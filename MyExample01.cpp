@@ -214,10 +214,11 @@ HRESULT CALLBACK OnD3D11CreateDevice(
 	//HRESULT hr;
 
 	// init camera
+	const float radius = 600.0f;
 	D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
     D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
     g_Camera.SetViewParams( &vecEye, &vecAt );
-    g_Camera.SetRadius(378.15607f, 378.15607f, 378.15607f);
+    g_Camera.SetRadius(radius, radius, radius);
 
 	// load mesh
 	RenderableMesh::ShaderDesc sd;
