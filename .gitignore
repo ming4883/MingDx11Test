@@ -1,6 +1,6 @@
-.ncb
-.suo
-.user
+*.ncb
+*.suo
+*.user
 Debug/*
 Release/*
 Profile/*
