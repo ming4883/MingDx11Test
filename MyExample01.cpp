@@ -161,10 +161,15 @@ struct CB_VS_PER_OBJECT
     D3DXMATRIX m_World;
 };
 
+typedef js::ConstantBuffer_t<CB_VS_PER_OBJECT> CB_VS_PER_OBJECT_Buffer;
+
 struct CB_PS_PER_OBJECT
 {
     D3DXVECTOR4 m_vObjectColor;
 };
+
+typedef js::ConstantBuffer_t<CB_PS_PER_OBJECT> CB_PS_PER_OBJECT_Buffer;
+
 #pragma pack(pop)
 
 
@@ -173,8 +178,8 @@ CModelViewerCamera g_Camera;
 RenderableMesh g_Mesh;
 D3DXMATRIX g_World;
 D3DXMATRIX g_WorldViewProjection;
-std::auto_ptr< js::ConstantBuffer_t<CB_VS_PER_OBJECT> > g_CbVsPreObject;
-std::auto_ptr< js::ConstantBuffer_t<CB_PS_PER_OBJECT> > g_CbPsPreObject;
+std::auto_ptr<CB_VS_PER_OBJECT_Buffer> g_CbVsPreObject;
+std::auto_ptr<CB_PS_PER_OBJECT_Buffer> g_CbPsPreObject;
 
 
 //--------------------------------------------------------------------------------------
@@ -214,7 +219,7 @@ HRESULT CALLBACK OnD3D11CreateDevice(
 	//HRESULT hr;
 
 	// init camera
-	const float radius = 600.0f;
+	const float radius = 900.0f;
 	D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
     D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
     g_Camera.SetViewParams( &vecEye, &vecAt );
@@ -235,10 +240,10 @@ HRESULT CALLBACK OnD3D11CreateDevice(
 
 	g_Mesh.create(pd3dDevice, media(L"Tiny/tiny.sdkmesh"), sd, ielems);
 
-	g_CbVsPreObject.reset(new js::ConstantBuffer_t<CB_VS_PER_OBJECT>);
+	g_CbVsPreObject.reset(new CB_VS_PER_OBJECT_Buffer);
 	g_CbVsPreObject->create(pd3dDevice);
 
-	g_CbPsPreObject.reset(new js::ConstantBuffer_t<CB_PS_PER_OBJECT>);
+	g_CbPsPreObject.reset(new CB_PS_PER_OBJECT_Buffer);
 	g_CbPsPreObject->create(pd3dDevice);
 	
     return S_OK;
