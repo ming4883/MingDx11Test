@@ -28,6 +28,14 @@ static const wchar_t* media(const wchar_t* in)
 		return in;
 	}
 
+	// convert all '/' to '\\'
+	wchar_t* ch = out;
+	while(*ch != 0)
+	{
+		if(*ch == '/') *ch = '\\';
+		++ch;
+	}
+
 	return out;
 }
 
@@ -118,36 +126,15 @@ public:
 
 	void render(ID3D11DeviceContext* d3dContext)
 	{
-		const UINT meshIt = 0;
-
 		// input layout
 		d3dContext->IASetInputLayout(m_IL);
-
-		// buffers
-		UINT strides[1];
-		UINT offsets[1];
-		ID3D11Buffer* vbs[1];
-
-		vbs[0] = m_Mesh.GetVB11(meshIt, 0);
-		strides[0] = (UINT)m_Mesh.GetVertexStride(meshIt, 0);
-		offsets[0] = 0;
-
-		d3dContext->IASetVertexBuffers(0, 1, vbs, strides, offsets);
-		d3dContext->IASetIndexBuffer(m_Mesh.GetIB11(meshIt), m_Mesh.GetIBFormat11(meshIt), 0);
 
 		// shaders
 		d3dContext->VSSetShader(m_VS->m_ShaderObject, nullptr, 0);
 		d3dContext->PSSetShader(m_PS->m_ShaderObject, nullptr, 0);
 
-		for(UINT subsetIt = 0; subsetIt < m_Mesh.GetNumSubsets(meshIt); ++subsetIt)
-		{
-			// Get the subset
-			SDKMESH_SUBSET* subset = m_Mesh.GetSubset(meshIt, subsetIt);
-			D3D11_PRIMITIVE_TOPOLOGY primType = CDXUTSDKMesh::GetPrimitiveType11((SDKMESH_PRIMITIVE_TYPE)subset->PrimitiveType);
-
-			d3dContext->IASetPrimitiveTopology(primType);
-			d3dContext->DrawIndexed((UINT)subset->IndexCount, 0, (UINT)subset->VertexStart);
-		}
+		// render mesh
+		m_Mesh.Render(d3dContext, 0);
 	}
 
 };	// RenderableMesh
@@ -219,11 +206,11 @@ HRESULT CALLBACK OnD3D11CreateDevice(
 	//HRESULT hr;
 
 	// init camera
-	const float radius = 900.0f;
+	const float radius = 50.0f;
 	D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
     D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
     g_Camera.SetViewParams( &vecEye, &vecAt );
-    g_Camera.SetRadius(radius, radius, radius);
+    g_Camera.SetRadius(radius, radius * 0.5f, radius * 4);
 
 	// load mesh
 	RenderableMesh::ShaderDesc sd;
@@ -238,7 +225,7 @@ HRESULT CALLBACK OnD3D11CreateDevice(
     input_element(ielems, "NORMAL",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0);
     input_element(ielems, "TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0);
 
-	g_Mesh.create(pd3dDevice, media(L"Tiny/tiny.sdkmesh"), sd, ielems);
+	g_Mesh.create(pd3dDevice, media(L"Common/SoftParticles/TankScene.sdkmesh"), sd, ielems);
 
 	g_CbVsPreObject.reset(new CB_VS_PER_OBJECT_Buffer);
 	g_CbVsPreObject->create(pd3dDevice);
@@ -313,7 +300,7 @@ void CALLBACK OnD3D11FrameRender(
 
 	// g_CbPsPreObject
 	g_CbPsPreObject->map(pd3dImmediateContext);
-	g_CbPsPreObject->data().m_vObjectColor = D3DXVECTOR4(1, 1, 0, 1);
+	g_CbPsPreObject->data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
 	g_CbPsPreObject->unmap(pd3dImmediateContext);
 
 	pd3dImmediateContext->PSSetConstantBuffers(0, 1, &g_CbPsPreObject->m_BufferObject);
@@ -335,6 +322,7 @@ void CALLBACK OnD3D11ReleasingSwapChain( void* pUserContext )
 //--------------------------------------------------------------------------------------
 void CALLBACK OnD3D11DestroyDevice( void* pUserContext )
 {
+	DXUTGetGlobalResourceCache().OnDestroyDevice();
 	g_Mesh.destroy();
 	g_CbVsPreObject.reset();
 	g_CbPsPreObject.reset();

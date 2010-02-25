@@ -34,8 +34,8 @@ struct PS_INPUT
 //--------------------------------------------------------------------------------------
 float4 PSMain( PS_INPUT Input ) : SV_TARGET
 {
-	//float4 vDiffuse = g_txDiffuse.Sample( g_samLinear, Input.vTexcoord );
-	float4 vDiffuse = float4(1,1,1,1);
+	float4 vDiffuse = g_txDiffuse.Sample(g_samLinear, Input.vTexcoord);
+	//float4 vDiffuse = float4(1,1,1,1);
 	float fLight = saturate(dot(normalize(Input.vNormal), float3(0,1,0)) * 0.5 + 0.5);
 	return vDiffuse * g_vObjectColor * fLight;
 }
