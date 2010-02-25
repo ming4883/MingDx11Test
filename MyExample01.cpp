@@ -137,6 +137,20 @@ public:
 		m_Mesh.Render(d3dContext, 0);
 	}
 
+	float radius()
+	{
+#define _max(a, b) (a > b ? a : b)
+		float r = 0;
+		for(UINT i=0; i<m_Mesh.GetNumMeshes(); ++i)
+		{
+			D3DXVECTOR3 e = m_Mesh.GetMeshBBoxExtents(i);
+			r = _max(r, _max(e.x, _max(e.y, e.z)));
+		}
+
+		return r;
+#undef _max
+	}
+
 };	// RenderableMesh
 
 #pragma pack(push)
@@ -203,15 +217,6 @@ HRESULT CALLBACK OnD3D11CreateDevice(
 	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 	void* pUserContext)
 {
-	//HRESULT hr;
-
-	// init camera
-	const float radius = 50.0f;
-	D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
-    D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
-    g_Camera.SetViewParams( &vecEye, &vecAt );
-    g_Camera.SetRadius(radius, radius * 0.5f, radius * 4);
-
 	// load mesh
 	RenderableMesh::ShaderDesc sd;
 	sd.vsPath = media(L"MyExample01/BasicHLSL11_VS.hlsl");
@@ -232,6 +237,13 @@ HRESULT CALLBACK OnD3D11CreateDevice(
 
 	g_CbPsPreObject.reset(new CB_PS_PER_OBJECT_Buffer);
 	g_CbPsPreObject->create(pd3dDevice);
+
+	// init camera
+	const float radius = g_Mesh.radius();
+	D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
+    D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
+    g_Camera.SetViewParams( &vecEye, &vecAt );
+    g_Camera.SetRadius(radius, radius * 0.5f, radius * 4);
 	
     return S_OK;
 }
@@ -246,8 +258,10 @@ HRESULT CALLBACK OnD3D11ResizedSwapChain(
 	const DXGI_SURFACE_DESC* pBackBufferSurfaceDesc,
 	void* pUserContext)
 {
-	float fAspectRatio = pBackBufferSurfaceDesc->Width / ( FLOAT )pBackBufferSurfaceDesc->Height;
-    g_Camera.SetProjParams( D3DX_PI / 4, fAspectRatio, 2.0f, 4000.0f );
+	float aspect = pBackBufferSurfaceDesc->Width / ( FLOAT )pBackBufferSurfaceDesc->Height;
+	const float radius = g_Mesh.radius();
+
+    g_Camera.SetProjParams( D3DX_PI / 4, aspect, 1.0f, radius * 8.0f );
     g_Camera.SetWindow( pBackBufferSurfaceDesc->Width, pBackBufferSurfaceDesc->Height );
     g_Camera.SetButtonMasks( MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON );
 
