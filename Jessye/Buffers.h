@@ -31,6 +31,11 @@ struct Buffers
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
 		size_t mipLevel);
+	
+	static ID3D11DepthStencilView* createDepthStencilView(
+		ID3D11Device* d3dDevice,
+		ID3D11Texture2D* texture,
+		size_t mipLevel);
 
 	static ID3D11ShaderResourceView* createShaderResourceView(
 		ID3D11Device* d3dDevice,

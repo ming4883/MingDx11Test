@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="MyExample01"
+	Name="Example01"
 	ProjectGUID="{D3D11108-96D0-4629-88B8-122C0256058C}"
 	RootNamespace="MyExample01"
 	Keyword="Win32Proj"
@@ -71,7 +71,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/IGNORE:4089"
-				AdditionalDependencies="d3dx9d.lib d3d9.lib d3dx11.lib dxerr.lib dxguid.lib winmm.lib comctl32.lib"
 				LinkIncremental="2"
 				GenerateManifest="true"
 				GenerateDebugInformation="true"
@@ -243,7 +242,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/IGNORE:4089"
-				AdditionalDependencies="d3dx9.lib d3d9.lib d3dx11.lib dxerr.lib dxguid.lib winmm.lib comctl32.lib"
 				LinkIncremental="1"
 				GenerateManifest="true"
 				GenerateDebugInformation="true"
@@ -422,7 +420,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/IGNORE:4089"
-				AdditionalDependencies="d3dx9.lib d3d9.lib d3dx11.lib dxerr.lib dxguid.lib winmm.lib comctl32.lib"
 				LinkIncremental="1"
 				GenerateManifest="true"
 				GenerateDebugInformation="true"
@@ -667,7 +664,15 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath="MyExample01.cpp"
+			RelativePath=".\Common.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Common.h"
+			>
+		</File>
+		<File
+			RelativePath=".\Example01.cpp"
 			>
 		</File>
 	</Files>

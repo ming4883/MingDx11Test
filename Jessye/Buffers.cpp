@@ -94,7 +94,7 @@ namespace js
 		return texture;
 	}
 
-	ID3D11RenderTargetView* Buffers::createRenderTargetView(
+	ID3D11RenderTargetView* createRenderTargetView(
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
 		size_t mipLevel)
@@ -113,6 +113,26 @@ namespace js
 		if(FAILED(hr)) js_safe_release(rtview);
 
 		return rtview;
+	}
+
+	ID3D11DepthStencilView* Buffers::createDepthStencilView(
+		ID3D11Device* d3dDevice,
+		ID3D11Texture2D* texture,
+		size_t mipLevel)
+	{
+		D3D11_TEXTURE2D_DESC texdesc;
+		texture->GetDesc(&texdesc);
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC desc;
+        desc.Format = texdesc.Format;
+		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+
+		ID3D11DepthStencilView* dsview = nullptr;
+		HRESULT hr = d3dDevice->CreateDepthStencilView(texture, &desc, &dsview);
+
+		if(FAILED(hr)) js_safe_release(dsview);
+
+		return dsview;
 	}
 
 	ID3D11ShaderResourceView* Buffers::createShaderResourceView(
