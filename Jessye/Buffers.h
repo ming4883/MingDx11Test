@@ -19,7 +19,22 @@ struct Buffers
 	static ID3D11Buffer* createConstantBuffer(
 		ID3D11Device* d3dDevice,
 		size_t sizeInBytes);
-		
+
+	static ID3D11Texture2D* createTexture2DRenderBuffer(
+		ID3D11Device* d3dDevice,
+		size_t width,
+		size_t height,
+		DXGI_FORMAT format,
+		size_t mipLevels);
+
+	static ID3D11RenderTargetView* createRenderTargetView(
+		ID3D11Device* d3dDevice,
+		ID3D11Texture2D* texture,
+		size_t mipLevel);
+
+	static ID3D11ShaderResourceView* createShaderResourceView(
+		ID3D11Device* d3dDevice,
+		ID3D11Texture2D* texture);
 		
 };	// Buffers
 

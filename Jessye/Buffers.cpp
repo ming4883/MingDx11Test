@@ -60,13 +60,80 @@ namespace js
 		desc.MiscFlags = 0;
 		desc.ByteWidth = sizeInBytes;
 
-
 		ID3D11Buffer* buffer = nullptr;
 		HRESULT hr = d3dDevice->CreateBuffer(&desc, nullptr, &buffer);
 
 		if(FAILED(hr)) js_safe_release(buffer);
 
 		return buffer;
+	}
+
+	ID3D11Texture2D* Buffers::createTexture2DRenderBuffer(
+		ID3D11Device* d3dDevice,
+		size_t width,
+		size_t height,
+		DXGI_FORMAT format,
+		size_t mipLevels)
+	{
+		D3D11_TEXTURE2D_DESC desc;
+		ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
+		desc.ArraySize = 1;
+		desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.Format = format;
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = mipLevels;
+		desc.SampleDesc.Count = 1;
+
+		ID3D11Texture2D* texture = nullptr;
+		HRESULT hr = d3dDevice->CreateTexture2D(&desc, nullptr, &texture);
+
+		if(FAILED(hr)) js_safe_release(texture);
+
+		return texture;
+	}
+
+	ID3D11RenderTargetView* Buffers::createRenderTargetView(
+		ID3D11Device* d3dDevice,
+		ID3D11Texture2D* texture,
+		size_t mipLevel)
+	{
+		D3D11_TEXTURE2D_DESC texdesc;
+		texture->GetDesc(&texdesc);
+
+		D3D11_RENDER_TARGET_VIEW_DESC desc;
+		desc.Format = texdesc.Format;
+		desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		desc.Texture2D.MipSlice = mipLevel;
+
+		ID3D11RenderTargetView* rtview = nullptr;
+		HRESULT hr = d3dDevice->CreateRenderTargetView(texture, &desc, &rtview);
+
+		if(FAILED(hr)) js_safe_release(rtview);
+
+		return rtview;
+	}
+
+	ID3D11ShaderResourceView* Buffers::createShaderResourceView(
+		ID3D11Device* d3dDevice,
+		ID3D11Texture2D* texture)
+	{
+		D3D11_TEXTURE2D_DESC texdesc;
+		texture->GetDesc(&texdesc);
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+		desc.Format = texdesc.Format;
+		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		desc.Texture2D.MipLevels = texdesc.MipLevels;
+		desc.Texture2D.MostDetailedMip = 0;
+
+		ID3D11ShaderResourceView* srview = nullptr;
+		HRESULT hr = d3dDevice->CreateShaderResourceView(texture, &desc, &srview);
+
+		if(FAILED(hr)) js_safe_release(srview);
+
+		return srview;
 	}
 
 }	// namespace js
