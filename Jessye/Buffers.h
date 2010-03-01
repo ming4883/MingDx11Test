@@ -24,25 +24,30 @@ struct Buffers
 		ID3D11Device* d3dDevice,
 		size_t width,
 		size_t height,
-		DXGI_FORMAT format,
-		size_t mipLevels);
+		size_t mipLevels,
+		DXGI_FORMAT dataFormat,
+		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
 
 	static ID3D11RenderTargetView* createRenderTargetView(
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
-		size_t mipLevel);
+		size_t mipLevel,
+		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
 	
 	static ID3D11DepthStencilView* createDepthStencilView(
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
-		size_t mipLevel);
+		size_t mipLevel,
+		DXGI_FORMAT dsvFormat = (DXGI_FORMAT)-1);
 
 	static ID3D11ShaderResourceView* createShaderResourceView(
 		ID3D11Device* d3dDevice,
-		ID3D11Texture2D* texture);
+		ID3D11Texture2D* texture,
+		DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
 		
 };	// Buffers
 
+//! Template for render buffer
 template<typename T>
 struct ConstantBuffer_t
 {
@@ -99,6 +104,112 @@ struct ConstantBuffer_t
 		return *static_cast<T*>(m_MappedPtr);
 	}
 
+};
+
+//! Texture2DRenderBuffer
+struct Texture2DRenderBuffer
+{
+	ID3D11Texture2D* m_TextureObject;
+	ID3D11RenderTargetView* m_RTView;
+	ID3D11DepthStencilView* m_DSView;
+	ID3D11ShaderResourceView* m_SRView;
+
+	size_t m_Width;
+	size_t m_Height;
+	size_t m_MipLevels;
+	DXGI_FORMAT m_Format;
+
+	Texture2DRenderBuffer()
+		: m_TextureObject(nullptr)
+		, m_RTView(nullptr)
+		, m_DSView(nullptr)
+		, m_SRView(nullptr)
+		, m_Width(0)
+		, m_Height(0)
+		, m_MipLevels(0)
+		, m_Format((DXGI_FORMAT)-1)
+	{
+	}
+
+	~Texture2DRenderBuffer()
+	{
+		destroy();
+	}
+
+	bool valid() const
+	{
+		return m_TextureObject != nullptr;
+	}
+
+	D3D11_VIEWPORT viewport()
+	{
+		js_assert(valid());
+
+		D3D11_VIEWPORT vp;
+		vp.TopLeftX = 0;
+		vp.TopLeftY = 0;
+		vp.Width = (float)m_Width;
+		vp.Height = (float)m_Height;
+		vp.MinDepth = 0;
+		vp.MaxDepth = 1;
+
+		return vp;
+	}
+
+	void create(ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat,
+		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1,
+		DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1)
+	{
+		m_TextureObject = Buffers::createTexture2DRenderBuffer(d3dDevice, width, height, mipLevels, dataFormat, rtvFormat);
+		if(nullptr == m_TextureObject) return;
+
+		m_Width = width; m_Height = height; m_Format = dataFormat; m_MipLevels = mipLevels;
+
+		if(-1 == rtvFormat) rtvFormat = dataFormat;
+		if(-1 == srvFormat) srvFormat = dataFormat;
+
+		switch(rtvFormat)
+		{
+		case ::DXGI_FORMAT_D16_UNORM:
+		case ::DXGI_FORMAT_D24_UNORM_S8_UINT:
+		case ::DXGI_FORMAT_D32_FLOAT:
+		case ::DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+			m_DSView = Buffers::createDepthStencilView(d3dDevice, m_TextureObject, 0, rtvFormat);
+			break;
+
+		default:
+			m_RTView = Buffers::createRenderTargetView(d3dDevice, m_TextureObject, 0, rtvFormat);
+			break;
+		}
+
+		if(nullptr == m_DSView && nullptr == m_RTView)
+		{
+			destroy();
+			return;
+		}
+
+		// shader resource view
+		m_SRView = Buffers::createShaderResourceView(d3dDevice, m_TextureObject, srvFormat);
+
+		if(nullptr == m_SRView)
+		{
+			destroy();
+			return;
+		}
+	}
+
+	void destroy()
+	{
+		js_safe_release(m_SRView);
+		js_safe_release(m_DSView);
+		js_safe_release(m_RTView);
+		js_safe_release(m_TextureObject);
+
+		m_Width = 0;
+		m_Height = 0;
+		m_MipLevels = 0;
+		m_Format = (DXGI_FORMAT)-1;
+	}
 };
 
 }	// namespace js

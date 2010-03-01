@@ -1,6 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Example01", "Example01.vcproj", "{D3D11108-96D0-4629-88B8-122C0256058C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Example02", "Example02.vcproj", "{D3D11108-96D0-4629-88B8-122C0256058C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Example01", "Example01.vcproj", "{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +26,18 @@ Global
 		{D3D11108-96D0-4629-88B8-122C0256058C}.Release|Win32.Build.0 = Release|Win32
 		{D3D11108-96D0-4629-88B8-122C0256058C}.Release|x64.ActiveCfg = Release|x64
 		{D3D11108-96D0-4629-88B8-122C0256058C}.Release|x64.Build.0 = Release|x64
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Debug|Win32.Build.0 = Debug|Win32
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Debug|x64.ActiveCfg = Debug|x64
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Debug|x64.Build.0 = Debug|x64
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Profile|Win32.ActiveCfg = Profile|Win32
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Profile|Win32.Build.0 = Profile|Win32
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Profile|x64.ActiveCfg = Profile|x64
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Profile|x64.Build.0 = Profile|x64
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Release|Win32.ActiveCfg = Release|Win32
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Release|Win32.Build.0 = Release|Win32
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Release|x64.ActiveCfg = Release|x64
+		{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="Example01"
-	ProjectGUID="{3D8F52EC-C5F7-4E62-B6B6-6E6E7888F5F2}"
+	Name="Example02"
+	ProjectGUID="{D3D11108-96D0-4629-88B8-122C0256058C}"
 	RootNamespace="MyExample01"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
@@ -655,11 +655,11 @@
 			Name="Media"
 			>
 			<File
-				RelativePath=".\Media\Example01\BasicHLSL11_PS.hlsl"
+				RelativePath=".\Media\Example02\Scene.PS.hlsl"
 				>
 			</File>
 			<File
-				RelativePath=".\Media\Example01\BasicHLSL11_VS.hlsl"
+				RelativePath=".\Media\Example02\Scene.VS.hlsl"
 				>
 			</File>
 		</Filter>
@@ -672,7 +672,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\Example01.cpp"
+			RelativePath=".\Example02.cpp"
 			>
 		</File>
 	</Files>

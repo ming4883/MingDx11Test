@@ -6,7 +6,7 @@
 #include "Jessye/Shaders.h"
 #include "Jessye/Buffers.h"
 
-class Example01 : public DXUTApp
+class Example02 : public DXUTApp
 {
 public:
 // Data structures
@@ -40,18 +40,20 @@ public:
 	std::auto_ptr<VSPreObjectConstBuf> m_VsPreObjectConstBuf;
 	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
 	ID3D11SamplerState* m_SamplerState;
+	js::Texture2DRenderBuffer m_ColorBuffer;
+	js::Texture2DRenderBuffer m_DepthBuffer;
 
 // Methods
-	Example01()
+	Example02()
 		: m_SamplerState(nullptr)
 	{
 	}
 
-	__override ~Example01()
+	__override ~Example02()
 	{
 	}
 
-	__override const wchar_t* getName() { return L"Example01"; }
+	__override const wchar_t* getName() { return L"Example02"; }
 
 	__override HRESULT onD3D11CreateDevice(
 		ID3D11Device* d3dDevice,
@@ -67,10 +69,10 @@ public:
 
 		// load mesh
 		RenderableMesh::ShaderDesc sd;
-		sd.vsPath = media(L"Example01/BasicHLSL11_VS.hlsl");
+		sd.vsPath = media(L"Example02/Scene.VS.hlsl");
 		sd.vsEntry = "VSMain";
 
-		sd.psPath = media(L"Example01/BasicHLSL11_PS.hlsl");
+		sd.psPath = media(L"Example02/Scene.PS.hlsl");
 		sd.psEntry = "PSMain";
 
 		std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
@@ -108,11 +110,20 @@ public:
 		m_Camera.SetWindow( backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height );
 		m_Camera.SetButtonMasks( MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON );
 
+		m_ColorBuffer.create(d3dDevice, backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+		js_assert(m_ColorBuffer.valid());
+
+		m_DepthBuffer.create(d3dDevice, backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height, 1,
+			DXGI_FORMAT_R32_TYPELESS, DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R32_FLOAT);
+		js_assert(m_DepthBuffer.valid());
+
 		return S_OK;
 	}
 
 	__override void onD3D11ReleasingSwapChain()
 	{
+		m_ColorBuffer.destroy();
+		m_DepthBuffer.destroy();
 	}
 
 	__override void onD3D11DestroyDevice()
@@ -173,7 +184,7 @@ public:
 		return 0;
 	}
 
-};	// Example01
+};	// Example02
 
 // Initialize everything and go into a render loop
 int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
@@ -183,7 +194,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
     _CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
 
-	Example01 app;
+	Example02 app;
 	return DXUTApp::run(app);
 }
 

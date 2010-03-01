@@ -72,19 +72,35 @@ namespace js
 		ID3D11Device* d3dDevice,
 		size_t width,
 		size_t height,
-		DXGI_FORMAT format,
-		size_t mipLevels)
+		size_t mipLevels,
+		DXGI_FORMAT dataFormat,
+		DXGI_FORMAT rtvFormat)
 	{
+		if(-1 == rtvFormat) rtvFormat = dataFormat;
+
 		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
 		desc.ArraySize = 1;
-		desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 		desc.Usage = D3D11_USAGE_DEFAULT;
-		desc.Format = format;
+		desc.Format = dataFormat;
 		desc.Width = width;
 		desc.Height = height;
 		desc.MipLevels = mipLevels;
 		desc.SampleDesc.Count = 1;
+		
+		switch(rtvFormat)
+		{
+		case ::DXGI_FORMAT_D16_UNORM:
+		case ::DXGI_FORMAT_D24_UNORM_S8_UINT:
+		case ::DXGI_FORMAT_D32_FLOAT:
+		case ::DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+			desc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+			break;
+
+		default:
+			desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+			break;
+		}
 
 		ID3D11Texture2D* texture = nullptr;
 		HRESULT hr = d3dDevice->CreateTexture2D(&desc, nullptr, &texture);
@@ -94,16 +110,24 @@ namespace js
 		return texture;
 	}
 
-	ID3D11RenderTargetView* createRenderTargetView(
+	ID3D11RenderTargetView* Buffers::createRenderTargetView(
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
-		size_t mipLevel)
+		size_t mipLevel,
+		DXGI_FORMAT rtvFormat)
 	{
-		D3D11_TEXTURE2D_DESC texdesc;
-		texture->GetDesc(&texdesc);
-
+		
 		D3D11_RENDER_TARGET_VIEW_DESC desc;
-		desc.Format = texdesc.Format;
+		
+		if(-1 == rtvFormat)
+		{
+			D3D11_TEXTURE2D_DESC texdesc;
+			texture->GetDesc(&texdesc);
+			desc.Format = texdesc.Format;
+		}
+		else
+			desc.Format = rtvFormat;
+
 		desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 		desc.Texture2D.MipSlice = mipLevel;
 
@@ -118,13 +142,20 @@ namespace js
 	ID3D11DepthStencilView* Buffers::createDepthStencilView(
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
-		size_t mipLevel)
+		size_t mipLevel,
+		DXGI_FORMAT dsvFormat)
 	{
-		D3D11_TEXTURE2D_DESC texdesc;
-		texture->GetDesc(&texdesc);
-
 		D3D11_DEPTH_STENCIL_VIEW_DESC desc;
-        desc.Format = texdesc.Format;
+		
+		if(-1 == dsvFormat)
+		{
+			D3D11_TEXTURE2D_DESC texdesc;
+			texture->GetDesc(&texdesc);
+			desc.Format = texdesc.Format;
+		}
+		else
+			desc.Format = dsvFormat;
+
 		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 
 		ID3D11DepthStencilView* dsview = nullptr;
@@ -137,13 +168,18 @@ namespace js
 
 	ID3D11ShaderResourceView* Buffers::createShaderResourceView(
 		ID3D11Device* d3dDevice,
-		ID3D11Texture2D* texture)
+		ID3D11Texture2D* texture,
+		DXGI_FORMAT srvFormat)
 	{
+		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
 		D3D11_TEXTURE2D_DESC texdesc;
 		texture->GetDesc(&texdesc);
+		
+		if(-1 == srvFormat)	
+			desc.Format = texdesc.Format;
+		else
+			desc.Format = srvFormat;
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-		desc.Format = texdesc.Format;
 		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 		desc.Texture2D.MipLevels = texdesc.MipLevels;
 		desc.Texture2D.MostDetailedMip = 0;
