@@ -655,6 +655,14 @@
 			Name="Media"
 			>
 			<File
+				RelativePath=".\Media\Example02\Post.Fog.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Post.VS.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\Media\Example02\Scene.PS.hlsl"
 				>
 			</File>

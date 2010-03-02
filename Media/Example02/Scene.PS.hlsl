@@ -25,8 +25,8 @@ SamplerState g_samLinear : register( s0 );
 //--------------------------------------------------------------------------------------
 struct PS_INPUT
 {
-	float3 vNormal		: NORMAL;
-	float2 vTexcoord	: TEXCOORD0;
+	float3 vNormal		: MYNORMAL;
+	float2 vTexcoord	: MYTEXCOORD0;
 };
 
 //--------------------------------------------------------------------------------------

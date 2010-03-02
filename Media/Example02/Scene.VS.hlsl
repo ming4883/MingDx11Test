@@ -27,8 +27,8 @@ struct VS_INPUT
 
 struct VS_OUTPUT
 {
-	float3 vNormal		: NORMAL;
-	float2 vTexcoord	: TEXCOORD0;
+	float3 vNormal		: MYNORMAL;
+	float2 vTexcoord	: MYTEXCOORD0;
 	float4 vPosition	: SV_POSITION;
 };
 
