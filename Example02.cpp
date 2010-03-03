@@ -29,6 +29,14 @@ public:
 
 	typedef js::ConstantBuffer_t<PSPreObjectStruct> PSPreObjectConstBuf;
 
+	struct PSPostProcessStruct
+	{
+		D3DXMATRIX m_InvViewProjScaleBias;
+		D3DXVECTOR4 m_ZParams;
+	};
+
+	typedef js::ConstantBuffer_t<PSPostProcessStruct> PSPostProcessConstBuf;
+
 #pragma pack(pop)
 //#pragma pack(show)
 
@@ -37,11 +45,18 @@ public:
 	RenderableMesh m_Mesh;
 	D3DXMATRIX m_World;
 	D3DXMATRIX m_WorldViewProjection;
+	D3DXMATRIX m_ViewProjection;
 	std::auto_ptr<VSPreObjectConstBuf> m_VsPreObjectConstBuf;
 	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
+	std::auto_ptr<PSPostProcessConstBuf> m_PSPostProcessConstBuf;
 	ID3D11SamplerState* m_SamplerState;
 	js::Texture2DRenderBuffer m_ColorBuffer;
 	js::Texture2DRenderBuffer m_DepthBuffer;
+
+	// post processing
+	ScreenQuad m_ScreenQuad;
+	js::VertexShader m_PostVtxShd;
+	js::PixelShader m_PostFogShd;
 
 // Methods
 	Example02()
@@ -88,6 +103,19 @@ public:
 		m_PsPreObjectConstBuf.reset(new PSPreObjectConstBuf);
 		m_PsPreObjectConstBuf->create(d3dDevice);
 
+		// post processing
+		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
+		js_assert(m_PostVtxShd.valid());
+
+		m_PostFogShd.createFromFile(d3dDevice, media(L"Example02/Post.Fog.hlsl"), "Main");
+		js_assert(m_PostFogShd.valid());
+
+		m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);
+		js_assert(m_ScreenQuad.valid());
+
+		m_PSPostProcessConstBuf.reset(new PSPostProcessConstBuf);
+		m_PSPostProcessConstBuf->create(d3dDevice);
+
 		// init camera
 		const float radius = m_Mesh.radius();
 		D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
@@ -132,6 +160,13 @@ public:
 		m_Mesh.destroy();
 		m_VsPreObjectConstBuf.reset();
 		m_PsPreObjectConstBuf.reset();
+
+		m_PSPostProcessConstBuf.reset();
+		
+		m_ScreenQuad.destroy();
+		m_PostVtxShd.destroy();
+		m_PostFogShd.destroy();
+		
 		js_safe_release(m_SamplerState);
 	}
 
@@ -143,6 +178,7 @@ public:
 
 		D3DXMatrixIdentity(&m_World);
 		m_WorldViewProjection = m_World * *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
+		m_ViewProjection = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
 	}
 	
 	__override void onD3D11FrameRender(
@@ -154,8 +190,9 @@ public:
 		// Clear render target and the depth stencil 
 		static const float ClearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
 
-		d3dImmediateContext->ClearRenderTargetView( DXUTGetD3D11RenderTargetView(), ClearColor );
-		d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
+		d3dImmediateContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, ClearColor );
+		d3dImmediateContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
+		d3dImmediateContext->OMSetRenderTargets(1, &m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
 
 		// m_VsPreObjectConstBuf
 		m_VsPreObjectConstBuf->map(d3dImmediateContext);
@@ -174,6 +211,38 @@ public:
 		d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState);
 
 		m_Mesh.render(d3dImmediateContext);
+
+		// Post-Processing
+		{
+			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
+			d3dImmediateContext->OMSetRenderTargets(1, rtv, DXUTGetD3D11DepthStencilView());
+			d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
+		}
+
+		// m_PSPostProcessConstBuf
+		m_PSPostProcessConstBuf->map(d3dImmediateContext);
+		// TODO: scale and bias
+		D3DXMatrixInverse(&m_PSPostProcessConstBuf->data().m_InvViewProjScaleBias, nullptr, &m_ViewProjection);
+		m_PSPostProcessConstBuf->data().m_ZParams.x = 1 / m_Camera.GetFarClip() - 1 / m_Camera.GetNearClip();
+		m_PSPostProcessConstBuf->data().m_ZParams.y = 1 / m_Camera.GetNearClip();
+		m_PSPostProcessConstBuf->data().m_ZParams.z = m_Camera.GetFarClip() - m_Camera.GetNearClip();
+		m_PSPostProcessConstBuf->data().m_ZParams.w = m_Camera.GetNearClip();
+		m_PSPostProcessConstBuf->unmap(d3dImmediateContext);
+
+		d3dImmediateContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
+		d3dImmediateContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
+		{
+			ID3D11ShaderResourceView* shv[] = {m_ColorBuffer.m_SRView, m_DepthBuffer.m_SRView};
+			d3dImmediateContext->PSSetShaderResources(0, 2, shv);
+			d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf->m_BufferObject);
+		}
+
+		m_ScreenQuad.render(d3dImmediateContext);
+
+		{
+			ID3D11ShaderResourceView* shv[] = {nullptr, nullptr};
+			d3dImmediateContext->PSSetShaderResources(0, 2, shv);
+		}
 	}
 
 	__override LRESULT msgProc(

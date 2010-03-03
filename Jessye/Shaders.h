@@ -50,14 +50,20 @@ struct Shader_t
 
 	virtual ~Shader_t()
 	{
-		js_safe_release(m_ByteCode);
-		js_safe_release(m_ShaderObject);
+		destroy();
 	}
 
 	bool valid() const
 	{
 		return m_ShaderObject != nullptr;
 	}
+
+	void destroy()
+	{
+		js_safe_release(m_ByteCode);
+		js_safe_release(m_ShaderObject);
+	}
+
 };	// Shader_t
 
 struct VertexShader : public Shader_t<ID3D11VertexShader>

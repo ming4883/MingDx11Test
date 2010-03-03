@@ -99,7 +99,7 @@ public:
 		m_PS->createFromFile(d3dDevice, shaderDesc.psPath.c_str(), shaderDesc.psEntry.c_str());
 		js_assert(m_PS->valid());
 
-		m_IL = js::Buffers::createInputLayout(d3dDevice, &inputElems[0], inputElems.size(), *m_VS);
+		m_IL = js::Buffers::createInputLayout(d3dDevice, &inputElems[0], inputElems.size(), m_VS->m_ByteCode);
 		js_assert(m_IL != nullptr);
 
 		return true;
@@ -144,13 +144,13 @@ public:
 
 };	// RenderableMesh::Impl
 
-RenderableMesh::RenderableMesh() : mImpl(*new Impl)
+RenderableMesh::RenderableMesh() : m_Impl(*new Impl)
 {
 }
 
 RenderableMesh::~RenderableMesh()
 {
-	delete &mImpl;
+	delete &m_Impl;
 }
 
 bool RenderableMesh::create(
@@ -160,22 +160,108 @@ bool RenderableMesh::create(
 	const std::vector<D3D11_INPUT_ELEMENT_DESC>& inputElems
 	)
 {
-	return mImpl.create(d3dDevice, meshPath, shaderDesc, inputElems);
+	return m_Impl.create(d3dDevice, meshPath, shaderDesc, inputElems);
 }
 
 void RenderableMesh::destroy()
 {
-	mImpl.destroy();
+	m_Impl.destroy();
 }
 
 void RenderableMesh::render(ID3D11DeviceContext* d3dContext) const
 {
-	mImpl.render(d3dContext);
+	m_Impl.render(d3dContext);
 }
 
 float RenderableMesh::radius() const
 {
-	return mImpl.radius();
+	return m_Impl.radius();
+}
+
+//------------------------------------------------------------------------------
+// ScreenQuad
+//------------------------------------------------------------------------------
+class ScreenQuad::Impl
+{
+public:
+	ID3D11Buffer* m_VB;
+	ID3D11Buffer* m_IB;
+	ID3D11InputLayout* m_IL;
+
+	Impl() : m_VB(nullptr), m_IB(nullptr), m_IL(nullptr)
+	{
+	}
+
+	static D3DXVECTOR3 v[];
+	static unsigned short i[];
+
+};	// ScreenQuad::Impl
+
+D3DXVECTOR3 ScreenQuad::Impl::v[] = {
+	D3DXVECTOR3( 1, 1, 0),
+	D3DXVECTOR3( 1,-1, 0),
+	D3DXVECTOR3(-1, 1, 0),
+	D3DXVECTOR3(-1,-1, 0),
+};
+
+unsigned short ScreenQuad::Impl::i[] = {
+	0, 1, 2, 3, 2, 1
+};
+
+ScreenQuad::ScreenQuad()
+	: m_Impl(*new Impl)
+{
+}
+
+ScreenQuad::~ScreenQuad()
+{
+	delete &m_Impl;
+}
+
+bool ScreenQuad::valid() const
+{
+	return m_Impl.m_VB != nullptr;
+}
+
+void ScreenQuad::create(ID3D11Device* d3dDevice, ID3DBlob* shaderByteCode)
+{
+	m_Impl.m_VB = js::Buffers::createVertexBuffer(d3dDevice, sizeof(Impl::v), sizeof(Impl::v[0]), false, Impl::v);
+	js_assert(m_Impl.m_VB != nullptr);
+
+	m_Impl.m_IB = js::Buffers::createIndexBuffer(d3dDevice, sizeof(Impl::i), sizeof(Impl::i[0]), false, Impl::i);
+	js_assert(m_Impl.m_IB != nullptr);
+
+	std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
+	inputElement(ielems, "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0);
+
+	m_Impl.m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), shaderByteCode);
+	js_assert(m_Impl.m_IL != nullptr);
+
+	if(nullptr == m_Impl.m_VB || nullptr == m_Impl.m_IB || nullptr == m_Impl.m_IL)
+	{
+		destroy();
+		return;
+	}
+
+}
+
+void ScreenQuad::destroy()
+{
+	js_safe_release(m_Impl.m_VB);
+	js_safe_release(m_Impl.m_IB);
+	js_safe_release(m_Impl.m_IL);
+}
+
+void ScreenQuad::render(ID3D11DeviceContext* d3dContext) const
+{
+	UINT strides[] = {sizeof(Impl::v[0])};
+	UINT offsets[] = {0};
+
+	d3dContext->IASetInputLayout(m_Impl.m_IL);
+	d3dContext->IASetIndexBuffer(m_Impl.m_IB, ::DXGI_FORMAT_R16_UINT, 0);
+	d3dContext->IASetVertexBuffers(0, 1, &m_Impl.m_VB, strides, offsets);
+	d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	d3dContext->DrawIndexed(6, 0, 0);
 }
 
 //------------------------------------------------------------------------------

@@ -15,6 +15,10 @@ void inputElement(
     D3D11_INPUT_CLASSIFICATION inputSlotClass,
     UINT instanceDataStepRate);
 
+#define js_decl_non_copyable(className)\
+	className(const className&);\
+	className& operator = (const className&);
+
 class RenderableMesh
 {
 public:
@@ -44,13 +48,32 @@ public:
 	float radius() const;
 
 private:
-	class Impl;
-	Impl& mImpl;
+	class Impl; Impl& m_Impl;
 
-	RenderableMesh(const RenderableMesh&);
-	RenderableMesh& operator = (const RenderableMesh&);
+	js_decl_non_copyable(RenderableMesh);
 
 };	// RenderableMesh
+
+class ScreenQuad
+{
+public:
+	ScreenQuad();
+
+	~ScreenQuad();
+
+	bool valid() const;
+
+	void create(ID3D11Device* d3dDevice, ID3DBlob* shaderByteCode);
+
+	void destroy();
+
+	void render(ID3D11DeviceContext* d3dContext) const;
+
+private:
+	class Impl; Impl& m_Impl;
+
+	js_decl_non_copyable(ScreenQuad);
+};
 
 
 class DXUTApp

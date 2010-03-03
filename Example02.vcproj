@@ -659,7 +659,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Media\Example02\Post.VS.hlsl"
+				RelativePath=".\Media\Example02\Post.Vtx.hlsl"
 				>
 			</File>
 			<File

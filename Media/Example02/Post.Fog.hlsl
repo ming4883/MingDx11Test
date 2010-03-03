@@ -9,35 +9,44 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-/*
-cbuffer cbPerObject : register( b0 )
+
+cbuffer cbPostCommon : register( b0 )
 {
-	float4		g_vObjectColor			: packoffset( c0 );
+	matrix g_InvViewProjScaleBias	: packoffset( c0 );
+	float4 g_ZParams				: packoffset( c4 );
 };
-*/
+
 
 //--------------------------------------------------------------------------------------
 // Textures and Samplers
 //--------------------------------------------------------------------------------------
-Texture2D	g_txScene : register( t0 );
-SamplerState g_samLinear : register( s0 );
+Texture2D g_txColor : register( t0 );
+Texture2D g_txDepth : register( t1 );
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
 //--------------------------------------------------------------------------------------
 struct PS_INPUT
 {
-	float4 vPosition	: SV_POSITION;
+	float4 vPosition : SV_POSITION;
 };
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
-float4 PSMain( PS_INPUT Input ) : SV_TARGET
+float4 Main( PS_INPUT Input ) : SV_TARGET
 {
-	float4 vDiffuse = g_txDiffuse.Sample(g_samLinear, Input.vTexcoord);
-	//float4 vDiffuse = float4(1,1,1,1);
-	float fLight = saturate(dot(normalize(Input.vNormal), float3(0,1,0)) * 0.5 + 0.5);
-	return vDiffuse * g_vObjectColor * fLight;
+	int3 texcoord = int3((int2)Input.vPosition.xy, 0);
+	
+	float4 vColor = g_txColor.Load(texcoord);
+	float  fDepth = g_txDepth.Load(texcoord).r;
+	
+	// http://www.humus.name/index.php?page=Comments&ID=256
+	float  fDepthLinear = 1 / (fDepth * g_ZParams.x + g_ZParams.y);
+	
+	float fFog = smoothstep(20, 30, fDepthLinear);
+	fFog = pow(fFog, 2);
+	
+	return lerp(vColor, float4(1,1,1,1), fFog);
 }
 

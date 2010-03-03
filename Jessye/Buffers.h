@@ -6,15 +6,37 @@
 namespace js
 {
 
-struct VertexShader;
-
 struct Buffers
 {
 	static ID3D11InputLayout* createInputLayout(
 		ID3D11Device* d3dDevice,
 		const D3D11_INPUT_ELEMENT_DESC* inputElements,
 		const size_t inputElementCount,
-		const VertexShader& shader);
+		ID3DBlob* shaderByteCode);
+
+	/*! Create a vertex buffer which allows:
+		- gpu read / write
+		- non dynamic usage (i.e. dynamic writing may be heavy)
+		- cpu write only
+	*/
+	static ID3D11Buffer* createVertexBuffer(
+		ID3D11Device* d3dDevice,
+		size_t sizeInBytes,
+		size_t stride,
+		bool dynamic,
+		void* initialData = nullptr);
+
+	/*! Create a index buffer which allows:
+		- gpu read / write
+		- non dynamic usage (i.e. dynamic writing may be heavy)
+		- cpu write only
+	*/
+	static ID3D11Buffer* createIndexBuffer(
+		ID3D11Device* d3dDevice,
+		size_t sizeInBytes,
+		size_t stride,
+		bool dynamic,
+		void* initialData = nullptr);
 
 	static ID3D11Buffer* createConstantBuffer(
 		ID3D11Device* d3dDevice,

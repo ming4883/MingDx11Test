@@ -1,6 +1,5 @@
 #include "DXUT.h"
 #include "Buffers.h"
-#include "Shaders.h"
 
 #include <sstream>
 
@@ -10,7 +9,7 @@ namespace js
 		ID3D11Device* d3dDevice,
 		const D3D11_INPUT_ELEMENT_DESC* inputElements,
 		const size_t inputElementCount,
-		const VertexShader& shader)
+		ID3DBlob* shaderByteCode)
 	{
 		/*
 		std::ostringstream stream;
@@ -35,18 +34,88 @@ namespace js
 		return nullptr;
 		*/
 
-		if(!shader.valid())
+		if(nullptr == shaderByteCode)
 			return nullptr;
 
 		ID3D11InputLayout* layout = nullptr;
 		HRESULT hr = d3dDevice->CreateInputLayout(
 			inputElements, inputElementCount,
-			shader.m_ByteCode->GetBufferPointer(), shader.m_ByteCode->GetBufferSize(),
+			shaderByteCode->GetBufferPointer(), shaderByteCode->GetBufferSize(),
 			&layout);
 
 		if(FAILED(hr)) js_safe_release(layout);
 
 		return layout;
+	}
+
+	ID3D11Buffer* Buffers::createVertexBuffer(
+		ID3D11Device* d3dDevice,
+		size_t sizeInBytes,
+		size_t stride,
+		bool dynamic,
+		void* initialData)
+	{
+		D3D11_BUFFER_DESC desc;
+		desc.ByteWidth = sizeInBytes;	// size
+		desc.StructureByteStride = stride;
+		desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// vertex buffer
+		desc.MiscFlags = 0;	// no misc flags
+		
+		if(dynamic)
+		{
+			desc.Usage = D3D11_USAGE_DYNAMIC;				// gpu read/write
+			desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;	// cpu write only
+		}
+		else
+		{
+			desc.Usage = D3D11_USAGE_DEFAULT;	// gpu read/write
+			desc.CPUAccessFlags = 0;			// no cpu sccess
+		}
+
+		D3D11_SUBRESOURCE_DATA srdara;
+		srdara.pSysMem = initialData;
+		
+		ID3D11Buffer* buffer = nullptr;
+		HRESULT hr = d3dDevice->CreateBuffer(&desc, initialData == nullptr ? nullptr : &srdara, &buffer);
+
+		if(FAILED(hr)) js_safe_release(buffer);
+
+		return buffer;
+	}
+
+	ID3D11Buffer* Buffers::createIndexBuffer(
+		ID3D11Device* d3dDevice,
+		size_t sizeInBytes,
+		size_t stride,
+		bool dynamic,
+		void* initialData)
+	{
+		D3D11_BUFFER_DESC desc;
+		desc.ByteWidth = sizeInBytes;	// size
+		desc.StructureByteStride = stride;
+		desc.BindFlags = D3D11_BIND_INDEX_BUFFER;	// index buffer
+		desc.MiscFlags = 0;	// no misc flags
+		
+		if(dynamic)
+		{
+			desc.Usage = D3D11_USAGE_DYNAMIC;				// gpu read/write
+			desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;	// cpu write only
+		}
+		else
+		{
+			desc.Usage = D3D11_USAGE_DEFAULT;	// gpu read/write
+			desc.CPUAccessFlags = 0;			// no cpu sccess
+		}
+
+		D3D11_SUBRESOURCE_DATA srdara;
+		srdara.pSysMem = initialData;
+
+		ID3D11Buffer* buffer = nullptr;
+		HRESULT hr = d3dDevice->CreateBuffer(&desc, initialData == nullptr ? nullptr : &srdara, &buffer);
+
+		if(FAILED(hr)) js_safe_release(buffer);
+
+		return buffer;
 	}
 
 	ID3D11Buffer* Buffers::createConstantBuffer(
