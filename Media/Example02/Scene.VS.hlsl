@@ -23,6 +23,7 @@ struct VS_INPUT
 	float4 vPosition	: POSITION;
 	float3 vNormal		: NORMAL;
 	float2 vTexcoord	: TEXCOORD0;
+	uint iInstanceId	: SV_INSTANCEID;
 };
 
 struct VS_OUTPUT
@@ -38,6 +39,9 @@ struct VS_OUTPUT
 VS_OUTPUT VSMain( VS_INPUT Input )
 {
 	VS_OUTPUT Output;
+	
+	if( Input.iInstanceId == 1 )
+		Input.vPosition.xz = Input.vPosition.xz + 2;
 	
 	Output.vPosition = mul( Input.vPosition, g_WorldViewProjection );
 	Output.vNormal = mul( Input.vNormal, (float3x3)g_World );

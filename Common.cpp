@@ -61,10 +61,167 @@ void inputElement(
 //------------------------------------------------------------------------------
 // RenderableMesh
 //------------------------------------------------------------------------------
+class MySDKMesh : public CDXUTSDKMesh
+{
+public:
+	enum {MAX_D3D11_VERTEX_STREAMS = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT};
+
+	__override ~MySDKMesh() {}
+
+	void render(
+		ID3D11DeviceContext* pd3dDeviceContext,
+		UINT iNumInstances = 1,
+		UINT iDiffuseSlot = (UINT)-1,
+		UINT iNormalSlot = (UINT)-1,
+		UINT iSpecularSlot = (UINT)-1)
+	{
+		renderFrame(0, false, pd3dDeviceContext, iNumInstances, iDiffuseSlot, iNormalSlot, iSpecularSlot);
+	}
+
+	void renderFrame( 
+		UINT iFrame,
+		bool bAdjacent,
+		ID3D11DeviceContext* pd3dDeviceContext,
+		UINT iNumInstances,
+		UINT iDiffuseSlot,
+		UINT iNormalSlot,
+		UINT iSpecularSlot)
+	{
+		if( !m_pStaticMeshData || !m_pFrameArray )
+			return;
+
+		if( m_pFrameArray[iFrame].Mesh != INVALID_MESH )
+		{
+			renderMesh(
+				m_pFrameArray[iFrame].Mesh,
+				bAdjacent,
+				pd3dDeviceContext,
+				iNumInstances,
+				iDiffuseSlot,
+				iNormalSlot,
+				iSpecularSlot);
+		}
+
+		// Render our children
+		if( m_pFrameArray[iFrame].ChildFrame != INVALID_FRAME )
+			renderFrame( 
+				m_pFrameArray[iFrame].ChildFrame, bAdjacent, pd3dDeviceContext, iNumInstances, iDiffuseSlot, 
+				iNormalSlot, iSpecularSlot );
+
+		// Render our siblings
+		if( m_pFrameArray[iFrame].SiblingFrame != INVALID_FRAME )
+			renderFrame(
+				m_pFrameArray[iFrame].SiblingFrame, bAdjacent, pd3dDeviceContext, iNumInstances, iDiffuseSlot, 
+				iNormalSlot, iSpecularSlot );
+	}
+
+	void renderMesh( 
+		UINT iMesh,
+		bool bAdjacent,
+		ID3D11DeviceContext* pd3dDeviceContext,
+		UINT iNumInstances,
+		UINT iDiffuseSlot,
+		UINT iNormalSlot,
+		UINT iSpecularSlot)
+	{
+		if( 0 < GetOutstandingBufferResources() )
+			return;
+
+		SDKMESH_MESH* pMesh = &m_pMeshArray[iMesh];
+
+		UINT Strides[MAX_D3D11_VERTEX_STREAMS];
+		UINT Offsets[MAX_D3D11_VERTEX_STREAMS];
+		ID3D11Buffer* pVB[MAX_D3D11_VERTEX_STREAMS];
+
+		if( pMesh->NumVertexBuffers > MAX_D3D11_VERTEX_STREAMS )
+			return;
+
+		for( UINT64 i = 0; i < pMesh->NumVertexBuffers; i++ )
+		{
+			pVB[i] = m_pVertexBufferArray[ pMesh->VertexBuffers[i] ].pVB11;
+			Strides[i] = ( UINT )m_pVertexBufferArray[ pMesh->VertexBuffers[i] ].StrideBytes;
+			Offsets[i] = 0;
+		}
+
+		SDKMESH_INDEX_BUFFER_HEADER* pIndexBufferArray;
+		if( bAdjacent )
+			pIndexBufferArray = m_pAdjacencyIndexBufferArray;
+		else
+			pIndexBufferArray = m_pIndexBufferArray;
+
+		ID3D11Buffer* pIB = pIndexBufferArray[ pMesh->IndexBuffer ].pIB11;
+		DXGI_FORMAT ibFormat = DXGI_FORMAT_R16_UINT;
+		switch( pIndexBufferArray[ pMesh->IndexBuffer ].IndexType )
+		{
+		case IT_16BIT:
+			ibFormat = DXGI_FORMAT_R16_UINT;
+			break;
+		case IT_32BIT:
+			ibFormat = DXGI_FORMAT_R32_UINT;
+			break;
+		};
+
+		pd3dDeviceContext->IASetVertexBuffers( 0, pMesh->NumVertexBuffers, pVB, Strides, Offsets );
+		pd3dDeviceContext->IASetIndexBuffer( pIB, ibFormat, 0 );
+
+		SDKMESH_SUBSET* pSubset = NULL;
+		SDKMESH_MATERIAL* pMat = NULL;
+		D3D11_PRIMITIVE_TOPOLOGY PrimType;
+
+		for( UINT subset = 0; subset < pMesh->NumSubsets; subset++ )
+		{
+			pSubset = &m_pSubsetArray[ pMesh->pSubsets[subset] ];
+
+			PrimType = GetPrimitiveType11( ( SDKMESH_PRIMITIVE_TYPE )pSubset->PrimitiveType );
+			if( bAdjacent )
+			{
+				switch( PrimType )
+				{
+				case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST:
+					PrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+					break;
+				case D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP:
+					PrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
+					break;
+				case D3D11_PRIMITIVE_TOPOLOGY_LINELIST:
+					PrimType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+					break;
+				case D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP:
+					PrimType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+					break;
+				}
+			}
+
+			pd3dDeviceContext->IASetPrimitiveTopology( PrimType );
+
+			pMat = &m_pMaterialArray[ pSubset->MaterialID ];
+			if( iDiffuseSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pDiffuseRV11 ) )
+				pd3dDeviceContext->PSSetShaderResources( iDiffuseSlot, 1, &pMat->pDiffuseRV11 );
+			if( iNormalSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pNormalRV11 ) )
+				pd3dDeviceContext->PSSetShaderResources( iNormalSlot, 1, &pMat->pNormalRV11 );
+			if( iSpecularSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pSpecularRV11 ) )
+				pd3dDeviceContext->PSSetShaderResources( iSpecularSlot, 1, &pMat->pSpecularRV11 );
+
+			UINT IndexCount = ( UINT )pSubset->IndexCount;
+			UINT IndexStart = ( UINT )pSubset->IndexStart;
+			UINT VertexStart = ( UINT )pSubset->VertexStart;
+			if( bAdjacent )
+			{
+				IndexCount *= 2;
+				IndexStart *= 2;
+			}
+
+			//pd3dDeviceContext->DrawIndexed( IndexCount, IndexStart, VertexStart );
+			pd3dDeviceContext->DrawIndexedInstanced( IndexCount, iNumInstances, IndexStart, VertexStart, 0 );
+		}
+	}
+
+};	// MySDKMesh
+
 class RenderableMesh::Impl
 {
 public:
-	mutable CDXUTSDKMesh m_Mesh;
+	mutable MySDKMesh m_Mesh;
 	std::auto_ptr<js::VertexShader> m_VS;
 	std::auto_ptr<js::PixelShader> m_PS;
 	ID3D11InputLayout* m_IL;
@@ -115,7 +272,7 @@ public:
 		js_safe_release(m_IL);
 	}
 
-	void render(ID3D11DeviceContext* d3dContext) const
+	void render(ID3D11DeviceContext* d3dContext, size_t numInstances) const
 	{
 		// input layout
 		d3dContext->IASetInputLayout(m_IL);
@@ -125,7 +282,7 @@ public:
 		d3dContext->PSSetShader(m_PS->m_ShaderObject, nullptr, 0);
 
 		// render mesh
-		m_Mesh.Render(d3dContext, 0);
+		m_Mesh.render(d3dContext, numInstances, 0, 1, 2);
 	}
 
 	float radius() const
@@ -168,9 +325,9 @@ void RenderableMesh::destroy()
 	m_Impl.destroy();
 }
 
-void RenderableMesh::render(ID3D11DeviceContext* d3dContext) const
+void RenderableMesh::render(ID3D11DeviceContext* d3dContext, size_t numInstances) const
 {
-	m_Impl.render(d3dContext);
+	m_Impl.render(d3dContext, numInstances);
 }
 
 float RenderableMesh::radius() const

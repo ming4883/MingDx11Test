@@ -43,7 +43,7 @@ public:
 
 	void destroy();
 
-	void render(ID3D11DeviceContext* d3dContext) const;
+	void render(ID3D11DeviceContext* d3dContext, size_t numInstances = 1) const;
 
 	float radius() const;
 
