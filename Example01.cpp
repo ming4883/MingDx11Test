@@ -9,6 +9,7 @@
 class Example01 : public DXUTApp
 {
 public:
+	enum { NUM_INSTANCES = 4 };
 // Data structures
 #pragma pack(push)
 //#pragma pack(show)
@@ -16,11 +17,18 @@ public:
 //#pragma pack(show)
 	struct VSPreObjectStruct
 	{
-		D3DXMATRIX m_WorldViewProj;
+		D3DXMATRIX m_ViewProjection;
 		D3DXMATRIX m_World;
 	};
 
 	typedef js::ConstantBuffer_t<VSPreObjectStruct> VSPreObjectConstBuf;
+
+	struct VSInstancingStruct
+	{
+		D3DXMATRIX m_InstanceWorld[NUM_INSTANCES];
+	};
+
+	typedef js::ConstantBuffer_t<VSInstancingStruct> VSInstancingConstBuf;
 
 	struct PSPreObjectStruct
 	{
@@ -36,8 +44,9 @@ public:
 	CModelViewerCamera m_Camera;
 	RenderableMesh m_Mesh;
 	D3DXMATRIX m_World;
-	D3DXMATRIX m_WorldViewProjection;
+	D3DXMATRIX m_ViewProjection;
 	std::auto_ptr<VSPreObjectConstBuf> m_VsPreObjectConstBuf;
+	std::auto_ptr<VSInstancingConstBuf> m_VSInstancingConstBuf;
 	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
 	ID3D11SamplerState* m_SamplerState;
 
@@ -78,10 +87,13 @@ public:
 		inputElement(ielems, "NORMAL",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0);
 		inputElement(ielems, "TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0);
 
-		m_Mesh.create(d3dDevice, media(L"Common/SoftParticles/TankScene.sdkmesh"), sd, ielems);
+		m_Mesh.create(d3dDevice, media(L"Common/Tiny/Tiny.sdkmesh"), sd, ielems);
 
 		m_VsPreObjectConstBuf.reset(new VSPreObjectConstBuf);
 		m_VsPreObjectConstBuf->create(d3dDevice);
+		
+		m_VSInstancingConstBuf.reset(new VSInstancingConstBuf);
+		m_VSInstancingConstBuf->create(d3dDevice);
 
 		m_PsPreObjectConstBuf.reset(new PSPreObjectConstBuf);
 		m_PsPreObjectConstBuf->create(d3dDevice);
@@ -91,7 +103,7 @@ public:
 		D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
 		D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
 		m_Camera.SetViewParams( &vecEye, &vecAt );
-		m_Camera.SetRadius(radius, radius * 0.5f, radius * 4);
+		m_Camera.SetRadius(radius * 2, radius * 0.5f, radius * 4);
 		
 		return S_OK;
 	}
@@ -121,6 +133,7 @@ public:
 		m_Mesh.destroy();
 		m_VsPreObjectConstBuf.reset();
 		m_PsPreObjectConstBuf.reset();
+		m_VSInstancingConstBuf.reset();
 		js_safe_release(m_SamplerState);
 	}
 
@@ -131,7 +144,9 @@ public:
 		m_Camera.FrameMove( elapsedTime );
 
 		D3DXMatrixIdentity(&m_World);
-		m_WorldViewProjection = m_World * *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
+		D3DXMatrixRotationX(&m_World, D3DXToDegree(90));
+
+		m_ViewProjection = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
 	}
 	
 	__override void onD3D11FrameRender(
@@ -146,23 +161,48 @@ public:
 		d3dImmediateContext->ClearRenderTargetView( DXUTGetD3D11RenderTargetView(), ClearColor );
 		d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
 
-		// m_VsPreObjectConstBuf
-		m_VsPreObjectConstBuf->map(d3dImmediateContext);
-		D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_WorldViewProj, &m_WorldViewProjection );
-		D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_World, &m_World );
-		m_VsPreObjectConstBuf->unmap(d3dImmediateContext);
+		{	// m_VsPreObjectConstBuf
+			m_VsPreObjectConstBuf->map(d3dImmediateContext);
+			D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_ViewProjection, &m_ViewProjection );
+			D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_World, &m_World );
+			m_VsPreObjectConstBuf->unmap(d3dImmediateContext);
+		}
+		
+		{	// m_VSInstancingConstBuf
+			m_VSInstancingConstBuf->map(d3dImmediateContext);
 
-		// m_PsPreObjectConstBuf
-		m_PsPreObjectConstBuf->map(d3dImmediateContext);
-		m_PsPreObjectConstBuf->data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
-		m_PsPreObjectConstBuf->unmap(d3dImmediateContext);
+			static const float d = 150;
+			static const D3DXVECTOR3 t[NUM_INSTANCES] = {
+				D3DXVECTOR3( 2*d, 0, 0),
+				D3DXVECTOR3(   d, 0, 0),
+				D3DXVECTOR3(-  d, 0, 0),
+				D3DXVECTOR3(-2*d, 0, 0),
+			};
+
+			for(int i=0; i<NUM_INSTANCES; ++i)
+			{
+				D3DXMATRIX* m = &m_VSInstancingConstBuf->data().m_InstanceWorld[i];
+				D3DXMatrixIdentity(m);
+				D3DXMatrixTranslation(m, t[i].x, t[i].y, t[i].z);
+				D3DXMatrixTranspose(m, m);
+			}
+			
+			m_VSInstancingConstBuf->unmap(d3dImmediateContext);
+		}
+
+		{	// m_PsPreObjectConstBuf
+			m_PsPreObjectConstBuf->map(d3dImmediateContext);
+			m_PsPreObjectConstBuf->data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
+			m_PsPreObjectConstBuf->unmap(d3dImmediateContext);
+		}
 
 		// preparing shaders
 		d3dImmediateContext->VSSetConstantBuffers(0, 1, &m_VsPreObjectConstBuf->m_BufferObject);
+		d3dImmediateContext->VSSetConstantBuffers(1, 1, &m_VSInstancingConstBuf->m_BufferObject);
 		d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PsPreObjectConstBuf->m_BufferObject);
 		d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState);
 
-		m_Mesh.render(d3dImmediateContext);
+		m_Mesh.render(d3dImmediateContext, NUM_INSTANCES);
 	}
 
 	__override LRESULT msgProc(

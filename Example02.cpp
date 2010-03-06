@@ -210,7 +210,7 @@ public:
 		d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PsPreObjectConstBuf->m_BufferObject);
 		d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState);
 
-		m_Mesh.render(d3dImmediateContext, 2);
+		m_Mesh.render(d3dImmediateContext);
 
 		// Post-Processing
 		{
