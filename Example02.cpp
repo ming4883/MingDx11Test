@@ -40,6 +40,49 @@ public:
 #pragma pack(pop)
 //#pragma pack(show)
 
+	class Rendering
+	{
+	public:
+		js::Texture2DRenderBuffer m_ColorBuffer;
+		js::Texture2DRenderBuffer m_DepthBuffer;
+
+		void onSwapChainResized(ID3D11Device* d3dDevice, size_t width, size_t height)
+		{
+			m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+			js_assert(m_ColorBuffer.valid());
+
+			m_DepthBuffer.create(d3dDevice, width, height, 1,
+				DXGI_FORMAT_R32_TYPELESS, DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R32_FLOAT);
+			js_assert(m_DepthBuffer.valid());
+		}
+
+		void onSwapChainReleasing()
+		{
+			m_ColorBuffer.destroy();
+			m_DepthBuffer.destroy();
+		}
+
+		void prepareRenderScene(
+			ID3D11Device* d3dDevice,
+			ID3D11DeviceContext* d3dContext)
+		{
+			// Clear render target and the depth stencil 
+			static const float ClearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
+
+			d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, ClearColor );
+			d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
+			d3dContext->OMSetRenderTargets(1, &m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
+		}
+
+		void unprepareRenderScene(
+			ID3D11Device* d3dDevice,
+			ID3D11DeviceContext* d3dContext)
+		{
+			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
+			d3dContext->OMSetRenderTargets(1, rtv, DXUTGetD3D11DepthStencilView());
+		}
+	};
+
 // Global Variables
 	CModelViewerCamera m_Camera;
 	RenderableMesh m_Mesh;
@@ -50,8 +93,8 @@ public:
 	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
 	std::auto_ptr<PSPostProcessConstBuf> m_PSPostProcessConstBuf;
 	ID3D11SamplerState* m_SamplerState;
-	js::Texture2DRenderBuffer m_ColorBuffer;
-	js::Texture2DRenderBuffer m_DepthBuffer;
+	Rendering m_Rendering;
+	
 
 	// post processing
 	ScreenQuad m_ScreenQuad;
@@ -138,20 +181,14 @@ public:
 		m_Camera.SetWindow( backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height );
 		m_Camera.SetButtonMasks( MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON );
 
-		m_ColorBuffer.create(d3dDevice, backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
-		js_assert(m_ColorBuffer.valid());
-
-		m_DepthBuffer.create(d3dDevice, backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height, 1,
-			DXGI_FORMAT_R32_TYPELESS, DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R32_FLOAT);
-		js_assert(m_DepthBuffer.valid());
+		m_Rendering.onSwapChainResized(d3dDevice, backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height);
 
 		return S_OK;
 	}
 
 	__override void onD3D11ReleasingSwapChain()
 	{
-		m_ColorBuffer.destroy();
-		m_DepthBuffer.destroy();
+		m_Rendering.onSwapChainReleasing();
 	}
 
 	__override void onD3D11DestroyDevice()
@@ -187,61 +224,75 @@ public:
 		double time,
 		float elapsedTime)
 	{
-		// Clear render target and the depth stencil 
-		static const float ClearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
+		// Render Scene
+		{	m_Rendering.prepareRenderScene(d3dDevice, d3dImmediateContext);
 
-		d3dImmediateContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, ClearColor );
-		d3dImmediateContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
-		d3dImmediateContext->OMSetRenderTargets(1, &m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
+			// m_VsPreObjectConstBuf
+			m_VsPreObjectConstBuf->map(d3dImmediateContext);
+			D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_WorldViewProj, &m_WorldViewProjection );
+			D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_World, &m_World );
+			m_VsPreObjectConstBuf->unmap(d3dImmediateContext);
 
-		// m_VsPreObjectConstBuf
-		m_VsPreObjectConstBuf->map(d3dImmediateContext);
-		D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_WorldViewProj, &m_WorldViewProjection );
-		D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_World, &m_World );
-		m_VsPreObjectConstBuf->unmap(d3dImmediateContext);
+			// m_PsPreObjectConstBuf
+			m_PsPreObjectConstBuf->map(d3dImmediateContext);
+			m_PsPreObjectConstBuf->data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
+			m_PsPreObjectConstBuf->unmap(d3dImmediateContext);
 
-		// m_PsPreObjectConstBuf
-		m_PsPreObjectConstBuf->map(d3dImmediateContext);
-		m_PsPreObjectConstBuf->data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
-		m_PsPreObjectConstBuf->unmap(d3dImmediateContext);
+			// preparing shaders
+			d3dImmediateContext->VSSetConstantBuffers(0, 1, &m_VsPreObjectConstBuf->m_BufferObject);
+			d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PsPreObjectConstBuf->m_BufferObject);
+			d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState);
 
-		// preparing shaders
-		d3dImmediateContext->VSSetConstantBuffers(0, 1, &m_VsPreObjectConstBuf->m_BufferObject);
-		d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PsPreObjectConstBuf->m_BufferObject);
-		d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState);
+			m_Mesh.render(d3dImmediateContext);
 
-		m_Mesh.render(d3dImmediateContext);
+		}	m_Rendering.unprepareRenderScene(d3dDevice, d3dImmediateContext);
 
 		// Post-Processing
-		{
-			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
-			d3dImmediateContext->OMSetRenderTargets(1, rtv, DXUTGetD3D11DepthStencilView());
+		{	
+			// todo replace this with disabling depth test
 			d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
-		}
 
-		// m_PSPostProcessConstBuf
-		m_PSPostProcessConstBuf->map(d3dImmediateContext);
-		// TODO: scale and bias
-		D3DXMatrixInverse(&m_PSPostProcessConstBuf->data().m_InvViewProjScaleBias, nullptr, &m_ViewProjection);
-		m_PSPostProcessConstBuf->data().m_ZParams.x = 1 / m_Camera.GetFarClip() - 1 / m_Camera.GetNearClip();
-		m_PSPostProcessConstBuf->data().m_ZParams.y = 1 / m_Camera.GetNearClip();
-		m_PSPostProcessConstBuf->data().m_ZParams.z = m_Camera.GetFarClip() - m_Camera.GetNearClip();
-		m_PSPostProcessConstBuf->data().m_ZParams.w = m_Camera.GetNearClip();
-		m_PSPostProcessConstBuf->unmap(d3dImmediateContext);
+			{	// m_PSPostProcessConstBuf
+				PSPostProcessConstBuf& buf = *m_PSPostProcessConstBuf;
+				buf.map(d3dImmediateContext);
+				
+				D3DXMATRIX scalebias(
+					 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
+					 0, 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
+					 0, 0, 1, 0,
+					-1,-1, 0, 1);
 
-		d3dImmediateContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
-		d3dImmediateContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
-		{
-			ID3D11ShaderResourceView* shv[] = {m_ColorBuffer.m_SRView, m_DepthBuffer.m_SRView};
-			d3dImmediateContext->PSSetShaderResources(0, 2, shv);
-			d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf->m_BufferObject);
-		}
+				D3DXMATRIX invViewProj;
+				D3DXMatrixInverse(&invViewProj, nullptr, &m_ViewProjection);
+				invViewProj = scalebias * invViewProj;
 
-		m_ScreenQuad.render(d3dImmediateContext);
+				D3DXMatrixTranspose(&buf.data().m_InvViewProjScaleBias, &invViewProj);
 
-		{
-			ID3D11ShaderResourceView* shv[] = {nullptr, nullptr};
-			d3dImmediateContext->PSSetShaderResources(0, 2, shv);
+				buf.data().m_ZParams.x = 1 / m_Camera.GetFarClip() - 1 / m_Camera.GetNearClip();
+				buf.data().m_ZParams.y = 1 / m_Camera.GetNearClip();
+				buf.data().m_ZParams.z = m_Camera.GetFarClip() - m_Camera.GetNearClip();
+				buf.data().m_ZParams.w = m_Camera.GetNearClip();
+
+				buf.unmap(d3dImmediateContext);
+			}
+
+			d3dImmediateContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
+			d3dImmediateContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
+
+			{	ID3D11ShaderResourceView* shv[] = {
+					m_Rendering.m_ColorBuffer.m_SRView, 
+					m_Rendering.m_DepthBuffer.m_SRView
+					};
+				d3dImmediateContext->PSSetShaderResources(0, 2, shv);
+				d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf->m_BufferObject);
+			}
+
+			m_ScreenQuad.render(d3dImmediateContext);
+
+			{
+				ID3D11ShaderResourceView* shv[] = {nullptr, nullptr};
+				d3dImmediateContext->PSSetShaderResources(0, 2, shv);
+			}
 		}
 	}
 
