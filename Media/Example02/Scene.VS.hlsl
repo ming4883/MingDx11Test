@@ -11,14 +11,15 @@
 //--------------------------------------------------------------------------------------
 cbuffer cbPerObject : register( b0 )
 {
-	matrix g_WorldViewProjection	: packoffset( c0 );
-	matrix g_World					: packoffset( c4 );
+	matrix g_ViewProjection	: packoffset(c0);
+	matrix g_World			: packoffset(c4);
+	float3 g_CameraPosition : packoffset(c8);
 };
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
 //--------------------------------------------------------------------------------------
-struct VS_INPUT
+struct IA_OUTPUT
 {
 	float4 vPosition	: POSITION;
 	float3 vNormal		: NORMAL;
@@ -28,22 +29,25 @@ struct VS_INPUT
 
 struct VS_OUTPUT
 {
-	float3 vNormal		: MYNORMAL;
-	float2 vTexcoord	: MYTEXCOORD0;
-	float4 vPosition	: SV_POSITION;
+	float3 vWorldNormal		: WORLDNORMAL;
+	float3 vWorldPosition	: WORLDPOSITION;
+	float3 vWorldViewDir	: WORLDVIEWDIR;
+	float4 vPosition		: SV_POSITION;
+	float2 vTexcoord		: TEXCOORD0;
 };
 
 //--------------------------------------------------------------------------------------
 // Vertex Shader
 //--------------------------------------------------------------------------------------
-VS_OUTPUT VSMain( VS_INPUT Input )
+VS_OUTPUT VSMain( IA_OUTPUT Input )
 {
 	VS_OUTPUT Output;
 	
-	Output.vPosition = mul( Input.vPosition, g_WorldViewProjection );
-	Output.vNormal = mul( Input.vNormal, (float3x3)g_World );
+	Output.vWorldNormal = mul(Input.vNormal, (float3x3)g_World);
+	Output.vWorldPosition = mul(Input.vPosition, g_World).xyz;
+	Output.vWorldViewDir = g_CameraPosition - Output.vWorldPosition;
+	Output.vPosition = mul(float4(Output.vWorldPosition, 1), g_ViewProjection);
 	Output.vTexcoord = Input.vTexcoord;
 	
 	return Output;
 }
-

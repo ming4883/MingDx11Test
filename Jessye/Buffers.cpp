@@ -122,6 +122,9 @@ namespace js
 		ID3D11Device* d3dDevice,
 		size_t sizeInBytes)
 	{
+		if(sizeInBytes % 16 != 0)
+			sizeInBytes += 16 - (sizeInBytes % 16);
+
 		D3D11_BUFFER_DESC desc;
 		desc.Usage = D3D11_USAGE_DYNAMIC;
 		desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;

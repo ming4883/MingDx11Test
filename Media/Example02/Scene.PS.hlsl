@@ -11,7 +11,7 @@
 //--------------------------------------------------------------------------------------
 cbuffer cbPerObject : register( b0 )
 {
-	float4		g_vObjectColor			: packoffset( c0 );
+	float4 g_vObjectColor : packoffset( c0 );
 };
 
 //--------------------------------------------------------------------------------------
@@ -23,20 +23,31 @@ SamplerState g_samLinear : register( s0 );
 //--------------------------------------------------------------------------------------
 // Input / Output structures
 //--------------------------------------------------------------------------------------
-struct PS_INPUT
+struct VS_OUTPUT
 {
-	float3 vNormal		: MYNORMAL;
-	float2 vTexcoord	: MYTEXCOORD0;
+	float3 vWorldNormal		: WORLDNORMAL;
+	float3 vWorldPosition	: WORLDPOSITION;
+	float3 vWorldViewDir	: WORLDVIEWDIR;
+	float4 vPosition		: SV_POSITION;
+	float2 vTexcoord		: TEXCOORD0;
 };
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
-float4 PSMain( PS_INPUT Input ) : SV_TARGET
+float4 PSMain( VS_OUTPUT Input ) : SV_TARGET
 {
 	float4 vDiffuse = g_txDiffuse.Sample(g_samLinear, Input.vTexcoord);
-	//float4 vDiffuse = float4(1,1,1,1);
-	float fLight = saturate(dot(normalize(Input.vNormal), float3(0,1,0)) * 0.5 + 0.5);
-	return vDiffuse * g_vObjectColor * fLight;
+	float4 vSpecular = vDiffuse;
+	
+	Input.vWorldNormal = normalize(Input.vWorldNormal);
+	Input.vWorldViewDir = normalize(Input.vWorldViewDir);
+	
+	float3 vLightDir = float3(0,1,0);
+	float3 vHalfDir = normalize(vLightDir + Input.vWorldViewDir);
+	vDiffuse.xyz = vDiffuse.xyz * saturate(dot(Input.vWorldNormal, vLightDir) * 0.5 + 0.5);
+	vSpecular.xyz = vSpecular.xyz * pow(saturate(dot(Input.vWorldNormal, vHalfDir)), 16);
+	
+	return vSpecular + vDiffuse * g_vObjectColor;
 }
 

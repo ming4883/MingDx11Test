@@ -14,28 +14,37 @@ public:
 //#pragma pack(show)
 #pragma pack(1)
 //#pragma pack(show)
-	struct VSPreObjectStruct
+	struct VSPreObject
 	{
-		D3DXMATRIX m_WorldViewProj;
+		D3DXMATRIX m_ViewProjection;
 		D3DXMATRIX m_World;
+		D3DXVECTOR3 m_CameraPosition;
+
+		void update(const CModelViewerCamera& camera, const D3DXMATRIX& worldMatrix)
+		{
+			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
+			D3DXMatrixTranspose(&m_ViewProjection, &viewProjectionMatrix);
+			D3DXMatrixTranspose(&m_World, &worldMatrix);
+			m_CameraPosition = *camera.GetEyePt();
+		}
 	};
 
-	typedef js::ConstantBuffer_t<VSPreObjectStruct> VSPreObjectConstBuf;
+	typedef js::ConstantBuffer_t<VSPreObject> VSPreObjectConstBuf;
 
-	struct PSPreObjectStruct
+	struct PSPreObject
 	{
 		D3DXVECTOR4 m_vObjectColor;
 	};
 
-	typedef js::ConstantBuffer_t<PSPreObjectStruct> PSPreObjectConstBuf;
+	typedef js::ConstantBuffer_t<PSPreObject> PSPreObjectConstBuf;
 
-	struct PSPostProcessStruct
+	struct PSPostProcess
 	{
 		D3DXMATRIX m_InvViewProjScaleBias;
 		D3DXVECTOR4 m_ZParams;
 	};
 
-	typedef js::ConstantBuffer_t<PSPostProcessStruct> PSPostProcessConstBuf;
+	typedef js::ConstantBuffer_t<PSPostProcess> PSPostProcessConstBuf;
 
 #pragma pack(pop)
 //#pragma pack(show)
@@ -86,9 +95,7 @@ public:
 // Global Variables
 	CModelViewerCamera m_Camera;
 	RenderableMesh m_Mesh;
-	D3DXMATRIX m_World;
-	D3DXMATRIX m_WorldViewProjection;
-	D3DXMATRIX m_ViewProjection;
+	D3DXMATRIX m_WorldMatrix;
 	std::auto_ptr<VSPreObjectConstBuf> m_VsPreObjectConstBuf;
 	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
 	std::auto_ptr<PSPostProcessConstBuf> m_PSPostProcessConstBuf;
@@ -212,10 +219,7 @@ public:
 		float elapsedTime)
 	{
 		m_Camera.FrameMove( elapsedTime );
-
-		D3DXMatrixIdentity(&m_World);
-		m_WorldViewProjection = m_World * *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
-		m_ViewProjection = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
+		D3DXMatrixIdentity(&m_WorldMatrix);
 	}
 	
 	__override void onD3D11FrameRender(
@@ -224,13 +228,14 @@ public:
 		double time,
 		float elapsedTime)
 	{
+		D3DXMATRIX viewProjection = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
+
 		// Render Scene
 		{	m_Rendering.prepareRenderScene(d3dDevice, d3dImmediateContext);
 
 			// m_VsPreObjectConstBuf
 			m_VsPreObjectConstBuf->map(d3dImmediateContext);
-			D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_WorldViewProj, &m_WorldViewProjection );
-			D3DXMatrixTranspose( &m_VsPreObjectConstBuf->data().m_World, &m_World );
+			m_VsPreObjectConstBuf->data().update(m_Camera, m_WorldMatrix);
 			m_VsPreObjectConstBuf->unmap(d3dImmediateContext);
 
 			// m_PsPreObjectConstBuf
@@ -263,7 +268,7 @@ public:
 					-1,-1, 0, 1);
 
 				D3DXMATRIX invViewProj;
-				D3DXMatrixInverse(&invViewProj, nullptr, &m_ViewProjection);
+				D3DXMatrixInverse(&invViewProj, nullptr, &viewProjection);
 				invViewProj = scalebias * invViewProj;
 
 				D3DXMatrixTranspose(&buf.data().m_InvViewProjScaleBias, &invViewProj);
