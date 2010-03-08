@@ -42,6 +42,27 @@ public:
 	{
 		D3DXMATRIX m_InvViewProjScaleBias;
 		D3DXVECTOR4 m_ZParams;
+
+		void update(const CModelViewerCamera& camera)
+		{
+			D3DXMATRIX scalebias(
+				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
+				 0, 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
+				 0, 0, 1, 0,
+				-1,-1, 0, 1);
+
+			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
+			D3DXMATRIX invViewProj;
+			D3DXMatrixInverse(&invViewProj, nullptr, &viewProjectionMatrix);
+			invViewProj = scalebias * invViewProj;
+
+			D3DXMatrixTranspose(&m_InvViewProjScaleBias, &invViewProj);
+
+			m_ZParams.x = 1 / camera.GetFarClip() - 1 / camera.GetNearClip();
+			m_ZParams.y = 1 / camera.GetNearClip();
+			m_ZParams.z = camera.GetFarClip() - camera.GetNearClip();
+			m_ZParams.w = camera.GetNearClip();
+		}
 	};
 
 	typedef js::ConstantBuffer_t<PSPostProcess> PSPostProcessConstBuf;
@@ -89,6 +110,24 @@ public:
 		{
 			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
 			d3dContext->OMSetRenderTargets(1, rtv, DXUTGetD3D11DepthStencilView());
+		}
+	};
+
+	class Histogram
+	{
+	public:
+		js::Texture2DRenderBuffer m_Buffer;
+		js::VertexShader m_VS;
+		js::PixelShader m_PS;
+
+		void create(ID3D11Device* d3dDevice)
+		{
+			m_Buffer.create(d3dDevice, 64, 1, 1, DXGI_FORMAT_R32_FLOAT);
+		}
+
+		void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
+		{
+
 		}
 	};
 
@@ -257,29 +296,10 @@ public:
 			// todo replace this with disabling depth test
 			d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
 
-			{	// m_PSPostProcessConstBuf
-				PSPostProcessConstBuf& buf = *m_PSPostProcessConstBuf;
-				buf.map(d3dImmediateContext);
-				
-				D3DXMATRIX scalebias(
-					 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
-					 0, 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
-					 0, 0, 1, 0,
-					-1,-1, 0, 1);
-
-				D3DXMATRIX invViewProj;
-				D3DXMatrixInverse(&invViewProj, nullptr, &viewProjection);
-				invViewProj = scalebias * invViewProj;
-
-				D3DXMatrixTranspose(&buf.data().m_InvViewProjScaleBias, &invViewProj);
-
-				buf.data().m_ZParams.x = 1 / m_Camera.GetFarClip() - 1 / m_Camera.GetNearClip();
-				buf.data().m_ZParams.y = 1 / m_Camera.GetNearClip();
-				buf.data().m_ZParams.z = m_Camera.GetFarClip() - m_Camera.GetNearClip();
-				buf.data().m_ZParams.w = m_Camera.GetNearClip();
-
-				buf.unmap(d3dImmediateContext);
-			}
+			// m_PSPostProcessConstBuf
+			m_PSPostProcessConstBuf->map(d3dImmediateContext);
+			m_PSPostProcessConstBuf->data().update(m_Camera);
+			m_PSPostProcessConstBuf->unmap(d3dImmediateContext);
 
 			d3dImmediateContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
 			d3dImmediateContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
