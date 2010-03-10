@@ -78,7 +78,7 @@ public:
 
 		void onSwapChainResized(ID3D11Device* d3dDevice, size_t width, size_t height)
 		{
-			m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R8G8B8A8_UNORM);
+			m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
 			js_assert(m_ColorBuffer.valid());
 
 			m_DepthBuffer.create(d3dDevice, width, height, 1,
@@ -123,6 +123,19 @@ public:
 		void create(ID3D11Device* d3dDevice)
 		{
 			m_Buffer.create(d3dDevice, 64, 1, 1, DXGI_FORMAT_R32_FLOAT);
+
+			m_VS.createFromFile(d3dDevice, media(L"Example02/Histogram.VS.hlsl"), "Main");
+			js_assert(m_VS.valid());
+
+			m_PS.createFromFile(d3dDevice, media(L"Example02/Histogram.PS.hlsl"), "Main");
+			js_assert(m_PS.valid());
+		}
+
+		void destroy()
+		{
+			m_Buffer.destroy();
+			m_VS.destroy();
+			m_PS.destroy();
 		}
 
 		void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
@@ -140,8 +153,8 @@ public:
 	std::auto_ptr<PSPostProcessConstBuf> m_PSPostProcessConstBuf;
 	ID3D11SamplerState* m_SamplerState;
 	Rendering m_Rendering;
+	Histogram m_Histogram;
 	
-
 	// post processing
 	ScreenQuad m_ScreenQuad;
 	js::VertexShader m_PostVtxShd;
@@ -192,6 +205,8 @@ public:
 		m_PsPreObjectConstBuf.reset(new PSPreObjectConstBuf);
 		m_PsPreObjectConstBuf->create(d3dDevice);
 
+		m_Histogram.create(d3dDevice);
+
 		// post processing
 		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
 		js_assert(m_PostVtxShd.valid());
@@ -210,7 +225,7 @@ public:
 		D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
 		D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
 		m_Camera.SetViewParams( &vecEye, &vecAt );
-		m_Camera.SetRadius(radius, radius * 0.5f, radius * 4);
+		m_Camera.SetRadius(radius, radius * 0.25f, radius * 4);
 		
 		return S_OK;
 	}
@@ -243,6 +258,8 @@ public:
 		m_Mesh.destroy();
 		m_VsPreObjectConstBuf.reset();
 		m_PsPreObjectConstBuf.reset();
+
+		m_Histogram.destroy();
 
 		m_PSPostProcessConstBuf.reset();
 		
