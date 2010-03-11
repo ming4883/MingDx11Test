@@ -82,7 +82,7 @@ struct ConstantBuffer_t
 
 	~ConstantBuffer_t()
 	{
-		js_safe_release(m_BufferObject);
+		destroy();
 	}
 
 	bool valid() const
@@ -93,6 +93,11 @@ struct ConstantBuffer_t
 	void create(ID3D11Device* d3dDevice)
 	{
 		m_BufferObject = Buffers::createConstantBuffer(d3dDevice, sizeof(T));
+	}
+
+	void destroy()
+	{
+		js_safe_release(m_BufferObject);
 	}
 
 	void map(ID3D11DeviceContext* d3dContext)

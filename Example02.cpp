@@ -116,9 +116,20 @@ public:
 	class Histogram
 	{
 	public:
+#pragma pack(push)
+#pragma pack(1)
+		struct Histogram_s
+		{
+			D3DXVECTOR4 g_vInputParams;
+		};
+
+		typedef js::ConstantBuffer_t<Histogram_s> HistogramConstBuf;
+
+#pragma pack(pop)
 		js::Texture2DRenderBuffer m_Buffer;
 		js::VertexShader m_VS;
 		js::PixelShader m_PS;
+		HistogramConstBuf m_CB;
 
 		void create(ID3D11Device* d3dDevice)
 		{
@@ -129,6 +140,9 @@ public:
 
 			m_PS.createFromFile(d3dDevice, media(L"Example02/Histogram.PS.hlsl"), "Main");
 			js_assert(m_PS.valid());
+
+			m_CB.create(d3dDevice);
+			js_assert(m_CB.valid());
 		}
 
 		void destroy()
@@ -136,6 +150,7 @@ public:
 			m_Buffer.destroy();
 			m_VS.destroy();
 			m_PS.destroy();
+			m_CB.destroy();
 		}
 
 		void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
