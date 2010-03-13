@@ -98,6 +98,7 @@ public:
 		{
 			// Clear render target and the depth stencil 
 			static const float ClearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
+			//static const float ClearColor[4] = { 4, 4, 4, 0 };
 
 			d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, ClearColor );
 			d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
@@ -135,15 +136,16 @@ public:
 		HistogramConstBuf m_CB;
 		ID3D11Buffer* m_VB;
 		ID3D11InputLayout* m_IL;
+		ID3D11BlendState* m_BlendState;
 
 		void create(ID3D11Device* d3dDevice)
 		{
 			m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32_FLOAT);
 
-			m_VS.createFromFile(d3dDevice, media(L"Example02/Histogram.VS.hlsl"), "Main");
+			m_VS.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
 			js_assert(m_VS.valid());
 
-			m_PS.createFromFile(d3dDevice, media(L"Example02/Histogram.PS.hlsl"), "Main");
+			m_PS.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.PS.hlsl"), "Main");
 			js_assert(m_PS.valid());
 
 			m_CB.create(d3dDevice);
@@ -158,6 +160,20 @@ public:
 
 			m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_VS.m_ByteCode);
 			js_assert(m_IL != nullptr);
+
+
+			D3D11_BLEND_DESC desc;
+			ZeroMemory(&desc, sizeof(desc));
+			desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+			desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			desc.RenderTarget[0].BlendEnable = true;
+			desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+			desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+			desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+			desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+			d3dDevice->CreateBlendState(&desc, &m_BlendState);
+			js_assert(m_BlendState != nullptr);
+
 		}
 
 		void destroy()
@@ -168,6 +184,7 @@ public:
 			m_CB.destroy();
 			js_safe_release(m_VB);
 			js_safe_release(m_IL);
+			js_safe_release(m_BlendState);
 		}
 
 		void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
@@ -200,6 +217,12 @@ public:
 			d3dContext->IASetInputLayout(m_IL);
 			d3dContext->IASetVertexBuffers(0, 1, &m_VB, strides, offsets);
 			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+			// render state
+			const float blendFactors[] = {1, 1, 1, 1};
+			d3dContext->OMSetBlendState(m_BlendState, blendFactors, 0xffffffff);
+			
+			// draw
 			d3dContext->DrawInstanced(1, colorBuffer.m_Width * colorBuffer.m_Height, 0, 0);
 			
 			// restore render targets
@@ -208,10 +231,7 @@ public:
 
 			vp.Width = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
 			vp.Height = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
-			vp.TopLeftX = 0;
-			vp.TopLeftY = 0;
-			vp.MinDepth = 0;
-			vp.MaxDepth = 1;
+			vp.TopLeftX = 0; vp.TopLeftY = 0; vp.MinDepth = 0; vp.MaxDepth = 1;
 			
 			d3dContext->RSSetViewports(1, &vp);
 
@@ -219,6 +239,8 @@ public:
 				ID3D11ShaderResourceView* shv[] = {nullptr};
 				d3dContext->VSSetShaderResources(0, 1, shv);
 			}
+
+			d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 		}
 	};
 

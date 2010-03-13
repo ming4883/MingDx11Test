@@ -663,11 +663,11 @@
 			Name="Media"
 			>
 			<File
-				RelativePath=".\Media\Example02\Histogram.PS.hlsl"
+				RelativePath=".\Media\Example02\Histogram.Compute.PS.hlsl"
 				>
 			</File>
 			<File
-				RelativePath=".\Media\Example02\Histogram.VS.hlsl"
+				RelativePath=".\Media\Example02\Histogram.Compute.VS.hlsl"
 				>
 			</File>
 			<File

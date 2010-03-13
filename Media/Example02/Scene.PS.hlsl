@@ -38,7 +38,7 @@ struct VS_OUTPUT
 float4 PSMain( VS_OUTPUT Input ) : SV_TARGET
 {
 	float4 vDiffuse = g_txDiffuse.Sample(g_samLinear, Input.vTexcoord);
-	float4 vSpecular = vDiffuse * 0.5 + 0.5;
+	float4 vSpecular = pow(vDiffuse * 0.5 + 0.5, 2);
 	
 	Input.vWorldNormal = normalize(Input.vWorldNormal);
 	Input.vWorldViewDir = normalize(Input.vWorldViewDir);
