@@ -116,6 +116,9 @@ public:
 	class Histogram
 	{
 	public:
+		
+		enum {SIZE = 16};
+
 #pragma pack(push)
 #pragma pack(1)
 		struct Histogram_s
@@ -130,10 +133,12 @@ public:
 		js::VertexShader m_VS;
 		js::PixelShader m_PS;
 		HistogramConstBuf m_CB;
+		ID3D11Buffer* m_VB;
+		ID3D11InputLayout* m_IL;
 
 		void create(ID3D11Device* d3dDevice)
 		{
-			m_Buffer.create(d3dDevice, 64, 1, 1, DXGI_FORMAT_R32_FLOAT);
+			m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32_FLOAT);
 
 			m_VS.createFromFile(d3dDevice, media(L"Example02/Histogram.VS.hlsl"), "Main");
 			js_assert(m_VS.valid());
@@ -143,6 +148,16 @@ public:
 
 			m_CB.create(d3dDevice);
 			js_assert(m_CB.valid());
+
+			static D3DXVECTOR3 v[] = {D3DXVECTOR3(0,0,0)};
+			m_VB = js::Buffers::createVertexBuffer(d3dDevice, sizeof(v), sizeof(v[0]), false, v);
+			js_assert(m_VB != nullptr);
+
+			std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
+			inputElement(ielems, "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0);
+
+			m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_VS.m_ByteCode);
+			js_assert(m_IL != nullptr);
 		}
 
 		void destroy()
@@ -151,11 +166,59 @@ public:
 			m_VS.destroy();
 			m_PS.destroy();
 			m_CB.destroy();
+			js_safe_release(m_VB);
+			js_safe_release(m_IL);
 		}
 
 		void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
 		{
+			js_assert(colorBuffer.valid());
 
+			// render target
+			static const float clearColor[] = {0, 0, 0, 0};
+			d3dContext->ClearRenderTargetView(m_Buffer.m_RTView, clearColor);
+			d3dContext->OMSetRenderTargets(1, &m_Buffer.m_RTView, nullptr);
+			D3D11_VIEWPORT vp = m_Buffer.viewport();
+			d3dContext->RSSetViewports(1, &vp);
+
+			// shaders
+			m_CB.map(d3dContext);
+			m_CB.data().g_vInputParams.x = (float)colorBuffer.m_Width;
+			m_CB.data().g_vInputParams.y = 4.0f;
+			m_CB.unmap(d3dContext);
+
+			d3dContext->VSSetShader(m_VS.m_ShaderObject, nullptr, 0);
+			d3dContext->VSSetShaderResources(0, 1, &colorBuffer.m_SRView);
+			d3dContext->VSSetConstantBuffers(0, 1, &m_CB.m_BufferObject);
+
+			d3dContext->PSSetShader(m_PS.m_ShaderObject, nullptr, 0);
+
+			// vertex buffer and input assembler
+			UINT strides[] = {sizeof(D3DXVECTOR3)};
+			UINT offsets[] = {0};
+
+			d3dContext->IASetInputLayout(m_IL);
+			d3dContext->IASetVertexBuffers(0, 1, &m_VB, strides, offsets);
+			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+			d3dContext->DrawInstanced(1, colorBuffer.m_Width * colorBuffer.m_Height, 0, 0);
+			
+			// restore render targets
+			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
+			d3dContext->OMSetRenderTargets(1, rtv, DXUTGetD3D11DepthStencilView());
+
+			vp.Width = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
+			vp.Height = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
+			vp.TopLeftX = 0;
+			vp.TopLeftY = 0;
+			vp.MinDepth = 0;
+			vp.MaxDepth = 1;
+			
+			d3dContext->RSSetViewports(1, &vp);
+
+			{	// reset PS shader resources
+				ID3D11ShaderResourceView* shv[] = {nullptr};
+				d3dContext->VSSetShaderResources(0, 1, shv);
+			}
 		}
 	};
 
@@ -323,6 +386,9 @@ public:
 
 		}	m_Rendering.unprepareRenderScene(d3dDevice, d3dImmediateContext);
 
+		// update histogram
+		m_Histogram.update(d3dImmediateContext, m_Rendering.m_ColorBuffer);
+
 		// Post-Processing
 		{	
 			// todo replace this with disabling depth test
@@ -346,7 +412,7 @@ public:
 
 			m_ScreenQuad.render(d3dImmediateContext);
 
-			{
+			{	// reset PS shader resources
 				ID3D11ShaderResourceView* shv[] = {nullptr, nullptr};
 				d3dImmediateContext->PSSetShaderResources(0, 2, shv);
 			}

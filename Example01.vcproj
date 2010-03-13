@@ -563,6 +563,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Jessye\RenderStates.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Jessye\RenderStates.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Jessye\Shaders.cpp"
 				>
 			</File>
