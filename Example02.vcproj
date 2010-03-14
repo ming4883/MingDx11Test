@@ -671,6 +671,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Media\Example02\Histogram.Draw.GS.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Histogram.Draw.PS.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Histogram.Draw.VS.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\Media\Example02\Post.Fog.hlsl"
 				>
 			</File>

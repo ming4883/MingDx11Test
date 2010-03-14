@@ -131,8 +131,11 @@ public:
 
 #pragma pack(pop)
 		js::Texture2DRenderBuffer m_Buffer;
-		js::VertexShader m_VS;
-		js::PixelShader m_PS;
+		js::VertexShader m_ComputeVs;
+		js::PixelShader m_ComputePs;
+		js::VertexShader m_DrawVs;
+		js::GeometryShader m_DrawGs;
+		js::PixelShader m_DrawPs;
 		HistogramConstBuf m_CB;
 		ID3D11Buffer* m_VB;
 		ID3D11InputLayout* m_IL;
@@ -142,11 +145,20 @@ public:
 		{
 			m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32_FLOAT);
 
-			m_VS.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
-			js_assert(m_VS.valid());
+			m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
+			js_assert(m_ComputeVs.valid());
 
-			m_PS.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.PS.hlsl"), "Main");
-			js_assert(m_PS.valid());
+			m_ComputePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.PS.hlsl"), "Main");
+			js_assert(m_ComputePs.valid());
+
+			m_DrawVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.VS.hlsl"), "Main");
+			js_assert(m_DrawVs.valid());
+
+			m_DrawGs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.GS.hlsl"), "Main");
+			js_assert(m_DrawGs.valid());
+
+			m_DrawPs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.PS.hlsl"), "Main");
+			js_assert(m_DrawPs.valid());
 
 			m_CB.create(d3dDevice);
 			js_assert(m_CB.valid());
@@ -158,7 +170,7 @@ public:
 			std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
 			inputElement(ielems, "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0);
 
-			m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_VS.m_ByteCode);
+			m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_ComputeVs.m_ByteCode);
 			js_assert(m_IL != nullptr);
 
 
@@ -179,8 +191,11 @@ public:
 		void destroy()
 		{
 			m_Buffer.destroy();
-			m_VS.destroy();
-			m_PS.destroy();
+			m_ComputeVs.destroy();
+			m_ComputePs.destroy();
+			m_DrawVs.destroy();
+			m_DrawGs.destroy();
+			m_DrawPs.destroy();
 			m_CB.destroy();
 			js_safe_release(m_VB);
 			js_safe_release(m_IL);
@@ -204,11 +219,11 @@ public:
 			m_CB.data().g_vInputParams.y = 4.0f;
 			m_CB.unmap(d3dContext);
 
-			d3dContext->VSSetShader(m_VS.m_ShaderObject, nullptr, 0);
+			d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
 			d3dContext->VSSetShaderResources(0, 1, &colorBuffer.m_SRView);
 			d3dContext->VSSetConstantBuffers(0, 1, &m_CB.m_BufferObject);
 
-			d3dContext->PSSetShader(m_PS.m_ShaderObject, nullptr, 0);
+			d3dContext->PSSetShader(m_ComputePs.m_ShaderObject, nullptr, 0);
 
 			// vertex buffer and input assembler
 			UINT strides[] = {sizeof(D3DXVECTOR3)};

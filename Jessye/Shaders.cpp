@@ -137,6 +137,38 @@ namespace js
 		return shader;
 	}
 
+	ID3D11GeometryShader* Shaders::createFromFileGeometry(
+		ID3D11Device* d3dDevice,
+		const wchar_t* filePath,
+		const char* entryPoint,
+		ID3DBlob** outByteCode)
+	{
+		HRESULT hr;
+
+		js_assert(d3dDevice != nullptr);
+
+		const std::string shaderModel = "gs" + getBestShaderModel(d3dDevice->GetFeatureLevel());
+
+		ID3DBlob* byteCode;
+
+		if(!compileFromFile(filePath, entryPoint, shaderModel.c_str(), byteCode))
+			return nullptr;
+
+		ID3D11GeometryShader* shader = nullptr;
+
+		hr = d3dDevice->CreateGeometryShader(byteCode->GetBufferPointer(), byteCode->GetBufferSize(),  nullptr, &shader);
+
+		if(FAILED(hr))
+		{
+			js_safe_release(byteCode);
+			return nullptr;
+		}
+
+		if(nullptr != outByteCode)
+			*outByteCode = byteCode;
+		
+		return shader;
+	}
 	ID3D11PixelShader* Shaders::createFromFilePixel(
 		ID3D11Device* d3dDevice,
 		const wchar_t* filePath,

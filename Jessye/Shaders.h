@@ -27,6 +27,12 @@ struct Shaders
 		const wchar_t* filePath,
 		const char* entryPoint,
 		ID3DBlob** outByteCode = nullptr);
+	
+	static ID3D11GeometryShader* createFromFileGeometry(
+		ID3D11Device* d3dDevice,
+		const wchar_t* filePath,
+		const char* entryPoint,
+		ID3DBlob** outByteCode = nullptr);
 
 	static ID3D11PixelShader* createFromFilePixel(
 		ID3D11Device* d3dDevice,
@@ -77,6 +83,18 @@ public:
 		m_ShaderObject = Shaders::createFromFileVertex(d3dDevice, filePath, entryPoint, &m_ByteCode);
 	}
 };	// VertexShader
+
+struct GeometryShader : public Shader_t<ID3D11GeometryShader>
+{
+public:
+	void createFromFile(
+		ID3D11Device* d3dDevice,
+		const wchar_t* filePath,
+		const char* entryPoint)
+	{
+		m_ShaderObject = Shaders::createFromFileGeometry(d3dDevice, filePath, entryPoint, &m_ByteCode);
+	}
+};	// GeometryShader
 
 struct PixelShader : public Shader_t<ID3D11PixelShader>
 {
