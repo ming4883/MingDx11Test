@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Histogram.VS.hlsl
+// File: Histogram.Draw.GS.hlsl
 //
 // The shader file for the MingDx11Test.  
 // 
@@ -13,8 +13,6 @@ cbuffer cbHistogram : register(b0)
 {
 	float4	g_vDrawParams : packoffset(c0);	// pitch, histogram max value
 };
-
-Texture2D g_txInput : register(t0);
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -32,8 +30,7 @@ void Main(point VS_OUTPUT Input[1], inout LineStream<VS_OUTPUT> OutputStream )
 {
 	OutputStream.Append(Input[0]);
 	
-	float height = g_txInput.Load(Input[0].vPosition.xyz);
-	Input[0].vPosition.y *= height;
+	Input[0].vPosition.y = g_vDrawParams.y;
 	
 	OutputStream.Append(Input[0]);
 }

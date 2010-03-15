@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Histogram.VS.hlsl
+// File: Histogram.Draw.VS.hlsl
 //
 // The shader file for the MingDx11Test.  
 // 
@@ -11,10 +11,10 @@
 //--------------------------------------------------------------------------------------
 cbuffer cbHistogram : register(b0)
 {
-	float4	g_vDrawParams : packoffset(c0);	// pitch, histogram max value
+	float4	g_vDrawParams : packoffset(c0);	// offsetx, offsety, scalex, scaley
 };
 
-Texture2D g_txInput : register(t0);
+Texture2D g_txHistogram : register(t0);
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -41,15 +41,14 @@ VS_OUTPUT Main(VS_INPUT Input)
 	float fHistogramMax = g_vDrawParams.y;
 	
 	int3 vTexcoord;
-	vTexcoord.y = Input.iInstanceId / iInputPitch;
-	vTexcoord.x = Input.iInstanceId - vTexcoord.y * iInputPitch;
+	vTexcoord.x = Input.iInstanceId;
+	vTexcoord.y = 0;
 	vTexcoord.z = 0;
 	
-	float4 vInput = g_txInput.Load(vTexcoord);
-	float fIntensity = dot(vInput.xyz, float3(0.3333, 0.3334, 0.3333));
+	float fHistogram = g_txHistogram.Load(vTexcoord).x;
 	
-	Output.vPosition.x = saturate(fIntensity / fHistogramMax) * 2.0 - 1.0;
-	Output.vPosition.y = 0;
+	Output.vPosition.x = g_vDrawParams.x + g_vDrawParams.z * Input.iInstanceId;
+	Output.vPosition.y = g_vDrawParams.y + g_vDrawParams.w * fHistogram;
 	Output.vPosition.z = 0;
 	Output.vPosition.w = 1;
 	

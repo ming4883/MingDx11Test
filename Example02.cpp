@@ -122,12 +122,19 @@ public:
 
 #pragma pack(push)
 #pragma pack(1)
-		struct Histogram_s
+		struct HistogramCompute_s
 		{
 			D3DXVECTOR4 g_vInputParams;
 		};
 
-		typedef js::ConstantBuffer_t<Histogram_s> HistogramConstBuf;
+		typedef js::ConstantBuffer_t<HistogramCompute_s> HistogramComputeConstBuf;
+
+		struct HistogramDraw_s
+		{
+			D3DXVECTOR4 g_vDrawParams;
+		};
+
+		typedef js::ConstantBuffer_t<HistogramDraw_s> HistogramDrawConstBuf;
 
 #pragma pack(pop)
 		js::Texture2DRenderBuffer m_Buffer;
@@ -136,7 +143,8 @@ public:
 		js::VertexShader m_DrawVs;
 		js::GeometryShader m_DrawGs;
 		js::PixelShader m_DrawPs;
-		HistogramConstBuf m_CB;
+		HistogramComputeConstBuf m_ComputeCb;
+		HistogramDrawConstBuf m_DrawCb;
 		ID3D11Buffer* m_VB;
 		ID3D11InputLayout* m_IL;
 		ID3D11BlendState* m_BlendState;
@@ -160,8 +168,11 @@ public:
 			m_DrawPs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.PS.hlsl"), "Main");
 			js_assert(m_DrawPs.valid());
 
-			m_CB.create(d3dDevice);
-			js_assert(m_CB.valid());
+			m_ComputeCb.create(d3dDevice);
+			js_assert(m_ComputeCb.valid());
+			
+			m_DrawCb.create(d3dDevice);
+			js_assert(m_DrawCb.valid());
 
 			static D3DXVECTOR3 v[] = {D3DXVECTOR3(0,0,0)};
 			m_VB = js::Buffers::createVertexBuffer(d3dDevice, sizeof(v), sizeof(v[0]), false, v);
@@ -172,7 +183,6 @@ public:
 
 			m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_ComputeVs.m_ByteCode);
 			js_assert(m_IL != nullptr);
-
 
 			D3D11_BLEND_DESC desc;
 			ZeroMemory(&desc, sizeof(desc));
@@ -196,7 +206,8 @@ public:
 			m_DrawVs.destroy();
 			m_DrawGs.destroy();
 			m_DrawPs.destroy();
-			m_CB.destroy();
+			m_ComputeCb.destroy();
+			m_DrawCb.destroy();
 			js_safe_release(m_VB);
 			js_safe_release(m_IL);
 			js_safe_release(m_BlendState);
@@ -214,14 +225,14 @@ public:
 			d3dContext->RSSetViewports(1, &vp);
 
 			// shaders
-			m_CB.map(d3dContext);
-			m_CB.data().g_vInputParams.x = (float)colorBuffer.m_Width;
-			m_CB.data().g_vInputParams.y = 4.0f;
-			m_CB.unmap(d3dContext);
+			m_ComputeCb.map(d3dContext);
+			m_ComputeCb.data().g_vInputParams.x = (float)colorBuffer.m_Width;
+			m_ComputeCb.data().g_vInputParams.y = 4.0f;
+			m_ComputeCb.unmap(d3dContext);
 
 			d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
 			d3dContext->VSSetShaderResources(0, 1, &colorBuffer.m_SRView);
-			d3dContext->VSSetConstantBuffers(0, 1, &m_CB.m_BufferObject);
+			d3dContext->VSSetConstantBuffers(0, 1, &m_ComputeCb.m_BufferObject);
 
 			d3dContext->PSSetShader(m_ComputePs.m_ShaderObject, nullptr, 0);
 
@@ -256,6 +267,43 @@ public:
 			}
 
 			d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+		}
+
+		void display(ID3D11DeviceContext* d3dContext, float x, float y, float w, float h)
+		{
+			// shaders
+			m_DrawCb.map(d3dContext);
+			m_DrawCb.data().g_vDrawParams.x = x;
+			m_DrawCb.data().g_vDrawParams.y = y;
+			m_DrawCb.data().g_vDrawParams.z = w / SIZE;
+			m_DrawCb.data().g_vDrawParams.w = h;
+			m_DrawCb.unmap(d3dContext);
+
+			d3dContext->VSSetShader(m_DrawVs.m_ShaderObject, nullptr, 0);
+			d3dContext->VSSetShaderResources(0, 1, &m_Buffer.m_SRView);
+			d3dContext->VSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
+
+			d3dContext->GSSetShader(m_DrawGs.m_ShaderObject, nullptr, 0);
+			d3dContext->GSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
+
+			d3dContext->PSSetShader(m_DrawPs.m_ShaderObject, nullptr, 0);
+
+			// vertex buffer and input assembler
+			UINT strides[] = {sizeof(D3DXVECTOR3)};
+			UINT offsets[] = {0};
+
+			d3dContext->IASetInputLayout(m_IL);
+			d3dContext->IASetVertexBuffers(0, 1, &m_VB, strides, offsets);
+			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+			
+			// draw
+			d3dContext->DrawInstanced(1, SIZE, 0, 0);
+
+			{	// reset PS shader resources
+				ID3D11ShaderResourceView* shv[] = {nullptr};
+				d3dContext->VSSetShaderResources(0, 1, shv);
+			}
+			d3dContext->GSSetShader(nullptr, nullptr, 0);
 		}
 	};
 
@@ -439,6 +487,8 @@ public:
 			// todo replace this with disabling depth test
 			d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
 
+			m_Histogram.display(d3dImmediateContext, -0.9f, -0.5f, 0.25f, 0.25f);
+			
 			// m_PSPostProcessConstBuf
 			m_PSPostProcessConstBuf->map(d3dImmediateContext);
 			m_PSPostProcessConstBuf->data().update(m_Camera);
@@ -462,6 +512,8 @@ public:
 				d3dImmediateContext->PSSetShaderResources(0, 2, shv);
 			}
 		}
+
+		
 
 		// gui
 		m_GuiTxtHelper->Begin();
