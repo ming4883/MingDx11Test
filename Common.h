@@ -75,6 +75,8 @@ private:
 	js_decl_non_copyable(ScreenQuad);
 };
 
+class CDXUTDialogResourceManager;
+class CDXUTTextHelper;
 
 class DXUTApp
 {
@@ -172,6 +174,19 @@ public:
 		int xPos, int yPos)
 	{
 	}
+
+protected:
+	CDXUTDialogResourceManager* m_GuiDlgResMgr;
+	CDXUTTextHelper* m_GuiTxtHelper;
+
+	DXUTApp() : m_GuiDlgResMgr(0), m_GuiTxtHelper(0)
+	{
+	}
+
+	void guiOnD3D11CreateDevice(ID3D11Device* d3dDevice);
+	void guiOnD3D11DestroyDevice();
+	void guiOnD3D11ResizedSwapChain(ID3D11Device* d3dDevice, const DXGI_SURFACE_DESC* backBufferSurfaceDesc);
+	void guiOnD3D11ReleasingSwapChain();
 };
 
 #endif	// COMMON_H

@@ -291,6 +291,8 @@ public:
 		ID3D11Device* d3dDevice,
 		const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 	{
+		guiOnD3D11CreateDevice(d3dDevice);
+
 		{	D3D11_SAMPLER_DESC sd;
 			ZeroMemory(&sd, sizeof(sd));
 			sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -350,6 +352,8 @@ public:
 		IDXGISwapChain* swapChain,
 		const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 	{
+		guiOnD3D11ResizedSwapChain(d3dDevice, backBufferSurfaceDesc);
+
 		float aspect = backBufferSurfaceDesc->Width / ( FLOAT )backBufferSurfaceDesc->Height;
 		const float radius = m_Mesh.radius();
 
@@ -364,11 +368,15 @@ public:
 
 	__override void onD3D11ReleasingSwapChain()
 	{
+		guiOnD3D11ReleasingSwapChain();
+
 		m_Rendering.onSwapChainReleasing();
 	}
 
 	__override void onD3D11DestroyDevice()
 	{
+		guiOnD3D11DestroyDevice();
+
 		DXUTGetGlobalResourceCache().OnDestroyDevice();
 		m_Mesh.destroy();
 		m_VsPreObjectConstBuf.reset();
@@ -454,6 +462,13 @@ public:
 				d3dImmediateContext->PSSetShaderResources(0, 2, shv);
 			}
 		}
+
+		// gui
+		m_GuiTxtHelper->Begin();
+		m_GuiTxtHelper->SetInsertionPos( 2, 0 );
+		m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.2f, 0.2f, 1.0f, 1.0f ) );
+		m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
+		m_GuiTxtHelper->End();
 	}
 
 	__override LRESULT msgProc(

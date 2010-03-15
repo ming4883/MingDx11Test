@@ -11,6 +11,7 @@
 
 #include "SDKmisc.h"	// DXUTFindDXSDKMediaFileCch
 #include "SDKmesh.h"	// DXUT
+#include "DXUTgui.h"
 #include "Jessye/Shaders.h"
 #include "Jessye/Buffers.h"
 
@@ -575,4 +576,40 @@ int DXUTApp::run(DXUTApp& app)
 	DXUTDestroyState();
 
     return exitCode;
+}
+
+void DXUTApp::guiOnD3D11CreateDevice(ID3D11Device* d3dDevice)
+{
+	ID3D11DeviceContext* d3dContext = DXUTGetD3D11DeviceContext();
+	m_GuiDlgResMgr = new CDXUTDialogResourceManager;
+	m_GuiDlgResMgr->OnD3D11CreateDevice(d3dDevice, d3dContext);
+	m_GuiTxtHelper = new CDXUTTextHelper(d3dDevice, d3dContext, m_GuiDlgResMgr, 15);
+}
+
+void DXUTApp::guiOnD3D11DestroyDevice()
+{
+	if(m_GuiTxtHelper)
+	{
+		delete m_GuiTxtHelper;
+		m_GuiTxtHelper = nullptr;
+	}
+
+	if(m_GuiDlgResMgr)
+	{
+		m_GuiDlgResMgr->OnD3D11DestroyDevice();
+		delete m_GuiDlgResMgr;
+		m_GuiDlgResMgr = nullptr;
+	}
+}
+
+void DXUTApp::guiOnD3D11ResizedSwapChain(ID3D11Device* d3dDevice, const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
+{
+	if(!m_GuiDlgResMgr) return;
+	m_GuiDlgResMgr->OnD3D11ResizedSwapChain(d3dDevice, backBufferSurfaceDesc);
+}
+
+void DXUTApp::guiOnD3D11ReleasingSwapChain()
+{
+	if(!m_GuiDlgResMgr) return;
+	m_GuiDlgResMgr->OnD3D11ReleasingSwapChain();
 }
