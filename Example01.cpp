@@ -66,12 +66,13 @@ public:
 		ID3D11Device* d3dDevice,
 		const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 	{
-		{	D3D11_SAMPLER_DESC sd;
-			ZeroMemory(&sd, sizeof(sd));
-			sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-			sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-			sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-			d3dDevice->CreateSamplerState(&sd, &m_SamplerState);
+		{	D3D11_SAMPLER_DESC d;
+			ZeroMemory(&d, sizeof(d));
+			d.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			d.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			d.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+			d.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			d3dDevice->CreateSamplerState(&d, &m_SamplerState);
 		}
 
 		// load mesh

@@ -98,7 +98,7 @@ public:
 		{
 			// Clear render target and the depth stencil 
 			static const float ClearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
-			//static const float ClearColor[4] = { 4, 4, 4, 0 };
+			//static const float ClearColor[4] = { 2, 2, 2, 0 };
 
 			d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, ClearColor );
 			d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
@@ -148,10 +148,16 @@ public:
 		ID3D11Buffer* m_VB;
 		ID3D11InputLayout* m_IL;
 		ID3D11BlendState* m_BlendState;
+		float m_LastNumInputs;
+		float m_MaxInputValue;
+		
+		Histogram() : m_MaxInputValue(4.0f), m_LastNumInputs(1)
+		{
+		}
 
 		void create(ID3D11Device* d3dDevice)
 		{
-			m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32_FLOAT);
+			m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 
 			m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
 			js_assert(m_ComputeVs.valid());
@@ -193,6 +199,9 @@ public:
 			desc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
 			desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
 			desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+			desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+			desc.AlphaToCoverageEnable = false;
+			desc.IndependentBlendEnable = false;
 			d3dDevice->CreateBlendState(&desc, &m_BlendState);
 			js_assert(m_BlendState != nullptr);
 
@@ -227,7 +236,7 @@ public:
 			// shaders
 			m_ComputeCb.map(d3dContext);
 			m_ComputeCb.data().g_vInputParams.x = (float)colorBuffer.m_Width;
-			m_ComputeCb.data().g_vInputParams.y = 4.0f;
+			m_ComputeCb.data().g_vInputParams.y = m_MaxInputValue;
 			m_ComputeCb.unmap(d3dContext);
 
 			d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
@@ -250,6 +259,8 @@ public:
 			
 			// draw
 			d3dContext->DrawInstanced(1, colorBuffer.m_Width * colorBuffer.m_Height, 0, 0);
+
+			m_LastNumInputs = (float)colorBuffer.m_Width * colorBuffer.m_Height;
 			
 			// restore render targets
 			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
@@ -276,7 +287,7 @@ public:
 			m_DrawCb.data().g_vDrawParams.x = x;
 			m_DrawCb.data().g_vDrawParams.y = y;
 			m_DrawCb.data().g_vDrawParams.z = w / SIZE;
-			m_DrawCb.data().g_vDrawParams.w = h;
+			m_DrawCb.data().g_vDrawParams.w = h / m_LastNumInputs;
 			m_DrawCb.unmap(d3dContext);
 
 			d3dContext->VSSetShader(m_DrawVs.m_ShaderObject, nullptr, 0);
@@ -315,8 +326,10 @@ public:
 	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
 	std::auto_ptr<PSPostProcessConstBuf> m_PSPostProcessConstBuf;
 	ID3D11SamplerState* m_SamplerState;
+	ID3D11DepthStencilState* m_DepthStencilState;
 	Rendering m_Rendering;
 	Histogram m_Histogram;
+	bool m_ShowHistogram;
 	
 	// post processing
 	ScreenQuad m_ScreenQuad;
@@ -326,6 +339,8 @@ public:
 // Methods
 	Example02()
 		: m_SamplerState(nullptr)
+		, m_DepthStencilState(nullptr)
+		, m_ShowHistogram(true)
 	{
 	}
 
@@ -341,12 +356,22 @@ public:
 	{
 		guiOnD3D11CreateDevice(d3dDevice);
 
-		{	D3D11_SAMPLER_DESC sd;
-			ZeroMemory(&sd, sizeof(sd));
-			sd.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-			sd.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-			sd.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-			d3dDevice->CreateSamplerState(&sd, &m_SamplerState);
+		{	D3D11_SAMPLER_DESC d;
+			ZeroMemory(&d, sizeof(d));
+			d.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+			d.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+			d.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+			d.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			d3dDevice->CreateSamplerState(&d, &m_SamplerState);
+		}
+
+		{	D3D11_DEPTH_STENCIL_DESC d;
+			ZeroMemory(&d, sizeof(d));
+			d.DepthEnable = FALSE;
+			d.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			d.DepthFunc = D3D11_COMPARISON_ALWAYS;
+			d.StencilEnable = FALSE;
+			d3dDevice->CreateDepthStencilState(&d, &m_DepthStencilState);
 		}
 
 		// load mesh
@@ -439,6 +464,7 @@ public:
 		m_PostFogShd.destroy();
 		
 		js_safe_release(m_SamplerState);
+		js_safe_release(m_DepthStencilState);
 	}
 
 	__override void onFrameMove(
@@ -483,12 +509,9 @@ public:
 		m_Histogram.update(d3dImmediateContext, m_Rendering.m_ColorBuffer);
 
 		// Post-Processing
-		{	
-			// todo replace this with disabling depth test
-			d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
+		d3dImmediateContext->OMSetDepthStencilState(m_DepthStencilState, 0);
 
-			m_Histogram.display(d3dImmediateContext, -0.9f, -0.5f, 0.25f, 0.25f);
-			
+		{	
 			// m_PSPostProcessConstBuf
 			m_PSPostProcessConstBuf->map(d3dImmediateContext);
 			m_PSPostProcessConstBuf->data().update(m_Camera);
@@ -513,7 +536,10 @@ public:
 			}
 		}
 
-		
+		if(m_ShowHistogram)
+			m_Histogram.display(d3dImmediateContext, -0.9f, -0.5f, 0.5f, 0.25f);
+
+		d3dImmediateContext->OMSetDepthStencilState(nullptr, 0);
 
 		// gui
 		m_GuiTxtHelper->Begin();
@@ -529,6 +555,14 @@ public:
 	{
 		m_Camera.HandleMessages(hWnd, uMsg, wParam, lParam);
 		return 0;
+	}
+
+	__override void onKeyboard(UINT nChar, bool keyDown, bool altDown)
+	{
+		if(VK_F1 == nChar && keyDown)
+		{
+			m_ShowHistogram = !m_ShowHistogram;
+		}
 	}
 
 };	// Example02

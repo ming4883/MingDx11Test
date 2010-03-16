@@ -46,6 +46,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	float fFog = smoothstep(20, 30, fDepthLinear);
 	fFog = pow(fFog, 2);
+	fFog = 0;
 	
 	return lerp(vColor, float4(1,1,1,1), fFog);
 }
