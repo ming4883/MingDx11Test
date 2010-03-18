@@ -212,8 +212,10 @@ public:
 				IndexStart *= 2;
 			}
 
-			//pd3dDeviceContext->DrawIndexed( IndexCount, IndexStart, VertexStart );
-			pd3dDeviceContext->DrawIndexedInstanced( IndexCount, iNumInstances, IndexStart, VertexStart, 0 );
+			if(iNumInstances == 1)
+				pd3dDeviceContext->DrawIndexed( IndexCount, IndexStart, VertexStart );
+			else
+				pd3dDeviceContext->DrawIndexedInstanced( IndexCount, iNumInstances, IndexStart, VertexStart, 0 );
 		}
 	}
 
@@ -563,7 +565,7 @@ int DXUTApp::run(DXUTApp& app)
     DXUTSetCallbackD3D11DeviceDestroyed( OnD3D11DestroyDevice, &app );
 
     // Perform any application-level initialization here
-    DXUTInit( true, true, NULL ); // Parse the command line, show msgboxes on error, no extra command line params
+    DXUTInit( true, true, L"" ); // Parse the command line, show msgboxes on error, no extra command line params
     DXUTSetCursorSettings( true, true ); // Show the cursor and clip it when in full screen
     DXUTCreateWindow( app.getName() );
 

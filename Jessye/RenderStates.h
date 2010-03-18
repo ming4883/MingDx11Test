@@ -8,6 +8,13 @@ namespace js
 
 struct RenderStates
 {
+	static void init(D3D11_DEPTH_STENCIL_DESC& desc);
+
+	static void init(D3D11_BLEND_DESC& desc);
+
+	static void init(D3D11_RASTERIZER_DESC& desc);
+
+	static void init(D3D11_SAMPLER_DESC& desc);
 };	// RenderStates
 
 }	// namespace js
