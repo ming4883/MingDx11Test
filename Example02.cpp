@@ -98,13 +98,13 @@ public:
 			ID3D11DeviceContext* d3dContext)
 		{
 			// Clear render target and the depth stencil 
-			static const float ClearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
-			//static const float ClearColor[4] = { 2, 2, 2, 0 };
+			//static const float clearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
+			static const float clearColor[4] = { 1, 1, 1, 0 };
+			//static const float clearColor[4] = { 2, 2, 2, 0 };
 
 			d3dContext->OMSetRenderTargets(1, &m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
-			d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, ClearColor );
+			d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, clearColor );
 			d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
-			
 		}
 
 		void unprepareRenderScene(
@@ -192,9 +192,9 @@ public:
 			m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_ComputeVs.m_ByteCode);
 			js_assert(m_IL != nullptr);
 
+			m_BlendState.RenderTarget[0].BlendEnable = TRUE;
 			m_BlendState.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 			m_BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			m_BlendState.RenderTarget[0].BlendEnable = TRUE;
 			m_BlendState.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
 			m_BlendState.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
 			m_BlendState.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
@@ -204,7 +204,6 @@ public:
 			m_BlendState.IndependentBlendEnable = FALSE;
 			m_BlendState.create(d3dDevice);
 			js_assert(m_BlendState.valid());
-
 		}
 
 		void destroy()
@@ -254,8 +253,7 @@ public:
 			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 			// render state
-			const float blendFactors[] = {1, 1, 1, 1};
-			d3dContext->OMSetBlendState(m_BlendState, blendFactors, 0xffffffff);
+			d3dContext->OMSetBlendState(m_BlendState, nullptr, 0xffffffff);
 			
 			// draw
 			d3dContext->DrawInstanced(1, colorBuffer.m_Width * colorBuffer.m_Height, 0, 0);
@@ -501,10 +499,9 @@ public:
 		// Post-Processing
 		d3dImmediateContext->OMSetDepthStencilState(m_DepthStencilState, 0);
 
-		//d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
-
 		// update histogram
-		//m_Histogram.update(d3dImmediateContext, m_Rendering.m_ColorBuffer);
+		if(m_ShowHistogram)
+			m_Histogram.update(d3dImmediateContext, m_Rendering.m_ColorBuffer);
 		
 		{	
 			// m_PSPostProcessConstBuf
@@ -531,8 +528,8 @@ public:
 			}
 		}
 
-		//if(m_ShowHistogram)
-		//	m_Histogram.display(d3dImmediateContext, -0.9f, -0.5f, 0.5f, 0.25f);
+		if(m_ShowHistogram)
+			m_Histogram.display(d3dImmediateContext, -0.9f, -0.5f, 0.5f, 0.25f);
 
 		d3dImmediateContext->OMSetDepthStencilState(nullptr, 0);
 

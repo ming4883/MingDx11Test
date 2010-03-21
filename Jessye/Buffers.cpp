@@ -229,6 +229,7 @@ namespace js
 			desc.Format = dsvFormat;
 
 		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		desc.Texture2D.MipSlice = mipLevel;
 
 		ID3D11DepthStencilView* dsview = nullptr;
 		HRESULT hr = d3dDevice->CreateDepthStencilView(texture, &desc, &dsview);

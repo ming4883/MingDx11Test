@@ -44,10 +44,10 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	// http://www.humus.name/index.php?page=Comments&ID=256
 	float  fDepthLinear = 1 / (fDepth * g_ZParams.x + g_ZParams.y);
 	
-	float fFog = smoothstep(20, 30, fDepthLinear);
-	fFog = pow(fFog, 2);
-	fFog = 0;
+	float fFog = smoothstep(10, 30, fDepthLinear);
+	//fFog = pow(fFog, 4);
+	//fFog = 0;
 	
-	return lerp(vColor, float4(1,1,1,1), fFog);
+	return lerp(vColor, float4(1,1,1,vColor.a), fFog);
 }
 
