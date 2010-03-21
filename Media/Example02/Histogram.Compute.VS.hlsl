@@ -9,12 +9,7 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-cbuffer cbHistogram : register(b0)
-{
-	float4	g_vInputParams : packoffset(c0);	// pitch, histogram max value
-};
 
-Texture2D g_txInput : register(t0);
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -37,21 +32,8 @@ VS_OUTPUT Main(VS_INPUT Input)
 {
 	VS_OUTPUT Output;
 	
-	int iInputPitch = (int)g_vInputParams.x;
-	float fHistogramMax = g_vInputParams.y;
-	
-	int3 vTexcoord;
-	vTexcoord.y = Input.iInstanceId / iInputPitch;
-	vTexcoord.x = Input.iInstanceId - vTexcoord.y * iInputPitch;
-	vTexcoord.z = 0;
-	
-	float4 vInput = g_txInput.Load(vTexcoord);
-	float fIntensity = dot(vInput.xyz, float3(0.3333, 0.3334, 0.3333));
-	
-	Output.vPosition.x = saturate(fIntensity / fHistogramMax) * 2.0 - 1.0;
-	Output.vPosition.y = 0;
-	Output.vPosition.z = 0;
-	Output.vPosition.w = 1;
+	Output.vPosition.x = Input.iInstanceId;
+	Output.vPosition.yzw = 0;
 	
 	return Output;
 }

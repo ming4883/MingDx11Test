@@ -48,7 +48,7 @@ VS_OUTPUT Main(VS_INPUT Input)
 	float fHistogram = g_txHistogram.Load(vTexcoord).x;
 	
 	Output.vPosition.x = g_vDrawParams.x + g_vDrawParams.z * Input.iInstanceId;
-	Output.vPosition.y = g_vDrawParams.y + g_vDrawParams.w * fHistogram + 0.01;
+	Output.vPosition.y = g_vDrawParams.y + g_vDrawParams.w * fHistogram + 0.005;
 	Output.vPosition.z = 0;
 	Output.vPosition.w = 1;
 	

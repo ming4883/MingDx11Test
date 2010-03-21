@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Scene.PS.hlsl
+// File: Post.Fog.hlsl
 //
 // The pixel shader file for the BasicHLSL11 sample.  
 // 

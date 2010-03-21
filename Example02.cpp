@@ -99,8 +99,7 @@ public:
 		{
 			// Clear render target and the depth stencil 
 			//static const float clearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
-			static const float clearColor[4] = { 1, 1, 1, 0 };
-			//static const float clearColor[4] = { 2, 2, 2, 0 };
+			static const float clearColor[4] = { 2, 2, 2, 0 };
 
 			d3dContext->OMSetRenderTargets(1, &m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
 			d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, clearColor );
@@ -141,6 +140,7 @@ public:
 #pragma pack(pop)
 		js::Texture2DRenderBuffer m_Buffer;
 		js::VertexShader m_ComputeVs;
+		js::GeometryShader m_ComputeGs;
 		js::PixelShader m_ComputePs;
 		js::VertexShader m_DrawVs;
 		js::GeometryShader m_DrawGs;
@@ -163,6 +163,9 @@ public:
 
 			m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
 			js_assert(m_ComputeVs.valid());
+			
+			m_ComputeGs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.GS.hlsl"), "Main");
+			js_assert(m_ComputeGs.valid());
 
 			m_ComputePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.PS.hlsl"), "Main");
 			js_assert(m_ComputePs.valid());
@@ -210,6 +213,7 @@ public:
 		{
 			m_Buffer.destroy();
 			m_ComputeVs.destroy();
+			m_ComputeGs.destroy();
 			m_ComputePs.destroy();
 			m_DrawVs.destroy();
 			m_DrawGs.destroy();
@@ -234,13 +238,16 @@ public:
 
 			// shaders
 			m_ComputeCb.map(d3dContext);
-			m_ComputeCb.data().g_vInputParams.x = (float)colorBuffer.m_Width;
-			m_ComputeCb.data().g_vInputParams.y = m_MaxInputValue;
+			m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
+			m_ComputeCb.data().g_vInputParams.y = 4;
+			m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
 			m_ComputeCb.unmap(d3dContext);
 
 			d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
-			d3dContext->VSSetShaderResources(0, 1, &colorBuffer.m_SRView);
-			d3dContext->VSSetConstantBuffers(0, 1, &m_ComputeCb.m_BufferObject);
+			
+			d3dContext->GSSetShader(m_ComputeGs.m_ShaderObject, nullptr, 0);
+			d3dContext->GSSetShaderResources(0, 1, &colorBuffer.m_SRView);
+			d3dContext->GSSetConstantBuffers(0, 1, &m_ComputeCb.m_BufferObject);
 
 			d3dContext->PSSetShader(m_ComputePs.m_ShaderObject, nullptr, 0);
 
@@ -256,9 +263,9 @@ public:
 			d3dContext->OMSetBlendState(m_BlendState, nullptr, 0xffffffff);
 			
 			// draw
-			d3dContext->DrawInstanced(1, colorBuffer.m_Width * colorBuffer.m_Height, 0, 0);
+			d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
 
-			m_LastNumInputs = (float)colorBuffer.m_Width * colorBuffer.m_Height;
+			m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
 			
 			// restore render targets
 			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
@@ -274,6 +281,8 @@ public:
 				ID3D11ShaderResourceView* shv[] = {nullptr};
 				d3dContext->VSSetShaderResources(0, 1, shv);
 			}
+
+			d3dContext->GSSetShader(nullptr, nullptr, 0);
 
 			d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 		}
@@ -392,7 +401,7 @@ public:
 		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
 		js_assert(m_PostVtxShd.valid());
 
-		m_PostFogShd.createFromFile(d3dDevice, media(L"Example02/Post.Fog.hlsl"), "Main");
+		m_PostFogShd.createFromFile(d3dDevice, media(L"Example02/Post.DOF.hlsl"), "Main");
 		js_assert(m_PostFogShd.valid());
 
 		m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);

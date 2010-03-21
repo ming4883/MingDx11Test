@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Scene.VS.hlsl
+// File: Post.Vtx.hlsl
 //
 // The vertex shader file for the BasicHLSL11 sample.  
 // 
