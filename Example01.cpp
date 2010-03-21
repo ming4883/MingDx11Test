@@ -5,6 +5,7 @@
 #include "DXUTcamera.h"
 #include "Jessye/Shaders.h"
 #include "Jessye/Buffers.h"
+#include "Jessye/RenderStates.h"
 
 class Example01 : public DXUTApp
 {
@@ -48,11 +49,10 @@ public:
 	std::auto_ptr<VSPreObjectConstBuf> m_VSPreObjectConstBuf;
 	std::auto_ptr<VSInstancingConstBuf> m_VSInstancingConstBuf;
 	std::auto_ptr<PSPreObjectConstBuf> m_PSPreObjectConstBuf;
-	ID3D11SamplerState* m_SamplerState;
+	js::SamplerState m_SamplerState;
 
 // Methods
 	Example01()
-		: m_SamplerState(nullptr)
 	{
 	}
 
@@ -66,14 +66,11 @@ public:
 		ID3D11Device* d3dDevice,
 		const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 	{
-		{	D3D11_SAMPLER_DESC d;
-			ZeroMemory(&d, sizeof(d));
-			d.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-			d.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-			d.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-			d.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-			d3dDevice->CreateSamplerState(&d, &m_SamplerState);
-		}
+		m_SamplerState.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_SamplerState.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_SamplerState.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_SamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		m_SamplerState.create(d3dDevice);
 
 		// load mesh
 		RenderableMesh::ShaderDesc sd;
@@ -135,7 +132,7 @@ public:
 		m_VSPreObjectConstBuf.reset();
 		m_PSPreObjectConstBuf.reset();
 		m_VSInstancingConstBuf.reset();
-		js_safe_release(m_SamplerState);
+		m_SamplerState.destroy();
 	}
 
 	__override void onFrameMove(
@@ -204,7 +201,7 @@ public:
 		d3dImmediateContext->VSSetConstantBuffers(0, 1, &m_VSPreObjectConstBuf->m_BufferObject);
 		d3dImmediateContext->VSSetConstantBuffers(1, 1, &m_VSInstancingConstBuf->m_BufferObject);
 		d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPreObjectConstBuf->m_BufferObject);
-		d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState);
+		d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
 
 		m_Mesh.render(d3dImmediateContext, NUM_INSTANCES);
 	}
