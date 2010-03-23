@@ -182,6 +182,32 @@ namespace js
 		return texture;
 	}
 
+	ID3D11Texture2D* createTexture2DStagingBuffer(
+		ID3D11Device* d3dDevice,
+		size_t width,
+		size_t height,
+		size_t mipLevels,
+		DXGI_FORMAT dataFormat)
+	{
+		D3D11_TEXTURE2D_DESC desc;
+		ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
+		desc.ArraySize = 1;
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.Format = dataFormat;
+		desc.Width = width;
+		desc.Height = height;
+		desc.MipLevels = mipLevels;
+		desc.SampleDesc.Count = 1;
+		desc.BindFlags = 0;
+
+		ID3D11Texture2D* texture = nullptr;
+		HRESULT hr = d3dDevice->CreateTexture2D(&desc, nullptr, &texture);
+
+		if(FAILED(hr)) js_safe_release(texture);
+
+		return texture;
+	}
+
 	ID3D11RenderTargetView* Buffers::createRenderTargetView(
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,

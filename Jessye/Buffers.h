@@ -50,6 +50,13 @@ struct Buffers
 		DXGI_FORMAT dataFormat,
 		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
 
+	static ID3D11Texture2D* createTexture2DStagingBuffer(
+		ID3D11Device* d3dDevice,
+		size_t width,
+		size_t height,
+		size_t mipLevels,
+		DXGI_FORMAT dataFormat);
+
 	static ID3D11RenderTargetView* createRenderTargetView(
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
@@ -132,6 +139,55 @@ struct ConstantBuffer_t
 	}
 
 };
+
+//! Texture2DStagingBuffer
+struct Texture2DStagingBuffer
+{
+	ID3D11Texture2D* m_TextureObject;
+
+	size_t m_Width;
+	size_t m_Height;
+	size_t m_MipLevels;
+	DXGI_FORMAT m_Format;
+
+	Texture2DStagingBuffer()
+		: m_TextureObject(nullptr)
+		, m_Width(0)
+		, m_Height(0)
+		, m_MipLevels(0)
+		, m_Format((DXGI_FORMAT)-1)
+	{
+	}
+
+	~Texture2DStagingBuffer()
+	{
+		destroy();
+	}
+
+	bool valid() const
+	{
+		return m_TextureObject != nullptr;
+	}
+
+	void create(ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat)
+	{
+		m_TextureObject = Buffers::createTexture2DStagingBuffer(d3dDevice, width, height, mipLevels, dataFormat);
+		if(nullptr == m_TextureObject) return;
+
+		m_Width = width; m_Height = height; m_Format = dataFormat; m_MipLevels = mipLevels;
+	}
+
+	void destroy()
+	{
+		js_safe_release(m_TextureObject);
+
+		m_Width = 0;
+		m_Height = 0;
+		m_MipLevels = 0;
+		m_Format = (DXGI_FORMAT)-1;
+	}
+
+};	// Texture2DStagingBuffer
 
 //! Texture2DRenderBuffer
 struct Texture2DRenderBuffer
