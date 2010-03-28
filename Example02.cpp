@@ -6,6 +6,7 @@
 #include "Jessye/Shaders.h"
 #include "Jessye/Buffers.h"
 #include "Jessye/RenderStates.h"
+#include "Jessye/ViewArrays.h"
 
 class Example02 : public DXUTApp
 {
@@ -110,8 +111,7 @@ public:
 			ID3D11Device* d3dDevice,
 			ID3D11DeviceContext* d3dContext)
 		{
-			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
-			d3dContext->OMSetRenderTargets(1, rtv, DXUTGetD3D11DepthStencilView());
+			d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
 		}
 	};
 
@@ -246,17 +246,14 @@ public:
 			d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
 			
 			d3dContext->GSSetShader(m_ComputeGs.m_ShaderObject, nullptr, 0);
-			d3dContext->GSSetShaderResources(0, 1, &colorBuffer.m_SRView);
+			d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << colorBuffer.m_SRView);
 			d3dContext->GSSetConstantBuffers(0, 1, &m_ComputeCb.m_BufferObject);
 
 			d3dContext->PSSetShader(m_ComputePs.m_ShaderObject, nullptr, 0);
 
 			// vertex buffer and input assembler
-			UINT strides[] = {sizeof(D3DXVECTOR3)};
-			UINT offsets[] = {0};
-
 			d3dContext->IASetInputLayout(m_IL);
-			d3dContext->IASetVertexBuffers(0, 1, &m_VB, strides, offsets);
+			d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
 			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 			// render state
@@ -268,8 +265,7 @@ public:
 			m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
 			
 			// restore render targets
-			ID3D11RenderTargetView* rtv[] = {DXUTGetD3D11RenderTargetView()};
-			d3dContext->OMSetRenderTargets(1, rtv, DXUTGetD3D11DepthStencilView());
+			d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
 
 			vp.Width = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
 			vp.Height = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
@@ -277,11 +273,7 @@ public:
 			
 			d3dContext->RSSetViewports(1, &vp);
 
-			{	// reset PS shader resources
-				ID3D11ShaderResourceView* shv[] = {nullptr};
-				d3dContext->VSSetShaderResources(0, 1, shv);
-			}
-
+			d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << nullptr);
 			d3dContext->GSSetShader(nullptr, nullptr, 0);
 
 			d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
@@ -298,7 +290,7 @@ public:
 			m_DrawCb.unmap(d3dContext);
 
 			d3dContext->VSSetShader(m_DrawVs.m_ShaderObject, nullptr, 0);
-			d3dContext->VSSetShaderResources(0, 1, &m_Buffer.m_SRView);
+			d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << m_Buffer.m_SRView);
 			d3dContext->VSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
 
 			d3dContext->GSSetShader(m_DrawGs.m_ShaderObject, nullptr, 0);
@@ -307,20 +299,15 @@ public:
 			d3dContext->PSSetShader(m_DrawPs.m_ShaderObject, nullptr, 0);
 
 			// vertex buffer and input assembler
-			UINT strides[] = {sizeof(D3DXVECTOR3)};
-			UINT offsets[] = {0};
-
 			d3dContext->IASetInputLayout(m_IL);
-			d3dContext->IASetVertexBuffers(0, 1, &m_VB, strides, offsets);
+			d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
 			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 			
 			// draw
 			d3dContext->DrawInstanced(1, SIZE, 0, 0);
 
-			{	// reset PS shader resources
-				ID3D11ShaderResourceView* shv[] = {nullptr};
-				d3dContext->VSSetShaderResources(0, 1, shv);
-			}
+			// reset shader resources
+			d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << nullptr);
 			d3dContext->GSSetShader(nullptr, nullptr, 0);
 		}
 	};
@@ -332,7 +319,6 @@ public:
 	std::auto_ptr<VSPreObjectConstBuf> m_VsPreObjectConstBuf;
 	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
 	std::auto_ptr<PSPostProcessConstBuf> m_PSPostProcessConstBuf;
-	//ID3D11SamplerState* m_SamplerState;
 	js::SamplerState m_SamplerState;
 	js::DepthStencilState m_DepthStencilState;
 	Rendering m_Rendering;
@@ -521,20 +507,16 @@ public:
 			d3dImmediateContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
 			d3dImmediateContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
 
-			{	ID3D11ShaderResourceView* shv[] = {
-					m_Rendering.m_ColorBuffer.m_SRView, 
-					m_Rendering.m_DepthBuffer.m_SRView
-					};
-				d3dImmediateContext->PSSetShaderResources(0, 2, shv);
-				d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf->m_BufferObject);
-			}
+			d3dImmediateContext->PSSetShaderResources(0, 2, js::SrvVA()
+				<< m_Rendering.m_ColorBuffer.m_SRView
+				<< m_Rendering.m_DepthBuffer.m_SRView
+				);
+			d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf->m_BufferObject);
 
 			m_ScreenQuad.render(d3dImmediateContext);
 
-			{	// reset PS shader resources
-				ID3D11ShaderResourceView* shv[] = {nullptr, nullptr};
-				d3dImmediateContext->PSSetShaderResources(0, 2, shv);
-			}
+			// reset shader resources
+			d3dImmediateContext->PSSetShaderResources(0, 2, js::SrvVA() << nullptr << nullptr);
 		}
 
 		if(m_ShowHistogram)
