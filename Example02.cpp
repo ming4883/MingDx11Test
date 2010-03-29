@@ -75,12 +75,16 @@ public:
 	{
 	public:
 		js::Texture2DRenderBuffer m_ColorBuffer;
+		js::Texture2DRenderBuffer m_ColorBufferQuater;
 		js::Texture2DRenderBuffer m_DepthBuffer;
 
 		void onSwapChainResized(ID3D11Device* d3dDevice, size_t width, size_t height)
 		{
 			m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
 			js_assert(m_ColorBuffer.valid());
+			
+			m_ColorBufferQuater.create(d3dDevice, width / 4, height / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+			js_assert(m_ColorBufferQuater.valid());
 
 			m_DepthBuffer.create(d3dDevice, width, height, 1,
 				DXGI_FORMAT_R24G8_TYPELESS, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
@@ -90,6 +94,7 @@ public:
 		void onSwapChainReleasing()
 		{
 			m_ColorBuffer.destroy();
+			m_ColorBufferQuater.destroy();
 			m_DepthBuffer.destroy();
 		}
 
@@ -510,7 +515,7 @@ public:
 
 		// update histogram
 		if(m_ShowHistogram)
-			m_Histogram.update(d3dImmediateContext, m_Rendering.m_ColorBuffer);
+			m_Histogram.update(d3dImmediateContext, m_Rendering.m_ColorBufferQuater);
 		
 		{	
 			// m_PSPostProcessConstBuf
