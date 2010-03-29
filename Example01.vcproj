@@ -578,6 +578,10 @@
 				RelativePath=".\Jessye\Shaders.h"
 				>
 			</File>
+			<File
+				RelativePath=".\Jessye\ViewArrays.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="DXUT"
