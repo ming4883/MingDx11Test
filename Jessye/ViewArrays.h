@@ -27,6 +27,7 @@ struct ViewArray_t
 typedef ViewArray_t<ID3D11ShaderResourceView*, 16> SrvVA;
 typedef ViewArray_t<ID3D11RenderTargetView*, 16> RtvVA;
 typedef ViewArray_t<unsigned int, 16> UintVA;
+typedef ViewArray_t<ID3D11Buffer*, 16> BufVA;
 
 }	// namespace js
 

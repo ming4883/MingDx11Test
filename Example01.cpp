@@ -16,27 +16,49 @@ public:
 //#pragma pack(show)
 #pragma pack(1)
 //#pragma pack(show)
-	struct VSPreObject
+	struct VSDefault
 	{
 		D3DXMATRIX m_ViewProjection;
 		D3DXMATRIX m_World;
+
+		void update(const D3DXMATRIX& viewProjMatrix, const D3DXMATRIX& worldMatrix)
+		{
+			D3DXMatrixTranspose(&m_ViewProjection, &viewProjMatrix);
+			D3DXMatrixTranspose(&m_World, &worldMatrix);
+		}
 	};
 
-	typedef js::ConstantBuffer_t<VSPreObject> VSPreObjectConstBuf;
+	typedef js::ConstantBuffer_t<VSDefault> VSDefaultConstBuf;
 
 	struct VSInstancing
 	{
 		D3DXMATRIX m_InstanceWorld[NUM_INSTANCES];
+
+		void update(const D3DXVECTOR3* instanceData)
+		{
+			for(int i=0; i<NUM_INSTANCES; ++i)
+			{
+				D3DXMATRIX* m = &m_InstanceWorld[i];
+				D3DXMatrixIdentity(m);
+				D3DXMatrixTranslation(m, instanceData[i].x, instanceData[i].y, instanceData[i].z);
+				D3DXMatrixTranspose(m, m);
+			}
+		}
 	};
 
 	typedef js::ConstantBuffer_t<VSInstancing> VSInstancingConstBuf;
 
-	struct PSPreObject
+	struct PSDefault
 	{
 		D3DXVECTOR4 m_vObjectColor;
+
+		void update(const D3DXVECTOR4& objColor)
+		{
+			m_vObjectColor = objColor;
+		}
 	};
 
-	typedef js::ConstantBuffer_t<PSPreObject> PSPreObjectConstBuf;
+	typedef js::ConstantBuffer_t<PSDefault> PSDefaultConstBuf;
 
 #pragma pack(pop)
 //#pragma pack(show)
@@ -44,11 +66,10 @@ public:
 // Global Variables
 	CModelViewerCamera m_Camera;
 	RenderableMesh m_Mesh;
-	D3DXMATRIX m_World;
-	D3DXMATRIX m_ViewProjection;
-	std::auto_ptr<VSPreObjectConstBuf> m_VSPreObjectConstBuf;
-	std::auto_ptr<VSInstancingConstBuf> m_VSInstancingConstBuf;
-	std::auto_ptr<PSPreObjectConstBuf> m_PSPreObjectConstBuf;
+	D3DXMATRIX m_WorldMatrix;
+	VSDefaultConstBuf m_VSDefaultConstBuf;
+	VSInstancingConstBuf m_VSInstancingConstBuf;
+	PSDefaultConstBuf m_PSDefaultConstBuf;
 	js::SamplerState m_SamplerState;
 
 // Methods
@@ -86,15 +107,9 @@ public:
 		inputElement(ielems, "TEXCOORD",  0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0);
 
 		m_Mesh.create(d3dDevice, media(L"Common/Tiny/Tiny.sdkmesh"), sd, ielems);
-
-		m_VSPreObjectConstBuf.reset(new VSPreObjectConstBuf);
-		m_VSPreObjectConstBuf->create(d3dDevice);
-		
-		m_VSInstancingConstBuf.reset(new VSInstancingConstBuf);
-		m_VSInstancingConstBuf->create(d3dDevice);
-
-		m_PSPreObjectConstBuf.reset(new PSPreObjectConstBuf);
-		m_PSPreObjectConstBuf->create(d3dDevice);
+		m_VSDefaultConstBuf.create(d3dDevice);
+		m_VSInstancingConstBuf.create(d3dDevice);
+		m_PSDefaultConstBuf.create(d3dDevice);
 
 		// init camera
 		const float radius = m_Mesh.radius();
@@ -129,9 +144,9 @@ public:
 	{
 		DXUTGetGlobalResourceCache().OnDestroyDevice();
 		m_Mesh.destroy();
-		m_VSPreObjectConstBuf.reset();
-		m_PSPreObjectConstBuf.reset();
-		m_VSInstancingConstBuf.reset();
+		m_VSDefaultConstBuf.destroy();
+		m_PSDefaultConstBuf.destroy();
+		m_VSInstancingConstBuf.destroy();
 		m_SamplerState.destroy();
 	}
 
@@ -141,10 +156,8 @@ public:
 	{
 		m_Camera.FrameMove( elapsedTime );
 
-		D3DXMatrixIdentity(&m_World);
-		D3DXMatrixRotationX(&m_World, D3DXToDegree(90));
-
-		m_ViewProjection = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
+		D3DXMatrixIdentity(&m_WorldMatrix);
+		D3DXMatrixRotationX(&m_WorldMatrix, D3DXToDegree(90));
 	}
 	
 	__override void onD3D11FrameRender(
@@ -153,57 +166,55 @@ public:
 		double time,
 		float elapsedTime)
 	{
+		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
+
+		onD3D11FrameRender_PrepareShaderResources(d3dImmediateContext);
+
+		m_Mesh.render(d3dImmediateContext, NUM_INSTANCES);
+	}
+	
+	void onD3D11FrameRender_ClearRenderTargets(ID3D11DeviceContext* d3dContext)
+	{
 		// Clear render target and the depth stencil 
 		static const float ClearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
 
-		d3dImmediateContext->ClearRenderTargetView( DXUTGetD3D11RenderTargetView(), ClearColor );
-		d3dImmediateContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
+		d3dContext->ClearRenderTargetView( DXUTGetD3D11RenderTargetView(), ClearColor );
+		d3dContext->ClearDepthStencilView( DXUTGetD3D11DepthStencilView(), D3D11_CLEAR_DEPTH, 1.0, 0 );
+	}
 
-		{	// m_VSPreObjectConstBuf
-			VSPreObjectConstBuf& buf = *m_VSPreObjectConstBuf;
-			buf.map(d3dImmediateContext);
-			D3DXMatrixTranspose( &buf.data().m_ViewProjection, &m_ViewProjection );
-			D3DXMatrixTranspose( &buf.data().m_World, &m_World );
-			buf.unmap(d3dImmediateContext);
-		}
+	void onD3D11FrameRender_PrepareShaderResources(ID3D11DeviceContext* d3dContext)
+	{
+		const D3DXMATRIX cViewProjMatrix = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
+
+		static const float d = 150;
+		static const D3DXVECTOR3 cInstanceData[NUM_INSTANCES] = {
+			D3DXVECTOR3( 2*d, 0, 0),
+			D3DXVECTOR3(   d, 0, 0),
+			D3DXVECTOR3(-  d, 0, 0),
+			D3DXVECTOR3(-2*d, 0, 0),
+		};
+
+		// m_VSDefaultConstBuf
+		m_VSDefaultConstBuf.map(d3dContext);
+		m_VSDefaultConstBuf.data().update(cViewProjMatrix, m_WorldMatrix);
+		m_VSDefaultConstBuf.unmap(d3dContext);
 		
-		{	// m_VSInstancingConstBuf
-			VSInstancingConstBuf& buf = *m_VSInstancingConstBuf;
-			buf.map(d3dImmediateContext);
+		// m_VSInstancingConstBuf
+		m_VSInstancingConstBuf.map(d3dContext);
+		m_VSInstancingConstBuf.data().update(cInstanceData);
+		m_VSInstancingConstBuf.unmap(d3dContext);
 
-			static const float d = 150;
-			static const D3DXVECTOR3 t[NUM_INSTANCES] = {
-				D3DXVECTOR3( 2*d, 0, 0),
-				D3DXVECTOR3(   d, 0, 0),
-				D3DXVECTOR3(-  d, 0, 0),
-				D3DXVECTOR3(-2*d, 0, 0),
-			};
-
-			for(int i=0; i<NUM_INSTANCES; ++i)
-			{
-				D3DXMATRIX* m = &m_VSInstancingConstBuf->data().m_InstanceWorld[i];
-				D3DXMatrixIdentity(m);
-				D3DXMatrixTranslation(m, t[i].x, t[i].y, t[i].z);
-				D3DXMatrixTranspose(m, m);
-			}
-			
-			buf.unmap(d3dImmediateContext);
-		}
-
-		{	// m_PSPreObjectConstBuf
-			PSPreObjectConstBuf& buf = *m_PSPreObjectConstBuf;
-			buf.map(d3dImmediateContext);
-			buf.data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
-			buf.unmap(d3dImmediateContext);
-		}
+		// m_PSDefaultConstBuf
+		m_PSDefaultConstBuf.map(d3dContext);
+		m_PSDefaultConstBuf.data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
+		m_PSDefaultConstBuf.unmap(d3dContext);
 
 		// preparing shaders
-		d3dImmediateContext->VSSetConstantBuffers(0, 1, &m_VSPreObjectConstBuf->m_BufferObject);
-		d3dImmediateContext->VSSetConstantBuffers(1, 1, &m_VSInstancingConstBuf->m_BufferObject);
-		d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPreObjectConstBuf->m_BufferObject);
-		d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
+		d3dContext->VSSetConstantBuffers(0, 1, &m_VSDefaultConstBuf.m_BufferObject);
+		d3dContext->VSSetConstantBuffers(1, 1, &m_VSInstancingConstBuf.m_BufferObject);
+		d3dContext->PSSetConstantBuffers(0, 1, &m_PSDefaultConstBuf.m_BufferObject);
+		d3dContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
 
-		m_Mesh.render(d3dImmediateContext, NUM_INSTANCES);
 	}
 
 	__override LRESULT msgProc(

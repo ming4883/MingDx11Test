@@ -107,6 +107,8 @@ struct ConstantBuffer_t
 		js_safe_release(m_BufferObject);
 	}
 
+	operator ID3D11Buffer* () { return m_BufferObject; }
+
 	void map(ID3D11DeviceContext* d3dContext)
 	{
 		if(!valid())

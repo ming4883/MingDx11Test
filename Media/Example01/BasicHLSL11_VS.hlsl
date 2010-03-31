@@ -9,12 +9,12 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-cbuffer cbPerObject : register( b0 )
+cbuffer cbDefault : register( b0 )
 {
 	matrix		g_ViewProjection	: packoffset( c0 );
 	matrix		g_World				: packoffset( c4 );
 };
-#define NUM_INSTANCES 4
+#define NUM_INSTANCES 4	// this must be matched with Example01.cpp
 cbuffer cbInstancing : register( b1 )
 {
 	matrix		g_InstanceWorld[NUM_INSTANCES];

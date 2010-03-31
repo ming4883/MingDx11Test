@@ -8,6 +8,203 @@
 #include "Jessye/RenderStates.h"
 #include "Jessye/ViewArrays.h"
 
+class Histogram
+{
+public:
+	
+	enum {SIZE = 16};
+
+#pragma pack(push)
+#pragma pack(1)
+	struct HistogramCompute_s
+	{
+		D3DXVECTOR4 g_vInputParams;
+	};
+
+	typedef js::ConstantBuffer_t<HistogramCompute_s> HistogramComputeConstBuf;
+
+	struct HistogramDraw_s
+	{
+		D3DXVECTOR4 g_vDrawParams;
+	};
+
+	typedef js::ConstantBuffer_t<HistogramDraw_s> HistogramDrawConstBuf;
+
+#pragma pack(pop)
+	js::Texture2DRenderBuffer m_Buffer;
+	js::VertexShader m_ComputeVs;
+	js::GeometryShader m_ComputeGs;
+	js::PixelShader m_ComputePs;
+	js::VertexShader m_DrawVs;
+	js::GeometryShader m_DrawGs;
+	js::PixelShader m_DrawPs;
+	HistogramComputeConstBuf m_ComputeCb;
+	HistogramDrawConstBuf m_DrawCb;
+	ID3D11Buffer* m_VB;
+	ID3D11InputLayout* m_IL;
+	js::BlendState m_BlendState;
+	float m_LastNumInputs;
+	float m_MaxInputValue;
+	
+	Histogram() : m_MaxInputValue(4.0f), m_LastNumInputs(1)
+	{
+	}
+
+	void create(ID3D11Device* d3dDevice)
+	{
+		m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+
+		m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
+		js_assert(m_ComputeVs.valid());
+		
+		m_ComputeGs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.GS.hlsl"), "Main");
+		js_assert(m_ComputeGs.valid());
+
+		m_ComputePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.PS.hlsl"), "Main");
+		js_assert(m_ComputePs.valid());
+
+		m_DrawVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.VS.hlsl"), "Main");
+		js_assert(m_DrawVs.valid());
+
+		m_DrawGs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.GS.hlsl"), "Main");
+		js_assert(m_DrawGs.valid());
+
+		m_DrawPs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.PS.hlsl"), "Main");
+		js_assert(m_DrawPs.valid());
+
+		m_ComputeCb.create(d3dDevice);
+		js_assert(m_ComputeCb.valid());
+		
+		m_DrawCb.create(d3dDevice);
+		js_assert(m_DrawCb.valid());
+
+		static D3DXVECTOR3 v[] = {D3DXVECTOR3(0,0,0)};
+		m_VB = js::Buffers::createVertexBuffer(d3dDevice, sizeof(v), sizeof(v[0]), false, v);
+		js_assert(m_VB != nullptr);
+
+		std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
+		inputElement(ielems, "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0);
+
+		m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_ComputeVs.m_ByteCode);
+		js_assert(m_IL != nullptr);
+
+		m_BlendState.RenderTarget[0].BlendEnable = TRUE;
+		m_BlendState.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		m_BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		m_BlendState.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		m_BlendState.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+		m_BlendState.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		m_BlendState.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		m_BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		m_BlendState.AlphaToCoverageEnable = FALSE;
+		m_BlendState.IndependentBlendEnable = FALSE;
+		m_BlendState.create(d3dDevice);
+		js_assert(m_BlendState.valid());
+	}
+
+	void destroy()
+	{
+		m_Buffer.destroy();
+		m_ComputeVs.destroy();
+		m_ComputeGs.destroy();
+		m_ComputePs.destroy();
+		m_DrawVs.destroy();
+		m_DrawGs.destroy();
+		m_DrawPs.destroy();
+		m_ComputeCb.destroy();
+		m_DrawCb.destroy();
+		js_safe_release(m_VB);
+		js_safe_release(m_IL);
+		m_BlendState.destroy();
+	}
+
+	void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
+	{
+		js_assert(colorBuffer.valid());
+
+		// render target
+		static const float clearColor[] = {0, 0, 0, 0};
+		d3dContext->ClearRenderTargetView(m_Buffer.m_RTView, clearColor);
+		d3dContext->OMSetRenderTargets(1, &m_Buffer.m_RTView, nullptr);
+		D3D11_VIEWPORT vp = m_Buffer.viewport();
+		d3dContext->RSSetViewports(1, &vp);
+
+		// shaders
+		m_ComputeCb.map(d3dContext);
+		m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
+		m_ComputeCb.data().g_vInputParams.y = 4;
+		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
+		m_ComputeCb.unmap(d3dContext);
+
+		d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
+		
+		d3dContext->GSSetShader(m_ComputeGs.m_ShaderObject, nullptr, 0);
+		d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << colorBuffer.m_SRView);
+		d3dContext->GSSetConstantBuffers(0, 1, &m_ComputeCb.m_BufferObject);
+
+		d3dContext->PSSetShader(m_ComputePs.m_ShaderObject, nullptr, 0);
+
+		// vertex buffer and input assembler
+		d3dContext->IASetInputLayout(m_IL);
+		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
+		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+
+		// render state
+		d3dContext->OMSetBlendState(m_BlendState, nullptr, 0xffffffff);
+		
+		// draw
+		d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
+
+		m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
+		
+		// restore render targets
+		d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
+
+		vp.Width = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
+		vp.Height = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
+		vp.TopLeftX = 0; vp.TopLeftY = 0; vp.MinDepth = 0; vp.MaxDepth = 1;
+		
+		d3dContext->RSSetViewports(1, &vp);
+
+		d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << nullptr);
+		d3dContext->GSSetShader(nullptr, nullptr, 0);
+
+		d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	}
+
+	void display(ID3D11DeviceContext* d3dContext, float x, float y, float w, float h)
+	{
+		// shaders
+		m_DrawCb.map(d3dContext);
+		m_DrawCb.data().g_vDrawParams.x = x;
+		m_DrawCb.data().g_vDrawParams.y = y;
+		m_DrawCb.data().g_vDrawParams.z = w / SIZE;
+		m_DrawCb.data().g_vDrawParams.w = h / m_LastNumInputs;
+		m_DrawCb.unmap(d3dContext);
+
+		d3dContext->VSSetShader(m_DrawVs.m_ShaderObject, nullptr, 0);
+		d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << m_Buffer.m_SRView);
+		d3dContext->VSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
+
+		d3dContext->GSSetShader(m_DrawGs.m_ShaderObject, nullptr, 0);
+		d3dContext->GSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
+
+		d3dContext->PSSetShader(m_DrawPs.m_ShaderObject, nullptr, 0);
+
+		// vertex buffer and input assembler
+		d3dContext->IASetInputLayout(m_IL);
+		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
+		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+		
+		// draw
+		d3dContext->DrawInstanced(1, SIZE, 0, 0);
+
+		// reset shader resources
+		d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << nullptr);
+		d3dContext->GSSetShader(nullptr, nullptr, 0);
+	}
+};	// Histogram
+
 class Example02 : public DXUTApp
 {
 public:
@@ -117,203 +314,6 @@ public:
 			ID3D11DeviceContext* d3dContext)
 		{
 			d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
-		}
-	};
-
-	class Histogram
-	{
-	public:
-		
-		enum {SIZE = 16};
-
-#pragma pack(push)
-#pragma pack(1)
-		struct HistogramCompute_s
-		{
-			D3DXVECTOR4 g_vInputParams;
-		};
-
-		typedef js::ConstantBuffer_t<HistogramCompute_s> HistogramComputeConstBuf;
-
-		struct HistogramDraw_s
-		{
-			D3DXVECTOR4 g_vDrawParams;
-		};
-
-		typedef js::ConstantBuffer_t<HistogramDraw_s> HistogramDrawConstBuf;
-
-#pragma pack(pop)
-		js::Texture2DRenderBuffer m_Buffer;
-		js::VertexShader m_ComputeVs;
-		js::GeometryShader m_ComputeGs;
-		js::PixelShader m_ComputePs;
-		js::VertexShader m_DrawVs;
-		js::GeometryShader m_DrawGs;
-		js::PixelShader m_DrawPs;
-		HistogramComputeConstBuf m_ComputeCb;
-		HistogramDrawConstBuf m_DrawCb;
-		ID3D11Buffer* m_VB;
-		ID3D11InputLayout* m_IL;
-		js::BlendState m_BlendState;
-		float m_LastNumInputs;
-		float m_MaxInputValue;
-		
-		Histogram() : m_MaxInputValue(4.0f), m_LastNumInputs(1)
-		{
-		}
-
-		void create(ID3D11Device* d3dDevice)
-		{
-			m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
-
-			m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
-			js_assert(m_ComputeVs.valid());
-			
-			m_ComputeGs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.GS.hlsl"), "Main");
-			js_assert(m_ComputeGs.valid());
-
-			m_ComputePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.PS.hlsl"), "Main");
-			js_assert(m_ComputePs.valid());
-
-			m_DrawVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.VS.hlsl"), "Main");
-			js_assert(m_DrawVs.valid());
-
-			m_DrawGs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.GS.hlsl"), "Main");
-			js_assert(m_DrawGs.valid());
-
-			m_DrawPs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.PS.hlsl"), "Main");
-			js_assert(m_DrawPs.valid());
-
-			m_ComputeCb.create(d3dDevice);
-			js_assert(m_ComputeCb.valid());
-			
-			m_DrawCb.create(d3dDevice);
-			js_assert(m_DrawCb.valid());
-
-			static D3DXVECTOR3 v[] = {D3DXVECTOR3(0,0,0)};
-			m_VB = js::Buffers::createVertexBuffer(d3dDevice, sizeof(v), sizeof(v[0]), false, v);
-			js_assert(m_VB != nullptr);
-
-			std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
-			inputElement(ielems, "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0);
-
-			m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_ComputeVs.m_ByteCode);
-			js_assert(m_IL != nullptr);
-
-			m_BlendState.RenderTarget[0].BlendEnable = TRUE;
-			m_BlendState.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			m_BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-			m_BlendState.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-			m_BlendState.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-			m_BlendState.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-			m_BlendState.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
-			m_BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-			m_BlendState.AlphaToCoverageEnable = FALSE;
-			m_BlendState.IndependentBlendEnable = FALSE;
-			m_BlendState.create(d3dDevice);
-			js_assert(m_BlendState.valid());
-		}
-
-		void destroy()
-		{
-			m_Buffer.destroy();
-			m_ComputeVs.destroy();
-			m_ComputeGs.destroy();
-			m_ComputePs.destroy();
-			m_DrawVs.destroy();
-			m_DrawGs.destroy();
-			m_DrawPs.destroy();
-			m_ComputeCb.destroy();
-			m_DrawCb.destroy();
-			js_safe_release(m_VB);
-			js_safe_release(m_IL);
-			m_BlendState.destroy();
-		}
-
-		void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
-		{
-			js_assert(colorBuffer.valid());
-
-			// render target
-			static const float clearColor[] = {0, 0, 0, 0};
-			d3dContext->ClearRenderTargetView(m_Buffer.m_RTView, clearColor);
-			d3dContext->OMSetRenderTargets(1, &m_Buffer.m_RTView, nullptr);
-			D3D11_VIEWPORT vp = m_Buffer.viewport();
-			d3dContext->RSSetViewports(1, &vp);
-
-			// shaders
-			m_ComputeCb.map(d3dContext);
-			m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
-			m_ComputeCb.data().g_vInputParams.y = 4;
-			m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
-			m_ComputeCb.unmap(d3dContext);
-
-			d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
-			
-			d3dContext->GSSetShader(m_ComputeGs.m_ShaderObject, nullptr, 0);
-			d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << colorBuffer.m_SRView);
-			d3dContext->GSSetConstantBuffers(0, 1, &m_ComputeCb.m_BufferObject);
-
-			d3dContext->PSSetShader(m_ComputePs.m_ShaderObject, nullptr, 0);
-
-			// vertex buffer and input assembler
-			d3dContext->IASetInputLayout(m_IL);
-			d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
-			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-			// render state
-			d3dContext->OMSetBlendState(m_BlendState, nullptr, 0xffffffff);
-			
-			// draw
-			d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
-
-			m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
-			
-			// restore render targets
-			d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
-
-			vp.Width = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
-			vp.Height = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
-			vp.TopLeftX = 0; vp.TopLeftY = 0; vp.MinDepth = 0; vp.MaxDepth = 1;
-			
-			d3dContext->RSSetViewports(1, &vp);
-
-			d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << nullptr);
-			d3dContext->GSSetShader(nullptr, nullptr, 0);
-
-			d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
-		}
-
-		void display(ID3D11DeviceContext* d3dContext, float x, float y, float w, float h)
-		{
-			// shaders
-			m_DrawCb.map(d3dContext);
-			m_DrawCb.data().g_vDrawParams.x = x;
-			m_DrawCb.data().g_vDrawParams.y = y;
-			m_DrawCb.data().g_vDrawParams.z = w / SIZE;
-			m_DrawCb.data().g_vDrawParams.w = h / m_LastNumInputs;
-			m_DrawCb.unmap(d3dContext);
-
-			d3dContext->VSSetShader(m_DrawVs.m_ShaderObject, nullptr, 0);
-			d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << m_Buffer.m_SRView);
-			d3dContext->VSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
-
-			d3dContext->GSSetShader(m_DrawGs.m_ShaderObject, nullptr, 0);
-			d3dContext->GSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
-
-			d3dContext->PSSetShader(m_DrawPs.m_ShaderObject, nullptr, 0);
-
-			// vertex buffer and input assembler
-			d3dContext->IASetInputLayout(m_IL);
-			d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
-			d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-			
-			// draw
-			d3dContext->DrawInstanced(1, SIZE, 0, 0);
-
-			// reset shader resources
-			d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << nullptr);
-			d3dContext->GSSetShader(nullptr, nullptr, 0);
 		}
 	};
 
