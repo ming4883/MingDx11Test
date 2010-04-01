@@ -2,6 +2,7 @@
 #define COMMON_H
 
 #include <vector>
+#include "Jessye/Platform.h"
 
 const wchar_t* media(const wchar_t* in);
 
@@ -14,10 +15,6 @@ void inputElement(
     UINT alignedByteOffset,
     D3D11_INPUT_CLASSIFICATION inputSlotClass,
     UINT instanceDataStepRate);
-
-#define js_decl_non_copyable(className)\
-	className(const className&);\
-	className& operator = (const className&);
 
 class RenderableMesh
 {

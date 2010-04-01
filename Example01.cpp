@@ -13,9 +13,7 @@ public:
 	enum { NUM_INSTANCES = 4 };
 // Data structures
 #pragma pack(push)
-//#pragma pack(show)
 #pragma pack(1)
-//#pragma pack(show)
 	struct VSDefault
 	{
 		D3DXMATRIX m_ViewProjection;
@@ -61,7 +59,6 @@ public:
 	typedef js::ConstantBuffer_t<PSDefault> PSDefaultConstBuf;
 
 #pragma pack(pop)
-//#pragma pack(show)
 
 // Global Variables
 	CModelViewerCamera m_Camera;
@@ -71,6 +68,7 @@ public:
 	VSInstancingConstBuf m_VSInstancingConstBuf;
 	PSDefaultConstBuf m_PSDefaultConstBuf;
 	js::SamplerState m_SamplerState;
+	js::RenderStateCache m_RSCache;
 
 // Methods
 	Example01()
@@ -92,6 +90,8 @@ public:
 		m_SamplerState.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		m_SamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 		m_SamplerState.create(d3dDevice);
+
+		m_RSCache.create(d3dDevice);
 
 		// load mesh
 		RenderableMesh::ShaderDesc sd;
@@ -148,6 +148,7 @@ public:
 		m_PSDefaultConstBuf.destroy();
 		m_VSInstancingConstBuf.destroy();
 		m_SamplerState.destroy();
+		m_RSCache.destroy();
 	}
 
 	__override void onFrameMove(
@@ -170,7 +171,8 @@ public:
 
 		onD3D11FrameRender_PrepareShaderResources(d3dImmediateContext);
 
-		m_Mesh.render(d3dImmediateContext, NUM_INSTANCES);
+		onD3D11FrameRender_DrawMesh(d3dImmediateContext, false);
+		onD3D11FrameRender_DrawMesh(d3dImmediateContext, true);
 	}
 	
 	void onD3D11FrameRender_ClearRenderTargets(ID3D11DeviceContext* d3dContext)
@@ -215,6 +217,39 @@ public:
 		d3dContext->PSSetConstantBuffers(0, 1, &m_PSDefaultConstBuf.m_BufferObject);
 		d3dContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
 
+	}
+
+	void onD3D11FrameRender_DrawMesh(ID3D11DeviceContext* d3dContext, bool blend)
+	{
+		if(blend)
+		{
+			m_RSCache.blendState().backup();
+			m_RSCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+			m_RSCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+			m_RSCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+			m_RSCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+			m_RSCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+			m_RSCache.blendState().dirty();
+
+			m_RSCache.depthStencilState().backup();
+			m_RSCache.depthStencilState().DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+			m_RSCache.depthStencilState().dirty();
+
+			m_RSCache.rasterizerState().backup();
+			m_RSCache.rasterizerState().FillMode = D3D11_FILL_WIREFRAME;
+			m_RSCache.rasterizerState().dirty();
+		}
+
+		m_RSCache.applyToContext(d3dContext);
+
+		m_Mesh.render(d3dContext, NUM_INSTANCES);
+
+		if(blend)
+		{
+			m_RSCache.blendState().restore();
+			m_RSCache.depthStencilState().restore();
+			m_RSCache.rasterizerState().restore();
+		}
 	}
 
 	__override LRESULT msgProc(

@@ -8,6 +8,7 @@
 #include "Jessye/RenderStates.h"
 #include "Jessye/ViewArrays.h"
 
+
 class Histogram
 {
 public:
@@ -42,7 +43,7 @@ public:
 	HistogramDrawConstBuf m_DrawCb;
 	ID3D11Buffer* m_VB;
 	ID3D11InputLayout* m_IL;
-	js::BlendState m_BlendState;
+
 	float m_LastNumInputs;
 	float m_MaxInputValue;
 	
@@ -87,19 +88,6 @@ public:
 
 		m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_ComputeVs.m_ByteCode);
 		js_assert(m_IL != nullptr);
-
-		m_BlendState.RenderTarget[0].BlendEnable = TRUE;
-		m_BlendState.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-		m_BlendState.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		m_BlendState.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-		m_BlendState.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-		m_BlendState.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-		m_BlendState.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
-		m_BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-		m_BlendState.AlphaToCoverageEnable = FALSE;
-		m_BlendState.IndependentBlendEnable = FALSE;
-		m_BlendState.create(d3dDevice);
-		js_assert(m_BlendState.valid());
 	}
 
 	void destroy()
@@ -115,10 +103,9 @@ public:
 		m_DrawCb.destroy();
 		js_safe_release(m_VB);
 		js_safe_release(m_IL);
-		m_BlendState.destroy();
 	}
 
-	void update(ID3D11DeviceContext* d3dContext, js::Texture2DRenderBuffer& colorBuffer)
+	void update(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, js::Texture2DRenderBuffer& colorBuffer)
 	{
 		js_assert(colorBuffer.valid());
 
@@ -150,8 +137,18 @@ public:
 		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		// render state
-		d3dContext->OMSetBlendState(m_BlendState, nullptr, 0xffffffff);
-		
+		rsCache.blendState().backup();
+		rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+		rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		rsCache.blendState().dirty();
+		rsCache.applyToContext(d3dContext);
+
 		// draw
 		d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
 
@@ -169,10 +166,10 @@ public:
 		d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << nullptr);
 		d3dContext->GSSetShader(nullptr, nullptr, 0);
 
-		d3dContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+		rsCache.blendState().restore();
 	}
 
-	void display(ID3D11DeviceContext* d3dContext, float x, float y, float w, float h)
+	void display(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, float x, float y, float w, float h)
 	{
 		// shaders
 		m_DrawCb.map(d3dContext);
@@ -210,9 +207,7 @@ class Example02 : public DXUTApp
 public:
 // Data structures
 #pragma pack(push)
-//#pragma pack(show)
 #pragma pack(1)
-//#pragma pack(show)
 	struct VSPreObject
 	{
 		D3DXMATRIX m_ViewProjection;
@@ -267,68 +262,26 @@ public:
 	typedef js::ConstantBuffer_t<PSPostProcess> PSPostProcessConstBuf;
 
 #pragma pack(pop)
-//#pragma pack(show)
-
-	class Rendering
-	{
-	public:
-		js::Texture2DRenderBuffer m_ColorBuffer;
-		js::Texture2DRenderBuffer m_ColorBufferQuater;
-		js::Texture2DRenderBuffer m_DepthBuffer;
-
-		void onSwapChainResized(ID3D11Device* d3dDevice, size_t width, size_t height)
-		{
-			m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
-			js_assert(m_ColorBuffer.valid());
-			
-			m_ColorBufferQuater.create(d3dDevice, width / 4, height / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
-			js_assert(m_ColorBufferQuater.valid());
-
-			m_DepthBuffer.create(d3dDevice, width, height, 1,
-				DXGI_FORMAT_R24G8_TYPELESS, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
-			js_assert(m_DepthBuffer.valid());
-		}
-
-		void onSwapChainReleasing()
-		{
-			m_ColorBuffer.destroy();
-			m_ColorBufferQuater.destroy();
-			m_DepthBuffer.destroy();
-		}
-
-		void prepareRenderScene(
-			ID3D11Device* d3dDevice,
-			ID3D11DeviceContext* d3dContext)
-		{
-			// Clear render target and the depth stencil 
-			//static const float clearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
-			static const float clearColor[4] = { 2, 2, 2, 0 };
-
-			d3dContext->OMSetRenderTargets(1, &m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
-			d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, clearColor );
-			d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
-		}
-
-		void unprepareRenderScene(
-			ID3D11Device* d3dDevice,
-			ID3D11DeviceContext* d3dContext)
-		{
-			d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
-		}
-	};
 
 // Global Variables
 	CModelViewerCamera m_Camera;
 	RenderableMesh m_Mesh;
 	D3DXMATRIX m_WorldMatrix;
-	std::auto_ptr<VSPreObjectConstBuf> m_VsPreObjectConstBuf;
-	std::auto_ptr<PSPreObjectConstBuf> m_PsPreObjectConstBuf;
-	std::auto_ptr<PSPostProcessConstBuf> m_PSPostProcessConstBuf;
+
+	js::Texture2DRenderBuffer m_ColorBuffer;
+	js::Texture2DRenderBuffer m_ColorBufferQuater;
+	js::Texture2DRenderBuffer m_DepthBuffer;
+
+	VSPreObjectConstBuf m_VsPreObjectConstBuf;
+	PSPreObjectConstBuf m_PsPreObjectConstBuf;
+	PSPostProcessConstBuf m_PSPostProcessConstBuf;
 	js::SamplerState m_SamplerState;
-	js::DepthStencilState m_DepthStencilState;
-	Rendering m_Rendering;
+
+	//Rendering m_Rendering;
 	Histogram m_Histogram;
 	bool m_ShowHistogram;
+
+	js::RenderStateCache m_RSCache;
 	
 	// post processing
 	ScreenQuad m_ScreenQuad;
@@ -337,7 +290,7 @@ public:
 
 // Methods
 	Example02()
-		: m_ShowHistogram(true)
+		: m_ShowHistogram(false)
 	{
 	}
 
@@ -353,19 +306,15 @@ public:
 	{
 		guiOnD3D11CreateDevice(d3dDevice);
 
+		m_RSCache.create(d3dDevice);
+
+		// scene
 		m_SamplerState.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		m_SamplerState.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		m_SamplerState.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		m_SamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 		m_SamplerState.create(d3dDevice);
 
-		m_DepthStencilState.DepthEnable = FALSE;
-		m_DepthStencilState.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		m_DepthStencilState.DepthFunc = D3D11_COMPARISON_ALWAYS;
-		m_DepthStencilState.StencilEnable = FALSE;
-		m_DepthStencilState.create(d3dDevice);
-
-		// load mesh
 		RenderableMesh::ShaderDesc sd;
 		sd.vsPath = media(L"Example02/Scene.VS.hlsl");
 		sd.vsEntry = "VSMain";
@@ -380,11 +329,8 @@ public:
 
 		m_Mesh.create(d3dDevice, media(L"Common/SoftParticles/TankScene.sdkmesh"), sd, ielems);
 
-		m_VsPreObjectConstBuf.reset(new VSPreObjectConstBuf);
-		m_VsPreObjectConstBuf->create(d3dDevice);
-
-		m_PsPreObjectConstBuf.reset(new PSPreObjectConstBuf);
-		m_PsPreObjectConstBuf->create(d3dDevice);
+		m_VsPreObjectConstBuf.create(d3dDevice);
+		m_PsPreObjectConstBuf.create(d3dDevice);
 
 		m_Histogram.create(d3dDevice);
 
@@ -398,8 +344,7 @@ public:
 		m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);
 		js_assert(m_ScreenQuad.valid());
 
-		m_PSPostProcessConstBuf.reset(new PSPostProcessConstBuf);
-		m_PSPostProcessConstBuf->create(d3dDevice);
+		m_PSPostProcessConstBuf.create(d3dDevice);
 
 		// init camera
 		const float radius = m_Mesh.radius();
@@ -421,11 +366,23 @@ public:
 		float aspect = backBufferSurfaceDesc->Width / ( FLOAT )backBufferSurfaceDesc->Height;
 		const float radius = m_Mesh.radius();
 
+		const size_t width = backBufferSurfaceDesc->Width;
+		const size_t height = backBufferSurfaceDesc->Height;
+
 		m_Camera.SetProjParams( D3DX_PI / 4, aspect, 1.0f, radius * 8.0f );
-		m_Camera.SetWindow( backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height );
+		m_Camera.SetWindow( width, height );
 		m_Camera.SetButtonMasks( MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON );
 
-		m_Rendering.onSwapChainResized(d3dDevice, backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height);
+		// create render buffers
+		m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		js_assert(m_ColorBuffer.valid());
+		
+		m_ColorBufferQuater.create(d3dDevice, width / 4, height / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		js_assert(m_ColorBufferQuater.valid());
+
+		m_DepthBuffer.create(d3dDevice, width, height, 1,
+			DXGI_FORMAT_R24G8_TYPELESS, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
+		js_assert(m_DepthBuffer.valid());
 
 		return S_OK;
 	}
@@ -434,28 +391,32 @@ public:
 	{
 		guiOnD3D11ReleasingSwapChain();
 
-		m_Rendering.onSwapChainReleasing();
+		// destroy render buffers
+		m_ColorBuffer.destroy();
+		m_ColorBufferQuater.destroy();
+		m_DepthBuffer.destroy();
 	}
 
 	__override void onD3D11DestroyDevice()
 	{
 		guiOnD3D11DestroyDevice();
 
+		m_RSCache.destroy();
+
 		DXUTGetGlobalResourceCache().OnDestroyDevice();
 		m_Mesh.destroy();
-		m_VsPreObjectConstBuf.reset();
-		m_PsPreObjectConstBuf.reset();
+		m_VsPreObjectConstBuf.destroy();
+		m_PsPreObjectConstBuf.destroy();
 
 		m_Histogram.destroy();
 
-		m_PSPostProcessConstBuf.reset();
+		m_PSPostProcessConstBuf.destroy();
 		
 		m_ScreenQuad.destroy();
 		m_PostVtxShd.destroy();
 		m_PostFogShd.destroy();
 		
 		m_SamplerState.destroy();
-		m_DepthStencilState.destroy();
 	}
 
 	__override void onFrameMove(
@@ -465,76 +426,101 @@ public:
 		m_Camera.FrameMove( elapsedTime );
 		D3DXMatrixIdentity(&m_WorldMatrix);
 	}
-	
+
 	__override void onD3D11FrameRender(
 		ID3D11Device* d3dDevice,
 		ID3D11DeviceContext* d3dImmediateContext,
 		double time,
 		float elapsedTime)
 	{
-		D3DXMATRIX viewProjection = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
-
-		// Render Scene
-		{	m_Rendering.prepareRenderScene(d3dDevice, d3dImmediateContext);
-
-			// m_VsPreObjectConstBuf
-			m_VsPreObjectConstBuf->map(d3dImmediateContext);
-			m_VsPreObjectConstBuf->data().update(m_Camera, m_WorldMatrix);
-			m_VsPreObjectConstBuf->unmap(d3dImmediateContext);
-
-			// m_PsPreObjectConstBuf
-			m_PsPreObjectConstBuf->map(d3dImmediateContext);
-			m_PsPreObjectConstBuf->data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
-			m_PsPreObjectConstBuf->unmap(d3dImmediateContext);
-
-			// preparing shaders
-			d3dImmediateContext->VSSetConstantBuffers(0, 1, &m_VsPreObjectConstBuf->m_BufferObject);
-			d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PsPreObjectConstBuf->m_BufferObject);
-			d3dImmediateContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
-
-			m_Mesh.render(d3dImmediateContext);
-
-		}	m_Rendering.unprepareRenderScene(d3dDevice, d3dImmediateContext);
+		// Scene
+		onD3D11FrameRender_Scene_PrepareRenderTargets(d3dImmediateContext);
+		onD3D11FrameRender_Scene_PrepareShaderResources(d3dImmediateContext);
+		onD3D11FrameRender_Scene_DrawMesh(d3dImmediateContext);
 
 		// Post-Processing
-		d3dImmediateContext->OMSetDepthStencilState(m_DepthStencilState, 0);
+		onD3D11FrameRender_PostProcessing(d3dImmediateContext);
 
-		// update histogram
-		if(m_ShowHistogram)
-			m_Histogram.update(d3dImmediateContext, m_Rendering.m_ColorBufferQuater);
-		
-		{	
-			// m_PSPostProcessConstBuf
-			m_PSPostProcessConstBuf->map(d3dImmediateContext);
-			m_PSPostProcessConstBuf->data().update(m_Camera);
-			m_PSPostProcessConstBuf->unmap(d3dImmediateContext);
-
-			d3dImmediateContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
-			d3dImmediateContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
-
-			d3dImmediateContext->PSSetShaderResources(0, 2, js::SrvVA()
-				<< m_Rendering.m_ColorBuffer.m_SRView
-				<< m_Rendering.m_DepthBuffer.m_SRView
-				);
-			d3dImmediateContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf->m_BufferObject);
-
-			m_ScreenQuad.render(d3dImmediateContext);
-
-			// reset shader resources
-			d3dImmediateContext->PSSetShaderResources(0, 2, js::SrvVA() << nullptr << nullptr);
-		}
-
-		if(m_ShowHistogram)
-			m_Histogram.display(d3dImmediateContext, -0.9f, -0.5f, 0.5f, 0.25f);
-
-		d3dImmediateContext->OMSetDepthStencilState(nullptr, 0);
-
-		// gui
+		// Gui
 		m_GuiTxtHelper->Begin();
 		m_GuiTxtHelper->SetInsertionPos( 2, 0 );
 		m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.2f, 0.2f, 1.0f, 1.0f ) );
 		m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
 		m_GuiTxtHelper->End();
+	}
+
+	void onD3D11FrameRender_Scene_PrepareRenderTargets(ID3D11DeviceContext* d3dContext)
+	{
+		// Clear render target and the depth stencil 
+		//static const float clearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
+		static const float clearColor[4] = { 2, 2, 2, 0 };
+
+		d3dContext->OMSetRenderTargets(1, &m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
+		d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, clearColor );
+		d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
+	}
+
+	void onD3D11FrameRender_Scene_PrepareShaderResources(ID3D11DeviceContext* d3dContext)
+	{
+		// m_VsPreObjectConstBuf
+		m_VsPreObjectConstBuf.map(d3dContext);
+		m_VsPreObjectConstBuf.data().update(m_Camera, m_WorldMatrix);
+		m_VsPreObjectConstBuf.unmap(d3dContext);
+
+		// m_PsPreObjectConstBuf
+		m_PsPreObjectConstBuf.map(d3dContext);
+		m_PsPreObjectConstBuf.data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
+		m_PsPreObjectConstBuf.unmap(d3dContext);
+
+		// preparing shaders
+		d3dContext->VSSetConstantBuffers(0, 1, &m_VsPreObjectConstBuf.m_BufferObject);
+		d3dContext->PSSetConstantBuffers(0, 1, &m_PsPreObjectConstBuf.m_BufferObject);
+		d3dContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
+	}
+	
+	void onD3D11FrameRender_Scene_DrawMesh(ID3D11DeviceContext* d3dContext)
+	{
+		m_RSCache.applyToContext(d3dContext);
+		m_Mesh.render(d3dContext);
+	}
+	
+	void onD3D11FrameRender_PostProcessing(ID3D11DeviceContext* d3dContext)
+	{
+		d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
+
+		m_RSCache.depthStencilState().backup();
+		m_RSCache.depthStencilState().DepthEnable = FALSE;
+		m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+		m_RSCache.depthStencilState().dirty();
+
+		// update histogram
+		if(m_ShowHistogram)
+			m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferQuater);
+		
+		// m_PSPostProcessConstBuf
+		m_PSPostProcessConstBuf.map(d3dContext);
+		m_PSPostProcessConstBuf.data().update(m_Camera);
+		m_PSPostProcessConstBuf.unmap(d3dContext);
+
+		d3dContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
+		d3dContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
+
+		d3dContext->PSSetShaderResources(0, 2, js::SrvVA()
+			<< m_ColorBuffer.m_SRView
+			<< m_DepthBuffer.m_SRView
+			);
+		d3dContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf.m_BufferObject);
+
+		m_RSCache.applyToContext(d3dContext);
+		m_ScreenQuad.render(d3dContext);
+
+		// reset shader resources
+		d3dContext->PSSetShaderResources(0, 2, js::SrvVA() << nullptr << nullptr);
+
+		if(m_ShowHistogram)
+			m_Histogram.display(d3dContext, m_RSCache, -0.9f, -0.5f, 0.5f, 0.25f);
+
+		m_RSCache.depthStencilState().restore();
 	}
 
 	__override LRESULT msgProc(

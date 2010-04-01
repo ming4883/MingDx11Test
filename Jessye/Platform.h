@@ -11,4 +11,8 @@
 #define js_assert(x) assert(x && ##x);
 
 
+#define js_decl_non_copyable(className)\
+	className(const className&);\
+	className& operator = (const className&);
+
 #endif	// PLATFORM_H
