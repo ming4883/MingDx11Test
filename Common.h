@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "Jessye/Platform.h"
+#include "Jessye/RenderStates.h"
 
 const wchar_t* media(const wchar_t* in);
 
@@ -40,7 +41,7 @@ public:
 
 	void destroy();
 
-	void render(ID3D11DeviceContext* d3dContext, size_t numInstances = 1) const;
+	void render(ID3D11DeviceContext* d3dContext, js::RenderStateCache* rsCache, size_t numInstances = 1) const;
 
 	float radius() const;
 

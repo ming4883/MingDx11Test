@@ -71,18 +71,20 @@ public:
 
 	void render(
 		ID3D11DeviceContext* pd3dDeviceContext,
+		js::RenderStateCache* rsCache,
 		UINT iNumInstances = 1,
 		UINT iDiffuseSlot = (UINT)-1,
 		UINT iNormalSlot = (UINT)-1,
 		UINT iSpecularSlot = (UINT)-1)
 	{
-		renderFrame(0, false, pd3dDeviceContext, iNumInstances, iDiffuseSlot, iNormalSlot, iSpecularSlot);
+		renderFrame(0, false, pd3dDeviceContext, rsCache, iNumInstances, iDiffuseSlot, iNormalSlot, iSpecularSlot);
 	}
 
 	void renderFrame( 
 		UINT iFrame,
 		bool bAdjacent,
 		ID3D11DeviceContext* pd3dDeviceContext,
+		js::RenderStateCache* rsCache,
 		UINT iNumInstances,
 		UINT iDiffuseSlot,
 		UINT iNormalSlot,
@@ -97,6 +99,7 @@ public:
 				m_pFrameArray[iFrame].Mesh,
 				bAdjacent,
 				pd3dDeviceContext,
+				rsCache,
 				iNumInstances,
 				iDiffuseSlot,
 				iNormalSlot,
@@ -106,13 +109,13 @@ public:
 		// Render our children
 		if( m_pFrameArray[iFrame].ChildFrame != INVALID_FRAME )
 			renderFrame( 
-				m_pFrameArray[iFrame].ChildFrame, bAdjacent, pd3dDeviceContext, iNumInstances, iDiffuseSlot, 
+				m_pFrameArray[iFrame].ChildFrame, bAdjacent, pd3dDeviceContext, rsCache, iNumInstances, iDiffuseSlot, 
 				iNormalSlot, iSpecularSlot );
 
 		// Render our siblings
 		if( m_pFrameArray[iFrame].SiblingFrame != INVALID_FRAME )
 			renderFrame(
-				m_pFrameArray[iFrame].SiblingFrame, bAdjacent, pd3dDeviceContext, iNumInstances, iDiffuseSlot, 
+				m_pFrameArray[iFrame].SiblingFrame, bAdjacent, pd3dDeviceContext, rsCache, iNumInstances, iDiffuseSlot, 
 				iNormalSlot, iSpecularSlot );
 	}
 
@@ -120,6 +123,7 @@ public:
 		UINT iMesh,
 		bool bAdjacent,
 		ID3D11DeviceContext* pd3dDeviceContext,
+		js::RenderStateCache* rsCache,
 		UINT iNumInstances,
 		UINT iDiffuseSlot,
 		UINT iNormalSlot,
@@ -196,12 +200,24 @@ public:
 			pd3dDeviceContext->IASetPrimitiveTopology( PrimType );
 
 			pMat = &m_pMaterialArray[ pSubset->MaterialID ];
-			if( iDiffuseSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pDiffuseRV11 ) )
-				pd3dDeviceContext->PSSetShaderResources( iDiffuseSlot, 1, &pMat->pDiffuseRV11 );
-			if( iNormalSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pNormalRV11 ) )
-				pd3dDeviceContext->PSSetShaderResources( iNormalSlot, 1, &pMat->pNormalRV11 );
-			if( iSpecularSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pSpecularRV11 ) )
-				pd3dDeviceContext->PSSetShaderResources( iSpecularSlot, 1, &pMat->pSpecularRV11 );
+			if(nullptr != rsCache)
+			{
+				if( iDiffuseSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pDiffuseRV11 ) )
+					rsCache->pixelShader().setSRViews( iDiffuseSlot, 1, &pMat->pDiffuseRV11 );
+				if( iNormalSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pNormalRV11 ) )
+					rsCache->pixelShader().setSRViews( iNormalSlot, 1, &pMat->pNormalRV11 );
+				if( iSpecularSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pSpecularRV11 ) )
+					rsCache->pixelShader().setSRViews( iSpecularSlot, 1, &pMat->pSpecularRV11 );
+			}
+			else
+			{
+				if( iDiffuseSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pDiffuseRV11 ) )
+					pd3dDeviceContext->PSSetShaderResources( iDiffuseSlot, 1, &pMat->pDiffuseRV11 );
+				if( iNormalSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pNormalRV11 ) )
+					pd3dDeviceContext->PSSetShaderResources( iNormalSlot, 1, &pMat->pNormalRV11 );
+				if( iSpecularSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pSpecularRV11 ) )
+					pd3dDeviceContext->PSSetShaderResources( iSpecularSlot, 1, &pMat->pSpecularRV11 );
+			}
 
 			UINT IndexCount = ( UINT )pSubset->IndexCount;
 			UINT IndexStart = ( UINT )pSubset->IndexStart;
@@ -211,6 +227,9 @@ public:
 				IndexCount *= 2;
 				IndexStart *= 2;
 			}
+
+			if(nullptr != rsCache)
+				rsCache->applyToContext(pd3dDeviceContext);
 
 			if(iNumInstances == 1)
 				pd3dDeviceContext->DrawIndexed( IndexCount, IndexStart, VertexStart );
@@ -225,8 +244,8 @@ class RenderableMesh::Impl
 {
 public:
 	mutable MySDKMesh m_Mesh;
-	std::auto_ptr<js::VertexShader> m_VS;
-	std::auto_ptr<js::PixelShader> m_PS;
+	js::VertexShader m_VS;
+	js::PixelShader m_PS;
 	ID3D11InputLayout* m_IL;
 
 	Impl()
@@ -251,15 +270,13 @@ public:
 		hr = m_Mesh.Create(d3dDevice, meshPath, false);
 		js_assert(SUCCEEDED(hr));
 
-		m_VS.reset(new js::VertexShader);
-		m_VS->createFromFile(d3dDevice, shaderDesc.vsPath.c_str(), shaderDesc.vsEntry.c_str());
-		js_assert(m_VS->valid());
+		m_VS.createFromFile(d3dDevice, shaderDesc.vsPath.c_str(), shaderDesc.vsEntry.c_str());
+		js_assert(m_VS.valid());
 
-		m_PS.reset(new js::PixelShader);
-		m_PS->createFromFile(d3dDevice, shaderDesc.psPath.c_str(), shaderDesc.psEntry.c_str());
-		js_assert(m_PS->valid());
+		m_PS.createFromFile(d3dDevice, shaderDesc.psPath.c_str(), shaderDesc.psEntry.c_str());
+		js_assert(m_PS.valid());
 
-		m_IL = js::Buffers::createInputLayout(d3dDevice, &inputElems[0], inputElems.size(), m_VS->m_ByteCode);
+		m_IL = js::Buffers::createInputLayout(d3dDevice, &inputElems[0], inputElems.size(), m_VS.m_ByteCode);
 		js_assert(m_IL != nullptr);
 
 		return true;
@@ -269,23 +286,31 @@ public:
 	{
 		m_Mesh.Destroy();
 		
-		m_VS.reset();
-		m_PS.reset();
+		m_VS.destroy();
+		m_PS.destroy();
 
 		js_safe_release(m_IL);
 	}
 
-	void render(ID3D11DeviceContext* d3dContext, size_t numInstances) const
+	void render(ID3D11DeviceContext* d3dContext, js::RenderStateCache* rsCache, size_t numInstances) const
 	{
 		// input layout
 		d3dContext->IASetInputLayout(m_IL);
 
 		// shaders
-		d3dContext->VSSetShader(m_VS->m_ShaderObject, nullptr, 0);
-		d3dContext->PSSetShader(m_PS->m_ShaderObject, nullptr, 0);
+		if(nullptr != rsCache)
+		{
+			rsCache->vertexShader().setShader(m_VS);
+			rsCache->pixelShader().setShader(m_PS);
+		}
+		else
+		{
+			d3dContext->VSSetShader(m_VS, nullptr, 0);
+			d3dContext->PSSetShader(m_PS, nullptr, 0);
+		}
 
 		// render mesh
-		m_Mesh.render(d3dContext, numInstances, 0, 1, 2);
+		m_Mesh.render(d3dContext, rsCache, numInstances, 0, 1, 2);
 	}
 
 	float radius() const
@@ -328,9 +353,9 @@ void RenderableMesh::destroy()
 	m_Impl.destroy();
 }
 
-void RenderableMesh::render(ID3D11DeviceContext* d3dContext, size_t numInstances) const
+void RenderableMesh::render(ID3D11DeviceContext* d3dContext, js::RenderStateCache* rsCache, size_t numInstances) const
 {
-	m_Impl.render(d3dContext, numInstances);
+	m_Impl.render(d3dContext, rsCache, numInstances);
 }
 
 float RenderableMesh::radius() const

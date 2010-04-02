@@ -109,22 +109,29 @@ public:
 	{
 		js_assert(colorBuffer.valid());
 
+		m_ComputeCb.map(d3dContext);
+		m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
+		m_ComputeCb.data().g_vInputParams.y = 4;
+		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
+		m_ComputeCb.unmap(d3dContext);
+
 		// vertex buffer and input assembler
 		d3dContext->IASetInputLayout(m_IL);
 		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
 		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-		// render state
+		
 		// render target
 		static const float clearColor[] = {0, 0, 0, 0};
 		d3dContext->ClearRenderTargetView(m_Buffer.m_RTView, clearColor);
-		//d3dContext->OMSetRenderTargets(1, &m_Buffer.m_RTView, nullptr);
-		D3D11_VIEWPORT vp = m_Buffer.viewport();
-		d3dContext->RSSetViewports(1, &vp);
+		size_t vpCnt; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+		d3dContext->RSGetViewports(&vpCnt, nullptr);
+		d3dContext->RSGetViewports(&vpCnt, vps);
+		d3dContext->RSSetViewports(1, js::VpVA() << m_Buffer.viewport());
 
-		rsCache.renderTargetState().backup();
-		rsCache.renderTargetState().set(1, js::RtvVA() << m_Buffer.m_RTView, nullptr);
+		rsCache.renderTarget().backup();
+		rsCache.renderTarget().set(1, js::RtvVA() << m_Buffer, nullptr);
 
+		// render state
 		rsCache.blendState().backup();
 		rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
 		rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
@@ -135,23 +142,19 @@ public:
 		rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
 		rsCache.blendState().RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 		rsCache.blendState().dirty();
+
+		// shader state
+		rsCache.vertexShader().backup();
+		rsCache.vertexShader().setShader(m_ComputeVs);
+
+		rsCache.geometryShader().backup();
+		rsCache.geometryShader().setShader(m_ComputeGs);
+		rsCache.geometryShader().setSRViews(0, 1, js::SrvVA() << colorBuffer);
+		rsCache.geometryShader().setConstBuffers(0, 1, js::BufVA() << m_ComputeCb);
+
+		rsCache.pixelShader().backup();
+		rsCache.pixelShader().setShader(m_ComputePs);
 		rsCache.applyToContext(d3dContext);
-
-		// TODO: shader state cache
-		m_ComputeCb.map(d3dContext);
-		m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
-		m_ComputeCb.data().g_vInputParams.y = 4;
-		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
-		m_ComputeCb.unmap(d3dContext);
-
-		d3dContext->VSSetShader(m_ComputeVs.m_ShaderObject, nullptr, 0);
-		
-		d3dContext->GSSetShader(m_ComputeGs.m_ShaderObject, nullptr, 0);
-		d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << colorBuffer.m_SRView);
-		d3dContext->GSSetConstantBuffers(0, 1, &m_ComputeCb.m_BufferObject);
-
-		d3dContext->PSSetShader(m_ComputePs.m_ShaderObject, nullptr, 0);
-
 
 		// draw
 		d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
@@ -159,54 +162,51 @@ public:
 		m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
 		
 		// restore render targets
-		rsCache.renderTargetState().restore();
+		d3dContext->RSSetViewports(vpCnt, vps);
+
+		rsCache.renderTarget().restore();
 		rsCache.blendState().restore();
-		
-		vp.Width = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width;
-		vp.Height = (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height;
-		vp.TopLeftX = 0; vp.TopLeftY = 0; vp.MinDepth = 0; vp.MaxDepth = 1;
-		
-		d3dContext->RSSetViewports(1, &vp);
-
-		d3dContext->GSSetShaderResources(0, 1, js::SrvVA() << nullptr);
-		d3dContext->GSSetShader(nullptr, nullptr, 0);
-
-		
+		rsCache.vertexShader().restore();
+		rsCache.geometryShader().restore();
+		rsCache.pixelShader().restore();
 	}
 
 	void display(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, float x, float y, float w, float h)
 	{
-		// vertex buffer and input assembler
-		d3dContext->IASetInputLayout(m_IL);
-		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
-		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
-
-		rsCache.applyToContext(d3dContext);
-		
-		// TODO: shader state cache
 		m_DrawCb.map(d3dContext);
 		m_DrawCb.data().g_vDrawParams.x = x;
 		m_DrawCb.data().g_vDrawParams.y = y;
 		m_DrawCb.data().g_vDrawParams.z = w / SIZE;
 		m_DrawCb.data().g_vDrawParams.w = h / m_LastNumInputs;
 		m_DrawCb.unmap(d3dContext);
+		
+		// vertex buffer and input assembler
+		d3dContext->IASetInputLayout(m_IL);
+		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
+		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
-		d3dContext->VSSetShader(m_DrawVs.m_ShaderObject, nullptr, 0);
-		d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << m_Buffer.m_SRView);
-		d3dContext->VSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
+		//shader states
+		rsCache.vertexShader().backup();
+		rsCache.vertexShader().setShader(m_DrawVs);
+		rsCache.vertexShader().setSRViews(0, 1, js::SrvVA() << m_Buffer);
+		rsCache.vertexShader().setConstBuffers(0, 1, js::BufVA() << m_DrawCb);
 
-		d3dContext->GSSetShader(m_DrawGs.m_ShaderObject, nullptr, 0);
-		d3dContext->GSSetConstantBuffers(0, 1, &m_DrawCb.m_BufferObject);
+		rsCache.geometryShader().backup();
+		rsCache.geometryShader().setShader(m_DrawGs);
+		rsCache.geometryShader().setConstBuffers(0, 1, js::BufVA() << m_DrawCb);
 
-		d3dContext->PSSetShader(m_DrawPs.m_ShaderObject, nullptr, 0);
+		rsCache.pixelShader().backup();
+		rsCache.pixelShader().setShader(m_DrawPs);
 
+		rsCache.applyToContext(d3dContext);
 
 		// draw
 		d3dContext->DrawInstanced(1, SIZE, 0, 0);
 
-		// reset shader resources
-		d3dContext->VSSetShaderResources(0, 1, js::SrvVA() << nullptr);
-		d3dContext->GSSetShader(nullptr, nullptr, 0);
+		// restore shader resources
+		rsCache.vertexShader().restore();
+		rsCache.geometryShader().restore();
+		rsCache.pixelShader().restore();
 	}
 };	// Histogram
 
@@ -441,17 +441,24 @@ public:
 		double time,
 		float elapsedTime)
 	{
-		m_RSCache.renderTargetState().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
+		m_RSCache.renderTarget().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
 
-		m_RSCache.renderTargetState().backup();
-		m_RSCache.renderTargetState().set(1, js::RtvVA() << m_ColorBuffer.m_RTView, m_DepthBuffer.m_DSView);
+		m_RSCache.renderTarget().backup();
+		m_RSCache.vertexShader().backup();
+		m_RSCache.pixelShader().backup();
+		m_RSCache.geometryShader().backup();
 
 		// Scene
-		onD3D11FrameRender_Scene_PrepareRenderTargets(d3dImmediateContext);
+		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
+		m_RSCache.renderTarget().set(1, js::RtvVA() << m_ColorBuffer, m_DepthBuffer);
+
 		onD3D11FrameRender_Scene_PrepareShaderResources(d3dImmediateContext);
 		onD3D11FrameRender_Scene_DrawMesh(d3dImmediateContext);
 
-		m_RSCache.renderTargetState().restore();
+		m_RSCache.vertexShader().restore();
+		m_RSCache.pixelShader().restore();
+		m_RSCache.geometryShader().restore();
+		m_RSCache.renderTarget().restore();
 
 		// Post-Processing
 		onD3D11FrameRender_PostProcessing(d3dImmediateContext);
@@ -464,10 +471,9 @@ public:
 		m_GuiTxtHelper->End();
 	}
 
-	void onD3D11FrameRender_Scene_PrepareRenderTargets(ID3D11DeviceContext* d3dContext)
+	void onD3D11FrameRender_ClearRenderTargets(ID3D11DeviceContext* d3dContext)
 	{
-		// Clear render target and the depth stencil 
-		//static const float clearColor[4] = { 0.176f, 0.176f, 0.176f, 0.0f };
+		// clear render target and the depth stencil 
 		static const float clearColor[4] = { 2, 2, 2, 0 };
 
 		d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, clearColor );
@@ -487,21 +493,24 @@ public:
 		m_PsPreObjectConstBuf.unmap(d3dContext);
 
 		// preparing shaders
-		d3dContext->VSSetConstantBuffers(0, 1, &m_VsPreObjectConstBuf.m_BufferObject);
-		d3dContext->PSSetConstantBuffers(0, 1, &m_PsPreObjectConstBuf.m_BufferObject);
-		d3dContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
+		m_RSCache.vertexShader().setConstBuffers(0, 1, js::BufVA() << m_VsPreObjectConstBuf);
+		m_RSCache.pixelShader().setConstBuffers(0, 1, js::BufVA() << m_PsPreObjectConstBuf);
+		m_RSCache.pixelShader().setSamplers(0, 1, js::SampVA() << m_SamplerState);
 	}
 	
 	void onD3D11FrameRender_Scene_DrawMesh(ID3D11DeviceContext* d3dContext)
 	{
 		m_RSCache.applyToContext(d3dContext);
-		m_Mesh.render(d3dContext);
+		m_Mesh.render(d3dContext, &m_RSCache);
 	}
 	
 	void onD3D11FrameRender_PostProcessing(ID3D11DeviceContext* d3dContext)
 	{
-		//d3dContext->OMSetRenderTargets(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
+		m_PSPostProcessConstBuf.map(d3dContext);
+		m_PSPostProcessConstBuf.data().update(m_Camera);
+		m_PSPostProcessConstBuf.unmap(d3dContext);
 
+		// depth stencil state
 		m_RSCache.depthStencilState().backup();
 		m_RSCache.depthStencilState().DepthEnable = FALSE;
 		m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -509,33 +518,29 @@ public:
 
 		// update histogram
 		if(m_ShowHistogram)
-			m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferQuater);
+			m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer);
 		
-		// TODO: shader state cache
+		// shader states
+		m_RSCache.vertexShader().backup();
+		m_RSCache.vertexShader().setShader(m_PostVtxShd);
+
+		m_RSCache.pixelShader().backup();
+		m_RSCache.pixelShader().setShader(m_PostFogShd);
+		m_RSCache.pixelShader().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer << m_DepthBuffer);
+		m_RSCache.pixelShader().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
+
 		m_RSCache.applyToContext(d3dContext);
-
-		// m_PSPostProcessConstBuf
-		m_PSPostProcessConstBuf.map(d3dContext);
-		m_PSPostProcessConstBuf.data().update(m_Camera);
-		m_PSPostProcessConstBuf.unmap(d3dContext);
-
-		d3dContext->VSSetShader(m_PostVtxShd.m_ShaderObject, nullptr, 0);
-		d3dContext->PSSetShader(m_PostFogShd.m_ShaderObject, nullptr, 0);
-
-		d3dContext->PSSetShaderResources(0, 2, js::SrvVA()
-			<< m_ColorBuffer.m_SRView
-			<< m_DepthBuffer.m_SRView
-			);
-		d3dContext->PSSetConstantBuffers(0, 1, &m_PSPostProcessConstBuf.m_BufferObject);
-
+		
 		m_ScreenQuad.render(d3dContext);
 
-		// reset shader resources
-		d3dContext->PSSetShaderResources(0, 2, js::SrvVA() << nullptr << nullptr);
+		// restore shader states
+		m_RSCache.vertexShader().restore();
+		m_RSCache.pixelShader().restore();
 
 		if(m_ShowHistogram)
 			m_Histogram.display(d3dContext, m_RSCache, -0.9f, -0.5f, 0.5f, 0.25f);
 
+		// restore depth stencil state
 		m_RSCache.depthStencilState().restore();
 	}
 

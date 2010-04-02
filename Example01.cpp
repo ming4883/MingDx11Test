@@ -6,6 +6,7 @@
 #include "Jessye/Shaders.h"
 #include "Jessye/Buffers.h"
 #include "Jessye/RenderStates.h"
+#include "Jessye/ViewArrays.h"
 
 class Example01 : public DXUTApp
 {
@@ -167,6 +168,8 @@ public:
 		double time,
 		float elapsedTime)
 	{
+		m_RSCache.renderTarget().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
+
 		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
 
 		onD3D11FrameRender_PrepareShaderResources(d3dImmediateContext);
@@ -212,10 +215,9 @@ public:
 		m_PSDefaultConstBuf.unmap(d3dContext);
 
 		// preparing shaders
-		d3dContext->VSSetConstantBuffers(0, 1, &m_VSDefaultConstBuf.m_BufferObject);
-		d3dContext->VSSetConstantBuffers(1, 1, &m_VSInstancingConstBuf.m_BufferObject);
-		d3dContext->PSSetConstantBuffers(0, 1, &m_PSDefaultConstBuf.m_BufferObject);
-		d3dContext->PSSetSamplers(0, 1, &m_SamplerState.m_StateObject);
+		m_RSCache.vertexShader().setConstBuffers(0, 2, js::BufVA() << m_VSDefaultConstBuf << m_VSInstancingConstBuf);
+		m_RSCache.pixelShader().setConstBuffers(0, 1, js::BufVA() << m_PSDefaultConstBuf);
+		m_RSCache.pixelShader().setSamplers(0, 1, js::SampVA() << m_SamplerState);
 
 	}
 
@@ -242,7 +244,7 @@ public:
 
 		m_RSCache.applyToContext(d3dContext);
 
-		m_Mesh.render(d3dContext, NUM_INSTANCES);
+		m_Mesh.render(d3dContext, &m_RSCache, NUM_INSTANCES);
 
 		if(blend)
 		{

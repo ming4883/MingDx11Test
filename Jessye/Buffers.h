@@ -226,6 +226,10 @@ struct Texture2DRenderBuffer
 		return m_TextureObject != nullptr;
 	}
 
+	operator ID3D11RenderTargetView* () const {return m_RTView;}
+	operator ID3D11DepthStencilView* () const {return m_DSView;}
+	operator ID3D11ShaderResourceView* () const {return m_SRView;}
+
 	D3D11_VIEWPORT viewport()
 	{
 		js_assert(valid());

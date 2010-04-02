@@ -70,6 +70,8 @@ struct Shader_t
 		js_safe_release(m_ShaderObject);
 	}
 
+	operator T* () const { return m_ShaderObject; }
+
 };	// Shader_t
 
 struct VertexShader : public Shader_t<ID3D11VertexShader>
