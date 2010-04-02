@@ -288,8 +288,10 @@ namespace js
 
 		struct State
 		{
-			ID3D11RenderTargetView* m_RTV[MAX_RTV];
+			ID3D11RenderTargetView* m_RTVs[MAX_RTV];
 			ID3D11DepthStencilView* m_DSV;
+
+			State() { memset(this, 0, sizeof(*this)); }
 		};
 
 		State m_Current;
@@ -305,18 +307,7 @@ namespace js
 	{
 		delete &m_Impl;
 	}
-
-	void RenderTargetStateCache::set(size_t count, ID3D11RenderTargetView* const * rtv, ID3D11DepthStencilView *dsv)
-	{
-		for(size_t i=0; i<count; ++i)
-			m_Impl.m_Current.m_RTV[i] = rtv[i];
-
-		for(size_t i=count; i<Impl::MAX_RTV; ++i)
-			m_Impl.m_Current.m_RTV[i] = nullptr;
-
-		m_Impl.m_Current.m_DSV = dsv;
-	}
-
+	
 	void RenderTargetStateCache::backup()
 	{
 		m_Impl.m_Backup = m_Impl.m_Current;
@@ -327,9 +318,17 @@ namespace js
 		m_Impl.m_Current = m_Impl.m_Backup;
 	}
 
+	void RenderTargetStateCache::set(size_t rtvCount, ID3D11RenderTargetView* const * rtViews, ID3D11DepthStencilView *dsView)
+	{
+		for(size_t i = 0; i < rtvCount; ++i)
+			m_Impl.m_Current.m_RTVs[i] = rtViews[i];
+
+		m_Impl.m_Current.m_DSV = dsView;
+	}
+
 	ID3D11RenderTargetView** RenderTargetStateCache::currentRTV()
 	{
-		return m_Impl.m_Current.m_RTV;
+		return m_Impl.m_Current.m_RTVs;
 	}
 
 	ID3D11DepthStencilView* RenderTargetStateCache::currentDSV()
@@ -337,6 +336,127 @@ namespace js
 		return m_Impl.m_Current.m_DSV;
 	}
 
+	size_t RenderTargetStateCache::maxNumRTVs() const
+	{
+		return Impl::MAX_RTV;
+	}
+	
+	//--------------------------------------------------------------------------
+	class ShaderStateCache::Impl
+	{
+		friend class ShaderStateCache;
+
+		enum
+		{
+			MAX_CONSTBUFFER = D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT,
+			MAX_SRV = D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,
+			MAX_SAMPLER = D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT,
+		};
+
+		struct State
+		{
+			void* m_Shader;
+			ID3D11Buffer* m_ConstBuffers[MAX_CONSTBUFFER];
+			ID3D11ShaderResourceView* m_SRVs[MAX_SRV];
+			ID3D11SamplerState* m_Samplers[MAX_SAMPLER];
+
+			State() { memset(this, 0, sizeof(*this)); }
+		};
+
+		State m_Current;
+		State m_Backup;
+	};
+
+	ShaderStateCache::ShaderStateCache()
+		: m_Impl(*new Impl)
+	{
+	}
+
+	ShaderStateCache::~ShaderStateCache()
+	{
+		delete &m_Impl;
+	}
+
+	void ShaderStateCache::backup()
+	{
+		m_Impl.m_Backup = m_Impl.m_Current;
+	}
+
+	void ShaderStateCache::restore()
+	{
+		m_Impl.m_Current = m_Impl.m_Backup;
+	}
+
+	void ShaderStateCache::setConstBuffers(size_t startSlot, size_t count, ID3D11Buffer* const * buffers)
+	{
+		size_t maxSlot = startSlot + count;
+		if(maxSlot > this->maxNumConstBuffers())
+			maxSlot = this->maxNumConstBuffers();
+
+		for(size_t i=startSlot; i<maxSlot; ++i)
+			m_Impl.m_Current.m_ConstBuffers[i] = buffers[i-startSlot];
+	}
+	
+	void ShaderStateCache::setResources(size_t startSlot, size_t count, ID3D11ShaderResourceView* const * srViews)
+	{
+		size_t maxSlot = startSlot + count;
+		if(maxSlot > this->maxNumResources())
+			maxSlot = this->maxNumResources();
+
+		for(size_t i=startSlot; i<maxSlot; ++i)
+			m_Impl.m_Current.m_SRVs[i] = srViews[i-startSlot];
+	}
+
+	void ShaderStateCache::setSamplers(size_t startSlot, size_t count, ID3D11SamplerState *const *samplers)
+	{
+		size_t maxSlot = startSlot + count;
+		if(maxSlot > this->maxNumSamplers())
+			maxSlot = this->maxNumSamplers();
+
+		for(size_t i=startSlot; i<maxSlot; ++i)
+			m_Impl.m_Current.m_Samplers[i] = samplers[i-startSlot];
+	}
+
+	void ShaderStateCache::setShader(void* shader)
+	{
+		m_Impl.m_Current.m_Shader = shader;
+	}
+
+	ID3D11Buffer** ShaderStateCache::currentConstBuffers()
+	{
+		return m_Impl.m_Current.m_ConstBuffers;
+	}
+
+	ID3D11ShaderResourceView** ShaderStateCache::currentSRVs()
+	{
+		return m_Impl.m_Current.m_SRVs;
+	}
+
+	ID3D11SamplerState** ShaderStateCache::currentSamplers()
+	{
+		return m_Impl.m_Current.m_Samplers;
+	}
+
+	void* ShaderStateCache::currentShader()
+	{
+		return m_Impl.m_Current.m_Shader;
+	}
+	
+	size_t ShaderStateCache::maxNumConstBuffers() const
+	{
+		return Impl::MAX_CONSTBUFFER;
+	}
+
+	size_t ShaderStateCache::maxNumResources() const
+	{
+		return Impl::MAX_SRV;
+	}
+
+	size_t ShaderStateCache::maxNumSamplers() const
+	{
+		return Impl::MAX_SAMPLER;
+	}
+	
 	//--------------------------------------------------------------------------
 	class RenderStateCache::Impl
 	{
@@ -438,6 +558,12 @@ namespace js
 		d3dContext->OMSetDepthStencilState(*m_Impl.m_DepthStencilStateCache->current(), m_Impl.m_StencilRef);
 
 		d3dContext->RSSetState(*m_Impl.m_RasterizerStateCache->current());
+
+		d3dContext->OMSetRenderTargets(
+			m_Impl.m_RenderTargetStateCache->maxNumRTVs(),
+			m_Impl.m_RenderTargetStateCache->currentRTV(),
+			m_Impl.m_RenderTargetStateCache->currentDSV()
+			);
 	}
 
 }	// namespace js

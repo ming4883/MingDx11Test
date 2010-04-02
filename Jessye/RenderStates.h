@@ -134,17 +134,54 @@ public:
 	RenderTargetStateCache();
 	~RenderTargetStateCache();
 
-	void set(size_t count, ID3D11RenderTargetView* const * rtv, ID3D11DepthStencilView *dsv);
 	void backup();
 	void restore();
+
+	void set(size_t count, ID3D11RenderTargetView* const * rtViews, ID3D11DepthStencilView *dsView);
+	
 	ID3D11RenderTargetView** currentRTV();
 	ID3D11DepthStencilView* currentDSV();
+
+	size_t maxNumRTVs() const;
 
 private:
 	class Impl;
 	Impl& m_Impl;
 	js_decl_non_copyable(RenderTargetStateCache);
-};
+};	// RenderTargetStateCache
+
+class ShaderStateCache
+{
+public:
+	ShaderStateCache();
+	~ShaderStateCache();
+
+	void backup();
+	void restore();
+	
+	void setConstBuffers(size_t startSlot, size_t count, ID3D11Buffer* const * buffers);
+	void setResources(size_t startSlot, size_t count, ID3D11ShaderResourceView* const * srViews);
+	void setSamplers(size_t startSlot, size_t count, ID3D11SamplerState *const *samplers);
+	void setShader(void* shader);
+
+	ID3D11Buffer** currentConstBuffers();
+	ID3D11ShaderResourceView** currentSRVs();
+	ID3D11SamplerState** currentSamplers();
+	void* currentShader();
+	
+	// D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT 
+	size_t maxNumConstBuffers() const;
+	// D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT 
+	size_t maxNumResources() const;
+	// D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT
+	size_t maxNumSamplers() const;
+
+private:
+	class Impl;
+	Impl& m_Impl;
+	js_decl_non_copyable(ShaderStateCache);
+};	// ShaderStateCache
+
 
 class RenderStateCache
 {
