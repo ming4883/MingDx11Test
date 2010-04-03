@@ -33,6 +33,7 @@ public:
 
 #pragma pack(pop)
 	js::Texture2DRenderBuffer m_Buffer;
+	js::Texture2DStagingBuffer m_BufferStaging;
 	js::VertexShader m_ComputeVs;
 	js::GeometryShader m_ComputeGs;
 	js::PixelShader m_ComputePs;
@@ -46,14 +47,19 @@ public:
 
 	float m_LastNumInputs;
 	float m_MaxInputValue;
+	D3DXVECTOR4 m_HDRParams; // min, max, key
 	
-	Histogram() : m_MaxInputValue(4.0f), m_LastNumInputs(1)
+	Histogram() : m_MaxInputValue(4.0f), m_LastNumInputs(1), m_HDRParams(0, 1, 1, 0)
 	{
 	}
 
 	void create(ID3D11Device* d3dDevice)
 	{
 		m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		js_assert(m_Buffer.valid());
+
+		m_BufferStaging.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		js_assert(m_BufferStaging.valid());
 
 		m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
 		js_assert(m_ComputeVs.valid());
@@ -93,6 +99,7 @@ public:
 	void destroy()
 	{
 		m_Buffer.destroy();
+		m_BufferStaging.destroy();
 		m_ComputeVs.destroy();
 		m_ComputeGs.destroy();
 		m_ComputePs.destroy();
@@ -113,6 +120,7 @@ public:
 		m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
 		m_ComputeCb.data().g_vInputParams.y = 4;
 		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
+		m_ComputeCb.data().g_vInputParams.w = (float)SIZE;
 		m_ComputeCb.unmap(d3dContext);
 
 		// vertex buffer and input assembler
@@ -169,6 +177,47 @@ public:
 		rsCache.vsState().restore();
 		rsCache.gsState().restore();
 		rsCache.psState().restore();
+
+		// measure hdrParams
+		d3dContext->CopyResource(m_BufferStaging.m_TextureObject, m_Buffer.m_TextureObject);
+		m_BufferStaging.map(d3dContext, D3D11_MAP_READ);
+
+		typedef float f4[4];
+		f4* data = m_BufferStaging.data<f4>();
+		
+		float histogram[SIZE]; float histogramSum = 0;
+		for(size_t i=0; i<SIZE; ++i)
+		{
+			histogram[i] = *data[0];
+			histogramSum += histogram[i];
+			++data;
+		}
+		m_BufferStaging.unmap(d3dContext);
+
+		size_t minIdx = 0;
+		while(histogram[minIdx] <= 0) {++minIdx;}
+
+		size_t maxIdx = SIZE-1;
+		while(histogram[maxIdx] <= 0) {--maxIdx;}
+
+		size_t keyIdx = SIZE-1;
+		float currentValue = 0;
+		const float targetValue = histogramSum * 0.5f;
+		while((currentValue += histogram[keyIdx]) < targetValue) {--keyIdx;}
+
+		D3DXVECTOR4 hdrParams;
+		hdrParams.x = ((float)minIdx / SIZE) * m_MaxInputValue;
+		hdrParams.y = ((float)maxIdx / SIZE) * m_MaxInputValue;
+		{
+			float a = ((float)(keyIdx+1) / SIZE) * m_MaxInputValue;
+			float b = ((float)(keyIdx+1) / SIZE) * m_MaxInputValue;
+			float aVal = currentValue - histogram[keyIdx];
+			float bVal = currentValue;
+			float t = (targetValue - aVal) / (bVal) - (aVal);
+			hdrParams.z = a + (b-a) * t;
+		}
+
+		m_HDRParams = m_HDRParams * (29 / 30.f) + hdrParams * (1 / 30.f);
 	}
 
 	void display(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, float x, float y, float w, float h)
@@ -208,6 +257,11 @@ public:
 		rsCache.gsState().restore();
 		rsCache.psState().restore();
 	}
+
+	D3DXVECTOR4 hdrParams() const
+	{
+		return m_HDRParams;
+	}
 };	// Histogram
 
 class Example02 : public DXUTApp
@@ -244,8 +298,9 @@ public:
 	{
 		D3DXMATRIX m_InvViewProjScaleBias;
 		D3DXVECTOR4 m_ZParams;
+		D3DXVECTOR4 m_HDRParams;
 
-		void update(const CModelViewerCamera& camera)
+		void update(const CModelViewerCamera& camera, const D3DXVECTOR4& hdrParams)
 		{
 			D3DXMATRIX scalebias(
 				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
@@ -264,6 +319,8 @@ public:
 			m_ZParams.y = 1 / camera.GetNearClip();
 			m_ZParams.z = camera.GetFarClip() - camera.GetNearClip();
 			m_ZParams.w = camera.GetNearClip();
+
+			m_HDRParams = hdrParams;
 		}
 	};
 
@@ -290,6 +347,7 @@ public:
 	Histogram m_Histogram;
 	bool m_ShowHistogram;
 	bool m_UseFullHistogram;
+	bool m_UseToneMapping;
 
 	js::RenderStateCache m_RSCache;
 	
@@ -297,12 +355,14 @@ public:
 	ScreenQuad m_ScreenQuad;
 	js::VertexShader m_PostVtxShd;
 	js::PixelShader m_PostDofShd;
+	js::PixelShader m_PostToneMapShd;
 	js::PixelShader m_PostDnSamp4xShd;
 
 // Methods
 	Example02()
-		: m_ShowHistogram(false)
+		: m_ShowHistogram(true)
 		, m_UseFullHistogram(false)
+		, m_UseToneMapping(true)
 	{
 	}
 
@@ -352,6 +412,9 @@ public:
 
 		m_PostDofShd.createFromFile(d3dDevice, media(L"Example02/Post.DOF.hlsl"), "Main");
 		js_assert(m_PostDofShd.valid());
+		
+		m_PostToneMapShd.createFromFile(d3dDevice, media(L"Example02/Post.ToneMapping.hlsl"), "Main");
+		js_assert(m_PostToneMapShd.valid());
 
 		m_PostDnSamp4xShd.createFromFile(d3dDevice, media(L"Example02/Post.DownSample4x.hlsl"), "Main");
 		js_assert(m_PostDnSamp4xShd.valid());
@@ -434,6 +497,7 @@ public:
 		m_ScreenQuad.destroy();
 		m_PostVtxShd.destroy();
 		m_PostDofShd.destroy();
+		m_PostToneMapShd.destroy();
 		m_PostDnSamp4xShd.destroy();
 		
 		m_SamplerState.destroy();
@@ -480,7 +544,8 @@ public:
 		m_GuiTxtHelper->SetInsertionPos( 2, 0 );
 		m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.2f, 0.2f, 1.0f, 1.0f ) );
 		m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
-		m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"Full Histogram [true]" : L"Full Histogram [false]");
+		m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"F2-Full Histogram [true]" : L"F2-Full Histogram [false]");
+		m_GuiTxtHelper->DrawTextLine( true == m_UseToneMapping ? L"F3-Tone Mapping [true]" : L"F3-Tone Mapping [false]");
 		m_GuiTxtHelper->End();
 	}
 
@@ -519,10 +584,6 @@ public:
 	
 	void onD3D11FrameRender_PostProcessing(ID3D11DeviceContext* d3dContext)
 	{
-		m_PSPostProcessConstBuf.map(d3dContext);
-		m_PSPostProcessConstBuf.data().update(m_Camera);
-		m_PSPostProcessConstBuf.unmap(d3dContext);
-
 		// depth stencil state
 		m_RSCache.depthStencilState().backup();
 		m_RSCache.depthStencilState().DepthEnable = FALSE;
@@ -538,14 +599,21 @@ public:
 			m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer);
 		else
 			m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferDnSamp16x);
-		
+
+		m_PSPostProcessConstBuf.map(d3dContext);
+		m_PSPostProcessConstBuf.data().update(m_Camera, m_Histogram.hdrParams());
+		m_PSPostProcessConstBuf.unmap(d3dContext);
+
 		// shader states
 		m_RSCache.vsState().backup();
 		m_RSCache.vsState().setShader(m_PostVtxShd);
 
 		m_RSCache.psState().backup();
-		m_RSCache.psState().setShader(m_PostDofShd);
-		m_RSCache.psState().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer << m_DepthBuffer);
+		if(m_UseToneMapping)
+			m_RSCache.psState().setShader(m_PostToneMapShd);
+		else
+			m_RSCache.psState().setShader(m_PostDofShd);
+				m_RSCache.psState().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer << m_DepthBuffer);
 		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
 
 		m_RSCache.applyToContext(d3dContext);
@@ -578,7 +646,7 @@ public:
 		m_RSCache.psState().backup();
 		m_RSCache.psState().setShader(m_PostDnSamp4xShd);
 		m_RSCache.psState().setSRViews(0, 1, js::SrvVA() << srcBuf);
-		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
+		//m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
 
 		m_RSCache.applyToContext(d3dContext);
 
@@ -604,6 +672,9 @@ public:
 
 		if(VK_F2 == nChar && keyDown)
 			m_UseFullHistogram = !m_UseFullHistogram;
+
+		if(VK_F3 == nChar && keyDown)
+			m_UseToneMapping = !m_UseToneMapping;
 	}
 
 };	// Example02

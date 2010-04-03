@@ -182,7 +182,7 @@ namespace js
 		return texture;
 	}
 
-	ID3D11Texture2D* createTexture2DStagingBuffer(
+	ID3D11Texture2D* Buffers::createTexture2DStagingBuffer(
 		ID3D11Device* d3dDevice,
 		size_t width,
 		size_t height,
@@ -199,6 +199,7 @@ namespace js
 		desc.MipLevels = mipLevels;
 		desc.SampleDesc.Count = 1;
 		desc.BindFlags = 0;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
 		ID3D11Texture2D* texture = nullptr;
 		HRESULT hr = d3dDevice->CreateTexture2D(&desc, nullptr, &texture);

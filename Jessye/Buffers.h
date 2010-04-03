@@ -151,6 +151,7 @@ struct Texture2DStagingBuffer
 	size_t m_Height;
 	size_t m_MipLevels;
 	DXGI_FORMAT m_Format;
+	void* m_MappedPtr;
 
 	Texture2DStagingBuffer()
 		: m_TextureObject(nullptr)
@@ -158,6 +159,7 @@ struct Texture2DStagingBuffer
 		, m_Height(0)
 		, m_MipLevels(0)
 		, m_Format((DXGI_FORMAT)-1)
+		, m_MappedPtr(nullptr)
 	{
 	}
 
@@ -188,6 +190,39 @@ struct Texture2DStagingBuffer
 		m_MipLevels = 0;
 		m_Format = (DXGI_FORMAT)-1;
 	}
+
+	void map(ID3D11DeviceContext* d3dContext, D3D11_MAP mapOptions)
+	{
+		if(!valid())
+			return;
+
+		js_assert(nullptr == m_MappedPtr);
+
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		if(FAILED(d3dContext->Map(m_TextureObject, 0, mapOptions, 0, &mapped)))
+			return;
+		
+		m_MappedPtr = mapped.pData;
+	}
+	
+	void unmap(ID3D11DeviceContext* d3dContext)
+	{
+		if(!valid())
+			return;
+		
+		js_assert(nullptr != m_MappedPtr);
+
+		d3dContext->Unmap(m_TextureObject, 0);
+		m_MappedPtr = nullptr;
+	}
+
+	template<typename T>
+	T* data()
+	{
+		js_assert(nullptr != m_MappedPtr);
+		return static_cast<T*>(m_MappedPtr);
+	}
+
 
 };	// Texture2DStagingBuffer
 

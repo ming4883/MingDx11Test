@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Post.DOF.hlsl
+// File: Post.ToneMapping.hlsl
 //
 // The pixel shader file for the BasicHLSL11 sample.  
 // 
@@ -69,7 +69,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	vSamples[14] = float2( 0.4665941, 0.96454906);
 	vSamples[15] = float2(-0.461774, 0.9360856);
 	
-	const float fBlurRadius = 4;
+	const float fBlurRadius = 6;
 	
 	float4 vOutput;
 	
@@ -94,6 +94,34 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 		
 		vOutput /= iNumSamples;
 	}
+
+#if BLOOMING	
+	// blooming
+	float4 vBloom = 0;
+	float fBloomThreshold = g_HDRParams.z * 0.8;
+	
+	[unroll]
+	for(int i=0; i<iNumSamples; ++i)
+	{
+		int3 vTapTexcoord = vTexcoord;
+		vTapTexcoord.xy += (int2)(vSamples[i] * fBlurRadius);
+		float4 tap = g_txColor.Load(vTapTexcoord);
+		float tapIntensity = dot(tap.xyz, float3(0.333, 0.334, 0.333));
+		if(tapIntensity > fBloomThreshold)
+			tapIntensity = 1;
+		else 
+			tapIntensity = 0;
+			
+		vBloom += tap * tapIntensity;
+	}
+	
+	vBloom /= iNumSamples;
+	vOutput.xyz = vOutput.xyz + vBloom.xyz;
+#endif
+
+	// tone mapping
+	vOutput.xyz = vOutput.xyz / (vOutput.xyz + g_HDRParams.z);
+	
 	
 	return vOutput;
 }

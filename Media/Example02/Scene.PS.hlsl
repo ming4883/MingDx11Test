@@ -45,7 +45,7 @@ float4 PSMain( VS_OUTPUT Input ) : SV_TARGET
 	
 	float3 vLightDir = float3(0,1,0);
 	float3 vHalfDir = normalize(vLightDir + Input.vWorldViewDir);
-	vDiffuse.xyz = vDiffuse.xyz * saturate(dot(Input.vWorldNormal, vLightDir) * 0.5 + 0.5) * 2.0;
+	vDiffuse.xyz = vDiffuse.xyz * saturate(dot(Input.vWorldNormal, vLightDir) * 0.8 + 0.2) * 2.0;
 	vSpecular.xyz = vSpecular.xyz * pow(saturate(dot(Input.vWorldNormal, vHalfDir)), 32);
 	
 	return (vSpecular + vDiffuse * g_vObjectColor);

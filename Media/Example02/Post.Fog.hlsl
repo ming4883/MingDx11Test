@@ -12,8 +12,9 @@
 
 cbuffer cbPostCommon : register( b0 )
 {
-	matrix g_InvViewProjScaleBias	: packoffset( c0 );
-	float4 g_ZParams				: packoffset( c4 );
+	matrix g_InvViewProjScaleBias	: packoffset(c0);
+	float4 g_ZParams				: packoffset(c4);
+	float4 g_HDRParams				: packoffset(c5);
 };
 
 
