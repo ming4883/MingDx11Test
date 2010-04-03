@@ -243,13 +243,13 @@ public:
 
 	RasterizerStateCache& rasterizerState() { return *this; }
 
-	VertexShaderStateCache& vertexShader() { return *this; }
+	VertexShaderStateCache& vsState() { return *this; }
 
-	GeometryShaderStateCache& geometryShader() { return *this; }
+	GeometryShaderStateCache& gsState() { return *this; }
 
-	PixelShaderStateCache& pixelShader() { return *this; }
+	PixelShaderStateCache& psState() { return *this; }
 	
-	RenderTargetStateCache& renderTarget() { return *this; }
+	RenderTargetStateCache& rtState() { return *this; }
 
 	void create(ID3D11Device* d3dDevice)
 	{

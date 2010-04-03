@@ -203,11 +203,11 @@ public:
 			if(nullptr != rsCache)
 			{
 				if( iDiffuseSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pDiffuseRV11 ) )
-					rsCache->pixelShader().setSRViews( iDiffuseSlot, 1, &pMat->pDiffuseRV11 );
+					rsCache->psState().setSRViews( iDiffuseSlot, 1, &pMat->pDiffuseRV11 );
 				if( iNormalSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pNormalRV11 ) )
-					rsCache->pixelShader().setSRViews( iNormalSlot, 1, &pMat->pNormalRV11 );
+					rsCache->psState().setSRViews( iNormalSlot, 1, &pMat->pNormalRV11 );
 				if( iSpecularSlot != INVALID_SAMPLER_SLOT && !IsErrorResource( pMat->pSpecularRV11 ) )
-					rsCache->pixelShader().setSRViews( iSpecularSlot, 1, &pMat->pSpecularRV11 );
+					rsCache->psState().setSRViews( iSpecularSlot, 1, &pMat->pSpecularRV11 );
 			}
 			else
 			{
@@ -300,8 +300,8 @@ public:
 		// shaders
 		if(nullptr != rsCache)
 		{
-			rsCache->vertexShader().setShader(m_VS);
-			rsCache->pixelShader().setShader(m_PS);
+			rsCache->vsState().setShader(m_VS);
+			rsCache->psState().setShader(m_PS);
 		}
 		else
 		{

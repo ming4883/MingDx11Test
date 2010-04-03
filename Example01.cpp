@@ -168,7 +168,7 @@ public:
 		double time,
 		float elapsedTime)
 	{
-		m_RSCache.renderTarget().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
+		m_RSCache.rtState().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
 
 		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
 
@@ -215,9 +215,9 @@ public:
 		m_PSDefaultConstBuf.unmap(d3dContext);
 
 		// preparing shaders
-		m_RSCache.vertexShader().setConstBuffers(0, 2, js::BufVA() << m_VSDefaultConstBuf << m_VSInstancingConstBuf);
-		m_RSCache.pixelShader().setConstBuffers(0, 1, js::BufVA() << m_PSDefaultConstBuf);
-		m_RSCache.pixelShader().setSamplers(0, 1, js::SampVA() << m_SamplerState);
+		m_RSCache.vsState().setConstBuffers(0, 2, js::BufVA() << m_VSDefaultConstBuf << m_VSInstancingConstBuf);
+		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSDefaultConstBuf);
+		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_SamplerState);
 
 	}
 

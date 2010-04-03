@@ -699,6 +699,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Media\Example02\Post.DownSample4x.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\Media\Example02\Post.Fog.hlsl"
 				>
 			</File>

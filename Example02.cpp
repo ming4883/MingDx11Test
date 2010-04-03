@@ -123,13 +123,13 @@ public:
 		// render target
 		static const float clearColor[] = {0, 0, 0, 0};
 		d3dContext->ClearRenderTargetView(m_Buffer.m_RTView, clearColor);
-		size_t vpCnt; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+		size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
 		d3dContext->RSGetViewports(&vpCnt, nullptr);
 		d3dContext->RSGetViewports(&vpCnt, vps);
 		d3dContext->RSSetViewports(1, js::VpVA() << m_Buffer.viewport());
 
-		rsCache.renderTarget().backup();
-		rsCache.renderTarget().set(1, js::RtvVA() << m_Buffer, nullptr);
+		rsCache.rtState().backup();
+		rsCache.rtState().set(1, js::RtvVA() << m_Buffer, nullptr);
 
 		// render state
 		rsCache.blendState().backup();
@@ -144,16 +144,16 @@ public:
 		rsCache.blendState().dirty();
 
 		// shader state
-		rsCache.vertexShader().backup();
-		rsCache.vertexShader().setShader(m_ComputeVs);
+		rsCache.vsState().backup();
+		rsCache.vsState().setShader(m_ComputeVs);
 
-		rsCache.geometryShader().backup();
-		rsCache.geometryShader().setShader(m_ComputeGs);
-		rsCache.geometryShader().setSRViews(0, 1, js::SrvVA() << colorBuffer);
-		rsCache.geometryShader().setConstBuffers(0, 1, js::BufVA() << m_ComputeCb);
+		rsCache.gsState().backup();
+		rsCache.gsState().setShader(m_ComputeGs);
+		rsCache.gsState().setSRViews(0, 1, js::SrvVA() << colorBuffer);
+		rsCache.gsState().setConstBuffers(0, 1, js::BufVA() << m_ComputeCb);
 
-		rsCache.pixelShader().backup();
-		rsCache.pixelShader().setShader(m_ComputePs);
+		rsCache.psState().backup();
+		rsCache.psState().setShader(m_ComputePs);
 		rsCache.applyToContext(d3dContext);
 
 		// draw
@@ -164,11 +164,11 @@ public:
 		// restore render targets
 		d3dContext->RSSetViewports(vpCnt, vps);
 
-		rsCache.renderTarget().restore();
+		rsCache.rtState().restore();
 		rsCache.blendState().restore();
-		rsCache.vertexShader().restore();
-		rsCache.geometryShader().restore();
-		rsCache.pixelShader().restore();
+		rsCache.vsState().restore();
+		rsCache.gsState().restore();
+		rsCache.psState().restore();
 	}
 
 	void display(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, float x, float y, float w, float h)
@@ -186,17 +186,17 @@ public:
 		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		//shader states
-		rsCache.vertexShader().backup();
-		rsCache.vertexShader().setShader(m_DrawVs);
-		rsCache.vertexShader().setSRViews(0, 1, js::SrvVA() << m_Buffer);
-		rsCache.vertexShader().setConstBuffers(0, 1, js::BufVA() << m_DrawCb);
+		rsCache.vsState().backup();
+		rsCache.vsState().setShader(m_DrawVs);
+		rsCache.vsState().setSRViews(0, 1, js::SrvVA() << m_Buffer);
+		rsCache.vsState().setConstBuffers(0, 1, js::BufVA() << m_DrawCb);
 
-		rsCache.geometryShader().backup();
-		rsCache.geometryShader().setShader(m_DrawGs);
-		rsCache.geometryShader().setConstBuffers(0, 1, js::BufVA() << m_DrawCb);
+		rsCache.gsState().backup();
+		rsCache.gsState().setShader(m_DrawGs);
+		rsCache.gsState().setConstBuffers(0, 1, js::BufVA() << m_DrawCb);
 
-		rsCache.pixelShader().backup();
-		rsCache.pixelShader().setShader(m_DrawPs);
+		rsCache.psState().backup();
+		rsCache.psState().setShader(m_DrawPs);
 
 		rsCache.applyToContext(d3dContext);
 
@@ -204,9 +204,9 @@ public:
 		d3dContext->DrawInstanced(1, SIZE, 0, 0);
 
 		// restore shader resources
-		rsCache.vertexShader().restore();
-		rsCache.geometryShader().restore();
-		rsCache.pixelShader().restore();
+		rsCache.vsState().restore();
+		rsCache.gsState().restore();
+		rsCache.psState().restore();
 	}
 };	// Histogram
 
@@ -277,7 +277,8 @@ public:
 	D3DXMATRIX m_WorldMatrix;
 
 	js::Texture2DRenderBuffer m_ColorBuffer;
-	js::Texture2DRenderBuffer m_ColorBufferQuater;
+	js::Texture2DRenderBuffer m_ColorBufferDnSamp4x;
+	js::Texture2DRenderBuffer m_ColorBufferDnSamp16x;
 	js::Texture2DRenderBuffer m_DepthBuffer;
 
 	VSPreObjectConstBuf m_VsPreObjectConstBuf;
@@ -288,17 +289,20 @@ public:
 	//Rendering m_Rendering;
 	Histogram m_Histogram;
 	bool m_ShowHistogram;
+	bool m_UseFullHistogram;
 
 	js::RenderStateCache m_RSCache;
 	
 	// post processing
 	ScreenQuad m_ScreenQuad;
 	js::VertexShader m_PostVtxShd;
-	js::PixelShader m_PostFogShd;
+	js::PixelShader m_PostDofShd;
+	js::PixelShader m_PostDnSamp4xShd;
 
 // Methods
 	Example02()
 		: m_ShowHistogram(false)
+		, m_UseFullHistogram(false)
 	{
 	}
 
@@ -346,9 +350,12 @@ public:
 		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
 		js_assert(m_PostVtxShd.valid());
 
-		m_PostFogShd.createFromFile(d3dDevice, media(L"Example02/Post.DOF.hlsl"), "Main");
-		js_assert(m_PostFogShd.valid());
+		m_PostDofShd.createFromFile(d3dDevice, media(L"Example02/Post.DOF.hlsl"), "Main");
+		js_assert(m_PostDofShd.valid());
 
+		m_PostDnSamp4xShd.createFromFile(d3dDevice, media(L"Example02/Post.DownSample4x.hlsl"), "Main");
+		js_assert(m_PostDnSamp4xShd.valid());
+		
 		m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);
 		js_assert(m_ScreenQuad.valid());
 
@@ -385,8 +392,11 @@ public:
 		m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		js_assert(m_ColorBuffer.valid());
 		
-		m_ColorBufferQuater.create(d3dDevice, width / 4, height / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
-		js_assert(m_ColorBufferQuater.valid());
+		m_ColorBufferDnSamp4x.create(d3dDevice, width / 4, height / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		js_assert(m_ColorBufferDnSamp4x.valid());
+		
+		m_ColorBufferDnSamp16x.create(d3dDevice, width / 16, height / 16, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		js_assert(m_ColorBufferDnSamp16x.valid());
 
 		m_DepthBuffer.create(d3dDevice, width, height, 1,
 			DXGI_FORMAT_R24G8_TYPELESS, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS);
@@ -401,7 +411,8 @@ public:
 
 		// destroy render buffers
 		m_ColorBuffer.destroy();
-		m_ColorBufferQuater.destroy();
+		m_ColorBufferDnSamp4x.destroy();
+		m_ColorBufferDnSamp16x.destroy();
 		m_DepthBuffer.destroy();
 	}
 
@@ -422,7 +433,8 @@ public:
 		
 		m_ScreenQuad.destroy();
 		m_PostVtxShd.destroy();
-		m_PostFogShd.destroy();
+		m_PostDofShd.destroy();
+		m_PostDnSamp4xShd.destroy();
 		
 		m_SamplerState.destroy();
 	}
@@ -441,24 +453,24 @@ public:
 		double time,
 		float elapsedTime)
 	{
-		m_RSCache.renderTarget().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
+		m_RSCache.rtState().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
 
-		m_RSCache.renderTarget().backup();
-		m_RSCache.vertexShader().backup();
-		m_RSCache.pixelShader().backup();
-		m_RSCache.geometryShader().backup();
+		m_RSCache.rtState().backup();
+		m_RSCache.vsState().backup();
+		m_RSCache.psState().backup();
+		m_RSCache.gsState().backup();
 
 		// Scene
 		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
-		m_RSCache.renderTarget().set(1, js::RtvVA() << m_ColorBuffer, m_DepthBuffer);
+		m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer, m_DepthBuffer);
 
 		onD3D11FrameRender_Scene_PrepareShaderResources(d3dImmediateContext);
 		onD3D11FrameRender_Scene_DrawMesh(d3dImmediateContext);
 
-		m_RSCache.vertexShader().restore();
-		m_RSCache.pixelShader().restore();
-		m_RSCache.geometryShader().restore();
-		m_RSCache.renderTarget().restore();
+		m_RSCache.vsState().restore();
+		m_RSCache.psState().restore();
+		m_RSCache.gsState().restore();
+		m_RSCache.rtState().restore();
 
 		// Post-Processing
 		onD3D11FrameRender_PostProcessing(d3dImmediateContext);
@@ -468,6 +480,7 @@ public:
 		m_GuiTxtHelper->SetInsertionPos( 2, 0 );
 		m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.2f, 0.2f, 1.0f, 1.0f ) );
 		m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
+		m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"Full Histogram [true]" : L"Full Histogram [false]");
 		m_GuiTxtHelper->End();
 	}
 
@@ -493,9 +506,9 @@ public:
 		m_PsPreObjectConstBuf.unmap(d3dContext);
 
 		// preparing shaders
-		m_RSCache.vertexShader().setConstBuffers(0, 1, js::BufVA() << m_VsPreObjectConstBuf);
-		m_RSCache.pixelShader().setConstBuffers(0, 1, js::BufVA() << m_PsPreObjectConstBuf);
-		m_RSCache.pixelShader().setSamplers(0, 1, js::SampVA() << m_SamplerState);
+		m_RSCache.vsState().setConstBuffers(0, 1, js::BufVA() << m_VsPreObjectConstBuf);
+		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PsPreObjectConstBuf);
+		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_SamplerState);
 	}
 	
 	void onD3D11FrameRender_Scene_DrawMesh(ID3D11DeviceContext* d3dContext)
@@ -516,32 +529,64 @@ public:
 		m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 		m_RSCache.depthStencilState().dirty();
 
+		// down sampling
+		onD3D11FrameRender_PostProcessing_DownSample4x(d3dContext, m_ColorBuffer, m_ColorBufferDnSamp4x);
+		onD3D11FrameRender_PostProcessing_DownSample4x(d3dContext, m_ColorBufferDnSamp4x, m_ColorBufferDnSamp16x);
+
 		// update histogram
-		if(m_ShowHistogram)
+		if(m_UseFullHistogram)
 			m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer);
+		else
+			m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferDnSamp16x);
 		
 		// shader states
-		m_RSCache.vertexShader().backup();
-		m_RSCache.vertexShader().setShader(m_PostVtxShd);
+		m_RSCache.vsState().backup();
+		m_RSCache.vsState().setShader(m_PostVtxShd);
 
-		m_RSCache.pixelShader().backup();
-		m_RSCache.pixelShader().setShader(m_PostFogShd);
-		m_RSCache.pixelShader().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer << m_DepthBuffer);
-		m_RSCache.pixelShader().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
+		m_RSCache.psState().backup();
+		m_RSCache.psState().setShader(m_PostDofShd);
+		m_RSCache.psState().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer << m_DepthBuffer);
+		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
 
 		m_RSCache.applyToContext(d3dContext);
 		
 		m_ScreenQuad.render(d3dContext);
 
 		// restore shader states
-		m_RSCache.vertexShader().restore();
-		m_RSCache.pixelShader().restore();
+		m_RSCache.vsState().restore();
+		m_RSCache.psState().restore();
 
 		if(m_ShowHistogram)
 			m_Histogram.display(d3dContext, m_RSCache, -0.9f, -0.5f, 0.5f, 0.25f);
 
 		// restore depth stencil state
 		m_RSCache.depthStencilState().restore();
+	}
+
+	void onD3D11FrameRender_PostProcessing_DownSample4x(
+		ID3D11DeviceContext* d3dContext,
+		js::Texture2DRenderBuffer& srcBuf,
+		js::Texture2DRenderBuffer& dstBuf
+		)
+	{
+		m_RSCache.rtState().backup();
+		m_RSCache.rtState().set(1, js::RtvVA() << dstBuf, nullptr);
+
+		m_RSCache.vsState().backup();
+		m_RSCache.vsState().setShader(m_PostVtxShd);
+
+		m_RSCache.psState().backup();
+		m_RSCache.psState().setShader(m_PostDnSamp4xShd);
+		m_RSCache.psState().setSRViews(0, 1, js::SrvVA() << srcBuf);
+		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
+
+		m_RSCache.applyToContext(d3dContext);
+
+		m_ScreenQuad.render(d3dContext);
+
+		m_RSCache.vsState().restore();
+		m_RSCache.psState().restore();
+		m_RSCache.rtState().restore();
 	}
 
 	__override LRESULT msgProc(
@@ -555,9 +600,10 @@ public:
 	__override void onKeyboard(UINT nChar, bool keyDown, bool altDown)
 	{
 		if(VK_F1 == nChar && keyDown)
-		{
 			m_ShowHistogram = !m_ShowHistogram;
-		}
+
+		if(VK_F2 == nChar && keyDown)
+			m_UseFullHistogram = !m_UseFullHistogram;
 	}
 
 };	// Example02
