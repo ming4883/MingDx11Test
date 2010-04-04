@@ -58,7 +58,7 @@ public:
 		, m_AdaptTime(2)
 		, m_HDRParams(0, 1, 1, 0)
 		, m_HistogramTarget(0.95f)
-		, m_BloomThreshold(0.75f)
+		, m_BloomThreshold(0.5f)
 	{
 	}
 
@@ -214,8 +214,13 @@ public:
 		const float targetValue = histogramSum * (1-m_HistogramTarget);
 		while((currentValue += histogram[keyIdx]) < targetValue) {--keyIdx;}
 
+		float mean = 0;
+		for(size_t i=0; i<SIZE; ++i)
+			mean += histogram[i] * ((float)i / SIZE) * m_MaxInputValue;
+		mean /= histogramSum;
+
 		D3DXVECTOR4 hdrParams;
-		hdrParams.x = ((float)minIdx / SIZE) * m_MaxInputValue;
+		hdrParams.x = mean;
 		hdrParams.y = ((float)maxIdx / SIZE) * m_MaxInputValue;
 		{
 			float a = ((float)(keyIdx+1) / SIZE) * m_MaxInputValue;
@@ -227,8 +232,7 @@ public:
 			hdrParams.w = hdrParams.z * m_BloomThreshold;
 		}
 
-		//m_HDRParams = m_HDRParams * (29 / 30.f) + hdrParams * (1 / 30.f);
-		float t = dt * m_AdaptTime;
+		const float t = dt * m_AdaptTime;
 		m_HDRParams = m_HDRParams * (1 - t) + hdrParams * t;
 	}
 
@@ -288,7 +292,7 @@ public:
 		D3DXMATRIX m_World;
 		D3DXVECTOR3 m_CameraPosition;
 
-		void update(const CModelViewerCamera& camera, const D3DXMATRIX& worldMatrix)
+		void update(const CBaseCamera& camera, const D3DXMATRIX& worldMatrix)
 		{
 			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
 			D3DXMatrixTranspose(&m_ViewProjection, &viewProjectionMatrix);
@@ -312,7 +316,7 @@ public:
 		D3DXVECTOR4 m_ZParams;
 		D3DXVECTOR4 m_HDRParams;
 
-		void update(const CModelViewerCamera& camera, const D3DXVECTOR4& hdrParams)
+		void update(const CBaseCamera& camera, const D3DXVECTOR4& hdrParams)
 		{
 			D3DXMATRIX scalebias(
 				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
@@ -341,11 +345,11 @@ public:
 #pragma pack(pop)
 
 // Global Variables
-	CModelViewerCamera m_Camera;
+	CFirstPersonCamera m_Camera;
 	RenderableMesh m_Mesh;
 	D3DXMATRIX m_WorldMatrix;
 
-	js::Texture2DRenderBuffer m_ColorBuffer;
+	js::Texture2DRenderBuffer m_ColorBuffer[2];
 	js::Texture2DRenderBuffer m_ColorBufferDnSamp4x[2];
 	js::Texture2DRenderBuffer m_ColorBufferDnSamp16x;
 	js::Texture2DRenderBuffer m_DepthBuffer;
@@ -358,9 +362,10 @@ public:
 
 	float m_ElapsedTime;
 	Histogram m_Histogram;
-	bool m_ShowHistogram;
+	bool m_ShowGui;
 	bool m_UseFullHistogram;
 	bool m_UseToneMapping;
+	bool m_UseDof;
 
 	js::RenderStateCache m_RSCache;
 	
@@ -377,9 +382,10 @@ public:
 // Methods
 	Example02()
 		: m_ElapsedTime(0)
-		, m_ShowHistogram(true)
+		, m_ShowGui(true)
 		, m_UseFullHistogram(false)
 		, m_UseToneMapping(true)
+		, m_UseDof(true)
 	{
 	}
 
@@ -454,13 +460,15 @@ public:
 
 		m_PSPostProcessConstBuf.create(d3dDevice);
 
-		// init camera
-		const float radius = m_Mesh.radius();
-		D3DXVECTOR3 vecEye( 0.0f, 0.0f, -100.0f );
+		D3DXVECTOR3 vecEye( 0.0f, m_Mesh.radius() * 0.5f, m_Mesh.radius() * -0.5f );
 		D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
 		m_Camera.SetViewParams( &vecEye, &vecAt );
-		m_Camera.SetRadius(radius, radius * 0.25f, radius * 4);
-		
+		m_Camera.SetRotateButtons(TRUE, FALSE, FALSE);
+		m_Camera.SetScalers( 0.01f, m_Mesh.radius() * 0.1f );
+		m_Camera.SetDrag( true );
+		m_Camera.SetEnableYAxisMovement( true );
+		m_Camera.FrameMove(0);
+
 		return S_OK;
 	}
 
@@ -477,16 +485,14 @@ public:
 		const size_t width = backBufferSurfaceDesc->Width;
 		const size_t height = backBufferSurfaceDesc->Height;
 
-		m_Camera.SetProjParams( D3DX_PI / 4, aspect, 1.0f, radius * 8.0f );
-		m_Camera.SetWindow( width, height );
-		m_Camera.SetButtonMasks( MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON );
-
+		m_Camera.SetProjParams( D3DX_PI / 3, aspect, 0.1f, radius * 8.0f );
 		// create render buffers
-		m_ColorBuffer.create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
-		js_assert(m_ColorBuffer.valid());
 		
 		for(int i=0; i<2; ++i)
 		{
+			m_ColorBuffer[i].create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
+			js_assert(m_ColorBuffer[i].valid());
+
 			m_ColorBufferDnSamp4x[i].create(d3dDevice, width / 4, height / 4, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
 			js_assert(m_ColorBufferDnSamp4x[i].valid());
 		}
@@ -506,9 +512,11 @@ public:
 		guiOnD3D11ReleasingSwapChain();
 
 		// destroy render buffers
-		m_ColorBuffer.destroy();
 		for(int i=0; i<2; ++i)
+		{
+			m_ColorBuffer[i].destroy();
 			m_ColorBufferDnSamp4x[i].destroy();
+		}
 		m_ColorBufferDnSamp16x.destroy();
 		m_DepthBuffer.destroy();
 	}
@@ -565,7 +573,7 @@ public:
 
 		// Scene
 		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
-		m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer, m_DepthBuffer);
+		m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[0], m_DepthBuffer);
 
 		onD3D11FrameRender_Scene_PrepareShaderResources(d3dImmediateContext);
 		onD3D11FrameRender_Scene_DrawMesh(d3dImmediateContext);
@@ -579,13 +587,16 @@ public:
 		onD3D11FrameRender_PostProcessing(d3dImmediateContext);
 
 		// Gui
-		m_GuiTxtHelper->Begin();
-		m_GuiTxtHelper->SetInsertionPos( 2, 0 );
-		m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.2f, 0.2f, 1.0f, 1.0f ) );
-		m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
-		m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"F2-Full Histogram [true]" : L"F2-Full Histogram [false]");
-		m_GuiTxtHelper->DrawTextLine( true == m_UseToneMapping ? L"F3-Tone Mapping [true]" : L"F3-Tone Mapping [false]");
-		m_GuiTxtHelper->End();
+		if(m_ShowGui)
+		{
+			m_GuiTxtHelper->Begin();
+			m_GuiTxtHelper->SetInsertionPos( 2, 0 );
+			m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 1.0f, 0.0f, 0.0f, 1.0f ) );
+			m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
+			m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"F2-Full Histogram [true]" : L"F2-Full Histogram [false]");
+			m_GuiTxtHelper->DrawTextLine( true == m_UseToneMapping ? L"F3-Tone Mapping [true]" : L"F3-Tone Mapping [false]");
+			m_GuiTxtHelper->End();
+		}
 	}
 
 	void onD3D11FrameRender_ClearRenderTargets(ID3D11DeviceContext* d3dContext)
@@ -594,7 +605,7 @@ public:
 		//static const float clearColor[4] = { 2, 2, 2, 0 };
 		static const float clearColor[4] = {0.8f, 0.8f, 2, 0 };
 
-		d3dContext->ClearRenderTargetView( m_ColorBuffer.m_RTView, clearColor );
+		d3dContext->ClearRenderTargetView( m_ColorBuffer[0].m_RTView, clearColor );
 		d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
 	}
 
@@ -634,13 +645,13 @@ public:
 		{
 			// down sampling
 			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBuffer, m_ColorBufferDnSamp4x[0], m_PostDnSamp4xShd);
+				d3dContext, m_ColorBuffer[0], m_ColorBufferDnSamp4x[0], m_PostDnSamp4xShd);
 			onD3D11FrameRender_PostProcessing_Filter(
 				d3dContext, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp16x, m_PostDnSamp4xShd);
 
 			// update histogram
 			if(m_UseFullHistogram)
-				m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer, m_ElapsedTime);
+				m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer[0], m_ElapsedTime);
 			else
 				m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferDnSamp16x, m_ElapsedTime);
 
@@ -650,7 +661,7 @@ public:
 			
 			// brightpass
 			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBuffer, m_ColorBufferDnSamp4x[0], m_PostBrPassShd);
+				d3dContext, m_ColorBuffer[0], m_ColorBufferDnSamp4x[0], m_PostBrPassShd);
 
 			// blur the bloom
 			onD3D11FrameRender_PostProcessing_Filter(
@@ -660,34 +671,69 @@ public:
 				d3dContext, m_ColorBufferDnSamp4x[1], m_ColorBufferDnSamp4x[0], m_PostBlurShd);
 		}
 
-		// shader states
-		m_RSCache.vsState().backup();
-		m_RSCache.vsState().setShader(m_PostVtxShd);
-
-		m_RSCache.psState().backup();
-		if(m_UseToneMapping)
+		// depth of field
+		if(m_UseDof)
 		{
-			m_RSCache.psState().setShader(m_PostToneMapShd);
-			m_RSCache.psState().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer << m_ColorBufferDnSamp4x[0]);
+			m_RSCache.rtState().backup();
+			m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[1], nullptr);
+
+			// shader states
+			m_RSCache.vsState().backup();
+			m_RSCache.vsState().setShader(m_PostVtxShd);
+
+			m_RSCache.psState().backup();
+			m_RSCache.psState().setShader(m_PostDofShd);
+			m_RSCache.psState().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer[0] << m_DepthBuffer);
+
+			m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
+			m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_PostSamplerState);
+
+			m_RSCache.applyToContext(d3dContext);
+			
+			m_ScreenQuad.render(d3dContext);
+
+			// restore shader states
+			m_RSCache.rtState().restore();
+			m_RSCache.vsState().restore();
+			m_RSCache.psState().restore();
 		}
 		else
 		{
-			m_RSCache.psState().setShader(m_PostCopyShd);
-			m_RSCache.psState().setSRViews(0, 1, js::SrvVA() << m_ColorBuffer);
+			onD3D11FrameRender_PostProcessing_Filter(
+				d3dContext, m_ColorBuffer[0], m_ColorBuffer[1], m_PostCopyShd);
 		}
 
-		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
-		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_PostSamplerState);
+		// final output
+		{
+			// shader states
+			m_RSCache.vsState().backup();
+			m_RSCache.vsState().setShader(m_PostVtxShd);
 
-		m_RSCache.applyToContext(d3dContext);
-		
-		m_ScreenQuad.render(d3dContext);
+			m_RSCache.psState().backup();
+			if(m_UseToneMapping)
+			{
+				m_RSCache.psState().setShader(m_PostToneMapShd);
+				m_RSCache.psState().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer[1] << m_ColorBufferDnSamp4x[0]);
+			}
+			else
+			{
+				m_RSCache.psState().setShader(m_PostCopyShd);
+				m_RSCache.psState().setSRViews(0, 1, js::SrvVA() << m_ColorBuffer[1]);
+			}
 
-		// restore shader states
-		m_RSCache.vsState().restore();
-		m_RSCache.psState().restore();
+			m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
+			m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_PostSamplerState);
 
-		if(m_ShowHistogram)
+			m_RSCache.applyToContext(d3dContext);
+			
+			m_ScreenQuad.render(d3dContext);
+
+			// restore shader states
+			m_RSCache.vsState().restore();
+			m_RSCache.psState().restore();
+		}
+
+		if(m_ShowGui)
 			m_Histogram.display(d3dContext, m_RSCache, -0.9f, -0.5f, 0.5f, 0.25f);
 
 		// restore depth stencil state
@@ -740,13 +786,16 @@ public:
 	__override void onKeyboard(UINT nChar, bool keyDown, bool altDown)
 	{
 		if(VK_F1 == nChar && keyDown)
-			m_ShowHistogram = !m_ShowHistogram;
+			m_ShowGui = !m_ShowGui;
 
 		if(VK_F2 == nChar && keyDown)
 			m_UseFullHistogram = !m_UseFullHistogram;
 
 		if(VK_F3 == nChar && keyDown)
 			m_UseToneMapping = !m_UseToneMapping;
+		
+		if(VK_F4 == nChar && keyDown)
+			m_UseDof = !m_UseDof;
 	}
 
 };	// Example02

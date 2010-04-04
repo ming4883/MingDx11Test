@@ -595,7 +595,7 @@ int DXUTApp::run(DXUTApp& app)
     DXUTCreateWindow( app.getName() );
 
     // Only require 10-level hardware
-    DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 640, 480 );
+    DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 720, 405 );
     DXUTMainLoop(); // Enter into the DXUT ren  der loop
 
     // Perform any application-level cleanup here

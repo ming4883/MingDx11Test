@@ -130,7 +130,7 @@ public:
 		float aspect = backBufferSurfaceDesc->Width / ( FLOAT )backBufferSurfaceDesc->Height;
 		const float radius = m_Mesh.radius();
 
-		m_Camera.SetProjParams( D3DX_PI / 4, aspect, 1.0f, radius * 8.0f );
+		m_Camera.SetProjParams( D3DX_PI / 3, aspect, 1.0f, radius * 8.0f );
 		m_Camera.SetWindow( backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height );
 		m_Camera.SetButtonMasks( MOUSE_MIDDLE_BUTTON, MOUSE_WHEEL, MOUSE_LEFT_BUTTON );
 

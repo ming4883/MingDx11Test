@@ -51,7 +51,7 @@ void Main(point VS_OUTPUT Input[1], inout PointStream<VS_OUTPUT> OutputStream )
 		{
 			int3 vOffset = int3(x, y, 0);
 			float4 vInput = g_txInput.Load(vTexcoord + vOffset);
-			float fIntensity = dot(vInput.xyz, float3(0.3333, 0.3334, 0.3333));
+			float fIntensity = dot(vInput.xyz, float3(0.27,0.67,0.06));
 			
 			//fIntensity = 3.25;
 			

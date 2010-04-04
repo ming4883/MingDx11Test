@@ -36,22 +36,31 @@ Texture2D g_txDepth : register( t1 );
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
+float LinearDepth(float zbufDepth)
+{
+	// http://www.humus.name/index.php?page=Comments&ID=256
+	return 1 / (zbufDepth * g_ZParams.x + g_ZParams.y);
+}
+
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
 	
-	float fDepth = g_txDepth.Load(vTexcoord).r;
+	int iWDepth, iHDepth;
+	g_txDepth.GetDimensions(iWDepth, iHDepth);
 	
-	// http://www.humus.name/index.php?page=Comments&ID=256
-	float  fDepthLinear = 1 / (fDepth * g_ZParams.x + g_ZParams.y);
+	// use the depth-value in the screen center as the focus distance
+	float fDepthFocus = LinearDepth(g_txDepth.Load(int3(iWDepth/2, iHDepth/2, 0)).r);
 	
-	//float fFog = smoothstep(10, 20, fDepthLinear);
-	float fFog = smoothstep(0, 3, abs(fDepthLinear - 5));
-	fFog = pow(fFog, 2);
-	fFog = 0;
+	float fDepthScene = LinearDepth(g_txDepth.Load(vTexcoord).r);
+	
+	const float fOutFocusDist = 5;
+	float fDofFactor = smoothstep(0, fOutFocusDist, abs(fDepthScene - fDepthFocus));
+	fDofFactor = pow(fDofFactor, 2);
 	
 	// 2d unit poisson disk samplers
 	const int iNumSamples = 16;
+	
 	float2 vSamples[iNumSamples];
 	vSamples[ 0] = float2( 0.007937789, 0.73124397);
 	vSamples[ 1] = float2(-0.10177308,-0.6509396);
@@ -75,25 +84,24 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	float4 vOutput;
 	
 	[branch]
-	if(fFog < 1 / fBlurRadius)
+	if(fDofFactor < 1 / fBlurRadius)
 	{
 		vOutput = g_txColor.Load(vTexcoord);
 	}
 	else
 	{
-		vOutput = 0;
+		vOutput = g_txColor.Load(vTexcoord) * 2;
 		
-		float fScale = fFog * fBlurRadius;
+		const float2 vBlurRadius = fDofFactor * fBlurRadius * float2(1.0 / iWDepth, 1.0 / iHDepth);
 		
 		[unroll]
 		for(int i=0; i<iNumSamples; ++i)
 		{
-			int3 vTapTexcoord = vTexcoord;
-			vTapTexcoord.xy += (int2)(vSamples[i] * fScale);
-			vOutput += g_txColor.Load(vTapTexcoord);
+			float2 vTapTexcoord = Input.vTexcoord + vSamples[i] * vBlurRadius;
+			vOutput += g_txColor.SampleLevel(g_samLinear, vTapTexcoord, 0);
 		}
 		
-		vOutput /= iNumSamples;
+		vOutput /= (iNumSamples + 2);
 	}
 	
 	return vOutput;

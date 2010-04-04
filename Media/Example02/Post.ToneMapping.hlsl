@@ -36,6 +36,8 @@ Texture2D g_txBloom : register( t1 );
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
+#define TONEMAPPING_ON_LUM 1
+
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
@@ -45,8 +47,23 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	// tone mapping
 	vOutput.xyz += vBloom.xyz;
-	vOutput.xyz = vOutput.xyz / (g_HDRParams.z);
 	
+	float fKey = g_HDRParams.z;
+	float fLumMean = g_HDRParams.x + 0.001f;
+	
+	float fLum = dot(vOutput.xyz, float3(0.27,0.67,0.06));
+	
+#if TONEMAPPING_ON_LUM
+	fLum = fLum * fKey / fLumMean;
+	fLum = fLum / (1 + fLum);
+	vOutput.xyz *= fLum;
+	
+#else
+	vOutput.xyz *= fLum * fKey / fLumMean;
+	vOutput.xyz = vOutput.xyz / (1 + vOutput.xyz);
+	
+#endif
+
 	return vOutput;
 }
 
