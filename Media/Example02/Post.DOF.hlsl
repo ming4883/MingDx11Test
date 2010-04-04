@@ -46,6 +46,10 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
 	
+	const float fOutFocusDist = 4;
+	
+	const float fBlurRadius = 4;
+	
 	int iWDepth, iHDepth;
 	g_txDepth.GetDimensions(iWDepth, iHDepth);
 	
@@ -54,7 +58,6 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	float fDepthScene = LinearDepth(g_txDepth.Load(vTexcoord).r);
 	
-	const float fOutFocusDist = 5;
 	float fDofFactor = smoothstep(0, fOutFocusDist, abs(fDepthScene - fDepthFocus));
 	fDofFactor = pow(fDofFactor, 2);
 	
@@ -78,8 +81,6 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	vSamples[13] = float2( 0.3091557,-0.17652994);
 	vSamples[14] = float2( 0.4665941, 0.96454906);
 	vSamples[15] = float2(-0.461774, 0.9360856);
-	
-	const float fBlurRadius = 4;
 	
 	float4 vOutput;
 	
