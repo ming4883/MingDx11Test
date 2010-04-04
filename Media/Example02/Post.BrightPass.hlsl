@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Post.ToneMapping.hlsl
+// File: Post.BrightPass.hlsl
 //
 // The pixel shader file for the BasicHLSL11 sample.  
 // 
@@ -30,22 +30,35 @@ SamplerState g_samLinear : register( s0 );
 //--------------------------------------------------------------------------------------
 // Textures and Samplers
 //--------------------------------------------------------------------------------------
-Texture2D g_txColor : register( t0 );
-Texture2D g_txBloom : register( t1 );
+Texture2D g_txSource : register( t0 );
+
+
+#define NUM_ROWS 4
+#define NUM_COLS 4
+#define NUM_TAPS NUM_ROWS * NUM_COLS
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
-	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
+	int3 vTexcoord = int3((int2)Input.vPosition.xy * int2(NUM_COLS, NUM_ROWS), 0);
 	
-	float4 vOutput = g_txColor.Load(vTexcoord);
-	float4 vBloom = g_txBloom.Sample(g_samLinear, Input.vTexcoord);
+	float4 vOutput = 0;
 	
-	// tone mapping
-	vOutput.xyz += vBloom.xyz;
-	vOutput.xyz = vOutput.xyz / (g_HDRParams.z);
+	[unroll]
+	for(int row=0; row<NUM_ROWS; ++row)
+	{
+		[unroll]
+		for(int col=0; col<NUM_COLS; ++col)
+		{
+			int3 vTapTexcoord = vTexcoord;
+			vTapTexcoord.xy += int2(col, row);
+			vOutput += max(g_txSource.Load(vTapTexcoord) - g_HDRParams.w, 0);
+		}
+	}
+	
+	vOutput /= NUM_TAPS;
 	
 	return vOutput;
 }

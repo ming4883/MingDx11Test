@@ -9,13 +9,6 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-/*
-cbuffer cbPerObject : register( b0 )
-{
-	matrix		g_mWorldViewProjection	: packoffset( c0 );
-	matrix		g_mWorld				: packoffset( c4 );
-};
-*/
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -27,7 +20,8 @@ struct VS_INPUT
 
 struct VS_OUTPUT
 {
-	float4 vPosition	: SV_POSITION;
+	float4 vPosition : SV_POSITION;
+	float2 vTexcoord : TEXCOORD0;
 };
 
 //--------------------------------------------------------------------------------------
@@ -38,6 +32,7 @@ VS_OUTPUT Main( VS_INPUT Input )
 	VS_OUTPUT Output;
 	
 	Output.vPosition = Input.vPosition;
+	Output.vTexcoord = Input.vPosition.xy * float2(1,-1) * 0.5 + 0.5;
 	
 	return Output;
 }

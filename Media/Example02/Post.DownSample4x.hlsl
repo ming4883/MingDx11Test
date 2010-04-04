@@ -9,18 +9,12 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-/*
 cbuffer cbPostCommon : register( b0 )
 {
-	matrix g_InvViewProjScaleBias	: packoffset( c0 );
-	float4 g_ZParams				: packoffset( c4 );
+	matrix g_InvViewProjScaleBias	: packoffset(c0);
+	float4 g_ZParams				: packoffset(c4);
+	float4 g_HDRParams				: packoffset(c5);
 };
-*/
-
-//--------------------------------------------------------------------------------------
-// Textures and Samplers
-//--------------------------------------------------------------------------------------
-Texture2D g_txSource : register( t0 );
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -28,7 +22,15 @@ Texture2D g_txSource : register( t0 );
 struct PS_INPUT
 {
 	float4 vPosition : SV_POSITION;
+	float2 vTexcoord : TEXCOORD0;
 };
+
+SamplerState g_samLinear : register( s0 );
+
+//--------------------------------------------------------------------------------------
+// Textures and Samplers
+//--------------------------------------------------------------------------------------
+Texture2D g_txSource : register( t0 );
 
 #define NUM_ROWS 4
 #define NUM_COLS 4

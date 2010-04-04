@@ -695,6 +695,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Media\Example02\Post.Blur.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Post.BrightPass.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Post.Copy.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\Media\Example02\Post.DOF.hlsl"
 				>
 			</File>

@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Post.DOF.hlsl
+// File: Post.Blur.hlsl
 //
 // The pixel shader file for the BasicHLSL11 sample.  
 // 
@@ -30,29 +30,19 @@ SamplerState g_samLinear : register( s0 );
 //--------------------------------------------------------------------------------------
 // Textures and Samplers
 //--------------------------------------------------------------------------------------
-Texture2D g_txColor : register( t0 );
-Texture2D g_txDepth : register( t1 );
+Texture2D g_txSource : register( t0 );
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
+#define USE_TEXOBJ_SAMPLE 0
+
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
-	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
-	
-	float fDepth = g_txDepth.Load(vTexcoord).r;
-	
-	// http://www.humus.name/index.php?page=Comments&ID=256
-	float  fDepthLinear = 1 / (fDepth * g_ZParams.x + g_ZParams.y);
-	
-	//float fFog = smoothstep(10, 20, fDepthLinear);
-	float fFog = smoothstep(0, 3, abs(fDepthLinear - 5));
-	fFog = pow(fFog, 2);
-	fFog = 0;
-	
 	// 2d unit poisson disk samplers
 	const int iNumSamples = 16;
 	float2 vSamples[iNumSamples];
+	
 	vSamples[ 0] = float2( 0.007937789, 0.73124397);
 	vSamples[ 1] = float2(-0.10177308,-0.6509396);
 	vSamples[ 2] = float2(-0.9906806,-0.63400936);
@@ -70,32 +60,44 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	vSamples[14] = float2( 0.4665941, 0.96454906);
 	vSamples[15] = float2(-0.461774, 0.9360856);
 	
-	const float fBlurRadius = 4;
+#if USE_TEXOBJ_SAMPLE
+	/**/
+	float fW, fH;
+	g_txSource.GetDimensions(fW, fH);
+	float2 vBlurRadius = 4 * float2(1 / fW, 1 / fH);
 	
-	float4 vOutput;
+	float4 vOutput = 0;
 	
-	[branch]
-	if(fFog < 1 / fBlurRadius)
+	[unroll]
+	for(int i=0; i<iNumSamples; ++i)
 	{
-		vOutput = g_txColor.Load(vTexcoord);
+		vOutput += g_txSource.Sample(g_samLinear, Input.vTexcoord + vSamples[i] * vBlurRadius);
 	}
-	else
-	{
-		vOutput = 0;
-		
-		float fScale = fFog * fBlurRadius;
-		
-		[unroll]
-		for(int i=0; i<iNumSamples; ++i)
-		{
-			int3 vTapTexcoord = vTexcoord;
-			vTapTexcoord.xy += (int2)(vSamples[i] * fScale);
-			vOutput += g_txColor.Load(vTapTexcoord);
-		}
-		
-		vOutput /= iNumSamples;
-	}
+	
+	vOutput /= iNumSamples;
 	
 	return vOutput;
+	
+#else	// USE_TEXOBJ_SAMPLE
+	const float fBlurRadius = 4;
+	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
+	
+	float4 vOutput = 0;
+	
+	[unroll]
+	for(int i=0; i<iNumSamples; ++i)
+	{
+		int3 vTapTexcoord = vTexcoord;
+		vTapTexcoord.xy += (int2)(vSamples[i] * fBlurRadius);
+		vOutput += g_txSource.Load(vTapTexcoord);
+	}
+	
+	vOutput /= iNumSamples;
+	
+	return vOutput;
+	
+#endif	// USE_TEXOBJ_SAMPLE
+	
+	
 }
 
