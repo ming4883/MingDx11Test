@@ -645,12 +645,6 @@ void DXUTApp::guiOnD3D11ResizedSwapChain(ID3D11Device* d3dDevice, const DXGI_SUR
 {
 	if(!m_GuiDlgResMgr) return;
 	m_GuiDlgResMgr->OnD3D11ResizedSwapChain(d3dDevice, backBufferSurfaceDesc);
-
-	for(size_t i=0; i<m_GuiDlgs.size(); ++i)
-	{
-		m_GuiDlgs[i]->SetLocation(0, 0);
-		m_GuiDlgs[i]->SetSize(backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height);
-	}
 }
 
 void DXUTApp::guiOnD3D11ReleasingSwapChain()

@@ -350,6 +350,7 @@ public:
 		UI_LIGHTCOLOR_R,
 		UI_LIGHTCOLOR_G,
 		UI_LIGHTCOLOR_B,
+		UI_LIGHTCOLOR_MULTIPLER,
 	};
 
 // Global Variables
@@ -397,7 +398,25 @@ public:
 	{
 		CDXUTDialog* dlg = new CDXUTDialog;
 		dlg->Init(m_GuiDlgResMgr);
-		dlg->AddSlider(UI_LIGHTCOLOR_R, 0, 0, 100, 20, 0, 255, 255);
+		const int w = 120, h = 20;
+		int y = 50;
+		dlg->AddStatic(UI_LIGHTCOLOR_R, L"Light.R", 0, y, w, h);
+		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
+		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 255);
+		y += h;
+		dlg->AddStatic(UI_LIGHTCOLOR_G, L"Light.G", 0, y, w, h);
+		dlg->GetStatic(UI_LIGHTCOLOR_G)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
+		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 255);
+		y += h;
+		dlg->AddStatic(UI_LIGHTCOLOR_B, L"Light.B", 0, y, w, h);
+		dlg->GetStatic(UI_LIGHTCOLOR_B)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
+		dlg->AddSlider(UI_LIGHTCOLOR_B, w, y, w, h, 0, 255, 255);
+		y += h;
+
+		dlg->AddStatic(UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler", 0, y, w, h);
+		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
+		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 511);
+		y += h;
 
 		m_GuiDlgs.push_back(dlg);
 	}
@@ -491,6 +510,9 @@ public:
 		const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 	{
 		guiOnD3D11ResizedSwapChain(d3dDevice, backBufferSurfaceDesc);
+
+		m_GuiDlgs[0]->SetLocation(backBufferSurfaceDesc->Width-260, 0);
+		m_GuiDlgs[0]->SetSize(260, backBufferSurfaceDesc->Height);
 
 		float aspect = backBufferSurfaceDesc->Width / ( FLOAT )backBufferSurfaceDesc->Height;
 		const float radius = m_Mesh.radius();
@@ -602,7 +624,7 @@ public:
 		// Gui
 		if(m_ShowGui)
 		{
-			//m_GuiDlgs[0]->OnRender(elapsedTime);
+			m_GuiDlgs[0]->OnRender(elapsedTime);
 
 			m_GuiTxtHelper->Begin();
 			m_GuiTxtHelper->SetInsertionPos( 2, 0 );
@@ -618,7 +640,16 @@ public:
 	{
 		// clear render target and the depth stencil 
 		//static const float clearColor[4] = { 2, 2, 2, 0 };
-		static const float clearColor[4] = {0.8f, 0.8f, 2, 0 };
+		static float clearColor[4] = {0.8f, 0.8f, 2, 0 };
+		clearColor[0] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_R)->GetValue() / 255.0f;
+		clearColor[1] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_G)->GetValue() / 255.0f;
+		clearColor[2] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
+		clearColor[3] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
+
+		clearColor[0] *= clearColor[3];
+		clearColor[1] *= clearColor[3];
+		clearColor[2] *= clearColor[3];
+		clearColor[3] = 0;
 
 		d3dContext->ClearRenderTargetView( m_ColorBuffer[0].m_RTView, clearColor );
 		d3dContext->ClearDepthStencilView( m_DepthBuffer.m_DSView, D3D11_CLEAR_DEPTH, 1.0, 0 );
@@ -633,7 +664,11 @@ public:
 
 		// m_PsPreObjectConstBuf
 		m_PsPreObjectConstBuf.map(d3dContext);
-		m_PsPreObjectConstBuf.data().m_vLightColor = D3DXVECTOR4(1, 1, 1, 2);
+		///m_PsPreObjectConstBuf.data().m_vLightColor = D3DXVECTOR4(1, 1, 1, 2);
+		m_PsPreObjectConstBuf.data().m_vLightColor.x = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_R)->GetValue() / 255.0f;
+		m_PsPreObjectConstBuf.data().m_vLightColor.y = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_G)->GetValue() / 255.0f;
+		m_PsPreObjectConstBuf.data().m_vLightColor.z = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
+		m_PsPreObjectConstBuf.data().m_vLightColor.w = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
 		m_PsPreObjectConstBuf.unmap(d3dContext);
 
 		// preparing shaders
