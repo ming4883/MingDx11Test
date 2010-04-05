@@ -3,6 +3,7 @@
 #include "SDKmisc.h"
 #include "Common.h"
 #include "DXUTcamera.h"
+#include "DXUTgui.h"
 #include "Jessye/Shaders.h"
 #include "Jessye/Buffers.h"
 #include "Jessye/RenderStates.h"
@@ -305,7 +306,7 @@ public:
 
 	struct PSPreObject
 	{
-		D3DXVECTOR4 m_vObjectColor;
+		D3DXVECTOR4 m_vLightColor;
 	};
 
 	typedef js::ConstantBuffer_t<PSPreObject> PSPreObjectConstBuf;
@@ -343,6 +344,13 @@ public:
 	typedef js::ConstantBuffer_t<PSPostProcess> PSPostProcessConstBuf;
 
 #pragma pack(pop)
+
+	enum
+	{
+		UI_LIGHTCOLOR_R,
+		UI_LIGHTCOLOR_G,
+		UI_LIGHTCOLOR_B,
+	};
 
 // Global Variables
 	CFirstPersonCamera m_Camera;
@@ -387,6 +395,11 @@ public:
 		, m_UseToneMapping(true)
 		, m_UseDof(true)
 	{
+		CDXUTDialog* dlg = new CDXUTDialog;
+		dlg->Init(m_GuiDlgResMgr);
+		dlg->AddSlider(UI_LIGHTCOLOR_R, 0, 0, 100, 20, 0, 255, 255);
+
+		m_GuiDlgs.push_back(dlg);
 	}
 
 	__override ~Example02()
@@ -584,14 +597,16 @@ public:
 		m_RSCache.rtState().restore();
 
 		// Post-Processing
-		onD3D11FrameRender_PostProcessing(d3dImmediateContext);
+		onD3D11FrameRender_PostProcessing(d3dImmediateContext, elapsedTime);
 
 		// Gui
 		if(m_ShowGui)
 		{
+			//m_GuiDlgs[0]->OnRender(elapsedTime);
+
 			m_GuiTxtHelper->Begin();
 			m_GuiTxtHelper->SetInsertionPos( 2, 0 );
-			m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 1.0f, 0.0f, 0.0f, 1.0f ) );
+			m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.0f, 0.5f, 0.0f, 1.0f ) );
 			m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
 			m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"F2-Full Histogram [true]" : L"F2-Full Histogram [false]");
 			m_GuiTxtHelper->DrawTextLine( true == m_UseToneMapping ? L"F3-Tone Mapping [true]" : L"F3-Tone Mapping [false]");
@@ -618,7 +633,7 @@ public:
 
 		// m_PsPreObjectConstBuf
 		m_PsPreObjectConstBuf.map(d3dContext);
-		m_PsPreObjectConstBuf.data().m_vObjectColor = D3DXVECTOR4(1, 1, 0.5f, 1);
+		m_PsPreObjectConstBuf.data().m_vLightColor = D3DXVECTOR4(1, 1, 1, 2);
 		m_PsPreObjectConstBuf.unmap(d3dContext);
 
 		// preparing shaders
@@ -633,7 +648,7 @@ public:
 		m_Mesh.render(d3dContext, &m_RSCache);
 	}
 	
-	void onD3D11FrameRender_PostProcessing(ID3D11DeviceContext* d3dContext)
+	void onD3D11FrameRender_PostProcessing(ID3D11DeviceContext* d3dContext, float elapsedTime)
 	{
 		// depth stencil state
 		m_RSCache.depthStencilState().backup();
@@ -651,9 +666,9 @@ public:
 
 			// update histogram
 			if(m_UseFullHistogram)
-				m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer[0], m_ElapsedTime);
+				m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer[0], elapsedTime);
 			else
-				m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferDnSamp16x, m_ElapsedTime);
+				m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferDnSamp16x, elapsedTime);
 
 			m_PSPostProcessConstBuf.map(d3dContext);
 			m_PSPostProcessConstBuf.data().update(m_Camera, m_Histogram.hdrParams());
@@ -779,7 +794,13 @@ public:
 		HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
 		bool* pbNoFurtherProcessing)
 	{
+		this->guiMsgProc(hWnd, uMsg, wParam, lParam, pbNoFurtherProcessing);
+
+		if(*pbNoFurtherProcessing)
+			return 0;
+
 		m_Camera.HandleMessages(hWnd, uMsg, wParam, lParam);
+
 		return 0;
 	}
 

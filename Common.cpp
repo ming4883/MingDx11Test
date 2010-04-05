@@ -605,10 +605,27 @@ int DXUTApp::run(DXUTApp& app)
     return exitCode;
 }
 
+DXUTApp::DXUTApp() : m_GuiDlgResMgr(0), m_GuiTxtHelper(0)
+{
+	m_GuiDlgResMgr = new CDXUTDialogResourceManager;
+}
+
+DXUTApp::~DXUTApp()
+{
+	for(size_t i=0; i<m_GuiDlgs.size(); ++i)
+		delete m_GuiDlgs[i];
+
+	if(m_GuiDlgResMgr)
+	{
+		delete m_GuiDlgResMgr;
+		m_GuiDlgResMgr = nullptr;
+	}
+}
+
 void DXUTApp::guiOnD3D11CreateDevice(ID3D11Device* d3dDevice)
 {
 	ID3D11DeviceContext* d3dContext = DXUTGetD3D11DeviceContext();
-	m_GuiDlgResMgr = new CDXUTDialogResourceManager;
+
 	m_GuiDlgResMgr->OnD3D11CreateDevice(d3dDevice, d3dContext);
 	m_GuiTxtHelper = new CDXUTTextHelper(d3dDevice, d3dContext, m_GuiDlgResMgr, 15);
 }
@@ -620,23 +637,42 @@ void DXUTApp::guiOnD3D11DestroyDevice()
 		delete m_GuiTxtHelper;
 		m_GuiTxtHelper = nullptr;
 	}
-
-	if(m_GuiDlgResMgr)
-	{
-		m_GuiDlgResMgr->OnD3D11DestroyDevice();
-		delete m_GuiDlgResMgr;
-		m_GuiDlgResMgr = nullptr;
-	}
+	
+	m_GuiDlgResMgr->OnD3D11DestroyDevice();
 }
 
 void DXUTApp::guiOnD3D11ResizedSwapChain(ID3D11Device* d3dDevice, const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 {
 	if(!m_GuiDlgResMgr) return;
 	m_GuiDlgResMgr->OnD3D11ResizedSwapChain(d3dDevice, backBufferSurfaceDesc);
+
+	for(size_t i=0; i<m_GuiDlgs.size(); ++i)
+	{
+		m_GuiDlgs[i]->SetLocation(0, 0);
+		m_GuiDlgs[i]->SetSize(backBufferSurfaceDesc->Width, backBufferSurfaceDesc->Height);
+	}
 }
 
 void DXUTApp::guiOnD3D11ReleasingSwapChain()
 {
 	if(!m_GuiDlgResMgr) return;
 	m_GuiDlgResMgr->OnD3D11ReleasingSwapChain();
+}
+
+int DXUTApp::guiMsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing)
+{
+	if(!m_GuiDlgResMgr) return 0;
+
+	*pbNoFurtherProcessing = m_GuiDlgResMgr->MsgProc( hWnd, uMsg, wParam, lParam );
+    if( *pbNoFurtherProcessing )
+        return 0;
+
+	for(size_t i=0; i<m_GuiDlgs.size(); ++i)
+	{
+		*pbNoFurtherProcessing = m_GuiDlgs[i]->MsgProc( hWnd, uMsg, wParam, lParam );
+		if( *pbNoFurtherProcessing )
+			return 0;
+	}
+
+	return 0;
 }

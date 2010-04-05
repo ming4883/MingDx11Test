@@ -75,11 +75,12 @@ private:
 
 class CDXUTDialogResourceManager;
 class CDXUTTextHelper;
+class CDXUTDialog;
 
 class DXUTApp
 {
 public:
-	virtual ~DXUTApp() {}
+	virtual ~DXUTApp();
 
 	static int run(DXUTApp& app);
 
@@ -176,15 +177,15 @@ public:
 protected:
 	CDXUTDialogResourceManager* m_GuiDlgResMgr;
 	CDXUTTextHelper* m_GuiTxtHelper;
+	std::vector<CDXUTDialog*> m_GuiDlgs;
 
-	DXUTApp() : m_GuiDlgResMgr(0), m_GuiTxtHelper(0)
-	{
-	}
+	DXUTApp();
 
 	void guiOnD3D11CreateDevice(ID3D11Device* d3dDevice);
 	void guiOnD3D11DestroyDevice();
 	void guiOnD3D11ResizedSwapChain(ID3D11Device* d3dDevice, const DXGI_SURFACE_DESC* backBufferSurfaceDesc);
 	void guiOnD3D11ReleasingSwapChain();
+	int guiMsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing);
 };
 
 #endif	// COMMON_H

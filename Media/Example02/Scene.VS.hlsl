@@ -9,7 +9,7 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-cbuffer cbPerObject : register( b0 )
+cbuffer cbShared : register( b0 )
 {
 	matrix g_ViewProjection	: packoffset(c0);
 	matrix g_World			: packoffset(c4);

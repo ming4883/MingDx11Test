@@ -48,7 +48,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	const float fOutFocusDist = 4;
 	
-	const float fBlurRadius = 4;
+	const float fBlurRadius = 3;
 	
 	int iWDepth, iHDepth;
 	g_txDepth.GetDimensions(iWDepth, iHDepth);
