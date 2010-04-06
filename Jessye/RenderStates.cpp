@@ -186,6 +186,7 @@ namespace js
 		friend class BlendStateCache;
 		
 		float m_BlendFactor[4];
+		float m_BlendFactorBackup[4];
 		
 		Impl()
 		{
@@ -222,11 +223,17 @@ namespace js
 	void BlendStateCache::backup()
 	{
 		m_Impl.backup();
+
+		for(size_t i=0; i<4; ++i)
+			m_Impl.m_BlendFactorBackup[i] = m_Impl.m_BlendFactor[i];
 	}
 
 	void BlendStateCache::restore()
 	{
 		m_Impl.restore();
+
+		for(size_t i=0; i<4; ++i)
+			m_Impl.m_BlendFactor[i] = m_Impl.m_BlendFactorBackup[i];
 	}
 
 	BlendState* BlendStateCache::current()
@@ -240,6 +247,11 @@ namespace js
 			return;
 
 		d3dContext->OMSetBlendState(*m_Impl.current(), m_Impl.m_BlendFactor, 0xffffffff);
+	}
+
+	float* BlendStateCache::blendFactor()
+	{
+		return m_Impl.m_BlendFactor;
 	}
 
 	//--------------------------------------------------------------------------

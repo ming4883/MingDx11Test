@@ -88,6 +88,8 @@ public:
 	void destroy();
 	void applyToContext(ID3D11DeviceContext* d3dContext);
 
+	float* blendFactor();
+
 private:
 	class Impl;
 	Impl& m_Impl;

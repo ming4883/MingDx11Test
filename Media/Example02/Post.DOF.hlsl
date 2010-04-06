@@ -32,6 +32,7 @@ SamplerState g_samLinear : register( s0 );
 //--------------------------------------------------------------------------------------
 Texture2D g_txColor : register( t0 );
 Texture2D g_txDepth : register( t1 );
+Texture2D g_txDOFFocus : register( t2 );
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
@@ -46,19 +47,19 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
 	
-	const float fOutFocusDist = 4;
+	const float fOutFocusBegin = 2;
+	const float fOutFocusEnd = 4;
 	
 	const float fBlurRadius = 3;
 	
 	int iWDepth, iHDepth;
 	g_txDepth.GetDimensions(iWDepth, iHDepth);
 	
-	// use the depth-value in the screen center as the focus distance
-	float fDepthFocus = LinearDepth(g_txDepth.Load(int3(iWDepth/2, iHDepth/2, 0)).r);
+	float fDepthFocus = g_txDOFFocus.Load(int3(0, 0, 0)).r;
 	
 	float fDepthScene = LinearDepth(g_txDepth.Load(vTexcoord).r);
 	
-	float fDofFactor = smoothstep(0, fOutFocusDist, abs(fDepthScene - fDepthFocus));
+	float fDofFactor = smoothstep(fOutFocusBegin, fOutFocusEnd, abs(fDepthScene - fDepthFocus));
 	fDofFactor = pow(fDofFactor, 2);
 	
 	// 2d unit poisson disk samplers
