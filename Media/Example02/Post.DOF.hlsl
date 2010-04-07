@@ -43,24 +43,43 @@ float LinearDepth(float zbufDepth)
 	return 1 / (zbufDepth * g_ZParams.x + g_ZParams.y);
 }
 
+float4 ScreenToWorldPosition(float4 screenPos)
+{
+	// http://www.humus.name/index.php?page=Comments&ID=256
+	float4 wPos = mul(screenPos, g_InvViewProjScaleBias);
+	return float4(wPos.xyz / wPos.w, 1);
+}
+
+#define USE_DEPTH_ONLY 0
+
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
 	
 	const float fOutFocusBegin = 2;
-	const float fOutFocusEnd = 4;
+	const float fOutFocusEnd = 6;
 	
 	const float fBlurRadius = 3;
 	
 	int iWDepth, iHDepth;
 	g_txDepth.GetDimensions(iWDepth, iHDepth);
 	
-	float fDepthFocus = g_txDOFFocus.Load(int3(0, 0, 0)).r;
-	
-	float fDepthScene = LinearDepth(g_txDepth.Load(vTexcoord).r);
-	
+#if USE_DEPTH_ONLY
+	float fDepthFocus = LinearDepth(g_txDOFFocus.Load(int3(0, 0, 0)).x);
+	float fDepthScene = LinearDepth(g_txDepth.Load(vTexcoord).x);
 	float fDofFactor = smoothstep(fOutFocusBegin, fOutFocusEnd, abs(fDepthScene - fDepthFocus));
-	fDofFactor = pow(fDofFactor, 2);
+	
+#else
+	
+	float fDepthScene = g_txDepth.Load(vTexcoord).x;
+	
+	float3 fPosFocus = g_txDOFFocus.Load(int3(0, 0, 0)).xyz;
+	float3 fPosScene = ScreenToWorldPosition(float4(Input.vPosition.xy, fDepthScene, 1)).xyz; 
+	float fDofFactor = smoothstep(fOutFocusBegin, fOutFocusEnd, distance(fPosScene, fPosFocus));
+	
+#endif
+
+	//fDofFactor = pow(fDofFactor, 2);
 	
 	// 2d unit poisson disk samplers
 	const int iNumSamples = 16;

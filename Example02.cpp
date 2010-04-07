@@ -319,16 +319,29 @@ public:
 
 		void update(const CBaseCamera& camera, const D3DXVECTOR4& hdrParams)
 		{
+			/*
 			D3DXMATRIX scalebias(
 				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
-				 0, 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
+				 0, -2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
 				 0, 0, 1, 0,
-				-1,-1, 0, 1);
+				-1, 1, 0, 1);
+			*/
+			D3DXMATRIX scale(
+				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
+				 0, -2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
+				 0, 0, 1, 0,
+				 0, 0, 0, 1);
+
+			D3DXMATRIX bias(
+				 1, 0, 0, 0,
+				 0, 1, 0, 0,
+				 0, 0, 1, 0,
+				-1, 1, 0, 1);
 
 			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
 			D3DXMATRIX invViewProj;
 			D3DXMatrixInverse(&invViewProj, nullptr, &viewProjectionMatrix);
-			invViewProj = scalebias * invViewProj;
+			invViewProj = scale * bias * invViewProj;
 
 			D3DXMatrixTranspose(&m_InvViewProjScaleBias, &invViewProj);
 
@@ -664,9 +677,9 @@ public:
 		clearColor[2] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
 		clearColor[3] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
 
-		clearColor[0] *= clearColor[3];
-		clearColor[1] *= clearColor[3];
-		clearColor[2] *= clearColor[3];
+		clearColor[0] *= clearColor[3] * 2;
+		clearColor[1] *= clearColor[3] * 2;
+		clearColor[2] *= clearColor[3] * 2;
 		clearColor[3] = 0;
 
 		d3dContext->ClearRenderTargetView( m_ColorBuffer[0].m_RTView, clearColor );
