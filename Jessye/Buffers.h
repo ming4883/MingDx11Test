@@ -42,6 +42,12 @@ struct Buffers
 		ID3D11Device* d3dDevice,
 		size_t sizeInBytes);
 
+	static ID3D11Buffer* createStructComputeBuffer(
+		ID3D11Device* d3dDevice,
+		size_t bufferSizeInBytes,
+		size_t structSizeInBytes,
+		void* initialData = nullptr);
+
 	static ID3D11Texture2D* createTexture2DRenderBuffer(
 		ID3D11Device* d3dDevice,
 		size_t width,
@@ -73,6 +79,14 @@ struct Buffers
 		ID3D11Device* d3dDevice,
 		ID3D11Texture2D* texture,
 		DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
+
+	static ID3D11ShaderResourceView* createShaderResourceView(
+		ID3D11Device* d3dDevice,
+		ID3D11Buffer* buffer);
+	
+	static ID3D11UnorderedAccessView* createUnorderedAccessView(
+		ID3D11Device* d3dDevice,
+		ID3D11Buffer* buffer);
 		
 };	// Buffers
 
@@ -140,6 +154,48 @@ struct ConstantBuffer_t
 		return *static_cast<T*>(m_MappedPtr);
 	}
 
+};
+
+//! StructComputeBuffer
+struct StructComputeBuffer
+{
+	ID3D11Buffer* m_BufferObject;
+	ID3D11ShaderResourceView* m_SRView;
+	ID3D11UnorderedAccessView* m_UAView;
+
+	StructComputeBuffer() : m_BufferObject(nullptr), m_SRView(nullptr), m_UAView(nullptr)
+	{
+	}
+
+	~StructComputeBuffer()
+	{
+		destroy();
+	}
+
+	bool valid() const
+	{
+		return (m_BufferObject != nullptr)
+			&& (m_SRView != nullptr)
+			&& (m_UAView != nullptr);
+	}
+
+	void create(ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, void* initialData = nullptr)
+	{
+		m_BufferObject = Buffers::createStructComputeBuffer(d3dDevice, bufferSizeInBytes, structSizeInBytes, initialData);
+		m_SRView = Buffers::createShaderResourceView(d3dDevice, m_BufferObject);
+		m_UAView = Buffers::createUnorderedAccessView(d3dDevice, m_BufferObject);
+	}
+
+	void destroy()
+	{
+		js_safe_release(m_UAView);
+		js_safe_release(m_SRView);
+		js_safe_release(m_BufferObject);
+	}
+
+	operator ID3D11Buffer* () { return m_BufferObject; }
+	operator ID3D11ShaderResourceView* () { return m_SRView; }
+	operator ID3D11UnorderedAccessView* () { return m_UAView; }
 };
 
 //! Texture2DStagingBuffer

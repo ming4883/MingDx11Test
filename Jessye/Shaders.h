@@ -40,6 +40,12 @@ struct Shaders
 		const char* entryPoint,
 		ID3DBlob** outByteCode = nullptr);
 
+	static ID3D11ComputeShader* createFromFileCompute(
+		ID3D11Device* d3dDevice,
+		const wchar_t* filePath,
+		const char* entryPoint,
+		ID3DBlob** outByteCode = nullptr);
+
 };	// Shaders
 
 template<typename T>
@@ -109,6 +115,18 @@ public:
 		m_ShaderObject = Shaders::createFromFilePixel(d3dDevice, filePath, entryPoint, &m_ByteCode);
 	}
 };	// PixelShader
+
+struct ComputeShader : public Shader_t<ID3D11ComputeShader>
+{
+public:
+	void createFromFile(
+		ID3D11Device* d3dDevice,
+		const wchar_t* filePath,
+		const char* entryPoint)
+	{
+		m_ShaderObject = Shaders::createFromFileCompute(d3dDevice, filePath, entryPoint, &m_ByteCode);
+	}
+};	// ComputeShader
 
 
 }	// namespace js

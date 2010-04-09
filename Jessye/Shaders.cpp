@@ -202,4 +202,37 @@ namespace js
 		return shader;
 	}
 
+	ID3D11ComputeShader* Shaders::createFromFileCompute(
+		ID3D11Device* d3dDevice,
+		const wchar_t* filePath,
+		const char* entryPoint,
+		ID3DBlob** outByteCode)
+	{
+		HRESULT hr;
+
+		js_assert(d3dDevice != nullptr);
+
+		const std::string shaderModel = "cs" + getBestShaderModel(d3dDevice->GetFeatureLevel());
+
+		ID3DBlob* byteCode;
+
+		if(!compileFromFile(filePath, entryPoint, shaderModel.c_str(), byteCode))
+			return nullptr;
+
+		ID3D11ComputeShader* shader = nullptr;
+
+		hr = d3dDevice->CreateComputeShader(byteCode->GetBufferPointer(), byteCode->GetBufferSize(),  nullptr, &shader);
+
+		if(FAILED(hr))
+		{
+			js_safe_release(byteCode);
+			return nullptr;
+		}
+
+		if(nullptr != outByteCode)
+			*outByteCode = byteCode;
+		
+		return shader;
+	}
+
 }	// namespace js

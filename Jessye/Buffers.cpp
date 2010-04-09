@@ -140,6 +140,33 @@ namespace js
 		return buffer;
 	}
 
+	ID3D11Buffer* Buffers::createStructComputeBuffer(
+		ID3D11Device* d3dDevice,
+		size_t bufferSizeInBytes,
+		size_t structSizeInBytes,
+		void* initialData)
+	{
+		//if(bufferSizeInBytes % 16 != 0)
+		//	bufferSizeInBytes += 16 - (bufferSizeInBytes % 16);
+		D3D11_BUFFER_DESC desc;
+		desc.Usage = D3D11_USAGE_DEFAULT;
+		desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = 0;
+		desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		desc.ByteWidth = bufferSizeInBytes;
+		desc.StructureByteStride = structSizeInBytes;
+
+		D3D11_SUBRESOURCE_DATA srdata;
+		srdata.pSysMem = initialData;
+
+		ID3D11Buffer* buffer = nullptr;
+		HRESULT hr = d3dDevice->CreateBuffer(&desc, (nullptr == initialData) ? nullptr : &srdata, &buffer);
+		
+		if(FAILED(hr)) js_safe_release(buffer);
+
+		return buffer;
+	}
+
 	ID3D11Texture2D* Buffers::createTexture2DRenderBuffer(
 		ID3D11Device* d3dDevice,
 		size_t width,
@@ -291,5 +318,83 @@ namespace js
 
 		return srview;
 	}
+
+	 ID3D11ShaderResourceView* Buffers::createShaderResourceView(
+		ID3D11Device* d3dDevice,
+		ID3D11Buffer* buffer)
+	 {
+		 D3D11_BUFFER_DESC bufdesc;
+		 ZeroMemory(&bufdesc, sizeof(bufdesc));
+		 buffer->GetDesc(&bufdesc);
+
+		 D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+		 ZeroMemory(&desc, sizeof(desc));
+		 desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+		 desc.BufferEx.FirstElement = 0;
+
+		 if(bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS)
+		 {
+			 // This is a Raw Buffer
+			 desc.Format = DXGI_FORMAT_R32_TYPELESS;
+			 desc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+			 desc.BufferEx.NumElements = bufdesc.ByteWidth / 4;
+		 }
+		 else if (bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
+		 {
+			 // This is a Structured Buffer
+			 desc.Format = DXGI_FORMAT_UNKNOWN;
+			 desc.BufferEx.NumElements = bufdesc.ByteWidth / bufdesc.StructureByteStride;
+		 }
+		 else
+		 {
+			 return nullptr;
+		 }
+
+		 ID3D11ShaderResourceView* srview = nullptr;
+		 HRESULT hr = d3dDevice->CreateShaderResourceView(buffer, &desc, &srview);
+
+		 if(FAILED(hr)) js_safe_release(srview);
+
+		 return srview;
+	 }
+
+	 ID3D11UnorderedAccessView* Buffers::createUnorderedAccessView(
+		ID3D11Device* d3dDevice,
+		ID3D11Buffer* buffer)
+	 {
+		 D3D11_BUFFER_DESC bufdesc;
+		 ZeroMemory(&bufdesc, sizeof(bufdesc));
+		 buffer->GetDesc(&bufdesc);
+
+		 D3D11_UNORDERED_ACCESS_VIEW_DESC desc;
+		 ZeroMemory(&desc, sizeof(desc));
+		 desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		 desc.Buffer.FirstElement = 0;
+
+		 if(bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS)
+		 {
+			 // This is a Raw Buffer
+			 desc.Format = DXGI_FORMAT_R32_TYPELESS; // Format must be DXGI_FORMAT_R32_TYPELESS, when creating Raw Unordered Access View
+			 desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
+			 desc.Buffer.NumElements = bufdesc.ByteWidth / 4; 
+		 }
+		 else if(bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
+		 {
+			 // This is a Structured Buffer
+			 desc.Format = DXGI_FORMAT_UNKNOWN;      // Format must be must be DXGI_FORMAT_UNKNOWN, when creating a View of a Structured Buffer
+			 desc.Buffer.NumElements = bufdesc.ByteWidth / bufdesc.StructureByteStride; 
+		 } 
+		 else
+		 {
+			 return nullptr;
+		 }
+
+		 ID3D11UnorderedAccessView* uaview = nullptr;
+		 HRESULT hr = d3dDevice->CreateUnorderedAccessView(buffer, &desc, &uaview);
+
+		 if(FAILED(hr)) js_safe_release(uaview);
+
+		 return uaview;
+	 }
 
 }	// namespace js
