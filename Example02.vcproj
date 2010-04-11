@@ -695,6 +695,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Media\Example02\Histogram.Update.PS.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Histogram.Update.VS.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\Media\Example02\Post.Blur.hlsl"
 				>
 			</File>
