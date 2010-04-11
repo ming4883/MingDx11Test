@@ -11,7 +11,7 @@
 //--------------------------------------------------------------------------------------
 cbuffer cbHistogramUpdate : register( b0 )
 {
-	float4 g_vInputParams	: packoffset(c0);	// white target, bloom threshold
+	float4 g_vInputParams	: packoffset(c0);	// MaxInputValue, WhiteTarget, BloomThreshold
 };
 
 //--------------------------------------------------------------------------------------
@@ -33,20 +33,52 @@ Texture2D g_txHistogram : register( t0 );
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
+float BinValue(int bin, int numBins)
+{
+	return ((float)bin / numBins) * g_vInputParams.x;
+}
+
+#define MAX_HISTOGRAM_SIZE 64
 
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
-	int iWDepth, iHDepth;
-	g_txHistogram.GetDimensions(iWDepth, iHDepth);
+	int iW, iH;
+	g_txHistogram.GetDimensions(iW, iH);
 	
-	// use the depth-value in the screen center as the focus distance
-	float fDepthFocus = 0;
-	int x = iWDepth/2;
-	int y = iHDepth/2;
+	float freq[MAX_HISTOGRAM_SIZE];
 	
-	fDepthFocus = g_txHistogram.Load(int3(x, y, 0)).x;
-	float3 fPosFocus = ScreenToWorldPosition(float4(x, y, fDepthFocus, 1)).xyz;
+	// fetch the histogram into shader registers
+	float total = 0;
+	for(int i=0; i<iW; ++i)
+	{
+		 freq[i] = g_txHistogram.Load(int3(i, 0, 0)).x;
+		 total += freq;
+	}
 	
-	return float4(fPosFocus, fDepthFocus);
+	// mean
+	float mean = 0;
+	
+	for(int i=0; i<iW; ++i)
+		mean += freq[i] * BinValue(i, iW);
+	
+	mean /= total;
+	
+	// max value
+	float binMax = iW-1;
+	
+	while(freq[binMax] <= 0)
+		binMax++;
+		
+	// white target
+	float fTargetValue = total * (1-g_vInputParams.y);
+	
+	float binWhite = iW-1;
+	
+	while(freq[binWhite] <= 0)
+		binMax++;
+	
+	return float4(mean, mean, mean, mean);
+	
+	
 }
 
