@@ -41,6 +41,7 @@ public:
 	js::VertexShader m_DrawVs;
 	js::GeometryShader m_DrawGs;
 	js::PixelShader m_DrawPs;
+	//js::StructComputeBuffer m_BufferCompute;
 	HistogramComputeConstBuf m_ComputeCb;
 	HistogramDrawConstBuf m_DrawCb;
 	ID3D11Buffer* m_VB;
@@ -49,7 +50,7 @@ public:
 	float m_LastNumInputs;
 	float m_MaxInputValue;
 	float m_AdaptFactor;
-	float m_HistogramTarget;
+	float m_WhiteTarget;
 	float m_BloomThreshold;
 	D3DXVECTOR4 m_HDRParams; // min, max, key
 	
@@ -58,7 +59,7 @@ public:
 		, m_LastNumInputs(1)
 		, m_AdaptFactor(2)
 		, m_HDRParams(0, 1, 1, 0)
-		, m_HistogramTarget(0.95f)
+		, m_WhiteTarget(0.95f)
 		, m_BloomThreshold(0.5f)
 	{
 	}
@@ -71,9 +72,12 @@ public:
 		m_BufferStaging.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		js_assert(m_BufferStaging.valid());
 
+		//m_BufferCompute.create(d3dDevice, sizeof(float)*SIZE, sizeof(float));
+		//js_assert(m_BufferCompute.valid());
+
 		m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
 		js_assert(m_ComputeVs.valid());
-		
+
 		m_ComputeGs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.GS.hlsl"), "Main");
 		js_assert(m_ComputeGs.valid());
 
@@ -110,6 +114,7 @@ public:
 	{
 		m_Buffer.destroy();
 		m_BufferStaging.destroy();
+		//m_BufferCompute.destroy();
 		m_ComputeVs.destroy();
 		m_ComputeGs.destroy();
 		m_ComputePs.destroy();
@@ -189,13 +194,14 @@ public:
 		rsCache.psState().restore();
 
 		// measure hdrParams
+		float histogram[SIZE]; float histogramSum = 0;
 		d3dContext->CopyResource(m_BufferStaging.m_TextureObject, m_Buffer.m_TextureObject);
 		m_BufferStaging.map(d3dContext, D3D11_MAP_READ);
 
 		typedef float f4[4];
 		f4* data = m_BufferStaging.data<f4>();
 		
-		float histogram[SIZE]; float histogramSum = 0;
+		
 		for(size_t i=0; i<SIZE; ++i)
 		{
 			histogram[i] = *data[0];
@@ -212,7 +218,7 @@ public:
 
 		size_t keyIdx = SIZE-1;
 		float currentValue = 0;
-		const float targetValue = histogramSum * (1-m_HistogramTarget);
+		const float targetValue = histogramSum * (1-m_WhiteTarget);
 		while((currentValue += histogram[keyIdx]) < targetValue) {--keyIdx;}
 
 		float mean = 0;
@@ -358,15 +364,6 @@ public:
 
 #pragma pack(pop)
 
-	enum
-	{
-		UI_LIGHTCOLOR_R,
-		UI_LIGHTCOLOR_G,
-		UI_LIGHTCOLOR_B,
-		UI_LIGHTCOLOR_MULTIPLER,
-		UI_POST_ADAPTTIME,
-	};
-
 // Global Variables
 	CFirstPersonCamera m_Camera;
 	RenderableMesh m_Mesh;
@@ -403,6 +400,17 @@ public:
 	js::PixelShader m_PostBrPassShd;
 	js::PixelShader m_PostBlurShd;
 
+	enum
+	{
+		UI_LIGHTCOLOR_R,
+		UI_LIGHTCOLOR_G,
+		UI_LIGHTCOLOR_B,
+		UI_LIGHTCOLOR_MULTIPLER,
+		UI_POST_ADAPTTIME,
+		UI_POST_HDR_BLOOMTHRESHOLD,
+		UI_POST_HDR_WHITETARGET,
+	};
+
 // Methods
 	Example02()
 		: m_ShowGui(true)
@@ -415,20 +423,20 @@ public:
 		const int w = 120, h = 20;
 		int y = 50;
 		dlg->AddStatic(UI_LIGHTCOLOR_R, L"Light.R", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 255);
+		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
+		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 180);
 		y += h;
 		dlg->AddStatic(UI_LIGHTCOLOR_G, L"Light.G", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_G)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 255);
+		dlg->GetStatic(UI_LIGHTCOLOR_G)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
+		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 200);
 		y += h;
 		dlg->AddStatic(UI_LIGHTCOLOR_B, L"Light.B", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_B)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
+		dlg->GetStatic(UI_LIGHTCOLOR_B)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
 		dlg->AddSlider(UI_LIGHTCOLOR_B, w, y, w, h, 0, 255, 255);
 		y += h;
 
 		dlg->AddStatic(UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
+		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
 		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 511);
 		y += h;
 
@@ -436,6 +444,17 @@ public:
 		dlg->GetStatic(UI_POST_ADAPTTIME)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
 		dlg->AddSlider(UI_POST_ADAPTTIME, w, y, w, h, 0, 1023, 127);
 		y += h;
+		
+		dlg->AddStatic(UI_POST_HDR_BLOOMTHRESHOLD, L"Post.HDR.BloomThreshold", 0, y, w, h);
+		dlg->GetStatic(UI_POST_HDR_BLOOMTHRESHOLD)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
+		dlg->AddSlider(UI_POST_HDR_BLOOMTHRESHOLD, w, y, w, h, 0, 255, 127);
+		y += h;
+
+		dlg->AddStatic(UI_POST_HDR_WHITETARGET, L"Post.HDR.WhileTarget", 0, y, w, h);
+		dlg->GetStatic(UI_POST_HDR_WHITETARGET)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
+		dlg->AddSlider(UI_POST_HDR_WHITETARGET, w, y, w, h, 0, 255, (int)(255 * 0.95f));
+		y += h;
+
 		m_GuiDlgs.push_back(dlg);
 	}
 
@@ -444,6 +463,19 @@ public:
 	}
 
 	__override const wchar_t* getName() { return L"Example02"; }
+
+	__override bool isD3D11DeviceAcceptable(
+		const CD3D11EnumAdapterInfo* adapterInfo,
+		UINT output,
+		const CD3D11EnumDeviceInfo* deviceInfo,
+		DXGI_FORMAT backBufferFormat,
+		bool windowed)
+	{
+		//if(FALSE == deviceInfo->ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)
+		//	return false;
+
+		return true;
+	}
 
 	__override HRESULT onD3D11CreateDevice(
 		ID3D11Device* d3dDevice,
@@ -623,6 +655,9 @@ public:
 
 		// adapt-factor = 1 / adapt-time
 		m_Histogram.m_AdaptFactor = 255.0f / m_GuiDlgs[0]->GetSlider(UI_POST_ADAPTTIME)->GetValue();
+		m_Histogram.m_BloomThreshold = m_GuiDlgs[0]->GetSlider(UI_POST_HDR_BLOOMTHRESHOLD)->GetValue() / 255.0f;
+		m_Histogram.m_WhiteTarget = m_GuiDlgs[0]->GetSlider(UI_POST_HDR_WHITETARGET)->GetValue() / 255.0f;
+
 	}
 
 	__override void onD3D11FrameRender(
@@ -677,9 +712,9 @@ public:
 		clearColor[2] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
 		clearColor[3] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
 
-		clearColor[0] *= clearColor[3] * 2;
-		clearColor[1] *= clearColor[3] * 2;
-		clearColor[2] *= clearColor[3] * 2;
+		clearColor[0] *= clearColor[3] * 1.25f;
+		clearColor[1] *= clearColor[3] * 1.25f;
+		clearColor[2] *= clearColor[3] * 1.25f;
 		clearColor[3] = 0;
 
 		d3dContext->ClearRenderTargetView( m_ColorBuffer[0].m_RTView, clearColor );
