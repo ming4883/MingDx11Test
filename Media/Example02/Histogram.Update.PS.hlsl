@@ -64,20 +64,24 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	mean /= total;
 	
 	// max value
-	float binMax = iW-1;
+	int binMax = iW-1;
 	
 	while(freq[binMax] <= 0)
-		binMax++;
+		--binMax;
 		
 	// white target
 	float fTargetValue = total * (1-g_vInputParams.y);
 	
-	float binWhite = iW-1;
+	int binWhite = iW-1;
 	
-	while(freq[binWhite] <= 0)
-		binMax++;
+	float whiteTotal = 0;
+	while(whiteTotal + freq[binWhite] <= fTargetValue)
+	{
+		whiteTotal += freq[binWhite];
+		--binWhite;
+	}
 	
-	return float4(mean, mean, mean, mean);
+	return float4(mean, BinValue(binMax, iW), BinValue(binWhite, iW), mean);
 	
 	
 }
