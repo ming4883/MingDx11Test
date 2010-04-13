@@ -15,4 +15,8 @@
 	className(const className&);\
 	className& operator = (const className&);
 
+#define js_max(a,b)            (((a) > (b)) ? (a) : (b))
+
+#define js_min(a,b)            (((a) < (b)) ? (a) : (b))
+
 #endif	// PLATFORM_H

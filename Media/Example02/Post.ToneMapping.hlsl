@@ -46,20 +46,22 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	float4 vBloom = g_txBloom.Sample(g_samLinear, Input.vTexcoord);
 	
 	// tone mapping
-	vOutput.xyz += vBloom.xyz;
 	
 	float fKey = g_HDRParams.z;
 	float fLumMean = g_HDRParams.x + 0.001f;
 	
 	float fLum = dot(vOutput.xyz, float3(0.27,0.67,0.06));
 	
+	vOutput.xyz += vBloom.xyz;
+	
 #if TONEMAPPING_ON_LUM
-	fLum = fLum * fKey / fLumMean;
+	fLum = fLum / fKey;
 	fLum = fLum / (1 + fLum);
+	
 	vOutput.xyz *= fLum;
 	
 #else
-	vOutput.xyz *= fLum * fKey / fLumMean;
+	vOutput.xyz = vOutput.xyz / fKey;
 	vOutput.xyz = vOutput.xyz / (1 + vOutput.xyz);
 	
 #endif

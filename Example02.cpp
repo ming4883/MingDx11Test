@@ -127,6 +127,14 @@ public:
 		js_safe_release(m_IL);
 	}
 
+	float binValue(size_t bin)
+	{
+		float a = ((float)bin / SIZE) * m_MaxInputValue;
+		float b = ((float)(bin+1) / SIZE) * m_MaxInputValue;
+		a = (a+b) / 2;
+		return a;
+	}
+
 	void update(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, js::Texture2DRenderBuffer& colorBuffer, float dt)
 	{
 		js_assert(colorBuffer.valid());
@@ -201,7 +209,6 @@ public:
 		typedef float f4[4];
 		f4* data = m_BufferStaging.data<f4>();
 		
-		
 		for(size_t i=0; i<SIZE; ++i)
 		{
 			histogram[i] = *data[0];
@@ -222,22 +229,27 @@ public:
 		while((currentValue += histogram[keyIdx]) < targetValue) {--keyIdx;}
 
 		float mean = 0;
-		for(size_t i=0; i<SIZE; ++i)
-			mean += histogram[i] * ((float)i / SIZE) * m_MaxInputValue;
+		for(size_t i=0; i<SIZE; ++i) {mean += histogram[i] * binValue(i);}
 		mean /= histogramSum;
 
 		D3DXVECTOR4 hdrParams;
 		hdrParams.x = mean;
-		hdrParams.y = ((float)maxIdx / SIZE) * m_MaxInputValue;
+		hdrParams.y = binValue(maxIdx);
+		if(keyIdx < SIZE-1)
 		{
-			float a = ((float)(keyIdx+1) / SIZE) * m_MaxInputValue;
-			float b = ((float)(keyIdx+1) / SIZE) * m_MaxInputValue;
+			float a = binValue(keyIdx+1);
+			float b = binValue(keyIdx);
+
 			float aVal = currentValue - histogram[keyIdx];
 			float bVal = currentValue;
-			float t = (targetValue - aVal) / (bVal) - (aVal);
+			float t = (targetValue - aVal) / (bVal - aVal);
 			hdrParams.z = a + (b-a) * t;
-			hdrParams.w = hdrParams.z * m_BloomThreshold;
 		}
+		else
+		{
+			hdrParams.z = binValue(keyIdx);
+		}
+		hdrParams.w = hdrParams.z * m_BloomThreshold;
 
 		const float t = dt * m_AdaptFactor;
 		m_HDRParams = m_HDRParams * (1 - t) + hdrParams * t;
@@ -424,11 +436,11 @@ public:
 		int y = 50;
 		dlg->AddStatic(UI_LIGHTCOLOR_R, L"Light.R", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 180);
+		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 255);
 		y += h;
 		dlg->AddStatic(UI_LIGHTCOLOR_G, L"Light.G", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_G)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 200);
+		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 255);
 		y += h;
 		dlg->AddStatic(UI_LIGHTCOLOR_B, L"Light.B", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_B)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
@@ -437,7 +449,7 @@ public:
 
 		dlg->AddStatic(UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 511);
+		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 767);
 		y += h;
 
 		dlg->AddStatic(UI_POST_ADAPTTIME, L"Post.AdaptTime", 0, y, w, h);
@@ -654,7 +666,7 @@ public:
 		D3DXMatrixIdentity(&m_WorldMatrix);
 
 		// adapt-factor = 1 / adapt-time
-		m_Histogram.m_AdaptFactor = 255.0f / m_GuiDlgs[0]->GetSlider(UI_POST_ADAPTTIME)->GetValue();
+		m_Histogram.m_AdaptFactor = 256.0f / (m_GuiDlgs[0]->GetSlider(UI_POST_ADAPTTIME)->GetValue()+1);
 		m_Histogram.m_BloomThreshold = m_GuiDlgs[0]->GetSlider(UI_POST_HDR_BLOOMTHRESHOLD)->GetValue() / 255.0f;
 		m_Histogram.m_WhiteTarget = m_GuiDlgs[0]->GetSlider(UI_POST_HDR_WHITETARGET)->GetValue() / 255.0f;
 
