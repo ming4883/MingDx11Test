@@ -724,9 +724,9 @@ public:
 		clearColor[2] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
 		clearColor[3] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
 
-		clearColor[0] *= clearColor[3] * 1.25f;
-		clearColor[1] *= clearColor[3] * 1.25f;
-		clearColor[2] *= clearColor[3] * 1.25f;
+		clearColor[0] *= clearColor[3];
+		clearColor[1] *= clearColor[3];
+		clearColor[2] *= clearColor[3];
 		clearColor[3] = 0;
 
 		d3dContext->ClearRenderTargetView( m_ColorBuffer[0].m_RTView, clearColor );

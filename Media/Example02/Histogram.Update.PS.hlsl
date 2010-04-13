@@ -81,7 +81,15 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 		--binWhite;
 	}
 	
-	return float4(mean, BinValue(binMax, iW), BinValue(binWhite, iW), mean);
+	float a = BinValue(binWhite+1, iW);
+	float b = BinValue(binWhite, iW);
+
+	float aFreq = whiteTotal;
+	float bFreq = whiteTotal + histogram[keyIdx];
+	float t = (fTargetValue - aFreq) / (bFreq - aFreq);
+	float fKey = a + (b-a) * t;
+	
+	return float4(mean, BinValue(binMax, iW), fKey, fKey * g_vInputParams.z);
 	
 	
 }
