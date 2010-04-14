@@ -13,7 +13,7 @@ cbuffer cbPostCommon : register( b0 )
 {
 	matrix g_InvViewProjScaleBias	: packoffset(c0);
 	float4 g_ZParams				: packoffset(c4);
-	float4 g_HDRParams				: packoffset(c5);
+	float4 g_UserParams				: packoffset(c5);
 };
 
 //--------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ SamplerState g_samLinear : register( s0 );
 // Textures and Samplers
 //--------------------------------------------------------------------------------------
 Texture2D g_txSource : register( t0 );
-
+Texture2D g_txHDRParams : register( t1 );
 
 #define NUM_ROWS 4
 #define NUM_COLS 4
@@ -46,6 +46,8 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	float4 vOutput = 0;
 	
+	float fBloomThresshold = g_txHDRParams.Load(int3(0,0,0)).w;
+	
 	[unroll]
 	for(int row=0; row<NUM_ROWS; ++row)
 	{
@@ -54,7 +56,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 		{
 			int3 vTapTexcoord = vTexcoord;
 			vTapTexcoord.xy += int2(col, row);
-			vOutput += max(g_txSource.Load(vTapTexcoord) - g_HDRParams.w, 0);
+			vOutput += max(g_txSource.Load(vTapTexcoord) - fBloomThresshold, 0);
 		}
 	}
 	

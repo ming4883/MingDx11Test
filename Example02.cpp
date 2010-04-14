@@ -9,6 +9,160 @@
 #include "Jessye/RenderStates.h"
 #include "Jessye/ViewArrays.h"
 
+class PostProcessor
+{
+public:
+	struct ConstBuffer_s
+	{
+		D3DXMATRIX m_InvViewProjScaleBias;
+		D3DXVECTOR4 m_ZParams;
+		D3DXVECTOR4 m_UserParams;
+
+		void update(const CBaseCamera& camera)
+		{
+			D3DXMATRIX scale(
+				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
+				 0, -2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
+				 0, 0, 1, 0,
+				 0, 0, 0, 1);
+
+			D3DXMATRIX bias(
+				 1, 0, 0, 0,
+				 0, 1, 0, 0,
+				 0, 0, 1, 0,
+				-1, 1, 0, 1);
+
+			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
+			D3DXMATRIX invViewProj;
+			D3DXMatrixInverse(&invViewProj, nullptr, &viewProjectionMatrix);
+			invViewProj = scale * bias * invViewProj;
+
+			D3DXMatrixTranspose(&m_InvViewProjScaleBias, &invViewProj);
+
+			m_ZParams.x = 1 / camera.GetFarClip() - 1 / camera.GetNearClip();
+			m_ZParams.y = 1 / camera.GetNearClip();
+			m_ZParams.z = camera.GetFarClip() - camera.GetNearClip();
+			m_ZParams.w = camera.GetNearClip();
+		}
+	};
+
+	typedef js::ConstantBuffer_t<ConstBuffer_s> ConstBuffer;
+
+	ScreenQuad m_ScreenQuad;
+	js::VertexShader m_PostVtxShd;
+	ConstBuffer m_ConstBuf;
+	js::SamplerState m_SamplerState;
+
+	bool valid() const
+	{
+		return m_ScreenQuad.valid()
+			&& m_PostVtxShd.valid()
+			&& m_ConstBuf.valid()
+			&& m_SamplerState.valid()
+			;
+	}
+
+	void create(ID3D11Device* d3dDevice)
+	{
+		// post processing
+		m_SamplerState.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		m_SamplerState.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		m_SamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		m_SamplerState.create(d3dDevice);
+
+		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
+		js_assert(m_PostVtxShd.valid());
+
+		m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);
+		js_assert(m_ScreenQuad.valid());
+
+		m_ConstBuf.create(d3dDevice);
+	};
+
+	void destroy()
+	{
+		m_SamplerState.destroy();
+		m_PostVtxShd.destroy();
+		m_ScreenQuad.destroy();
+		m_ConstBuf.destroy();
+	}
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::Texture2DRenderBuffer& srcBuf,
+		js::Texture2DRenderBuffer& dstBuf,
+		js::PixelShader& shader
+		)
+	{
+		filter(d3dContext, rsCache, js::SrvVA() << srcBuf, js::RtvVA() << dstBuf, dstBuf.viewport(), shader);
+	}
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::SrvVA& srvVA,
+		js::Texture2DRenderBuffer& dstBuf,
+		js::PixelShader& shader
+		)
+	{
+		filter(d3dContext, rsCache, srvVA, js::RtvVA() << dstBuf, dstBuf.viewport(), shader);
+	}
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::SrvVA& srvVA,
+		js::RtvVA& rtvVA,
+		const D3D11_VIEWPORT& vp,
+		js::PixelShader& shader
+		)
+	{
+		if(rtvVA.m_Count > 0)
+		{
+			rsCache.rtState().backup();
+			rsCache.rtState().set(rtvVA.m_Count, rtvVA, nullptr);
+		}
+
+		size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+		d3dContext->RSGetViewports(&vpCnt, nullptr);
+		d3dContext->RSGetViewports(&vpCnt, vps);
+		d3dContext->RSSetViewports(1, js::VpVA() << vp);
+
+		filter(d3dContext, rsCache, srvVA, shader);
+		
+		d3dContext->RSSetViewports(vpCnt, vps);
+
+		if(rtvVA.m_Count > 0)
+		{
+			rsCache.rtState().restore();
+		}
+	}
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::SrvVA& srvVA,
+		js::PixelShader& shader
+		)
+	{
+		rsCache.vsState().backup();
+		rsCache.vsState().setShader(m_PostVtxShd);
+
+		rsCache.psState().backup();
+		rsCache.psState().setShader(shader);
+		rsCache.psState().setSRViews(0, srvVA.m_Count, srvVA);
+		rsCache.psState().setConstBuffers(0, 1, js::BufVA() << m_ConstBuf);
+		rsCache.psState().setSamplers(0, 1, js::SampVA() << m_SamplerState);
+
+		rsCache.applyToContext(d3dContext);
+
+		m_ScreenQuad.render(d3dContext);
+		
+		rsCache.vsState().restore();
+		rsCache.psState().restore();
+	}
+};
 
 class Histogram
 {
@@ -32,15 +186,18 @@ public:
 
 	typedef js::ConstantBuffer_t<HistogramDraw_s> HistogramDrawConstBuf;
 
+
 #pragma pack(pop)
-	js::Texture2DRenderBuffer m_Buffer;
-	js::Texture2DStagingBuffer m_BufferStaging;
+	js::Texture2DRenderBuffer m_HistogramBuffer;
+	js::Texture2DRenderBuffer m_HdrParamBuffer;
+	//js::Texture2DStagingBuffer m_HistogramStageBuffer;
 	js::VertexShader m_ComputeVs;
 	js::GeometryShader m_ComputeGs;
 	js::PixelShader m_ComputePs;
 	js::VertexShader m_DrawVs;
 	js::GeometryShader m_DrawGs;
 	js::PixelShader m_DrawPs;
+	js::PixelShader m_UpdatePs;
 	//js::StructComputeBuffer m_BufferCompute;
 	HistogramComputeConstBuf m_ComputeCb;
 	HistogramDrawConstBuf m_DrawCb;
@@ -50,27 +207,32 @@ public:
 	float m_LastNumInputs;
 	float m_MaxInputValue;
 	float m_AdaptFactor;
-	float m_WhiteTarget;
+	float m_KeyTarget;
 	float m_BloomThreshold;
-	D3DXVECTOR4 m_HDRParams; // min, max, key
 	
 	Histogram()
 		: m_MaxInputValue(4.0f)
 		, m_LastNumInputs(1)
 		, m_AdaptFactor(2)
-		, m_HDRParams(0, 1, 1, 0)
-		, m_WhiteTarget(0.95f)
+		, m_KeyTarget(0.95f)
 		, m_BloomThreshold(0.5f)
 	{
 	}
 
 	void create(ID3D11Device* d3dDevice)
 	{
-		m_Buffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
-		js_assert(m_Buffer.valid());
+		m_HistogramBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		js_assert(m_HistogramBuffer.valid());
 
-		m_BufferStaging.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
-		js_assert(m_BufferStaging.valid());
+		//m_HistogramStageBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		//js_assert(m_HistogramStageBuffer.valid());
+		
+		m_HdrParamBuffer.create(d3dDevice, 1, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
+		js_assert(m_HdrParamBuffer.valid());
+
+		{	float value[4] = {0, 1, 1, 0};
+			DXUTGetD3D11DeviceContext()->ClearRenderTargetView(m_HdrParamBuffer, value);
+		}
 
 		//m_BufferCompute.create(d3dDevice, sizeof(float)*SIZE, sizeof(float));
 		//js_assert(m_BufferCompute.valid());
@@ -93,6 +255,9 @@ public:
 		m_DrawPs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.PS.hlsl"), "Main");
 		js_assert(m_DrawPs.valid());
 
+		m_UpdatePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Update.PS.hlsl"), "Main");
+		js_assert(m_UpdatePs.valid());
+
 		m_ComputeCb.create(d3dDevice);
 		js_assert(m_ComputeCb.valid());
 		
@@ -112,8 +277,9 @@ public:
 
 	void destroy()
 	{
-		m_Buffer.destroy();
-		m_BufferStaging.destroy();
+		m_HistogramBuffer.destroy();
+		//m_HistogramStageBuffer.destroy();
+		m_HdrParamBuffer.destroy();
 		//m_BufferCompute.destroy();
 		m_ComputeVs.destroy();
 		m_ComputeGs.destroy();
@@ -121,6 +287,7 @@ public:
 		m_DrawVs.destroy();
 		m_DrawGs.destroy();
 		m_DrawPs.destroy();
+		m_UpdatePs.destroy();
 		m_ComputeCb.destroy();
 		m_DrawCb.destroy();
 		js_safe_release(m_VB);
@@ -135,7 +302,7 @@ public:
 		return a;
 	}
 
-	void update(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, js::Texture2DRenderBuffer& colorBuffer, float dt)
+	void compute(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, js::Texture2DRenderBuffer& colorBuffer)
 	{
 		js_assert(colorBuffer.valid());
 
@@ -153,14 +320,14 @@ public:
 		
 		// render target
 		static const float clearColor[] = {0, 0, 0, 0};
-		d3dContext->ClearRenderTargetView(m_Buffer.m_RTView, clearColor);
+		d3dContext->ClearRenderTargetView(m_HistogramBuffer.m_RTView, clearColor);
 		size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
 		d3dContext->RSGetViewports(&vpCnt, nullptr);
 		d3dContext->RSGetViewports(&vpCnt, vps);
-		d3dContext->RSSetViewports(1, js::VpVA() << m_Buffer.viewport());
+		d3dContext->RSSetViewports(1, js::VpVA() << m_HistogramBuffer.viewport());
 
 		rsCache.rtState().backup();
-		rsCache.rtState().set(1, js::RtvVA() << m_Buffer, nullptr);
+		rsCache.rtState().set(1, js::RtvVA() << m_HistogramBuffer, nullptr);
 
 		// render state
 		rsCache.blendState().backup();
@@ -200,59 +367,37 @@ public:
 		rsCache.vsState().restore();
 		rsCache.gsState().restore();
 		rsCache.psState().restore();
-
-		// measure hdrParams
-		float histogram[SIZE]; float histogramSum = 0;
-		d3dContext->CopyResource(m_BufferStaging.m_TextureObject, m_Buffer.m_TextureObject);
-		m_BufferStaging.map(d3dContext, D3D11_MAP_READ);
-
-		typedef float f4[4];
-		f4* data = m_BufferStaging.data<f4>();
-		
-		for(size_t i=0; i<SIZE; ++i)
-		{
-			histogram[i] = *data[0];
-			histogramSum += histogram[i];
-			++data;
-		}
-		m_BufferStaging.unmap(d3dContext);
-
-		size_t minIdx = 0;
-		while(histogram[minIdx] <= 0) {++minIdx;}
-
-		size_t maxIdx = SIZE-1;
-		while(histogram[maxIdx] <= 0) {--maxIdx;}
-
-		size_t keyIdx = SIZE-1;
-		float currentValue = 0;
-		const float targetValue = histogramSum * (1-m_WhiteTarget);
-		while((currentValue += histogram[keyIdx]) < targetValue) {--keyIdx;}
-
-		float mean = 0;
-		for(size_t i=0; i<SIZE; ++i) {mean += histogram[i] * binValue(i);}
-		mean /= histogramSum;
-
-		D3DXVECTOR4 hdrParams;
-		hdrParams.x = mean;
-		hdrParams.y = binValue(maxIdx);
-		if(keyIdx < SIZE-1)
-		{
-			float a = binValue(keyIdx+1);
-			float b = binValue(keyIdx);
-
-			float aVal = currentValue - histogram[keyIdx];
-			float bVal = currentValue;
-			float t = (targetValue - aVal) / (bVal - aVal);
-			hdrParams.z = a + (b-a) * t;
-		}
-		else
-		{
-			hdrParams.z = binValue(keyIdx);
-		}
-		hdrParams.w = hdrParams.z * m_BloomThreshold;
-
+	}
+	
+	void update(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, PostProcessor& postProcessor, float dt)
+	{
 		const float t = dt * m_AdaptFactor;
-		m_HDRParams = m_HDRParams * (1 - t) + hdrParams * t;
+
+		postProcessor.m_ConstBuf.map(d3dContext);
+		postProcessor.m_ConstBuf.data().m_UserParams.x = m_MaxInputValue;
+		postProcessor.m_ConstBuf.data().m_UserParams.y = m_KeyTarget;
+		postProcessor.m_ConstBuf.data().m_UserParams.z = m_BloomThreshold;
+		postProcessor.m_ConstBuf.data().m_UserParams.w = (float)SIZE;
+		postProcessor.m_ConstBuf.unmap(d3dContext);
+
+		rsCache.blendState().backup();
+		rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+		rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_BLEND_FACTOR;
+		rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_INV_BLEND_FACTOR;
+		rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_BLEND_FACTOR;
+		rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_BLEND_FACTOR;
+		rsCache.blendState().blendFactor()[0] = t;
+		rsCache.blendState().blendFactor()[1] = t;
+		rsCache.blendState().blendFactor()[2] = t;
+		rsCache.blendState().blendFactor()[3] = t;
+		rsCache.blendState().dirty();
+
+		postProcessor.filter(
+			d3dContext, rsCache, m_HistogramBuffer, m_HdrParamBuffer, m_UpdatePs);
+
+		rsCache.blendState().restore();
 	}
 
 	void display(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, float x, float y, float w, float h)
@@ -272,7 +417,7 @@ public:
 		//shader states
 		rsCache.vsState().backup();
 		rsCache.vsState().setShader(m_DrawVs);
-		rsCache.vsState().setSRViews(0, 1, js::SrvVA() << m_Buffer);
+		rsCache.vsState().setSRViews(0, 1, js::SrvVA() << m_HistogramBuffer);
 		rsCache.vsState().setConstBuffers(0, 1, js::BufVA() << m_DrawCb);
 
 		rsCache.gsState().backup();
@@ -291,11 +436,6 @@ public:
 		rsCache.vsState().restore();
 		rsCache.gsState().restore();
 		rsCache.psState().restore();
-	}
-
-	D3DXVECTOR4 hdrParams() const
-	{
-		return m_HDRParams;
 	}
 };	// Histogram
 
@@ -329,51 +469,6 @@ public:
 
 	typedef js::ConstantBuffer_t<PSPreObject> PSPreObjectConstBuf;
 
-	struct PSPostProcess
-	{
-		D3DXMATRIX m_InvViewProjScaleBias;
-		D3DXVECTOR4 m_ZParams;
-		D3DXVECTOR4 m_HDRParams;
-
-		void update(const CBaseCamera& camera, const D3DXVECTOR4& hdrParams)
-		{
-			/*
-			D3DXMATRIX scalebias(
-				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
-				 0, -2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
-				 0, 0, 1, 0,
-				-1, 1, 0, 1);
-			*/
-			D3DXMATRIX scale(
-				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
-				 0, -2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
-				 0, 0, 1, 0,
-				 0, 0, 0, 1);
-
-			D3DXMATRIX bias(
-				 1, 0, 0, 0,
-				 0, 1, 0, 0,
-				 0, 0, 1, 0,
-				-1, 1, 0, 1);
-
-			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
-			D3DXMATRIX invViewProj;
-			D3DXMatrixInverse(&invViewProj, nullptr, &viewProjectionMatrix);
-			invViewProj = scale * bias * invViewProj;
-
-			D3DXMatrixTranspose(&m_InvViewProjScaleBias, &invViewProj);
-
-			m_ZParams.x = 1 / camera.GetFarClip() - 1 / camera.GetNearClip();
-			m_ZParams.y = 1 / camera.GetNearClip();
-			m_ZParams.z = camera.GetFarClip() - camera.GetNearClip();
-			m_ZParams.w = camera.GetNearClip();
-
-			m_HDRParams = hdrParams;
-		}
-	};
-
-	typedef js::ConstantBuffer_t<PSPostProcess> PSPostProcessConstBuf;
-
 #pragma pack(pop)
 
 // Global Variables
@@ -389,21 +484,16 @@ public:
 
 	VSPreObjectConstBuf m_VsPreObjectConstBuf;
 	PSPreObjectConstBuf m_PsPreObjectConstBuf;
-	PSPostProcessConstBuf m_PSPostProcessConstBuf;
 	js::SamplerState m_SceneSamplerState;
-	js::SamplerState m_PostSamplerState;
 
 	Histogram m_Histogram;
 	bool m_ShowGui;
 	bool m_UseFullHistogram;
-	bool m_UseToneMapping;
-	bool m_UseDof;
 
 	js::RenderStateCache m_RSCache;
 	
 	// post processing
-	ScreenQuad m_ScreenQuad;
-	js::VertexShader m_PostVtxShd;
+	PostProcessor m_PostProcessor;
 	js::PixelShader m_PostDofShd;
 	js::PixelShader m_PostDofFocusShd;
 	js::PixelShader m_PostCopyShd;
@@ -418,53 +508,83 @@ public:
 		UI_LIGHTCOLOR_G,
 		UI_LIGHTCOLOR_B,
 		UI_LIGHTCOLOR_MULTIPLER,
+		UI_BGCOLOR_MULTIPLER,
 		UI_POST_ADAPTTIME,
+		UI_POST_HDR_ENABLE,
 		UI_POST_HDR_BLOOMTHRESHOLD,
 		UI_POST_HDR_WHITETARGET,
+		UI_POST_DOF_ENABLE,
+		UI_POST_DOF_BEGIN,
+		UI_POST_DOF_RANGE,
 	};
 
 // Methods
 	Example02()
 		: m_ShowGui(true)
 		, m_UseFullHistogram(false)
-		, m_UseToneMapping(true)
-		, m_UseDof(true)
 	{
 		CDXUTDialog* dlg = new CDXUTDialog;
 		dlg->Init(m_GuiDlgResMgr);
 		const int w = 120, h = 20;
 		int y = 50;
+		D3DCOLOR textClr = D3DCOLOR_ARGB(255, 255, 255, 255);
+
 		dlg->AddStatic(UI_LIGHTCOLOR_R, L"Light.R", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
+		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(textClr);
 		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 255);
 		y += h;
+
 		dlg->AddStatic(UI_LIGHTCOLOR_G, L"Light.G", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_G)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 255);
+		dlg->GetStatic(UI_LIGHTCOLOR_G)->SetTextColor(textClr);
+		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 202);
 		y += h;
+
 		dlg->AddStatic(UI_LIGHTCOLOR_B, L"Light.B", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_B)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_B, w, y, w, h, 0, 255, 255);
+		dlg->GetStatic(UI_LIGHTCOLOR_B)->SetTextColor(textClr);
+		dlg->AddSlider(UI_LIGHTCOLOR_B, w, y, w, h, 0, 255, 87);
 		y += h;
 
 		dlg->AddStatic(UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler", 0, y, w, h);
-		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
-		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 767);
+		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(textClr);
+		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 511);
+		y += h;
+
+		dlg->AddStatic(UI_BGCOLOR_MULTIPLER, L"BgColor.Multipler", 0, y, w, h);
+		dlg->GetStatic(UI_BGCOLOR_MULTIPLER)->SetTextColor(textClr);
+		dlg->AddSlider(UI_BGCOLOR_MULTIPLER, w, y, w, h, 0, 511, 255);
 		y += h;
 
 		dlg->AddStatic(UI_POST_ADAPTTIME, L"Post.AdaptTime", 0, y, w, h);
-		dlg->GetStatic(UI_POST_ADAPTTIME)->SetTextColor(D3DCOLOR_ARGB(255, 0, 128, 0));
+		dlg->GetStatic(UI_POST_ADAPTTIME)->SetTextColor(textClr);
 		dlg->AddSlider(UI_POST_ADAPTTIME, w, y, w, h, 0, 1023, 127);
 		y += h;
 		
+		dlg->AddCheckBox(UI_POST_HDR_ENABLE, L"Post.HDR.Enable", 0, y, w, h, true);
+		dlg->GetCheckBox(UI_POST_HDR_ENABLE)->SetTextColor(textClr);
+		y += h;
+
 		dlg->AddStatic(UI_POST_HDR_BLOOMTHRESHOLD, L"Post.HDR.BloomThreshold", 0, y, w, h);
-		dlg->GetStatic(UI_POST_HDR_BLOOMTHRESHOLD)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
+		dlg->GetStatic(UI_POST_HDR_BLOOMTHRESHOLD)->SetTextColor(textClr);
 		dlg->AddSlider(UI_POST_HDR_BLOOMTHRESHOLD, w, y, w, h, 0, 255, 127);
 		y += h;
 
-		dlg->AddStatic(UI_POST_HDR_WHITETARGET, L"Post.HDR.WhileTarget", 0, y, w, h);
-		dlg->GetStatic(UI_POST_HDR_WHITETARGET)->SetTextColor(D3DCOLOR_ARGB(255, 0, 127, 0));
-		dlg->AddSlider(UI_POST_HDR_WHITETARGET, w, y, w, h, 0, 255, (int)(255 * 0.95f));
+		dlg->AddStatic(UI_POST_HDR_WHITETARGET, L"Post.HDR.KeyTarget", 0, y, w, h);
+		dlg->GetStatic(UI_POST_HDR_WHITETARGET)->SetTextColor(textClr);
+		dlg->AddSlider(UI_POST_HDR_WHITETARGET, w, y, w, h, 0, 255, (int)(255 * 0.8f));
+		y += h;
+
+		dlg->AddCheckBox(UI_POST_DOF_ENABLE, L"Post.DOF.Enable", 0, y, w, h, true);
+		dlg->GetCheckBox(UI_POST_DOF_ENABLE)->SetTextColor(textClr);
+		y += h;
+
+		dlg->AddStatic(UI_POST_DOF_BEGIN, L"Post.DOF.Begin", 0, y, w, h);
+		dlg->GetStatic(UI_POST_DOF_BEGIN)->SetTextColor(textClr);
+		dlg->AddSlider(UI_POST_DOF_BEGIN, w, y, w, h, 1, 16, 1);
+		y += h;
+
+		dlg->AddStatic(UI_POST_DOF_RANGE, L"Post.DOF.Range", 0, y, w, h);
+		dlg->GetStatic(UI_POST_DOF_RANGE)->SetTextColor(textClr);
+		dlg->AddSlider(UI_POST_DOF_RANGE, w, y, w, h, 1, 16, 3);
 		y += h;
 
 		m_GuiDlgs.push_back(dlg);
@@ -524,13 +644,9 @@ public:
 		m_Histogram.create(d3dDevice);
 
 		// post processing
-		m_PostSamplerState.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		m_PostSamplerState.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		m_PostSamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		m_PostSamplerState.create(d3dDevice);
-		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
-		js_assert(m_PostVtxShd.valid());
-
+		m_PostProcessor.create(d3dDevice);
+		js_assert(m_PostProcessor.valid());
+		
 		m_PostDofShd.createFromFile(d3dDevice, media(L"Example02/Post.DOF.hlsl"), "Main");
 		js_assert(m_PostDofShd.valid());
 		
@@ -552,11 +668,7 @@ public:
 		m_PostBlurShd.createFromFile(d3dDevice, media(L"Example02/Post.Blur.hlsl"), "Main");
 		js_assert(m_PostBlurShd.valid());
 		
-		m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);
-		js_assert(m_ScreenQuad.valid());
-
-		m_PSPostProcessConstBuf.create(d3dDevice);
-
+		// init camera
 		D3DXVECTOR3 vecEye( 0.0f, m_Mesh.radius() * 0.5f, m_Mesh.radius() * -0.5f );
 		D3DXVECTOR3 vecAt ( 0.0f, 0.0f, -0.0f );
 		m_Camera.SetViewParams( &vecEye, &vecAt );
@@ -586,8 +698,8 @@ public:
 		const size_t height = backBufferSurfaceDesc->Height;
 
 		m_Camera.SetProjParams( D3DX_PI / 3, aspect, 0.1f, radius * 8.0f );
+
 		// create render buffers
-		
 		for(int i=0; i<2; ++i)
 		{
 			m_ColorBuffer[i].create(d3dDevice, width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT);
@@ -642,10 +754,7 @@ public:
 
 		m_Histogram.destroy();
 
-		m_PSPostProcessConstBuf.destroy();
-		
-		m_ScreenQuad.destroy();
-		m_PostVtxShd.destroy();
+		m_PostProcessor.destroy();
 		m_PostDofShd.destroy();
 		m_PostDofFocusShd.destroy();
 		m_PostCopyShd.destroy();
@@ -655,7 +764,6 @@ public:
 		m_PostBlurShd.destroy();
 		
 		m_SceneSamplerState.destroy();
-		m_PostSamplerState.destroy();
 	}
 
 	__override void onFrameMove(
@@ -668,8 +776,7 @@ public:
 		// adapt-factor = 1 / adapt-time
 		m_Histogram.m_AdaptFactor = 256.0f / (m_GuiDlgs[0]->GetSlider(UI_POST_ADAPTTIME)->GetValue()+1);
 		m_Histogram.m_BloomThreshold = m_GuiDlgs[0]->GetSlider(UI_POST_HDR_BLOOMTHRESHOLD)->GetValue() / 255.0f;
-		m_Histogram.m_WhiteTarget = m_GuiDlgs[0]->GetSlider(UI_POST_HDR_WHITETARGET)->GetValue() / 255.0f;
-
+		m_Histogram.m_KeyTarget = m_GuiDlgs[0]->GetSlider(UI_POST_HDR_WHITETARGET)->GetValue() / 255.0f;
 	}
 
 	__override void onD3D11FrameRender(
@@ -709,7 +816,6 @@ public:
 			m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.0f, 0.5f, 0.0f, 1.0f ) );
 			m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
 			m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"F2-Full Histogram [true]" : L"F2-Full Histogram [false]");
-			m_GuiTxtHelper->DrawTextLine( true == m_UseToneMapping ? L"F3-Tone Mapping [true]" : L"F3-Tone Mapping [false]");
 			m_GuiTxtHelper->End();
 		}
 	}
@@ -723,6 +829,7 @@ public:
 		clearColor[1] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_G)->GetValue() / 255.0f;
 		clearColor[2] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
 		clearColor[3] = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
+		clearColor[3] *= m_GuiDlgs[0]->GetSlider(UI_BGCOLOR_MULTIPLER)->GetValue() / 255.0f;
 
 		clearColor[0] *= clearColor[3];
 		clearColor[1] *= clearColor[3];
@@ -742,7 +849,6 @@ public:
 
 		// m_PsPreObjectConstBuf
 		m_PsPreObjectConstBuf.map(d3dContext);
-		///m_PsPreObjectConstBuf.data().m_vLightColor = D3DXVECTOR4(1, 1, 1, 2);
 		m_PsPreObjectConstBuf.data().m_vLightColor.x = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_R)->GetValue() / 255.0f;
 		m_PsPreObjectConstBuf.data().m_vLightColor.y = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_G)->GetValue() / 255.0f;
 		m_PsPreObjectConstBuf.data().m_vLightColor.z = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
@@ -763,44 +869,47 @@ public:
 	
 	void onD3D11FrameRender_PostProcessing(ID3D11DeviceContext* d3dContext, float elapsedTime)
 	{
+		const bool cUseToneMapping = m_GuiDlgs[0]->GetCheckBox(UI_POST_HDR_ENABLE)->GetChecked();
+		const bool cUseDOF = m_GuiDlgs[0]->GetCheckBox(UI_POST_DOF_ENABLE)->GetChecked();
+
 		// depth stencil state
 		m_RSCache.depthStencilState().backup();
 		m_RSCache.depthStencilState().DepthEnable = FALSE;
 		m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 		m_RSCache.depthStencilState().dirty();
 
-		if(m_UseToneMapping)
+		m_PostProcessor.m_ConstBuf.map(d3dContext);
+		m_PostProcessor.m_ConstBuf.data().update(m_Camera);
+		m_PostProcessor.m_ConstBuf.unmap(d3dContext);
+
+		if(cUseToneMapping)
 		{
 			// down sampling
-			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBuffer[0], m_ColorBufferDnSamp4x[0], m_PostDnSamp4xShd);
-			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp16x, m_PostDnSamp4xShd);
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache, m_ColorBuffer[0], m_ColorBufferDnSamp4x[0], m_PostDnSamp4xShd);
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp16x, m_PostDnSamp4xShd);
 
 			// update histogram
-			if(m_UseFullHistogram)
-				m_Histogram.update(d3dContext, m_RSCache, m_ColorBuffer[0], elapsedTime);
-			else
-				m_Histogram.update(d3dContext, m_RSCache, m_ColorBufferDnSamp16x, elapsedTime);
+			m_Histogram.compute(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp16x);
+			m_Histogram.update(d3dContext, m_RSCache, m_PostProcessor, elapsedTime);
 
-			m_PSPostProcessConstBuf.map(d3dContext);
-			m_PSPostProcessConstBuf.data().update(m_Camera, m_Histogram.hdrParams());
-			m_PSPostProcessConstBuf.unmap(d3dContext);
-			
 			// brightpass
-			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBuffer[0], m_ColorBufferDnSamp4x[0], m_PostBrPassShd);
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache,
+				js::SrvVA() << m_ColorBuffer[0] << m_Histogram.m_HdrParamBuffer,
+				m_ColorBufferDnSamp4x[0], m_PostBrPassShd);
 
 			// blur the bloom
-			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp4x[1], m_PostBlurShd);
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp4x[1], m_PostBlurShd);
 
-			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBufferDnSamp4x[1], m_ColorBufferDnSamp4x[0], m_PostBlurShd);
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache, m_ColorBufferDnSamp4x[1], m_ColorBufferDnSamp4x[0], m_PostBlurShd);
 		}
 
 		{
-			const float t = elapsedTime * m_Histogram.m_AdaptFactor;
+			const float t = elapsedTime * m_Histogram.m_AdaptFactor * 0.5f;
 
 			m_RSCache.blendState().backup();
 			m_RSCache.blendState().RenderTarget[0].BlendEnable = TRUE;
@@ -817,72 +926,50 @@ public:
 			m_RSCache.blendState().dirty();
 
 			// measure dof focus
-			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_DepthBuffer, m_DofFocusBuffer, m_PostDofFocusShd);
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache, m_DepthBuffer, m_DofFocusBuffer, m_PostDofFocusShd);
 
 			m_RSCache.blendState().restore();
 		}
 
 		// depth of field
-		if(m_UseDof)
+		if(cUseDOF)
 		{
-			m_RSCache.rtState().backup();
-			m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[1], nullptr);
+			float dofBegin = (float)m_GuiDlgs[0]->GetSlider(UI_POST_DOF_BEGIN)->GetValue();
+			float dofRange = (float)m_GuiDlgs[0]->GetSlider(UI_POST_DOF_RANGE)->GetValue();
 
-			// shader states
-			m_RSCache.vsState().backup();
-			m_RSCache.vsState().setShader(m_PostVtxShd);
+			m_PostProcessor.m_ConstBuf.map(d3dContext);
+			m_PostProcessor.m_ConstBuf.data().m_UserParams.x = dofBegin;
+			m_PostProcessor.m_ConstBuf.data().m_UserParams.y = dofBegin + dofRange;
+			m_PostProcessor.m_ConstBuf.data().m_UserParams.z = 3;
+			m_PostProcessor.m_ConstBuf.data().m_UserParams.w = 0;
+			m_PostProcessor.m_ConstBuf.unmap(d3dContext);
 
-			m_RSCache.psState().backup();
-			m_RSCache.psState().setShader(m_PostDofShd);
-			m_RSCache.psState().setSRViews(0, 3, js::SrvVA() << m_ColorBuffer[0] << m_DepthBuffer << m_DofFocusBuffer);
-
-			m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
-			m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_PostSamplerState);
-
-			m_RSCache.applyToContext(d3dContext);
-			
-			m_ScreenQuad.render(d3dContext);
-
-			// restore shader states
-			m_RSCache.rtState().restore();
-			m_RSCache.vsState().restore();
-			m_RSCache.psState().restore();
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache,
+				js::SrvVA() << m_ColorBuffer[0] << m_DepthBuffer << m_DofFocusBuffer,
+				m_ColorBuffer[1], m_PostDofShd);
 		}
 		else
 		{
-			onD3D11FrameRender_PostProcessing_Filter(
-				d3dContext, m_ColorBuffer[0], m_ColorBuffer[1], m_PostCopyShd);
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache, m_ColorBuffer[0], m_ColorBuffer[1], m_PostCopyShd);
 		}
 
 		// final output
+		if(cUseToneMapping)
 		{
-			// shader states
-			m_RSCache.vsState().backup();
-			m_RSCache.vsState().setShader(m_PostVtxShd);
-
-			m_RSCache.psState().backup();
-			if(m_UseToneMapping)
-			{
-				m_RSCache.psState().setShader(m_PostToneMapShd);
-				m_RSCache.psState().setSRViews(0, 2, js::SrvVA() << m_ColorBuffer[1] << m_ColorBufferDnSamp4x[0]);
-			}
-			else
-			{
-				m_RSCache.psState().setShader(m_PostCopyShd);
-				m_RSCache.psState().setSRViews(0, 1, js::SrvVA() << m_ColorBuffer[1]);
-			}
-
-			m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
-			m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_PostSamplerState);
-
-			m_RSCache.applyToContext(d3dContext);
-			
-			m_ScreenQuad.render(d3dContext);
-
-			// restore shader states
-			m_RSCache.vsState().restore();
-			m_RSCache.psState().restore();
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache,
+				js::SrvVA() << m_ColorBuffer[1] << m_ColorBufferDnSamp4x[0] << m_Histogram.m_HdrParamBuffer,
+				m_PostToneMapShd);
+		}
+		else
+		{
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache,
+				js::SrvVA() << m_ColorBuffer[1],
+				m_PostCopyShd);
 		}
 
 		if(m_ShowGui)
@@ -890,41 +977,6 @@ public:
 
 		// restore depth stencil state
 		m_RSCache.depthStencilState().restore();
-	}
-	
-	void onD3D11FrameRender_PostProcessing_Filter(
-		ID3D11DeviceContext* d3dContext,
-		js::Texture2DRenderBuffer& srcBuf,
-		js::Texture2DRenderBuffer& dstBuf,
-		js::PixelShader& shader
-		)
-	{
-		m_RSCache.rtState().backup();
-		m_RSCache.rtState().set(1, js::RtvVA() << dstBuf, nullptr);
-
-		m_RSCache.vsState().backup();
-		m_RSCache.vsState().setShader(m_PostVtxShd);
-
-		m_RSCache.psState().backup();
-		m_RSCache.psState().setShader(shader);
-		m_RSCache.psState().setSRViews(0, 1, js::SrvVA() << srcBuf);
-		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSPostProcessConstBuf);
-		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_PostSamplerState);
-
-		m_RSCache.applyToContext(d3dContext);
-
-		size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-		d3dContext->RSGetViewports(&vpCnt, nullptr);
-		d3dContext->RSGetViewports(&vpCnt, vps);
-		d3dContext->RSSetViewports(1, js::VpVA() << dstBuf.viewport());
-
-		m_ScreenQuad.render(d3dContext);
-
-		d3dContext->RSSetViewports(vpCnt, vps);
-
-		m_RSCache.vsState().restore();
-		m_RSCache.psState().restore();
-		m_RSCache.rtState().restore();
 	}
 
 	__override LRESULT msgProc(
@@ -948,12 +1000,6 @@ public:
 
 		if(VK_F2 == nChar && keyDown)
 			m_UseFullHistogram = !m_UseFullHistogram;
-
-		if(VK_F3 == nChar && keyDown)
-			m_UseToneMapping = !m_UseToneMapping;
-		
-		if(VK_F4 == nChar && keyDown)
-			m_UseDof = !m_UseDof;
 	}
 
 };	// Example02

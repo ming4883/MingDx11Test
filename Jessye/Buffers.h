@@ -95,6 +95,7 @@ template<typename T>
 struct ConstantBuffer_t
 {
 	ID3D11Buffer* m_BufferObject;
+	T m_SysMemCopy;
 	void* m_MappedPtr;
 
 	ConstantBuffer_t() : m_BufferObject(nullptr), m_MappedPtr(nullptr)
@@ -144,6 +145,8 @@ struct ConstantBuffer_t
 		
 		js_assert(nullptr != m_MappedPtr);
 
+		memcpy(m_MappedPtr, &m_SysMemCopy, sizeof(T));
+
 		d3dContext->Unmap(m_BufferObject, 0);
 		m_MappedPtr = nullptr;
 	}
@@ -151,7 +154,8 @@ struct ConstantBuffer_t
 	T& data()
 	{
 		js_assert(nullptr != m_MappedPtr);
-		return *static_cast<T*>(m_MappedPtr);
+		//return *static_cast<T*>(m_MappedPtr);
+		return m_SysMemCopy;
 	}
 
 };

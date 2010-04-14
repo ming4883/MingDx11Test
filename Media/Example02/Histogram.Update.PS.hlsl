@@ -9,10 +9,14 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-cbuffer cbHistogramUpdate : register( b0 )
+cbuffer cbPostCommon : register( b0 )
 {
-	float4 g_vInputParams	: packoffset(c0);	// MaxInputValue, WhiteTarget, BloomThreshold
+	matrix g_InvViewProjScaleBias	: packoffset(c0);
+	float4 g_ZParams				: packoffset(c4);
+	float4 g_UserParams				: packoffset(c5);
 };
+
+// g_UserParams = MaxInputValue, KeyTarget, BloomThreshold, Histogram Size
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -35,7 +39,7 @@ Texture2D g_txHistogram : register( t0 );
 //--------------------------------------------------------------------------------------
 float BinValue(int bin, int numBins)
 {
-	return ((float)bin / numBins) * g_vInputParams.x;
+	return ((float)bin / numBins) * g_UserParams.x;
 }
 
 #define MAX_HISTOGRAM_SIZE 64
@@ -48,49 +52,53 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	float freq[MAX_HISTOGRAM_SIZE];
 	
 	// fetch the histogram into shader registers
-	float total = 0;
+	float fTotalFreq = 0;
 	for(int i=0; i<iW; ++i)
 	{
 		 freq[i] = g_txHistogram.Load(int3(i, 0, 0)).x;
-		 total += freq;
+		 fTotalFreq += freq[i];
 	}
 	
-	// mean
-	float mean = 0;
+	// fMean
+	float fMean = 0;
 	
 	for(int i=0; i<iW; ++i)
-		mean += freq[i] * BinValue(i, iW);
+		fMean += freq[i] * BinValue(i, iW);
 	
-	mean /= total;
+	fMean /= fTotalFreq;
 	
 	// max value
 	int binMax = iW-1;
-	
 	while(freq[binMax] <= 0)
-		--binMax;
-		
-	// white target
-	float fTargetValue = total * (1-g_vInputParams.y);
-	
-	int binWhite = iW-1;
-	
-	float whiteTotal = 0;
-	while(whiteTotal + freq[binWhite] <= fTargetValue)
 	{
-		whiteTotal += freq[binWhite];
-		--binWhite;
+		--binMax;
 	}
 	
-	float a = BinValue(binWhite+1, iW);
-	float b = BinValue(binWhite, iW);
+	// key value
+	float fTargetFreq = fTotalFreq * (1-g_UserParams.y);
+	
+	int binKey = iW-1;
+	
+	float fKeyFreq = 0;
+	while(fKeyFreq + freq[binKey] <= fTargetFreq)
+	{
+		fKeyFreq += freq[binKey];
+		--binKey;
+	}
+	
+	float a = BinValue(binKey+1, iW);
+	float b = BinValue(binKey, iW);
 
-	float aFreq = whiteTotal;
-	float bFreq = whiteTotal + histogram[keyIdx];
-	float t = (fTargetValue - aFreq) / (bFreq - aFreq);
+	float aFreq = fKeyFreq;
+	float bFreq = fKeyFreq + freq[binKey];
+	float t = (fTargetFreq - aFreq) / (bFreq - aFreq);
 	float fKey = a + (b-a) * t;
 	
-	return float4(mean, BinValue(binMax, iW), fKey, fKey * g_vInputParams.z);
-	
-	
+	return float4(
+		fMean,
+		BinValue(binMax, iW),
+		lerp(fKey, fMean, 0.8),
+		fKey * g_UserParams.z
+		);
 }
 

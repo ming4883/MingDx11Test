@@ -13,7 +13,7 @@ cbuffer cbPostCommon : register( b0 )
 {
 	matrix g_InvViewProjScaleBias	: packoffset(c0);
 	float4 g_ZParams				: packoffset(c4);
-	float4 g_HDRParams				: packoffset(c5);
+	float4 g_UserParams				: packoffset(c5);
 };
 
 //--------------------------------------------------------------------------------------
@@ -32,6 +32,7 @@ SamplerState g_samLinear : register( s0 );
 //--------------------------------------------------------------------------------------
 Texture2D g_txColor : register( t0 );
 Texture2D g_txBloom : register( t1 );
+Texture2D g_txHDRParams : register( t2 );
 
 //--------------------------------------------------------------------------------------
 // Pixel Shader
@@ -47,12 +48,12 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	// tone mapping
 	vOutput.xyz += vBloom.xyz;
-	float fKey = g_HDRParams.z;
-	float fLumMean = g_HDRParams.x + 0.001f;
+	
+	float4 hdrParams = g_txHDRParams.Load(int3(0,0,0));
+	float fKey = hdrParams.z + 1e-3f;
+	float fMean = hdrParams.x + 1e-3f;
 	
 	float fLum = dot(vOutput.xyz, float3(0.27,0.67,0.06));
-	
-	
 	
 #if TONEMAPPING_ON_LUM
 	fLum = fLum / fKey;

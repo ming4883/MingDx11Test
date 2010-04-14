@@ -13,8 +13,10 @@ cbuffer cbPostCommon : register( b0 )
 {
 	matrix g_InvViewProjScaleBias	: packoffset(c0);
 	float4 g_ZParams				: packoffset(c4);
-	float4 g_HDRParams				: packoffset(c5);
+	float4 g_UserParams				: packoffset(c5);
 };
+
+// g_UserParams = OutFocusBegin, OutFocusEnd, BlurRadius, Unused
 
 //--------------------------------------------------------------------------------------
 // Input / Output structures
@@ -56,10 +58,9 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
 	
-	const float fOutFocusBegin = 2;
-	const float fOutFocusEnd = 6;
-	
-	const float fBlurRadius = 3;
+	const float fOutFocusBegin = g_UserParams.x;
+	const float fOutFocusEnd = g_UserParams.y;
+	const float fBlurRadius = g_UserParams.z;
 	
 	int iWDepth, iHDepth;
 	g_txDepth.GetDimensions(iWDepth, iHDepth);
@@ -78,8 +79,6 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	float fDofFactor = smoothstep(fOutFocusBegin, fOutFocusEnd, distance(fPosScene, fPosFocus));
 	
 #endif
-
-	//fDofFactor = pow(fDofFactor, 2);
 	
 	// 2d unit poisson disk samplers
 	const int iNumSamples = 16;
