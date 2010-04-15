@@ -395,15 +395,18 @@ namespace js
 
 		d3dContext->RSSetState(*m_Impl.current());
 	}
-	
+
 	//--------------------------------------------------------------------------
-	class SamplerStateCache::Impl : public Cache_t<SamplerState>
+	class SamplerStateCache::Impl : public CacheWithPrototype_t<SamplerState>
 	{
+		friend class SamplerStateCache;
+		Impl() {}
 	};
 
 	SamplerStateCache::SamplerStateCache()
 		: m_Impl(*new Impl)
 	{
+		m_Impl.m_Prototype = this;
 	}
 
 	SamplerStateCache::~SamplerStateCache()
@@ -421,9 +424,24 @@ namespace js
 		m_Impl.destroy();
 	}
 
-	SamplerState* SamplerStateCache::get(const SamplerState& prototype)
+	void SamplerStateCache::dirty()
 	{
-		return m_Impl.get(prototype);
+		m_Impl.m_PrototypeDirty = true;
+	}
+
+	void SamplerStateCache::backup()
+	{
+		m_Impl.backup();
+	}
+
+	void SamplerStateCache::restore()
+	{
+		m_Impl.restore();
+	}
+
+	SamplerState* SamplerStateCache::current()
+	{
+		return m_Impl.current();
 	}
 
 	//--------------------------------------------------------------------------

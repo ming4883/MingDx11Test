@@ -225,13 +225,13 @@ public:
 		m_RSCache.vsState().setConstBuffers(0, 2, js::BufVA() << m_VSDefaultConstBuf << m_VSInstancingConstBuf);
 		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSDefaultConstBuf);
 
-		js::SamplerState state;
-		state.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		state.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		state.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		state.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		m_RSCache.samplerState().AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_RSCache.samplerState().AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_RSCache.samplerState().AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_RSCache.samplerState().Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		m_RSCache.samplerState().dirty();
 		
-		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << *m_RSCache.samplerState().get(state));
+		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << *m_RSCache.samplerState().current());
 	}
 
 	void onD3D11FrameRender_DrawMesh(ID3D11DeviceContext* d3dContext, bool blend)

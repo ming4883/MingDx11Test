@@ -51,25 +51,17 @@ public:
 	ScreenQuad m_ScreenQuad;
 	js::VertexShader m_PostVtxShd;
 	ConstBuffer m_ConstBuf;
-	js::SamplerState m_SamplerState;
 
 	bool valid() const
 	{
 		return m_ScreenQuad.valid()
 			&& m_PostVtxShd.valid()
 			&& m_ConstBuf.valid()
-			&& m_SamplerState.valid()
 			;
 	}
 
 	void create(ID3D11Device* d3dDevice)
 	{
-		// post processing
-		m_SamplerState.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		m_SamplerState.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		m_SamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		m_SamplerState.createStateObject(d3dDevice);
-
 		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
 		js_assert(m_PostVtxShd.valid());
 
@@ -81,7 +73,6 @@ public:
 
 	void destroy()
 	{
-		m_SamplerState.destroy();
 		m_PostVtxShd.destroy();
 		m_ScreenQuad.destroy();
 		m_ConstBuf.destroy();
@@ -153,8 +144,14 @@ public:
 		rsCache.psState().setShader(shader);
 		rsCache.psState().setSRViews(0, srvVA.m_Count, srvVA);
 		rsCache.psState().setConstBuffers(0, 1, js::BufVA() << m_ConstBuf);
-		rsCache.psState().setSamplers(0, 1, js::SampVA() << m_SamplerState);
 
+		rsCache.samplerState().AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		rsCache.samplerState().AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		rsCache.samplerState().AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		rsCache.samplerState().Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		rsCache.samplerState().dirty();
+		rsCache.psState().setSamplers(0, 1, js::SampVA() << *rsCache.samplerState().current());
+		
 		rsCache.applyToContext(d3dContext);
 
 		m_ScreenQuad.render(d3dContext);
@@ -484,7 +481,6 @@ public:
 
 	VSPreObjectConstBuf m_VsPreObjectConstBuf;
 	PSPreObjectConstBuf m_PsPreObjectConstBuf;
-	js::SamplerState m_SceneSamplerState;
 
 	Histogram m_Histogram;
 	bool m_ShowGui;
@@ -618,12 +614,6 @@ public:
 		m_RSCache.create(d3dDevice);
 
 		// scene
-		m_SceneSamplerState.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		m_SceneSamplerState.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		m_SceneSamplerState.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		m_SceneSamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		m_SceneSamplerState.createStateObject(d3dDevice);
-
 		RenderableMesh::ShaderDesc sd;
 		sd.vsPath = media(L"Example02/Scene.VS.hlsl");
 		sd.vsEntry = "VSMain";
@@ -762,8 +752,6 @@ public:
 		m_PostDnSamp4xShd.destroy();
 		m_PostBrPassShd.destroy();
 		m_PostBlurShd.destroy();
-		
-		m_SceneSamplerState.destroy();
 	}
 
 	__override void onFrameMove(
@@ -858,7 +846,14 @@ public:
 		// preparing shaders
 		m_RSCache.vsState().setConstBuffers(0, 1, js::BufVA() << m_VsPreObjectConstBuf);
 		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PsPreObjectConstBuf);
-		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_SceneSamplerState);
+
+		m_RSCache.samplerState().AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_RSCache.samplerState().AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_RSCache.samplerState().AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		m_RSCache.samplerState().Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		m_RSCache.samplerState().dirty();
+		
+		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << *m_RSCache.samplerState().current());
 	}
 	
 	void onD3D11FrameRender_Scene_DrawMesh(ID3D11DeviceContext* d3dContext)

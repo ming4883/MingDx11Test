@@ -139,16 +139,18 @@ private:
 
 };	// RasterizerStateCache
 
-class SamplerStateCache
+class SamplerStateCache : public SamplerState
 {
 public:
 	SamplerStateCache();
 	~SamplerStateCache();
 
+	void dirty();
+	void backup();
+	void restore();
+	SamplerState* current();
 	void create(ID3D11Device* d3dDevice);
 	void destroy();
-
-	SamplerState* get(const SamplerState& prototype);
 
 private:
 	class Impl;

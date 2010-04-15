@@ -54,12 +54,19 @@ float4 ScreenToWorldPosition(float4 screenPos)
 
 #define USE_DEPTH_ONLY 0
 
+float DofFactor(float dist)
+{
+	const float fOutFocusBegin = g_UserParams.x;
+	const float fOutFocusEnd = g_UserParams.y;
+	
+	//return smoothstep(fOutFocusBegin, fOutFocusEnd, dist);
+	return min(max(dist - fOutFocusBegin, 0) / (fOutFocusEnd - fOutFocusBegin), 1);
+}
+
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
 	
-	const float fOutFocusBegin = g_UserParams.x;
-	const float fOutFocusEnd = g_UserParams.y;
 	const float fBlurRadius = g_UserParams.z;
 	
 	int iWDepth, iHDepth;
@@ -68,7 +75,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 #if USE_DEPTH_ONLY
 	float fDepthFocus = LinearDepth(g_txDOFFocus.Load(int3(0, 0, 0)).x);
 	float fDepthScene = LinearDepth(g_txDepth.Load(vTexcoord).x);
-	float fDofFactor = smoothstep(fOutFocusBegin, fOutFocusEnd, abs(fDepthScene - fDepthFocus));
+	float fDofFactor = DofFactor(abs(fDepthScene - fDepthFocus));
 	
 #else
 	
@@ -76,7 +83,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	float3 fPosFocus = g_txDOFFocus.Load(int3(0, 0, 0)).xyz;
 	float3 fPosScene = ScreenToWorldPosition(float4(Input.vPosition.xy, fDepthScene, 1)).xyz; 
-	float fDofFactor = smoothstep(fOutFocusBegin, fOutFocusEnd, distance(fPosScene, fPosFocus));
+	float fDofFactor = DofFactor(distance(fPosScene, fPosFocus));
 	
 #endif
 	
