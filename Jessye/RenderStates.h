@@ -67,7 +67,7 @@ struct RasterizerState : public RenderState_t<D3D11_RASTERIZER_DESC, ID3D11Raste
 
 struct SamplerState : public RenderState_t<D3D11_SAMPLER_DESC, ID3D11SamplerState>
 {
-	void create(ID3D11Device* d3dDevice)
+	void createStateObject(ID3D11Device* d3dDevice)
 	{
 		destroy();
 		d3dDevice->CreateSamplerState(this, &m_StateObject);
@@ -139,11 +139,29 @@ private:
 
 };	// RasterizerStateCache
 
+class SamplerStateCache
+{
+public:
+	SamplerStateCache();
+	~SamplerStateCache();
+
+	void create(ID3D11Device* d3dDevice);
+	void destroy();
+
+	SamplerState* get(const SamplerState& prototype);
+
+private:
+	class Impl;
+	Impl& m_Impl;
+	js_decl_non_copyable(SamplerStateCache);
+
+};	// SamplerStateCache
+
 class ShaderStateCache
 {
 public:
 	ShaderStateCache();
-	~ShaderStateCache();
+	virtual ~ShaderStateCache();
 
 	void create(ID3D11Device* d3dDevice);
 	void destroy();
@@ -233,6 +251,7 @@ class RenderStateCache
 	: protected BlendStateCache
 	, protected DepthStencilStateCache
 	, protected RasterizerStateCache
+	, protected SamplerStateCache
 	, protected VertexShaderStateCache
 	, protected GeometryShaderStateCache
 	, protected PixelShaderStateCache
@@ -245,6 +264,8 @@ public:
 
 	RasterizerStateCache& rasterizerState() { return *this; }
 
+	SamplerStateCache& samplerState() { return *this; }
+
 	VertexShaderStateCache& vsState() { return *this; }
 
 	GeometryShaderStateCache& gsState() { return *this; }
@@ -252,12 +273,13 @@ public:
 	PixelShaderStateCache& psState() { return *this; }
 	
 	RenderTargetStateCache& rtState() { return *this; }
-
+	
 	void create(ID3D11Device* d3dDevice)
 	{
 		BlendStateCache::create(d3dDevice);
 		DepthStencilStateCache::create(d3dDevice);
 		RasterizerStateCache::create(d3dDevice);
+		SamplerStateCache::create(d3dDevice);
 		VertexShaderStateCache::create(d3dDevice);
 		GeometryShaderStateCache::create(d3dDevice);
 		PixelShaderStateCache::create(d3dDevice);
@@ -269,6 +291,7 @@ public:
 		BlendStateCache::destroy();
 		DepthStencilStateCache::destroy();
 		RasterizerStateCache::destroy();
+		SamplerStateCache::destroy();
 		VertexShaderStateCache::destroy();
 		GeometryShaderStateCache::destroy();
 		PixelShaderStateCache::destroy();

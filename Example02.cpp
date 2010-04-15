@@ -68,7 +68,7 @@ public:
 		m_SamplerState.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		m_SamplerState.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		m_SamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		m_SamplerState.create(d3dDevice);
+		m_SamplerState.createStateObject(d3dDevice);
 
 		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
 		js_assert(m_PostVtxShd.valid());
@@ -622,7 +622,7 @@ public:
 		m_SceneSamplerState.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		m_SceneSamplerState.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 		m_SceneSamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		m_SceneSamplerState.create(d3dDevice);
+		m_SceneSamplerState.createStateObject(d3dDevice);
 
 		RenderableMesh::ShaderDesc sd;
 		sd.vsPath = media(L"Example02/Scene.VS.hlsl");

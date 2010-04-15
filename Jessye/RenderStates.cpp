@@ -58,7 +58,7 @@ namespace js
 
 	void RenderStates::init(D3D11_SAMPLER_DESC& desc)
 	{
-		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		desc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -81,17 +81,9 @@ namespace js
 		typedef BaseClass::iterator Iter;
 
 		ID3D11Device* m_D3dDevice;
-		T* m_Prototype;
-		bool m_PrototypeDirty;
-		T* m_Current;
-		T* m_Backup;
-
+		
 		Cache_t()
 			: m_D3dDevice(nullptr)
-			, m_Current(nullptr)
-			, m_Prototype(nullptr)
-			, m_PrototypeDirty(true)
-			, m_Backup(nullptr)
 		{
 		}
 
@@ -103,9 +95,6 @@ namespace js
 		void create(ID3D11Device* d3dDevice)
 		{
 			m_D3dDevice = d3dDevice;
-			m_Current = nullptr;
-			m_PrototypeDirty = true;
-			m_Backup = nullptr;
 		}
 
 		void destroy()
@@ -115,7 +104,7 @@ namespace js
 			clear();
 		}
 
-		static size_t hashCode(T& t)
+		static size_t hashCode(const T& t)
 		{
 			const char* buf = (const char*)&t;
 			const size_t len = sizeof(T);
@@ -130,28 +119,63 @@ namespace js
 			return hash;
 		}
 
+		T* get(const T& prototoype)
+		{
+			size_t hash = hashCode(prototoype);
+			Iter it = find(hash);
+
+			if(end() == it)
+			{
+				T* state = new T;
+				state->copyDesc(prototoype);
+				state->createStateObject(m_D3dDevice);
+				js_assert(state->valid());
+
+				insert(std::make_pair(hash, state));
+
+				it = find(hash);
+				js_assert(it != end());
+			}
+
+			return it->second;
+		}
+
+	};	// Cache_t
+
+	template<typename T>
+	struct CacheWithPrototype_t : public Cache_t<T>
+	{
+		T* m_Prototype;
+		bool m_PrototypeDirty;
+		T* m_Current;
+		T* m_Backup;
+
+		CacheWithPrototype_t()
+			: m_Current(nullptr)
+			, m_Backup(nullptr)
+			, m_Prototype(nullptr)
+			, m_PrototypeDirty(true)
+		{
+		}
+
+		virtual ~CacheWithPrototype_t()
+		{
+		}
+
+		void create(ID3D11Device* d3dDevice)
+		{
+			Cache_t::create(d3dDevice);
+			m_Current = nullptr;
+			m_PrototypeDirty = true;
+			m_Backup = nullptr;
+		}
+
 		T* current()
 		{
 			js_assert(nullptr != m_Prototype);
 			if(m_PrototypeDirty)
 			{
-				size_t hash = hashCode(*m_Prototype);
-				Iter it = find(hash);
-
-				if(end() == it)
-				{
-					T* state = new T;
-					state->copyDesc(*m_Prototype);
-					state->createStateObject(m_D3dDevice);
-					js_assert(state->valid());
-
-					insert(std::make_pair(hash, state));
-
-					it = find(hash);
-					js_assert(it != end());
-				}
-
-				m_Current = it->second;
+				m_Current = get(*m_Prototype);
 
 				// reset dirty flag
 				m_PrototypeDirty = false;
@@ -178,10 +202,10 @@ namespace js
 
 			m_PrototypeDirty = true;
 		}
-	};	// Cache_t
+	};	// CacheWithPrototype_t
 
 	//--------------------------------------------------------------------------
-	class BlendStateCache::Impl : public Cache_t<BlendState>
+	class BlendStateCache::Impl : public CacheWithPrototype_t<BlendState>
 	{
 		friend class BlendStateCache;
 		
@@ -255,7 +279,7 @@ namespace js
 	}
 
 	//--------------------------------------------------------------------------
-	class DepthStencilStateCache::Impl : public Cache_t<DepthStencilState>
+	class DepthStencilStateCache::Impl : public CacheWithPrototype_t<DepthStencilState>
 	{
 		friend class DepthStencilStateCache;
 		
@@ -317,7 +341,7 @@ namespace js
 	}
 
 	//--------------------------------------------------------------------------
-	class RasterizerStateCache::Impl : public Cache_t<RasterizerState>
+	class RasterizerStateCache::Impl : public CacheWithPrototype_t<RasterizerState>
 	{
 		friend class RasterizerStateCache;
 		Impl() {}
@@ -373,6 +397,36 @@ namespace js
 	}
 	
 	//--------------------------------------------------------------------------
+	class SamplerStateCache::Impl : public Cache_t<SamplerState>
+	{
+	};
+
+	SamplerStateCache::SamplerStateCache()
+		: m_Impl(*new Impl)
+	{
+	}
+
+	SamplerStateCache::~SamplerStateCache()
+	{
+		delete &m_Impl;
+	}
+
+	void SamplerStateCache::create(ID3D11Device* d3dDevice)
+	{
+		m_Impl.create(d3dDevice);
+	}
+
+	void SamplerStateCache::destroy()
+	{
+		m_Impl.destroy();
+	}
+
+	SamplerState* SamplerStateCache::get(const SamplerState& prototype)
+	{
+		return m_Impl.get(prototype);
+	}
+
+	//--------------------------------------------------------------------------
 	class ShaderStateCache::Impl
 	{
 		friend class ShaderStateCache;
@@ -396,9 +450,10 @@ namespace js
 			ID3D11ShaderResourceView* m_SRViews[MAX_SRVIEW];
 			ID3D11SamplerState* m_Samplers[MAX_SAMPLER];
 
-			State() { memset(this, 0, sizeof(State)); }
+			State() {memset(this, 0, sizeof(State));}
 		};
 #pragma pack(pop)
+
 
 		State m_Current;
 		State m_Backup;

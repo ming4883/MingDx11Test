@@ -68,7 +68,7 @@ public:
 	VSDefaultConstBuf m_VSDefaultConstBuf;
 	VSInstancingConstBuf m_VSInstancingConstBuf;
 	PSDefaultConstBuf m_PSDefaultConstBuf;
-	js::SamplerState m_SamplerState;
+	//js::SamplerState m_SamplerState;
 	js::RenderStateCache m_RSCache;
 
 // Methods
@@ -86,11 +86,7 @@ public:
 		ID3D11Device* d3dDevice,
 		const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 	{
-		m_SamplerState.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		m_SamplerState.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		m_SamplerState.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		m_SamplerState.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		m_SamplerState.create(d3dDevice);
+		guiOnD3D11CreateDevice(d3dDevice);
 
 		m_RSCache.create(d3dDevice);
 
@@ -127,6 +123,8 @@ public:
 		IDXGISwapChain* swapChain,
 		const DXGI_SURFACE_DESC* backBufferSurfaceDesc)
 	{
+		guiOnD3D11ResizedSwapChain(d3dDevice, backBufferSurfaceDesc);
+
 		float aspect = backBufferSurfaceDesc->Width / ( FLOAT )backBufferSurfaceDesc->Height;
 		const float radius = m_Mesh.radius();
 
@@ -139,16 +137,19 @@ public:
 
 	__override void onD3D11ReleasingSwapChain()
 	{
+		guiOnD3D11ReleasingSwapChain();
 	}
 
 	__override void onD3D11DestroyDevice()
 	{
+		guiOnD3D11DestroyDevice();
+
 		DXUTGetGlobalResourceCache().OnDestroyDevice();
 		m_Mesh.destroy();
 		m_VSDefaultConstBuf.destroy();
 		m_PSDefaultConstBuf.destroy();
 		m_VSInstancingConstBuf.destroy();
-		m_SamplerState.destroy();
+		//m_SamplerState.destroy();
 		m_RSCache.destroy();
 	}
 
@@ -176,6 +177,12 @@ public:
 
 		onD3D11FrameRender_DrawMesh(d3dImmediateContext, false);
 		onD3D11FrameRender_DrawMesh(d3dImmediateContext, true);
+
+		m_GuiTxtHelper->Begin();
+		m_GuiTxtHelper->SetInsertionPos( 2, 0 );
+		m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.0f, 0.5f, 0.0f, 1.0f ) );
+		m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
+		m_GuiTxtHelper->End();
 	}
 	
 	void onD3D11FrameRender_ClearRenderTargets(ID3D11DeviceContext* d3dContext)
@@ -217,8 +224,14 @@ public:
 		// preparing shaders
 		m_RSCache.vsState().setConstBuffers(0, 2, js::BufVA() << m_VSDefaultConstBuf << m_VSInstancingConstBuf);
 		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PSDefaultConstBuf);
-		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << m_SamplerState);
 
+		js::SamplerState state;
+		state.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		state.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		state.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		state.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+		
+		m_RSCache.psState().setSamplers(0, 1, js::SampVA() << *m_RSCache.samplerState().get(state));
 	}
 
 	void onD3D11FrameRender_DrawMesh(ID3D11DeviceContext* d3dContext, bool blend)
