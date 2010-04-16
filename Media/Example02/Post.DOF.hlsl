@@ -58,9 +58,16 @@ float DofFactor(float dist)
 {
 	const float fOutFocusBegin = g_UserParams.x;
 	const float fOutFocusEnd = g_UserParams.y;
+	const float fConverge = 0.5;
 	
 	//return smoothstep(fOutFocusBegin, fOutFocusEnd, dist);
-	return min(max(dist - fOutFocusBegin, 0) / (fOutFocusEnd - fOutFocusBegin), 1);
+	
+	float fDof = max(dist - fOutFocusBegin, 0) / (fOutFocusEnd - fOutFocusBegin);
+	
+	// y = x / (c + x), where c is a positive constant which controlls how fast y converge to 1
+	fDof = fDof / (fConverge + fDof);
+	
+	return min(fDof, 1);
 }
 
 float4 Main( PS_INPUT Input ) : SV_TARGET
