@@ -55,6 +55,15 @@ struct Buffers
 		size_t mipLevels,
 		DXGI_FORMAT dataFormat,
 		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
+	
+	static ID3D11Texture2D* createTexture2DArrayRenderBuffer(
+		ID3D11Device* d3dDevice,
+		size_t width,
+		size_t height,
+		size_t arraySize,
+		size_t mipLevels,
+		DXGI_FORMAT dataFormat,
+		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
 
 	static ID3D11Texture2D* createTexture2DStagingBuffer(
 		ID3D11Device* d3dDevice,
@@ -299,102 +308,64 @@ struct Texture2DRenderBuffer
 	size_t m_MipLevels;
 	DXGI_FORMAT m_Format;
 
-	Texture2DRenderBuffer()
-		: m_TextureObject(nullptr)
-		, m_RTView(nullptr)
-		, m_DSView(nullptr)
-		, m_SRView(nullptr)
-		, m_Width(0)
-		, m_Height(0)
-		, m_MipLevels(0)
-		, m_Format((DXGI_FORMAT)-1)
-	{
-	}
+	Texture2DRenderBuffer();
 
-	~Texture2DRenderBuffer()
-	{
-		destroy();
-	}
+	~Texture2DRenderBuffer();
 
-	bool valid() const
-	{
-		return m_TextureObject != nullptr;
-	}
+	bool valid() const;
 
 	operator ID3D11RenderTargetView* () const {return m_RTView;}
 	operator ID3D11DepthStencilView* () const {return m_DSView;}
 	operator ID3D11ShaderResourceView* () const {return m_SRView;}
 
-	D3D11_VIEWPORT viewport()
-	{
-		js_assert(valid());
+	D3D11_VIEWPORT viewport();
 
-		D3D11_VIEWPORT vp;
-		vp.TopLeftX = 0;
-		vp.TopLeftY = 0;
-		vp.Width = (float)m_Width;
-		vp.Height = (float)m_Height;
-		vp.MinDepth = 0;
-		vp.MaxDepth = 1;
-
-		return vp;
-	}
-
-	void create(ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat,
+	void create(ID3D11Device* d3dDevice,
+		size_t width, size_t height, size_t mipLevels,
+		DXGI_FORMAT dataFormat,
 		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1,
-		DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1)
-	{
-		m_TextureObject = Buffers::createTexture2DRenderBuffer(d3dDevice, width, height, mipLevels, dataFormat, rtvFormat);
-		if(nullptr == m_TextureObject) return;
+		DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
 
-		m_Width = width; m_Height = height; m_Format = dataFormat; m_MipLevels = mipLevels;
+	void destroy();
 
-		if(-1 == rtvFormat) rtvFormat = dataFormat;
-		if(-1 == srvFormat) srvFormat = dataFormat;
+};	// Texture2DRenderBuffer
 
-		switch(rtvFormat)
-		{
-		case ::DXGI_FORMAT_D16_UNORM:
-		case ::DXGI_FORMAT_D24_UNORM_S8_UINT:
-		case ::DXGI_FORMAT_D32_FLOAT:
-		case ::DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
-			m_DSView = Buffers::createDepthStencilView(d3dDevice, m_TextureObject, 0, rtvFormat);
-			break;
+//! Texture2DArrayRenderBuffer
+struct Texture2DArrayRenderBuffer
+{
+	ID3D11Texture2D* m_TextureObject;
+	ID3D11RenderTargetView* m_RTView;
+	ID3D11DepthStencilView* m_DSView;
+	ID3D11ShaderResourceView* m_SRView;
 
-		default:
-			m_RTView = Buffers::createRenderTargetView(d3dDevice, m_TextureObject, 0, rtvFormat);
-			break;
-		}
+	size_t m_Width;
+	size_t m_Height;
+	size_t m_ArraySize;
+	size_t m_MipLevels;
+	DXGI_FORMAT m_Format;
 
-		if(nullptr == m_DSView && nullptr == m_RTView)
-		{
-			destroy();
-			return;
-		}
+	Texture2DArrayRenderBuffer();
 
-		// shader resource view
-		m_SRView = Buffers::createShaderResourceView(d3dDevice, m_TextureObject, srvFormat);
+	~Texture2DArrayRenderBuffer();
 
-		if(nullptr == m_SRView)
-		{
-			destroy();
-			return;
-		}
-	}
+	bool valid() const;
 
-	void destroy()
-	{
-		js_safe_release(m_SRView);
-		js_safe_release(m_DSView);
-		js_safe_release(m_RTView);
-		js_safe_release(m_TextureObject);
+	operator ID3D11RenderTargetView* () const {return m_RTView;}
+	operator ID3D11DepthStencilView* () const {return m_DSView;}
+	operator ID3D11ShaderResourceView* () const {return m_SRView;}
 
-		m_Width = 0;
-		m_Height = 0;
-		m_MipLevels = 0;
-		m_Format = (DXGI_FORMAT)-1;
-	}
-};
+	D3D11_VIEWPORT viewport();
+
+	void create(
+		ID3D11Device* d3dDevice,
+		size_t width, size_t height, size_t arraySize, size_t mipLevels,
+		DXGI_FORMAT dataFormat,
+		DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1,
+		DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
+
+	void destroy();
+
+};	// Texture2DArrayRenderBuffer
 
 }	// namespace js
 

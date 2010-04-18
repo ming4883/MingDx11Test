@@ -187,6 +187,7 @@ public:
 #pragma pack(pop)
 	js::Texture2DRenderBuffer m_HistogramBuffer;
 	js::Texture2DRenderBuffer m_HdrParamBuffer;
+	js::Texture2DArrayRenderBuffer m_HistogramBuffer2;
 	//js::Texture2DStagingBuffer m_HistogramStageBuffer;
 	js::VertexShader m_ComputeVs;
 	js::GeometryShader m_ComputeGs;
@@ -220,7 +221,9 @@ public:
 	{
 		m_HistogramBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		js_assert(m_HistogramBuffer.valid());
-
+		
+		m_HistogramBuffer2.create(d3dDevice, 1, 1, SIZE, 1, DXGI_FORMAT_R32_FLOAT);
+		js_assert(m_HistogramBuffer2.valid());
 		//m_HistogramStageBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		//js_assert(m_HistogramStageBuffer.valid());
 		
@@ -275,6 +278,7 @@ public:
 	void destroy()
 	{
 		m_HistogramBuffer.destroy();
+		m_HistogramBuffer2.destroy();
 		//m_HistogramStageBuffer.destroy();
 		m_HdrParamBuffer.destroy();
 		//m_BufferCompute.destroy();
