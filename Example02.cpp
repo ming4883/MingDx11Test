@@ -192,10 +192,14 @@ public:
 	js::VertexShader m_ComputeVs;
 	js::GeometryShader m_ComputeGs;
 	js::PixelShader m_ComputePs;
+	js::VertexShader m_Compute2Vs;
+	js::GeometryShader m_Compute2Gs;
+	js::PixelShader m_Compute2Ps;
 	js::VertexShader m_DrawVs;
 	js::GeometryShader m_DrawGs;
 	js::PixelShader m_DrawPs;
 	js::PixelShader m_UpdatePs;
+	js::PixelShader m_Update2Ps;
 	//js::StructComputeBuffer m_BufferCompute;
 	HistogramComputeConstBuf m_ComputeCb;
 	HistogramDrawConstBuf m_DrawCb;
@@ -246,6 +250,15 @@ public:
 		m_ComputePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.PS.hlsl"), "Main");
 		js_assert(m_ComputePs.valid());
 
+		m_Compute2Vs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute2.VS.hlsl"), "Main");
+		js_assert(m_Compute2Vs.valid());
+
+		m_Compute2Gs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute2.GS.hlsl"), "Main");
+		js_assert(m_Compute2Gs.valid());
+
+		m_Compute2Ps.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute2.PS.hlsl"), "Main");
+		js_assert(m_Compute2Ps.valid());
+
 		m_DrawVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Draw.VS.hlsl"), "Main");
 		js_assert(m_DrawVs.valid());
 
@@ -257,6 +270,9 @@ public:
 
 		m_UpdatePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Update.PS.hlsl"), "Main");
 		js_assert(m_UpdatePs.valid());
+
+		m_Update2Ps.createFromFile(d3dDevice, media(L"Example02/Histogram.Update2.PS.hlsl"), "Main");
+		js_assert(m_Update2Ps.valid());
 
 		m_ComputeCb.create(d3dDevice);
 		js_assert(m_ComputeCb.valid());
@@ -285,10 +301,14 @@ public:
 		m_ComputeVs.destroy();
 		m_ComputeGs.destroy();
 		m_ComputePs.destroy();
+		m_Compute2Vs.destroy();
+		m_Compute2Gs.destroy();
+		m_Compute2Ps.destroy();
 		m_DrawVs.destroy();
 		m_DrawGs.destroy();
 		m_DrawPs.destroy();
 		m_UpdatePs.destroy();
+		m_Update2Ps.destroy();
 		m_ComputeCb.destroy();
 		m_DrawCb.destroy();
 		js_safe_release(m_VB);

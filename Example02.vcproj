@@ -683,6 +683,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Media\Example02\Histogram.Compute2.GS.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Histogram.Compute2.PS.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Histogram.Compute2.VS.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\Media\Example02\Histogram.Draw.GS.hlsl"
 				>
 			</File>
@@ -696,6 +708,10 @@
 			</File>
 			<File
 				RelativePath=".\Media\Example02\Histogram.Update.PS.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example02\Histogram.Update2.PS.hlsl"
 				>
 			</File>
 			<File
