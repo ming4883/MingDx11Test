@@ -81,8 +81,8 @@ public:
 	void filter(
 		ID3D11DeviceContext* d3dContext,
 		js::RenderStateCache& rsCache,
-		js::Texture2DRenderBuffer& srcBuf,
-		js::Texture2DRenderBuffer& dstBuf,
+		js::RenderBuffer& srcBuf,
+		js::RenderBuffer& dstBuf,
 		js::PixelShader& shader
 		)
 	{
@@ -93,7 +93,7 @@ public:
 		ID3D11DeviceContext* d3dContext,
 		js::RenderStateCache& rsCache,
 		js::SrvVA& srvVA,
-		js::Texture2DRenderBuffer& dstBuf,
+		js::RenderBuffer& dstBuf,
 		js::PixelShader& shader
 		)
 	{
@@ -389,6 +389,61 @@ public:
 		rsCache.gsState().restore();
 		rsCache.psState().restore();
 	}
+
+	void compute2(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, js::Texture2DRenderBuffer& colorBuffer)
+	{
+		js_assert(colorBuffer.valid());
+
+		m_ComputeCb.map(d3dContext);
+		m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
+		m_ComputeCb.data().g_vInputParams.y = 4;
+		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
+		m_ComputeCb.data().g_vInputParams.w = (float)SIZE;
+		m_ComputeCb.unmap(d3dContext);
+
+		// vertex buffer and input assembler
+		d3dContext->IASetInputLayout(m_IL);
+		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
+		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+		
+		// render target
+		static const float clearColor[] = {0, 0, 0, 0};
+		d3dContext->ClearRenderTargetView(m_HistogramBuffer2.m_RTView, clearColor);
+		size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+		d3dContext->RSGetViewports(&vpCnt, nullptr);
+		d3dContext->RSGetViewports(&vpCnt, vps);
+		d3dContext->RSSetViewports(1, js::VpVA() << m_HistogramBuffer2.viewport());
+
+		rsCache.rtState().backup();
+		rsCache.rtState().set(1, js::RtvVA() << m_HistogramBuffer2, nullptr);
+
+		// shader state
+		rsCache.vsState().backup();
+		rsCache.vsState().setShader(m_Compute2Vs);
+
+		rsCache.gsState().backup();
+		rsCache.gsState().setShader(m_Compute2Gs);
+		rsCache.gsState().setSRViews(0, 1, js::SrvVA() << colorBuffer);
+		rsCache.gsState().setConstBuffers(0, 1, js::BufVA() << m_ComputeCb);
+
+		rsCache.psState().backup();
+		rsCache.psState().setShader(m_Compute2Ps);
+		rsCache.applyToContext(d3dContext);
+
+		// draw
+		d3dContext->Draw(1, 0);
+
+		m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
+		
+		// restore render targets
+		d3dContext->RSSetViewports(vpCnt, vps);
+
+		rsCache.rtState().restore();
+		rsCache.blendState().restore();
+		rsCache.vsState().restore();
+		rsCache.gsState().restore();
+		rsCache.psState().restore();
+	}
 	
 	void update(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, PostProcessor& postProcessor, float dt)
 	{
@@ -417,6 +472,37 @@ public:
 
 		postProcessor.filter(
 			d3dContext, rsCache, m_HistogramBuffer, m_HdrParamBuffer, m_UpdatePs);
+
+		rsCache.blendState().restore();
+	}
+
+	void update2(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, PostProcessor& postProcessor, float dt)
+	{
+		const float t = dt * m_AdaptFactor;
+
+		postProcessor.m_ConstBuf.map(d3dContext);
+		postProcessor.m_ConstBuf.data().m_UserParams.x = m_MaxInputValue;
+		postProcessor.m_ConstBuf.data().m_UserParams.y = m_KeyTarget;
+		postProcessor.m_ConstBuf.data().m_UserParams.z = m_BloomThreshold;
+		postProcessor.m_ConstBuf.data().m_UserParams.w = (float)SIZE;
+		postProcessor.m_ConstBuf.unmap(d3dContext);
+
+		rsCache.blendState().backup();
+		rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+		rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_BLEND_FACTOR;
+		rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_INV_BLEND_FACTOR;
+		rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_BLEND_FACTOR;
+		rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_BLEND_FACTOR;
+		rsCache.blendState().blendFactor()[0] = t;
+		rsCache.blendState().blendFactor()[1] = t;
+		rsCache.blendState().blendFactor()[2] = t;
+		rsCache.blendState().blendFactor()[3] = t;
+		rsCache.blendState().dirty();
+
+		postProcessor.filter(
+			d3dContext, rsCache, m_HistogramBuffer2, m_HdrParamBuffer, m_Update2Ps);
 
 		rsCache.blendState().restore();
 	}

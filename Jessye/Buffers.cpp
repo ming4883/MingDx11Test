@@ -470,13 +470,6 @@ namespace js
 	//--------------------------------------------------------------------------
 	 Texture2DRenderBuffer::Texture2DRenderBuffer()
 		: m_TextureObject(nullptr)
-		, m_RTView(nullptr)
-		, m_DSView(nullptr)
-		, m_SRView(nullptr)
-		, m_Width(0)
-		, m_Height(0)
-		, m_MipLevels(0)
-		, m_Format((DXGI_FORMAT)-1)
 	{
 	}
 
@@ -488,21 +481,6 @@ namespace js
 	bool Texture2DRenderBuffer::valid() const
 	{
 		return m_TextureObject != nullptr;
-	}
-
-	D3D11_VIEWPORT Texture2DRenderBuffer::viewport()
-	{
-		js_assert(valid());
-
-		D3D11_VIEWPORT vp;
-		vp.TopLeftX = 0;
-		vp.TopLeftY = 0;
-		vp.Width = (float)m_Width;
-		vp.Height = (float)m_Height;
-		vp.MinDepth = 0;
-		vp.MaxDepth = 1;
-
-		return vp;
 	}
 
 	void Texture2DRenderBuffer::create(
@@ -566,14 +544,6 @@ namespace js
 	//--------------------------------------------------------------------------
 	Texture2DArrayRenderBuffer::Texture2DArrayRenderBuffer()
 		: m_TextureObject(nullptr)
-		, m_RTView(nullptr)
-		, m_DSView(nullptr)
-		, m_SRView(nullptr)
-		, m_Width(0)
-		, m_Height(0)
-		, m_ArraySize(0)
-		, m_MipLevels(0)
-		, m_Format((DXGI_FORMAT)-1)
 	{
 	}
 
@@ -585,21 +555,6 @@ namespace js
 	bool Texture2DArrayRenderBuffer::valid() const
 	{
 		return m_TextureObject != nullptr;
-	}
-
-	D3D11_VIEWPORT Texture2DArrayRenderBuffer::viewport()
-	{
-		js_assert(valid());
-
-		D3D11_VIEWPORT vp;
-		vp.TopLeftX = 0;
-		vp.TopLeftY = 0;
-		vp.Width = (float)m_Width;
-		vp.Height = (float)m_Height;
-		vp.MinDepth = 0;
-		vp.MaxDepth = 1;
-
-		return vp;
 	}
 
 	void Texture2DArrayRenderBuffer::create(

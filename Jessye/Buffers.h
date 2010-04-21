@@ -295,30 +295,58 @@ struct Texture2DStagingBuffer
 
 };	// Texture2DStagingBuffer
 
-//! Texture2DRenderBuffer
-struct Texture2DRenderBuffer
+struct RenderBuffer
 {
-	ID3D11Texture2D* m_TextureObject;
 	ID3D11RenderTargetView* m_RTView;
 	ID3D11DepthStencilView* m_DSView;
 	ID3D11ShaderResourceView* m_SRView;
-
+	
+	DXGI_FORMAT m_Format;
 	size_t m_Width;
 	size_t m_Height;
+	size_t m_ArraySize;
 	size_t m_MipLevels;
-	DXGI_FORMAT m_Format;
+
+	RenderBuffer()
+		: m_RTView(nullptr)
+		, m_DSView(nullptr)
+		, m_SRView(nullptr)
+		, m_Width(0)
+		, m_Height(0)
+		, m_MipLevels(0)
+		, m_ArraySize(0)
+		, m_Format((DXGI_FORMAT)-1)
+	{
+	}
+
+	operator ID3D11RenderTargetView* () const {return m_RTView;}
+	operator ID3D11DepthStencilView* () const {return m_DSView;}
+	operator ID3D11ShaderResourceView* () const {return m_SRView;}
+
+	D3D11_VIEWPORT viewport() const
+	{
+		D3D11_VIEWPORT vp;
+		vp.TopLeftX = 0;
+		vp.TopLeftY = 0;
+		vp.Width = (float)m_Width;
+		vp.Height = (float)m_Height;
+		vp.MinDepth = 0;
+		vp.MaxDepth = 1;
+
+		return vp;
+	}
+};
+
+//! Texture2DRenderBuffer
+struct Texture2DRenderBuffer : public RenderBuffer
+{
+	ID3D11Texture2D* m_TextureObject;
 
 	Texture2DRenderBuffer();
 
 	~Texture2DRenderBuffer();
 
 	bool valid() const;
-
-	operator ID3D11RenderTargetView* () const {return m_RTView;}
-	operator ID3D11DepthStencilView* () const {return m_DSView;}
-	operator ID3D11ShaderResourceView* () const {return m_SRView;}
-
-	D3D11_VIEWPORT viewport();
 
 	void create(ID3D11Device* d3dDevice,
 		size_t width, size_t height, size_t mipLevels,
@@ -331,30 +359,15 @@ struct Texture2DRenderBuffer
 };	// Texture2DRenderBuffer
 
 //! Texture2DArrayRenderBuffer
-struct Texture2DArrayRenderBuffer
+struct Texture2DArrayRenderBuffer : public RenderBuffer
 {
 	ID3D11Texture2D* m_TextureObject;
-	ID3D11RenderTargetView* m_RTView;
-	ID3D11DepthStencilView* m_DSView;
-	ID3D11ShaderResourceView* m_SRView;
-
-	size_t m_Width;
-	size_t m_Height;
-	size_t m_ArraySize;
-	size_t m_MipLevels;
-	DXGI_FORMAT m_Format;
 
 	Texture2DArrayRenderBuffer();
 
 	~Texture2DArrayRenderBuffer();
 
 	bool valid() const;
-
-	operator ID3D11RenderTargetView* () const {return m_RTView;}
-	operator ID3D11DepthStencilView* () const {return m_DSView;}
-	operator ID3D11ShaderResourceView* () const {return m_SRView;}
-
-	D3D11_VIEWPORT viewport();
 
 	void create(
 		ID3D11Device* d3dDevice,
