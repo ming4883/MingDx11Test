@@ -17,6 +17,7 @@
 struct VS_INPUT
 {
 	float4 vPosition	: POSITION;
+	uint iInstanceId	: SV_INSTANCEID;
 };
 
 struct VS_OUTPUT
@@ -31,7 +32,8 @@ VS_OUTPUT Main(VS_INPUT Input)
 {
 	VS_OUTPUT Output;
 	
-	Output.vPosition = 0;
+	Output.vPosition.x = Input.iInstanceId;
+	Output.vPosition.yzw = 0;
 	
 	return Output;
 }

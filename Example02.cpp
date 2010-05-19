@@ -187,7 +187,7 @@ public:
 #pragma pack(pop)
 	js::Texture2DRenderBuffer m_HistogramBuffer;
 	js::Texture2DRenderBuffer m_HdrParamBuffer;
-	js::Texture2DArrayRenderBuffer m_HistogramBuffer2;
+	//js::Texture2DArrayRenderBuffer m_HistogramBuffer2;
 	//js::Texture2DStagingBuffer m_HistogramStageBuffer;
 	js::VertexShader m_ComputeVs;
 	js::GeometryShader m_ComputeGs;
@@ -199,7 +199,7 @@ public:
 	js::GeometryShader m_DrawGs;
 	js::PixelShader m_DrawPs;
 	js::PixelShader m_UpdatePs;
-	js::PixelShader m_Update2Ps;
+	//js::PixelShader m_Update2Ps;
 	//js::StructComputeBuffer m_BufferCompute;
 	HistogramComputeConstBuf m_ComputeCb;
 	HistogramDrawConstBuf m_DrawCb;
@@ -226,8 +226,8 @@ public:
 		m_HistogramBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		js_assert(m_HistogramBuffer.valid());
 		
-		m_HistogramBuffer2.create(d3dDevice, 1, 1, SIZE, 1, DXGI_FORMAT_R32_FLOAT);
-		js_assert(m_HistogramBuffer2.valid());
+		//m_HistogramBuffer2.create(d3dDevice, 1, 1, SIZE, 1, DXGI_FORMAT_R32_FLOAT);
+		//js_assert(m_HistogramBuffer2.valid());
 		//m_HistogramStageBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		//js_assert(m_HistogramStageBuffer.valid());
 		
@@ -271,8 +271,8 @@ public:
 		m_UpdatePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Update.PS.hlsl"), "Main");
 		js_assert(m_UpdatePs.valid());
 
-		m_Update2Ps.createFromFile(d3dDevice, media(L"Example02/Histogram.Update2.PS.hlsl"), "Main");
-		js_assert(m_Update2Ps.valid());
+		//m_Update2Ps.createFromFile(d3dDevice, media(L"Example02/Histogram.Update2.PS.hlsl"), "Main");
+		//js_assert(m_Update2Ps.valid());
 
 		m_ComputeCb.create(d3dDevice);
 		js_assert(m_ComputeCb.valid());
@@ -294,7 +294,7 @@ public:
 	void destroy()
 	{
 		m_HistogramBuffer.destroy();
-		m_HistogramBuffer2.destroy();
+		//m_HistogramBuffer2.destroy();
 		//m_HistogramStageBuffer.destroy();
 		m_HdrParamBuffer.destroy();
 		//m_BufferCompute.destroy();
@@ -308,7 +308,7 @@ public:
 		m_DrawGs.destroy();
 		m_DrawPs.destroy();
 		m_UpdatePs.destroy();
-		m_Update2Ps.destroy();
+		//m_Update2Ps.destroy();
 		m_ComputeCb.destroy();
 		m_DrawCb.destroy();
 		js_safe_release(m_VB);
@@ -408,14 +408,26 @@ public:
 		
 		// render target
 		static const float clearColor[] = {0, 0, 0, 0};
-		d3dContext->ClearRenderTargetView(m_HistogramBuffer2.m_RTView, clearColor);
+		d3dContext->ClearRenderTargetView(m_HistogramBuffer.m_RTView, clearColor);
 		size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
 		d3dContext->RSGetViewports(&vpCnt, nullptr);
 		d3dContext->RSGetViewports(&vpCnt, vps);
-		d3dContext->RSSetViewports(1, js::VpVA() << m_HistogramBuffer2.viewport());
+		d3dContext->RSSetViewports(1, js::VpVA() << m_HistogramBuffer.viewport());
 
 		rsCache.rtState().backup();
-		rsCache.rtState().set(1, js::RtvVA() << m_HistogramBuffer2, nullptr);
+		rsCache.rtState().set(1, js::RtvVA() << m_HistogramBuffer, nullptr);
+
+		// render state
+		rsCache.blendState().backup();
+		rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+		rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+		rsCache.blendState().RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		rsCache.blendState().dirty();
 
 		// shader state
 		rsCache.vsState().backup();
@@ -431,7 +443,8 @@ public:
 		rsCache.applyToContext(d3dContext);
 
 		// draw
-		d3dContext->Draw(1, 0);
+		//d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
+		d3dContext->DrawInstanced(1, 1, 0, 0);
 
 		m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
 		
@@ -476,36 +489,36 @@ public:
 		rsCache.blendState().restore();
 	}
 
-	void update2(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, PostProcessor& postProcessor, float dt)
-	{
-		const float t = dt * m_AdaptFactor;
+	//void update2(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, PostProcessor& postProcessor, float dt)
+	//{
+	//	const float t = dt * m_AdaptFactor;
 
-		postProcessor.m_ConstBuf.map(d3dContext);
-		postProcessor.m_ConstBuf.data().m_UserParams.x = m_MaxInputValue;
-		postProcessor.m_ConstBuf.data().m_UserParams.y = m_KeyTarget;
-		postProcessor.m_ConstBuf.data().m_UserParams.z = m_BloomThreshold;
-		postProcessor.m_ConstBuf.data().m_UserParams.w = (float)SIZE;
-		postProcessor.m_ConstBuf.unmap(d3dContext);
+	//	postProcessor.m_ConstBuf.map(d3dContext);
+	//	postProcessor.m_ConstBuf.data().m_UserParams.x = m_MaxInputValue;
+	//	postProcessor.m_ConstBuf.data().m_UserParams.y = m_KeyTarget;
+	//	postProcessor.m_ConstBuf.data().m_UserParams.z = m_BloomThreshold;
+	//	postProcessor.m_ConstBuf.data().m_UserParams.w = (float)SIZE;
+	//	postProcessor.m_ConstBuf.unmap(d3dContext);
 
-		rsCache.blendState().backup();
-		rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
-		rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-		rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_BLEND_FACTOR;
-		rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_INV_BLEND_FACTOR;
-		rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_BLEND_FACTOR;
-		rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_BLEND_FACTOR;
-		rsCache.blendState().blendFactor()[0] = t;
-		rsCache.blendState().blendFactor()[1] = t;
-		rsCache.blendState().blendFactor()[2] = t;
-		rsCache.blendState().blendFactor()[3] = t;
-		rsCache.blendState().dirty();
+	//	rsCache.blendState().backup();
+	//	rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+	//	rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	//	rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	//	rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_BLEND_FACTOR;
+	//	rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_INV_BLEND_FACTOR;
+	//	rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_BLEND_FACTOR;
+	//	rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_BLEND_FACTOR;
+	//	rsCache.blendState().blendFactor()[0] = t;
+	//	rsCache.blendState().blendFactor()[1] = t;
+	//	rsCache.blendState().blendFactor()[2] = t;
+	//	rsCache.blendState().blendFactor()[3] = t;
+	//	rsCache.blendState().dirty();
 
-		postProcessor.filter(
-			d3dContext, rsCache, m_HistogramBuffer2, m_HdrParamBuffer, m_Update2Ps);
+	//	postProcessor.filter(
+	//		d3dContext, rsCache, m_HistogramBuffer2, m_HdrParamBuffer, m_Update2Ps);
 
-		rsCache.blendState().restore();
-	}
+	//	rsCache.blendState().restore();
+	//}
 
 	void display(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, float x, float y, float w, float h)
 	{
@@ -595,6 +608,7 @@ public:
 	Histogram m_Histogram;
 	bool m_ShowGui;
 	bool m_UseFullHistogram;
+	int m_HistogramMethod;
 
 	js::RenderStateCache m_RSCache;
 	
@@ -628,6 +642,7 @@ public:
 	Example02()
 		: m_ShowGui(true)
 		, m_UseFullHistogram(false)
+		, m_HistogramMethod(0)
 	{
 		CDXUTDialog* dlg = new CDXUTDialog;
 		dlg->Init(m_GuiDlgResMgr);
@@ -996,7 +1011,15 @@ public:
 				d3dContext, m_RSCache, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp16x, m_PostDnSamp4xShd);
 
 			// update histogram
-			m_Histogram.compute(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp16x);
+			if(0 == m_HistogramMethod)
+			{
+				m_Histogram.compute(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp16x);
+			}
+			else
+			{
+				m_Histogram.compute2(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp16x);
+			}
+
 			m_Histogram.update(d3dContext, m_RSCache, m_PostProcessor, elapsedTime);
 
 			// brightpass
@@ -1105,6 +1128,9 @@ public:
 
 		if(VK_F2 == nChar && keyDown)
 			m_UseFullHistogram = !m_UseFullHistogram;
+
+		if(VK_F3 == nChar && keyDown)
+			m_HistogramMethod = 1 - m_HistogramMethod;
 	}
 
 };	// Example02

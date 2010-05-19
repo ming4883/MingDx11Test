@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: Histogram.PS.hlsl
+// File: Histogram.Compute.PS.hlsl
 //
 // The shader file for the MingDx11Test.  
 // 

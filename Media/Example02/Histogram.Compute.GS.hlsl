@@ -61,6 +61,7 @@ void Main(point VS_OUTPUT Input[1], inout PointStream<VS_OUTPUT> OutputStream )
 			Input[0].vPosition.w = 1;
 			
 			OutputStream.Append(Input[0]);
+			OutputStream.RestartStrip();
 		}
 	}
 }

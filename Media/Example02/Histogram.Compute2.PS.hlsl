@@ -19,7 +19,8 @@
 //--------------------------------------------------------------------------------------
 struct PS_INPUT
 {
-	float fBinValue		: BINVALUE;
+	float4 vPosition : SV_POSITION;
+	float fBinValue : BINVALUE;
 };
 
 //--------------------------------------------------------------------------------------
@@ -27,5 +28,5 @@ struct PS_INPUT
 //--------------------------------------------------------------------------------------
 float4 Main(PS_INPUT Input) : SV_TARGET
 {
-	return Input.fBinValue;
+	return float4(Input.fBinValue, Input.fBinValue, Input.fBinValue, Input.fBinValue);
 }

@@ -69,7 +69,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	
 	// max value
 	int binMax = iW-1;
-	while(freq[binMax] <= 0)
+	while(binMax > 0 && freq[binMax] <= 0)
 	{
 		--binMax;
 	}
@@ -80,7 +80,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	int binKey = iW-1;
 	
 	float fKeyFreq = 0;
-	while(fKeyFreq + freq[binKey] <= fTargetFreq)
+	while(binKey > 0 && fKeyFreq + freq[binKey] <= fTargetFreq)
 	{
 		fKeyFreq += freq[binKey];
 		--binKey;

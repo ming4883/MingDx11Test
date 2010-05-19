@@ -33,4 +33,5 @@ void Main(point VS_OUTPUT Input[1], inout LineStream<VS_OUTPUT> OutputStream )
 	Input[0].vPosition.y = g_vDrawParams.y;
 	
 	OutputStream.Append(Input[0]);
+	OutputStream.RestartStrip();
 }
