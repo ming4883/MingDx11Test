@@ -394,9 +394,11 @@ public:
 	{
 		js_assert(colorBuffer.valid());
 
+		const size_t iDiv = 4;
+
 		m_ComputeCb.map(d3dContext);
-		m_ComputeCb.data().g_vInputParams.x = (float)(colorBuffer.m_Width / 4);
-		m_ComputeCb.data().g_vInputParams.y = 4;
+		m_ComputeCb.data().g_vInputParams.x = (float)iDiv;
+		m_ComputeCb.data().g_vInputParams.y = 0;
 		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
 		m_ComputeCb.data().g_vInputParams.w = (float)SIZE;
 		m_ComputeCb.unmap(d3dContext);
@@ -444,7 +446,7 @@ public:
 
 		// draw
 		//d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
-		d3dContext->DrawInstanced(1, 1, 0, 0);
+		d3dContext->DrawInstanced(1, iDiv * iDiv, 0, 0);
 
 		m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
 		

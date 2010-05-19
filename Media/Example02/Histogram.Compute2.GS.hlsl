@@ -41,6 +41,7 @@ struct GS_OUTPUT
 [maxvertexcount(HISTOGRAM_SIZE)]
 void Main(point GS_INPUT Input[1], inout PointStream<GS_OUTPUT> OutputStream )
 {
+	const int iDiv = (int)g_vInputParams.x;
 	const float fHistogramMax = g_vInputParams.z;
 	const float fHistogramSize = g_vInputParams.w;
 	const float fOutputOffset = (1 / fHistogramSize);
@@ -55,12 +56,21 @@ void Main(point GS_INPUT Input[1], inout PointStream<GS_OUTPUT> OutputStream )
 	// gather
 	int iWInput, iHInput;
 	g_txInput.GetDimensions(iWInput, iHInput);
+	
+	iWInput /= iDiv;
+	iHInput /= iDiv;
 
+	int iYOffset = Input[0].vPosition.x / iDiv;
+	int iXOffset = Input[0].vPosition.x - iYOffset * iDiv;
+	
+	iXOffset *= iWInput;
+	iYOffset *= iHInput;
+	
 	[loop]
-	for(int y = 0; y < iHInput; ++y)
+	for(int y = iYOffset; y < iHInput; ++y)
 	{
 		[loop]
-		for(int x = 0; x < iWInput; ++x)
+		for(int x = iXOffset; x < iWInput; ++x)
 		{
 			float4 vInput = g_txInput.Load(int3(x, y, 0));
 			float fIntensity = dot(vInput.xyz, float3(0.27,0.67,0.06));
