@@ -187,8 +187,6 @@ public:
 #pragma pack(pop)
 	js::Texture2DRenderBuffer m_HistogramBuffer;
 	js::Texture2DRenderBuffer m_HdrParamBuffer;
-	//js::Texture2DArrayRenderBuffer m_HistogramBuffer2;
-	//js::Texture2DStagingBuffer m_HistogramStageBuffer;
 	js::VertexShader m_ComputeVs;
 	js::GeometryShader m_ComputeGs;
 	js::PixelShader m_ComputePs;
@@ -199,8 +197,6 @@ public:
 	js::GeometryShader m_DrawGs;
 	js::PixelShader m_DrawPs;
 	js::PixelShader m_UpdatePs;
-	//js::PixelShader m_Update2Ps;
-	//js::StructComputeBuffer m_BufferCompute;
 	HistogramComputeConstBuf m_ComputeCb;
 	HistogramDrawConstBuf m_DrawCb;
 	ID3D11Buffer* m_VB;
@@ -226,20 +222,12 @@ public:
 		m_HistogramBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		js_assert(m_HistogramBuffer.valid());
 		
-		//m_HistogramBuffer2.create(d3dDevice, 1, 1, SIZE, 1, DXGI_FORMAT_R32_FLOAT);
-		//js_assert(m_HistogramBuffer2.valid());
-		//m_HistogramStageBuffer.create(d3dDevice, SIZE, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
-		//js_assert(m_HistogramStageBuffer.valid());
-		
 		m_HdrParamBuffer.create(d3dDevice, 1, 1, 1, DXGI_FORMAT_R32G32B32A32_FLOAT);
 		js_assert(m_HdrParamBuffer.valid());
 
 		{	float value[4] = {0, 1, 1, 0};
 			DXUTGetD3D11DeviceContext()->ClearRenderTargetView(m_HdrParamBuffer, value);
 		}
-
-		//m_BufferCompute.create(d3dDevice, sizeof(float)*SIZE, sizeof(float));
-		//js_assert(m_BufferCompute.valid());
 
 		m_ComputeVs.createFromFile(d3dDevice, media(L"Example02/Histogram.Compute.VS.hlsl"), "Main");
 		js_assert(m_ComputeVs.valid());
@@ -271,9 +259,6 @@ public:
 		m_UpdatePs.createFromFile(d3dDevice, media(L"Example02/Histogram.Update.PS.hlsl"), "Main");
 		js_assert(m_UpdatePs.valid());
 
-		//m_Update2Ps.createFromFile(d3dDevice, media(L"Example02/Histogram.Update2.PS.hlsl"), "Main");
-		//js_assert(m_Update2Ps.valid());
-
 		m_ComputeCb.create(d3dDevice);
 		js_assert(m_ComputeCb.valid());
 		
@@ -294,10 +279,7 @@ public:
 	void destroy()
 	{
 		m_HistogramBuffer.destroy();
-		//m_HistogramBuffer2.destroy();
-		//m_HistogramStageBuffer.destroy();
 		m_HdrParamBuffer.destroy();
-		//m_BufferCompute.destroy();
 		m_ComputeVs.destroy();
 		m_ComputeGs.destroy();
 		m_ComputePs.destroy();
@@ -308,7 +290,6 @@ public:
 		m_DrawGs.destroy();
 		m_DrawPs.destroy();
 		m_UpdatePs.destroy();
-		//m_Update2Ps.destroy();
 		m_ComputeCb.destroy();
 		m_DrawCb.destroy();
 		js_safe_release(m_VB);
@@ -394,7 +375,7 @@ public:
 	{
 		js_assert(colorBuffer.valid());
 
-		const size_t iDiv = 4;
+		const size_t iDiv = 8;
 
 		m_ComputeCb.map(d3dContext);
 		m_ComputeCb.data().g_vInputParams.x = (float)iDiv;
@@ -434,6 +415,7 @@ public:
 		// shader state
 		rsCache.vsState().backup();
 		rsCache.vsState().setShader(m_Compute2Vs);
+		rsCache.vsState().setConstBuffers(0, 1, js::BufVA() << m_ComputeCb);
 
 		rsCache.gsState().backup();
 		rsCache.gsState().setShader(m_Compute2Gs);
@@ -445,10 +427,9 @@ public:
 		rsCache.applyToContext(d3dContext);
 
 		// draw
-		//d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
 		d3dContext->DrawInstanced(1, iDiv * iDiv, 0, 0);
 
-		m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
+		m_LastNumInputs = (float)(((colorBuffer.m_Width / iDiv) * iDiv) * ((colorBuffer.m_Height / iDiv) * iDiv));
 		
 		// restore render targets
 		d3dContext->RSSetViewports(vpCnt, vps);
@@ -490,37 +471,6 @@ public:
 
 		rsCache.blendState().restore();
 	}
-
-	//void update2(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, PostProcessor& postProcessor, float dt)
-	//{
-	//	const float t = dt * m_AdaptFactor;
-
-	//	postProcessor.m_ConstBuf.map(d3dContext);
-	//	postProcessor.m_ConstBuf.data().m_UserParams.x = m_MaxInputValue;
-	//	postProcessor.m_ConstBuf.data().m_UserParams.y = m_KeyTarget;
-	//	postProcessor.m_ConstBuf.data().m_UserParams.z = m_BloomThreshold;
-	//	postProcessor.m_ConstBuf.data().m_UserParams.w = (float)SIZE;
-	//	postProcessor.m_ConstBuf.unmap(d3dContext);
-
-	//	rsCache.blendState().backup();
-	//	rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
-	//	rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	//	rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	//	rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_BLEND_FACTOR;
-	//	rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_INV_BLEND_FACTOR;
-	//	rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_BLEND_FACTOR;
-	//	rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_BLEND_FACTOR;
-	//	rsCache.blendState().blendFactor()[0] = t;
-	//	rsCache.blendState().blendFactor()[1] = t;
-	//	rsCache.blendState().blendFactor()[2] = t;
-	//	rsCache.blendState().blendFactor()[3] = t;
-	//	rsCache.blendState().dirty();
-
-	//	postProcessor.filter(
-	//		d3dContext, rsCache, m_HistogramBuffer2, m_HdrParamBuffer, m_Update2Ps);
-
-	//	rsCache.blendState().restore();
-	//}
 
 	void display(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, float x, float y, float w, float h)
 	{
@@ -650,7 +600,7 @@ public:
 		dlg->Init(m_GuiDlgResMgr);
 		const int w = 120, h = 20;
 		int y = 50;
-		D3DCOLOR textClr = D3DCOLOR_ARGB(255, 255, 255, 255);
+		D3DCOLOR textClr = D3DCOLOR_ARGB(255, 204, 0, 0);
 
 		dlg->AddStatic(UI_LIGHTCOLOR_R, L"Light.R", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(textClr);
@@ -928,9 +878,10 @@ public:
 			m_GuiDlgs[0]->OnRender(elapsedTime);
 			m_GuiTxtHelper->Begin();
 			m_GuiTxtHelper->SetInsertionPos( 2, 0 );
-			m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.0f, 0.5f, 0.0f, 1.0f ) );
+			m_GuiTxtHelper->SetForegroundColor( D3DXCOLOR( 0.8f, 0.0f, 0.0f, 1.0f ) );
 			m_GuiTxtHelper->DrawTextLine( DXUTGetFrameStats( DXUTIsVsyncEnabled() ) );
 			m_GuiTxtHelper->DrawTextLine( true == m_UseFullHistogram ? L"F2-Full Histogram [true]" : L"F2-Full Histogram [false]");
+			m_GuiTxtHelper->DrawTextLine( 0 == m_HistogramMethod ? L"F3-HistogramMethod [0]" : L"F3-HistogramMethod [1]");
 			m_GuiTxtHelper->End();
 		}
 	}
@@ -1009,17 +960,17 @@ public:
 			// down sampling
 			m_PostProcessor.filter(
 				d3dContext, m_RSCache, m_ColorBuffer[0], m_ColorBufferDnSamp4x[0], m_PostDnSamp4xShd);
-			m_PostProcessor.filter(
-				d3dContext, m_RSCache, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp16x, m_PostDnSamp4xShd);
+			//m_PostProcessor.filter(
+			//	d3dContext, m_RSCache, m_ColorBufferDnSamp4x[0], m_ColorBufferDnSamp16x, m_PostDnSamp4xShd);
 
 			// update histogram
 			if(0 == m_HistogramMethod)
 			{
-				m_Histogram.compute(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp16x);
+				m_Histogram.compute(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp4x[0]);
 			}
 			else
 			{
-				m_Histogram.compute2(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp16x);
+				m_Histogram.compute2(d3dContext, m_RSCache, m_UseFullHistogram ? m_ColorBuffer[0] : m_ColorBufferDnSamp4x[0]);
 			}
 
 			m_Histogram.update(d3dContext, m_RSCache, m_PostProcessor, elapsedTime);

@@ -19,9 +19,6 @@ Texture2D g_txInput : register(t0);
 //--------------------------------------------------------------------------------------
 // Input / Output structures
 //--------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------
-// Input / Output structures
-//--------------------------------------------------------------------------------------
 struct GS_INPUT
 {
 	float4 vPosition : SV_POSITION;
@@ -41,7 +38,7 @@ struct GS_OUTPUT
 [maxvertexcount(HISTOGRAM_SIZE)]
 void Main(point GS_INPUT Input[1], inout PointStream<GS_OUTPUT> OutputStream )
 {
-	const int iDiv = (int)g_vInputParams.x;
+	const uint iDiv = (uint)g_vInputParams.x;
 	const float fHistogramMax = g_vInputParams.z;
 	const float fHistogramSize = g_vInputParams.w;
 	const float fOutputOffset = (1 / fHistogramSize);
@@ -54,25 +51,20 @@ void Main(point GS_INPUT Input[1], inout PointStream<GS_OUTPUT> OutputStream )
 		fHistogram[i] = 0;
 		
 	// gather
-	int iWInput, iHInput;
+	uint iWInput, iHInput;
 	g_txInput.GetDimensions(iWInput, iHInput);
 	
-	iWInput /= iDiv;
-	iHInput /= iDiv;
-
-	int iYOffset = Input[0].vPosition.x / iDiv;
-	int iXOffset = Input[0].vPosition.x - iYOffset * iDiv;
-	
-	iXOffset *= iWInput;
-	iYOffset *= iHInput;
-	
+	iWInput = iWInput / iDiv;
+	iHInput = iHInput / iDiv;
+	int3 vOffset = int3(Input[0].vPosition.xy * int2(iWInput, iHInput), 0);
+		
 	[loop]
-	for(int y = iYOffset; y < iHInput; ++y)
+	for(uint y = 0; y < iHInput; ++y)
 	{
 		[loop]
-		for(int x = iXOffset; x < iWInput; ++x)
+		for(uint x = 0; x < iWInput; ++x)
 		{
-			float4 vInput = g_txInput.Load(int3(x, y, 0));
+			float4 vInput = g_txInput.Load(int3(x, y, 0) + vOffset);
 			float fIntensity = dot(vInput.xyz, float3(0.27,0.67,0.06));
 
 			//fIntensity = 3.25;
@@ -85,13 +77,18 @@ void Main(point GS_INPUT Input[1], inout PointStream<GS_OUTPUT> OutputStream )
 	[unroll]
 	for(int i=0; i<HISTOGRAM_SIZE; ++i)
 	{
-		GS_OUTPUT Output;
+		GS_OUTPUT Output = (GS_OUTPUT)0;
 		Output.vPosition.x = ((i / fHistogramSize) * 2 - 1) + fOutputOffset;
 		Output.vPosition.y = 0;
 		Output.vPosition.z = 0;
 		Output.vPosition.w = 1;
 		Output.fBinValue = fHistogram[i];
-		OutputStream.Append(Output);
-		OutputStream.RestartStrip();
+			
+		[branch]
+		if(fHistogram[i] > 0)
+		{
+			OutputStream.Append(Output);
+			OutputStream.RestartStrip();
+		}
 	}
 }
