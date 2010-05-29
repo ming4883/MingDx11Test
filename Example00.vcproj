@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="Example02"
-	ProjectGUID="{D3D11108-96D0-4629-88B8-122C0256058C}"
-	RootNamespace="MyExample01"
+	Name="Example00"
+	ProjectGUID="{D5F5A81A-8D4F-4633-AFB5-B56400906CA7}"
+	RootNamespace="Example00"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -671,75 +671,7 @@
 			Name="Media"
 			>
 			<File
-				RelativePath=".\Media\Example02\Histogram.Compute.GS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Compute.PS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Compute.VS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Compute2.GS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Compute2.PS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Compute2.VS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Draw.GS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Draw.PS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Draw.VS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Histogram.Update.PS.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Post.Blur.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Post.BrightPass.hlsl"
-				>
-			</File>
-			<File
 				RelativePath=".\Media\Common\Shader\Post.Copy.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Post.DOF.Focus.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Post.DOF.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Post.DownSample4x.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Post.Fog.hlsl"
-				>
-			</File>
-			<File
-				RelativePath=".\Media\Example02\Post.ToneMapping.hlsl"
 				>
 			</File>
 			<File
@@ -764,7 +696,7 @@
 			>
 		</File>
 		<File
-			RelativePath=".\Example02.cpp"
+			RelativePath=".\Example00.cpp"
 			>
 		</File>
 	</Files>

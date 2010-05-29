@@ -12,6 +12,7 @@
 #include "SDKmisc.h"	// DXUTFindDXSDKMediaFileCch
 #include "SDKmesh.h"	// DXUT
 #include "DXUTgui.h"
+#include "DXUTcamera.h"
 #include "Jessye/Shaders.h"
 #include "Jessye/Buffers.h"
 
@@ -450,6 +451,144 @@ void ScreenQuad::render(ID3D11DeviceContext* d3dContext) const
 }
 
 //------------------------------------------------------------------------------
+// PostProcessor
+//------------------------------------------------------------------------------
+void PostProcessor::ConstBuffer_s::update(const CBaseCamera& camera)
+{
+	D3DXMATRIX scale(
+		 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
+		 0, -2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
+		 0, 0, 1, 0,
+		 0, 0, 0, 1);
+
+	D3DXMATRIX bias(
+		 1, 0, 0, 0,
+		 0, 1, 0, 0,
+		 0, 0, 1, 0,
+		-1, 1, 0, 1);
+
+	D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
+	D3DXMATRIX invViewProj;
+	D3DXMatrixInverse(&invViewProj, nullptr, &viewProjectionMatrix);
+	invViewProj = scale * bias * invViewProj;
+
+	D3DXMatrixTranspose(&m_InvViewProjScaleBias, &invViewProj);
+
+	m_ZParams.x = 1 / camera.GetFarClip() - 1 / camera.GetNearClip();
+	m_ZParams.y = 1 / camera.GetNearClip();
+	m_ZParams.z = camera.GetFarClip() - camera.GetNearClip();
+	m_ZParams.w = camera.GetNearClip();
+}
+
+bool PostProcessor::valid() const
+{
+	return m_ScreenQuad.valid()
+		&& m_PostVtxShd.valid()
+		&& m_ConstBuf.valid()
+		;
+}
+
+void PostProcessor::create(ID3D11Device* d3dDevice)
+{
+	m_PostVtxShd.createFromFile(d3dDevice, media(L"Common/Shader/Post.Vtx.hlsl"), "Main");
+	js_assert(m_PostVtxShd.valid());
+
+	m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);
+	js_assert(m_ScreenQuad.valid());
+
+	m_ConstBuf.create(d3dDevice);
+}
+
+void PostProcessor::destroy()
+{
+	m_PostVtxShd.destroy();
+	m_ScreenQuad.destroy();
+	m_ConstBuf.destroy();
+}
+
+void PostProcessor::filter(
+	ID3D11DeviceContext* d3dContext,
+	js::RenderStateCache& rsCache,
+	js::RenderBuffer& srcBuf,
+	js::RenderBuffer& dstBuf,
+	js::PixelShader& shader
+	)
+{
+	filter(d3dContext, rsCache, js::SrvVA() << srcBuf, js::RtvVA() << dstBuf, dstBuf.viewport(), shader);
+}
+
+void PostProcessor::filter(
+	ID3D11DeviceContext* d3dContext,
+	js::RenderStateCache& rsCache,
+	js::SrvVA& srvVA,
+	js::RenderBuffer& dstBuf,
+	js::PixelShader& shader
+	)
+{
+	filter(d3dContext, rsCache, srvVA, js::RtvVA() << dstBuf, dstBuf.viewport(), shader);
+}
+
+void PostProcessor::filter(
+	ID3D11DeviceContext* d3dContext,
+	js::RenderStateCache& rsCache,
+	js::SrvVA& srvVA,
+	js::RtvVA& rtvVA,
+	const D3D11_VIEWPORT& vp,
+	js::PixelShader& shader
+	)
+{
+	if(rtvVA.m_Count > 0)
+	{
+		rsCache.rtState().backup();
+		rsCache.rtState().set(rtvVA.m_Count, rtvVA, nullptr);
+	}
+
+	size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+	d3dContext->RSGetViewports(&vpCnt, nullptr);
+	d3dContext->RSGetViewports(&vpCnt, vps);
+	d3dContext->RSSetViewports(1, js::VpVA() << vp);
+
+	filter(d3dContext, rsCache, srvVA, shader);
+	
+	d3dContext->RSSetViewports(vpCnt, vps);
+
+	if(rtvVA.m_Count > 0)
+	{
+		rsCache.rtState().restore();
+	}
+}
+
+void PostProcessor::filter(
+	ID3D11DeviceContext* d3dContext,
+	js::RenderStateCache& rsCache,
+	js::SrvVA& srvVA,
+	js::PixelShader& shader
+	)
+{
+	rsCache.vsState().backup();
+	rsCache.vsState().setShader(m_PostVtxShd);
+
+	rsCache.psState().backup();
+	rsCache.psState().setShader(shader);
+	rsCache.psState().setSRViews(0, srvVA.m_Count, srvVA);
+	rsCache.psState().setConstBuffers(0, 1, js::BufVA() << m_ConstBuf);
+
+	rsCache.samplerState().AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	rsCache.samplerState().AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	rsCache.samplerState().AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	rsCache.samplerState().Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	rsCache.samplerState().dirty();
+	rsCache.psState().setSamplers(0, 1, js::SampVA() << *rsCache.samplerState().current());
+	
+	rsCache.applyToContext(d3dContext);
+
+	m_ScreenQuad.render(d3dContext);
+	
+	rsCache.vsState().restore();
+	rsCache.psState().restore();
+}
+
+//------------------------------------------------------------------------------
 // DXUTApp
 //------------------------------------------------------------------------------
 #define DECL_DXUT_APP(userContext) DXUTApp& app = *static_cast<DXUTApp*>(userContext);
@@ -595,7 +734,7 @@ int DXUTApp::run(DXUTApp& app)
     DXUTCreateWindow( app.getName() );
 
     // Only require 10-level hardware
-    DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 720, 405 );
+    DXUTCreateDevice( D3D_FEATURE_LEVEL_10_0, true, 800, 450 );
     DXUTMainLoop(); // Enter into the DXUT ren  der loop
 
     // Perform any application-level cleanup here

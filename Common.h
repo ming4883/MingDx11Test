@@ -4,6 +4,9 @@
 #include <vector>
 #include "Jessye/Platform.h"
 #include "Jessye/RenderStates.h"
+#include "Jessye/Buffers.h"
+#include "Jessye/Shaders.h"
+#include "Jessye/ViewArrays.h"
 
 const wchar_t* media(const wchar_t* in);
 
@@ -71,6 +74,65 @@ private:
 	class Impl; Impl& m_Impl;
 
 	js_decl_non_copyable(ScreenQuad);
+};
+
+class CBaseCamera;
+
+class PostProcessor
+{
+public:
+	struct ConstBuffer_s
+	{
+		D3DXMATRIX m_InvViewProjScaleBias;
+		D3DXVECTOR4 m_ZParams;
+		D3DXVECTOR4 m_UserParams;
+
+		void update(const CBaseCamera& camera);
+	};
+
+	typedef js::ConstantBuffer_t<ConstBuffer_s> ConstBuffer;
+
+	ScreenQuad m_ScreenQuad;
+	js::VertexShader m_PostVtxShd;
+	ConstBuffer m_ConstBuf;
+
+	bool valid() const;
+
+	void create(ID3D11Device* d3dDevice);
+
+	void destroy();
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::RenderBuffer& srcBuf,
+		js::RenderBuffer& dstBuf,
+		js::PixelShader& shader
+		);
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::SrvVA& srvVA,
+		js::RenderBuffer& dstBuf,
+		js::PixelShader& shader
+		);
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::SrvVA& srvVA,
+		js::RtvVA& rtvVA,
+		const D3D11_VIEWPORT& vp,
+		js::PixelShader& shader
+		);
+
+	void filter(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		js::SrvVA& srvVA,
+		js::PixelShader& shader
+		);
 };
 
 class CDXUTDialogResourceManager;

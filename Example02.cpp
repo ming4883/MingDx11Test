@@ -9,158 +9,6 @@
 #include "Jessye/RenderStates.h"
 #include "Jessye/ViewArrays.h"
 
-class PostProcessor
-{
-public:
-	struct ConstBuffer_s
-	{
-		D3DXMATRIX m_InvViewProjScaleBias;
-		D3DXVECTOR4 m_ZParams;
-		D3DXVECTOR4 m_UserParams;
-
-		void update(const CBaseCamera& camera)
-		{
-			D3DXMATRIX scale(
-				 2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Width, 0, 0, 0,
-				 0, -2 / (float)DXUTGetDXGIBackBufferSurfaceDesc()->Height, 0, 0,
-				 0, 0, 1, 0,
-				 0, 0, 0, 1);
-
-			D3DXMATRIX bias(
-				 1, 0, 0, 0,
-				 0, 1, 0, 0,
-				 0, 0, 1, 0,
-				-1, 1, 0, 1);
-
-			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
-			D3DXMATRIX invViewProj;
-			D3DXMatrixInverse(&invViewProj, nullptr, &viewProjectionMatrix);
-			invViewProj = scale * bias * invViewProj;
-
-			D3DXMatrixTranspose(&m_InvViewProjScaleBias, &invViewProj);
-
-			m_ZParams.x = 1 / camera.GetFarClip() - 1 / camera.GetNearClip();
-			m_ZParams.y = 1 / camera.GetNearClip();
-			m_ZParams.z = camera.GetFarClip() - camera.GetNearClip();
-			m_ZParams.w = camera.GetNearClip();
-		}
-	};
-
-	typedef js::ConstantBuffer_t<ConstBuffer_s> ConstBuffer;
-
-	ScreenQuad m_ScreenQuad;
-	js::VertexShader m_PostVtxShd;
-	ConstBuffer m_ConstBuf;
-
-	bool valid() const
-	{
-		return m_ScreenQuad.valid()
-			&& m_PostVtxShd.valid()
-			&& m_ConstBuf.valid()
-			;
-	}
-
-	void create(ID3D11Device* d3dDevice)
-	{
-		m_PostVtxShd.createFromFile(d3dDevice, media(L"Example02/Post.Vtx.hlsl"), "Main");
-		js_assert(m_PostVtxShd.valid());
-
-		m_ScreenQuad.create(d3dDevice, m_PostVtxShd.m_ByteCode);
-		js_assert(m_ScreenQuad.valid());
-
-		m_ConstBuf.create(d3dDevice);
-	};
-
-	void destroy()
-	{
-		m_PostVtxShd.destroy();
-		m_ScreenQuad.destroy();
-		m_ConstBuf.destroy();
-	}
-
-	void filter(
-		ID3D11DeviceContext* d3dContext,
-		js::RenderStateCache& rsCache,
-		js::RenderBuffer& srcBuf,
-		js::RenderBuffer& dstBuf,
-		js::PixelShader& shader
-		)
-	{
-		filter(d3dContext, rsCache, js::SrvVA() << srcBuf, js::RtvVA() << dstBuf, dstBuf.viewport(), shader);
-	}
-
-	void filter(
-		ID3D11DeviceContext* d3dContext,
-		js::RenderStateCache& rsCache,
-		js::SrvVA& srvVA,
-		js::RenderBuffer& dstBuf,
-		js::PixelShader& shader
-		)
-	{
-		filter(d3dContext, rsCache, srvVA, js::RtvVA() << dstBuf, dstBuf.viewport(), shader);
-	}
-
-	void filter(
-		ID3D11DeviceContext* d3dContext,
-		js::RenderStateCache& rsCache,
-		js::SrvVA& srvVA,
-		js::RtvVA& rtvVA,
-		const D3D11_VIEWPORT& vp,
-		js::PixelShader& shader
-		)
-	{
-		if(rtvVA.m_Count > 0)
-		{
-			rsCache.rtState().backup();
-			rsCache.rtState().set(rtvVA.m_Count, rtvVA, nullptr);
-		}
-
-		size_t vpCnt = 0; D3D11_VIEWPORT vps[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-		d3dContext->RSGetViewports(&vpCnt, nullptr);
-		d3dContext->RSGetViewports(&vpCnt, vps);
-		d3dContext->RSSetViewports(1, js::VpVA() << vp);
-
-		filter(d3dContext, rsCache, srvVA, shader);
-		
-		d3dContext->RSSetViewports(vpCnt, vps);
-
-		if(rtvVA.m_Count > 0)
-		{
-			rsCache.rtState().restore();
-		}
-	}
-
-	void filter(
-		ID3D11DeviceContext* d3dContext,
-		js::RenderStateCache& rsCache,
-		js::SrvVA& srvVA,
-		js::PixelShader& shader
-		)
-	{
-		rsCache.vsState().backup();
-		rsCache.vsState().setShader(m_PostVtxShd);
-
-		rsCache.psState().backup();
-		rsCache.psState().setShader(shader);
-		rsCache.psState().setSRViews(0, srvVA.m_Count, srvVA);
-		rsCache.psState().setConstBuffers(0, 1, js::BufVA() << m_ConstBuf);
-
-		rsCache.samplerState().AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		rsCache.samplerState().AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		rsCache.samplerState().AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		rsCache.samplerState().Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-		rsCache.samplerState().dirty();
-		rsCache.psState().setSamplers(0, 1, js::SampVA() << *rsCache.samplerState().current());
-		
-		rsCache.applyToContext(d3dContext);
-
-		m_ScreenQuad.render(d3dContext);
-		
-		rsCache.vsState().restore();
-		rsCache.psState().restore();
-	}
-};
-
 class Histogram
 {
 public:
@@ -182,7 +30,6 @@ public:
 	};
 
 	typedef js::ConstantBuffer_t<HistogramDraw_s> HistogramDrawConstBuf;
-
 
 #pragma pack(pop)
 	js::Texture2DRenderBuffer m_HistogramBuffer;
@@ -692,10 +539,10 @@ public:
 
 		// scene
 		RenderableMesh::ShaderDesc sd;
-		sd.vsPath = media(L"Example02/Scene.VS.hlsl");
+		sd.vsPath = media(L"Common/Shader/Scene.VS.hlsl");
 		sd.vsEntry = "VSMain";
 
-		sd.psPath = media(L"Example02/Scene.PS.hlsl");
+		sd.psPath = media(L"Common/Shader/Scene.PS.hlsl");
 		sd.psEntry = "PSMain";
 
 		std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
@@ -720,7 +567,7 @@ public:
 		m_PostDofFocusShd.createFromFile(d3dDevice, media(L"Example02/Post.DOF.Focus.hlsl"), "Main");
 		js_assert(m_PostDofFocusShd.valid());
 		
-		m_PostCopyShd.createFromFile(d3dDevice, media(L"Example02/Post.Copy.hlsl"), "Main");
+		m_PostCopyShd.createFromFile(d3dDevice, media(L"Common/Shader/Post.Copy.hlsl"), "Main");
 		js_assert(m_PostCopyShd.valid());
 
 		m_PostToneMapShd.createFromFile(d3dDevice, media(L"Example02/Post.ToneMapping.hlsl"), "Main");
