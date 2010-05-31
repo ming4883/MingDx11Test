@@ -686,6 +686,18 @@
 				RelativePath=".\Media\Common\Shader\Scene.VS.hlsl"
 				>
 			</File>
+			<File
+				RelativePath=".\Media\Example03\VolLight.Gs.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example03\VolLight.Ps.hlsl"
+				>
+			</File>
+			<File
+				RelativePath=".\Media\Example03\VolLight.Vs.hlsl"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\Common.cpp"

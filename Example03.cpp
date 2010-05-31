@@ -9,6 +9,48 @@
 #include "Jessye/RenderStates.h"
 #include "Jessye/ViewArrays.h"
 
+class VolumeLightEffect
+{
+public:
+	VolumeLightEffect(ID3D11Device* d3dDevice);
+	~VolumeLightEffect();
+
+	void create(ID3D11Device* d3dDevice);
+	void destroy();
+
+	js::VertexShader m_Vs;
+	js::GeometryShader m_Gs;
+	js::PixelShader m_Ps;
+};
+
+VolumeLightEffect::VolumeLightEffect(ID3D11Device* d3dDevice)
+{
+}
+
+VolumeLightEffect::~VolumeLightEffect()
+{
+	destroy();
+}
+
+void VolumeLightEffect::create(ID3D11Device* d3dDevice)
+{
+	m_Vs.createFromFile(d3dDevice, media(L"Example03/VolLight.Vs.hlsl"), "Main");
+	js_assert(m_Vs.valid());
+
+	m_Gs.createFromFile(d3dDevice, media(L"Example03/VolLight.Gs.hlsl"), "Main");
+	js_assert(m_Gs.valid());
+
+	m_Ps.createFromFile(d3dDevice, media(L"Example03/VolLight.Ps.hlsl"), "Main");
+	js_assert(m_Ps.valid());
+}
+
+void VolumeLightEffect::destroy()
+{
+	m_Vs.destroy();
+	m_Gs.destroy();
+	m_Ps.destroy();
+}
+
 class Example03 : public DXUTApp
 {
 public:
