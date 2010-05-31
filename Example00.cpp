@@ -12,35 +12,6 @@
 class Example00 : public DXUTApp
 {
 public:
-// Data structures
-#pragma pack(push)
-#pragma pack(1)
-	struct VSPreObject
-	{
-		D3DXMATRIX m_ViewProjection;
-		D3DXMATRIX m_World;
-		D3DXVECTOR3 m_CameraPosition;
-
-		void update(const CBaseCamera& camera, const D3DXMATRIX& worldMatrix)
-		{
-			D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
-			D3DXMatrixTranspose(&m_ViewProjection, &viewProjectionMatrix);
-			D3DXMatrixTranspose(&m_World, &worldMatrix);
-			m_CameraPosition = *camera.GetEyePt();
-		}
-	};
-
-	typedef js::ConstantBuffer_t<VSPreObject> VSPreObjectConstBuf;
-
-	struct PSPreObject
-	{
-		D3DXVECTOR4 m_vLightColor;
-	};
-
-	typedef js::ConstantBuffer_t<PSPreObject> PSPreObjectConstBuf;
-
-#pragma pack(pop)
-
 // Global Variables
 	CFirstPersonCamera m_Camera;
 	RenderableMesh m_Mesh;
@@ -50,13 +21,9 @@ public:
 	js::Texture2DRenderBuffer m_ColorBufferDnSamp4x[2];
 	js::Texture2DRenderBuffer m_DepthBuffer;
 
-	VSPreObjectConstBuf m_VsPreObjectConstBuf;
-	PSPreObjectConstBuf m_PsPreObjectConstBuf;
+	SceneShaderConstantsBuffer m_SceneShdConstBuf;
 
-	//Histogram m_Histogram;
 	bool m_ShowGui;
-	bool m_UseFullHistogram;
-	int m_HistogramMethod;
 
 	js::RenderStateCache m_RSCache;
 	
@@ -76,8 +43,6 @@ public:
 // Methods
 	Example00()
 		: m_ShowGui(true)
-		, m_UseFullHistogram(false)
-		, m_HistogramMethod(0)
 	{
 		CDXUTDialog* dlg = new CDXUTDialog;
 		dlg->Init(m_GuiDlgResMgr);
@@ -155,8 +120,7 @@ public:
 
 		m_Mesh.create(d3dDevice, media(L"Common/SoftParticles/TankScene.sdkmesh"), sd, ielems);
 
-		m_VsPreObjectConstBuf.create(d3dDevice);
-		m_PsPreObjectConstBuf.create(d3dDevice);
+		m_SceneShdConstBuf.create(d3dDevice);
 
 		// post processing
 		m_PostProcessor.create(d3dDevice);
@@ -234,8 +198,7 @@ public:
 
 		DXUTGetGlobalResourceCache().OnDestroyDevice();
 		m_Mesh.destroy();
-		m_VsPreObjectConstBuf.destroy();
-		m_PsPreObjectConstBuf.destroy();
+		m_SceneShdConstBuf.destroy();
 
 		m_PostProcessor.destroy();
 		m_PostCopyShd.destroy();
@@ -310,22 +273,21 @@ public:
 
 	void onD3D11FrameRender_Scene_PrepareShaderResources(ID3D11DeviceContext* d3dContext)
 	{
-		// m_VsPreObjectConstBuf
-		m_VsPreObjectConstBuf.map(d3dContext);
-		m_VsPreObjectConstBuf.data().update(m_Camera, m_WorldMatrix);
-		m_VsPreObjectConstBuf.unmap(d3dContext);
-
-		// m_PsPreObjectConstBuf
-		m_PsPreObjectConstBuf.map(d3dContext);
-		m_PsPreObjectConstBuf.data().m_vLightColor.x = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_R)->GetValue() / 255.0f;
-		m_PsPreObjectConstBuf.data().m_vLightColor.y = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_G)->GetValue() / 255.0f;
-		m_PsPreObjectConstBuf.data().m_vLightColor.z = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
-		m_PsPreObjectConstBuf.data().m_vLightColor.w = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
-		m_PsPreObjectConstBuf.unmap(d3dContext);
+		// m_SceneShdConstBuf
+		m_SceneShdConstBuf.map(d3dContext);
+		D3DXMatrixTranspose(&m_SceneShdConstBuf.data().m_World, &m_WorldMatrix);
+		m_SceneShdConstBuf.data().updateCameraContants(m_Camera);
+		m_SceneShdConstBuf.data().m_AmbientColor = D3DXVECTOR4(0.2f, 0.24f, 1, 0.5f);
+		m_SceneShdConstBuf.data().m_LightColor.x = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_R)->GetValue() / 255.0f;
+		m_SceneShdConstBuf.data().m_LightColor.y = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_G)->GetValue() / 255.0f;
+		m_SceneShdConstBuf.data().m_LightColor.z = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_B)->GetValue() / 255.0f;
+		m_SceneShdConstBuf.data().m_LightColor.w = m_GuiDlgs[0]->GetSlider(UI_LIGHTCOLOR_MULTIPLER)->GetValue() / 255.0f;
+		m_SceneShdConstBuf.data().m_LightVector = D3DXVECTOR4(0, 1, 0, 0);
+		m_SceneShdConstBuf.unmap(d3dContext);
 
 		// preparing shaders
-		m_RSCache.vsState().setConstBuffers(0, 1, js::BufVA() << m_VsPreObjectConstBuf);
-		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_PsPreObjectConstBuf);
+		m_RSCache.vsState().setConstBuffers(0, 1, js::BufVA() << m_SceneShdConstBuf);
+		m_RSCache.psState().setConstBuffers(0, 1, js::BufVA() << m_SceneShdConstBuf);
 
 		m_RSCache.samplerState().AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		m_RSCache.samplerState().AddressV = D3D11_TEXTURE_ADDRESS_WRAP;

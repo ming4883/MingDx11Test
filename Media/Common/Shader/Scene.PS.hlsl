@@ -9,9 +9,15 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-cbuffer cbShared : register( b0 )
+cbuffer cbSceneConstants : register( b0 )
 {
-	float4 g_vLightColor : packoffset( c0 );
+	matrix g_mWorld;
+	matrix g_mViewProjection;
+	float4 g_vCameraPosition;
+	float4 g_vCameraParams;
+	float4 g_vAmbientColor;
+	float4 g_vLightVector;
+	float4 g_vLightColor;
 };
 
 //--------------------------------------------------------------------------------------
@@ -40,15 +46,17 @@ float4 PSMain( VS_OUTPUT Input ) : SV_TARGET
 	float4 vDiffuse = g_txDiffuse.Sample(g_samLinear, Input.vTexcoord);
 	vDiffuse *= g_vLightColor.w;
 	float4 vSpecular = vDiffuse.w;
+	float4 vAmbient = vDiffuse * g_vAmbientColor;
+	vAmbient.xyz *= g_vAmbientColor.w;
 	
 	Input.vWorldNormal = normalize(Input.vWorldNormal);
 	Input.vWorldViewDir = normalize(Input.vWorldViewDir);
 	
-	float3 vLightDir = float3(0,1,0);
+	float3 vLightDir = g_vLightVector.xyz;
 	float3 vHalfDir = normalize(vLightDir + Input.vWorldViewDir);
-	vDiffuse.xyz = vDiffuse.xyz * saturate(dot(Input.vWorldNormal, vLightDir) * 0.5 + 0.5);
+	vDiffuse.xyz = vDiffuse.xyz * saturate(dot(Input.vWorldNormal, vLightDir));
 	vSpecular.xyz = vSpecular.xyz * pow(saturate(dot(Input.vWorldNormal, vHalfDir)), 32);
 	
-	return float4((vSpecular + vDiffuse).xyz * g_vLightColor.xyz, 1);
+	return float4(vAmbient.xyz + (vSpecular + vDiffuse).xyz * g_vLightColor.xyz, 1);
 }
 

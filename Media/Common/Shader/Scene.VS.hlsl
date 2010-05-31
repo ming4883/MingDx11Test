@@ -9,11 +9,15 @@
 //--------------------------------------------------------------------------------------
 // Globals
 //--------------------------------------------------------------------------------------
-cbuffer cbShared : register( b0 )
+cbuffer cbSceneConstants : register( b0 )
 {
-	matrix g_ViewProjection	: packoffset(c0);
-	matrix g_World			: packoffset(c4);
-	float3 g_CameraPosition : packoffset(c8);
+	matrix g_mWorld;
+	matrix g_mViewProjection;
+	float4 g_vCameraPosition;
+	float4 g_vCameraParams;
+	float4 g_vAmbientColor;
+	float4 g_vLightVector;
+	float4 g_vLightColor;
 };
 
 //--------------------------------------------------------------------------------------
@@ -43,10 +47,10 @@ VS_OUTPUT VSMain( IA_OUTPUT Input )
 {
 	VS_OUTPUT Output;
 	
-	Output.vWorldNormal = mul(Input.vNormal, (float3x3)g_World);
-	Output.vWorldPosition = mul(Input.vPosition, g_World).xyz;
-	Output.vWorldViewDir = g_CameraPosition - Output.vWorldPosition;
-	Output.vPosition = mul(float4(Output.vWorldPosition, 1), g_ViewProjection);
+	Output.vWorldNormal = mul(Input.vNormal, (float3x3)g_mWorld);
+	Output.vWorldPosition = mul(Input.vPosition, g_mWorld).xyz;
+	Output.vWorldViewDir = g_vCameraPosition.xyz - Output.vWorldPosition;
+	Output.vPosition = mul(float4(Output.vWorldPosition, 1), g_mViewProjection);
 	Output.vTexcoord = Input.vTexcoord;
 	
 	return Output;

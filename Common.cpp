@@ -589,6 +589,25 @@ void PostProcessor::filter(
 }
 
 //------------------------------------------------------------------------------
+// SceneShaderConstants
+//------------------------------------------------------------------------------
+void SceneShaderConstants::updateCameraContants(const CBaseCamera& camera)
+{
+	D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
+	D3DXMatrixTranspose(&m_ViewProjection, &viewProjectionMatrix);
+	
+	m_CameraPosition.x = camera.GetEyePt()->x;
+	m_CameraPosition.y = camera.GetEyePt()->y;
+	m_CameraPosition.z = camera.GetEyePt()->z;
+	m_CameraPosition.w = 1;
+
+	m_CameraParams.x = camera.GetNearClip();
+	m_CameraParams.y = camera.GetFarClip() - camera.GetNearClip();
+	m_CameraParams.z = 0;
+	m_CameraParams.w = 0;
+}
+
+//------------------------------------------------------------------------------
 // DXUTApp
 //------------------------------------------------------------------------------
 #define DECL_DXUT_APP(userContext) DXUTApp& app = *static_cast<DXUTApp*>(userContext);

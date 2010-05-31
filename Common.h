@@ -135,6 +135,24 @@ public:
 		);
 };
 
+struct SceneShaderConstants
+{
+#pragma pack(push)
+#pragma pack(1)
+	D3DXMATRIX m_World;
+	D3DXMATRIX m_ViewProjection;
+	D3DXVECTOR4 m_CameraPosition;
+	D3DXVECTOR4 m_CameraParams;
+	D3DXVECTOR4 m_AmbientColor;
+	D3DXVECTOR4 m_LightVector;
+	D3DXVECTOR4 m_LightColor;
+#pragma pack(pop)
+
+	void updateCameraContants(const CBaseCamera& camera);
+};
+
+typedef js::ConstantBuffer_t<SceneShaderConstants> SceneShaderConstantsBuffer;
+
 class CDXUTDialogResourceManager;
 class CDXUTTextHelper;
 class CDXUTDialog;
