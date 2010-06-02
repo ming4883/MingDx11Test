@@ -12,6 +12,8 @@
 cbuffer cbSceneConstants : register( b0 )
 {
 	matrix g_mWorld;
+	matrix g_mView;
+	matrix g_mProjection;
 	matrix g_mViewProjection;
 	float4 g_vCameraPosition;
 	float4 g_vCameraParams;
@@ -31,7 +33,7 @@ struct IA_OUTPUT
 
 struct VS_OUTPUT
 {
-	float4 vPosition	: SV_POSITION;
+	float4 vViewPosition	: SV_POSITION;
 };
 
 //--------------------------------------------------------------------------------------
@@ -41,7 +43,7 @@ VS_OUTPUT Main( IA_OUTPUT Input )
 {
 	VS_OUTPUT Output;
 	
-	Output.vPosition = mul(float4(Input.vPosition, 1), g_mWorld);
+	Output.vPosition = mul(mul(float4(Input.vPosition, 1), g_mWorld), g_mView);
 	
 	return Output;
 }

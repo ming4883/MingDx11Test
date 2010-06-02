@@ -12,6 +12,8 @@
 cbuffer cbSceneConstants : register( b0 )
 {
 	matrix g_mWorld;
+	matrix g_mView;
+	matrix g_mProjection;
 	matrix g_mViewProjection;
 	float4 g_vCameraPosition;
 	float4 g_vCameraParams;

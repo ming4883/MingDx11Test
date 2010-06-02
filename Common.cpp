@@ -595,6 +595,9 @@ void SceneShaderConstants::updateCameraContants(const CBaseCamera& camera)
 {
 	D3DXMATRIX viewProjectionMatrix = *camera.GetViewMatrix() * *camera.GetProjMatrix();
 	D3DXMatrixTranspose(&m_ViewProjection, &viewProjectionMatrix);
+
+	D3DXMatrixTranspose(&m_View, camera.GetViewMatrix());
+	D3DXMatrixTranspose(&m_Projection, camera.GetProjMatrix());
 	
 	m_CameraPosition.x = camera.GetEyePt()->x;
 	m_CameraPosition.y = camera.GetEyePt()->y;
