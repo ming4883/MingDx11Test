@@ -874,3 +874,20 @@ int DXUTApp::guiMsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool
 
 	return 0;
 }
+
+void DXUTApp::guiUpdateStaticWithSlider(size_t dlgId, int staticId, int sliderId, const wchar_t* text)
+{
+	CDXUTDialog* dlg = m_GuiDlgs[dlgId];
+
+	CDXUTStatic* pStatic = dlg->GetStatic(staticId);
+	if(nullptr == pStatic)
+		return;
+
+	CDXUTSlider* pSlider = dlg->GetSlider(sliderId);
+	if(nullptr == pSlider)
+		return;
+
+	static wchar_t buf[256];
+	wsprintf(buf, L"%s: %d", text, pSlider->GetValue());
+	pStatic->SetText(buf);
+}

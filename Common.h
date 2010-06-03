@@ -291,6 +291,7 @@ protected:
 	void guiOnD3D11DestroyDevice();
 	void guiOnD3D11ResizedSwapChain(ID3D11Device* d3dDevice, const DXGI_SURFACE_DESC* backBufferSurfaceDesc);
 	void guiOnD3D11ReleasingSwapChain();
+	void guiUpdateStaticWithSlider(size_t dlgId, int staticId, int sliderId, const wchar_t* text);
 	int guiMsgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool* pbNoFurtherProcessing);
 };
 

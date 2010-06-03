@@ -126,8 +126,8 @@ void VolumeLightEffect::render(
 	rsCache.applyToContext(d3dContext);
 	
 	m_VolLightConstBuf.map(d3dContext);
-	m_VolLightConstBuf.data().m_VolSphere = D3DXVECTOR4(0, 2, 0, 1);
-	m_VolLightConstBuf.data().m_VolColor = D3DXVECTOR4(1, 1, 0.5f, 1);
+	m_VolLightConstBuf.data().m_VolSphere = D3DXVECTOR4(0, 0, 0, 2);
+	m_VolLightConstBuf.data().m_VolColor = D3DXVECTOR4(1, 1, 1, 1);
 	m_VolLightConstBuf.unmap(d3dContext);
 
 	// draw
@@ -184,12 +184,12 @@ public:
 
 		dlg->AddStatic(UI_LIGHTCOLOR_R, L"Light.R", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_R)->SetTextColor(textClr);
-		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 255);
+		dlg->AddSlider(UI_LIGHTCOLOR_R, w, y, w, h, 0, 255, 51);
 		y += h;
 
 		dlg->AddStatic(UI_LIGHTCOLOR_G, L"Light.G", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_G)->SetTextColor(textClr);
-		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 202);
+		dlg->AddSlider(UI_LIGHTCOLOR_G, w, y, w, h, 0, 255, 53);
 		y += h;
 
 		dlg->AddStatic(UI_LIGHTCOLOR_B, L"Light.B", 0, y, w, h);
@@ -199,7 +199,7 @@ public:
 
 		dlg->AddStatic(UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(textClr);
-		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 202);
+		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 255);
 		y += h;
 
 		dlg->AddStatic(UI_BGCOLOR_MULTIPLER, L"BgColor.Multipler", 0, y, w, h);
@@ -346,6 +346,11 @@ public:
 	{
 		m_Camera.FrameMove(elapsedTime);
 		D3DXMatrixIdentity(&m_WorldMatrix);
+
+		guiUpdateStaticWithSlider(0, UI_LIGHTCOLOR_R, UI_LIGHTCOLOR_R, L"Light.R");
+		guiUpdateStaticWithSlider(0, UI_LIGHTCOLOR_G, UI_LIGHTCOLOR_G, L"Light.G");
+		guiUpdateStaticWithSlider(0, UI_LIGHTCOLOR_B, UI_LIGHTCOLOR_B, L"Light.B");
+		guiUpdateStaticWithSlider(0, UI_LIGHTCOLOR_MULTIPLER, UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler");
 	}
 
 	__override void onD3D11FrameRender(

@@ -46,7 +46,6 @@ struct VS_OUTPUT
 float4 PSMain( VS_OUTPUT Input ) : SV_TARGET
 {
 	float4 vDiffuse = g_txDiffuse.Sample(g_samLinear, Input.vTexcoord);
-	vDiffuse *= g_vLightColor.w;
 	float4 vSpecular = vDiffuse.w;
 	float4 vAmbient = vDiffuse * g_vAmbientColor;
 	vAmbient.xyz *= g_vAmbientColor.w;
@@ -59,6 +58,6 @@ float4 PSMain( VS_OUTPUT Input ) : SV_TARGET
 	vDiffuse.xyz = vDiffuse.xyz * saturate(dot(Input.vWorldNormal, vLightDir));
 	vSpecular.xyz = vSpecular.xyz * pow(saturate(dot(Input.vWorldNormal, vHalfDir)), 32);
 	
-	return float4(vAmbient.xyz + (vSpecular + vDiffuse).xyz * g_vLightColor.xyz, 1);
+	return float4(vAmbient.xyz + (vSpecular + vDiffuse).xyz * g_vLightColor.xyz * g_vLightColor.w, 1);
 }
 
