@@ -33,6 +33,12 @@ public:
 	void create(ID3D11Device* d3dDevice);
 	void destroy();
 	bool valid() const;
+
+	void render(
+		ID3D11DeviceContext* d3dContext,
+		js::RenderStateCache& rsCache,
+		PostProcessor& postProcessor,
+		SceneShaderConstantsBuffer& sceneShaderConstBuf);
 };
 
 VolumeLightEffect::VolumeLightEffect()
@@ -78,6 +84,60 @@ bool VolumeLightEffect::valid() const
 		&& m_VolLightPs.valid()
 		&& m_VolLightConstBuf.valid()
 		&& m_PointMesh.valid();
+}
+
+void VolumeLightEffect::render(
+	ID3D11DeviceContext* d3dContext,
+	js::RenderStateCache& rsCache,
+	PostProcessor& postProcessor,
+	SceneShaderConstantsBuffer& sceneShaderConstBuf
+	)
+{
+	// render state
+	//rsCache.blendState().backup();
+	//rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+	//rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	//rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	//rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	//rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	//rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	//rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+	//rsCache.blendState().RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	//rsCache.blendState().dirty();
+	
+	rsCache.depthStencilState().backup();
+	rsCache.depthStencilState().DepthEnable = FALSE;
+	rsCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	rsCache.depthStencilState().dirty();
+
+	// shader state
+	rsCache.vsState().backup();
+	rsCache.vsState().setShader(m_VolLightVs);
+	rsCache.vsState().setConstBuffers(0, 2, js::BufVA() << sceneShaderConstBuf << m_VolLightConstBuf);
+
+	rsCache.gsState().backup();
+	rsCache.gsState().setShader(m_VolLightGs);
+	rsCache.gsState().setConstBuffers(0, 2, js::BufVA() << sceneShaderConstBuf << m_VolLightConstBuf);
+
+	rsCache.psState().backup();
+	rsCache.psState().setShader(m_VolLightPs);
+	rsCache.psState().setConstBuffers(0, 3, js::BufVA() << sceneShaderConstBuf << m_VolLightConstBuf << postProcessor.m_ConstBuf);
+	
+	rsCache.applyToContext(d3dContext);
+	
+	m_VolLightConstBuf.map(d3dContext);
+	m_VolLightConstBuf.data().m_VolSphere = D3DXVECTOR4(0, 2, 0, 1);
+	m_VolLightConstBuf.data().m_VolColor = D3DXVECTOR4(1, 1, 0.5f, 1);
+	m_VolLightConstBuf.unmap(d3dContext);
+
+	// draw
+	m_PointMesh.render(d3dContext, 1);
+
+	//rsCache.blendState().restore();
+	rsCache.depthStencilState().restore();
+	rsCache.vsState().restore();
+	rsCache.gsState().restore();
+	rsCache.psState().restore();
 }
 
 class Example03 : public DXUTApp
@@ -139,7 +199,7 @@ public:
 
 		dlg->AddStatic(UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler", 0, y, w, h);
 		dlg->GetStatic(UI_LIGHTCOLOR_MULTIPLER)->SetTextColor(textClr);
-		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 511);
+		dlg->AddSlider(UI_LIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 202);
 		y += h;
 
 		dlg->AddStatic(UI_BGCOLOR_MULTIPLER, L"BgColor.Multipler", 0, y, w, h);
@@ -296,14 +356,15 @@ public:
 	{
 		m_RSCache.rtState().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
 
+		
 		m_RSCache.rtState().backup();
+		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
+		m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[0], m_DepthBuffer);
+
+		// Scene
 		m_RSCache.vsState().backup();
 		m_RSCache.psState().backup();
 		m_RSCache.gsState().backup();
-
-		// Scene
-		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
-		m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[0], m_DepthBuffer);
 
 		onD3D11FrameRender_Scene_PrepareShaderResources(d3dImmediateContext);
 		onD3D11FrameRender_Scene_DrawMesh(d3dImmediateContext);
@@ -311,6 +372,14 @@ public:
 		m_RSCache.vsState().restore();
 		m_RSCache.psState().restore();
 		m_RSCache.gsState().restore();
+
+		// Volume light effect
+		m_VolLightEffect.render(
+			d3dImmediateContext,
+			m_RSCache,
+			m_PostProcessor,
+			m_SceneShdConstBuf);
+
 		m_RSCache.rtState().restore();
 
 		// Post-Processing

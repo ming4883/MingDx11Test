@@ -28,13 +28,26 @@ cbuffer cbVolLightConstants : register( b1 )
 	float4 g_vVolColor;
 };
 
+cbuffer cbPostConstants : register( b2 )
+{
+	matrix g_mInvViewProjScaleBias	: packoffset(c0);
+	float4 g_vZParams				: packoffset(c4);
+	float4 g_vUserParams			: packoffset(c5);
+};
+
 struct GS_OUTPUT
 {
 	float4 vPosition	: SV_POSITION;
-	float4 vViewSphere  : SPHERE;
 };
+
+float4 ScreenToWorldPosition(float4 screenPos)
+{
+	// http://www.humus.name/index.php?page=Comments&ID=256
+	float4 wPos = mul(screenPos, g_mInvViewProjScaleBias);
+	return float4(wPos.xyz / wPos.w, 1);
+}
 
 float4 Main( GS_OUTPUT Input ) : SV_TARGET
 {
-	return float4(1,1,1,1);
+	return g_vVolColor;
 }
