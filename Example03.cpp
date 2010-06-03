@@ -12,18 +12,30 @@
 class VolumeLightEffect
 {
 public:
-	VolumeLightEffect(ID3D11Device* d3dDevice);
+	struct VolLightConstants
+	{
+#pragma pack(push)
+#pragma pack(1)
+		D3DXVECTOR4 m_VolSphere;	// x y z r
+		D3DXVECTOR4 m_VolColor;
+#pragma pack(pop)
+	};
+
+	js::VertexShader m_VolLightVs;
+	js::GeometryShader m_VolLightGs;
+	js::PixelShader m_VolLightPs;
+	js::ConstantBuffer_t<VolLightConstants> m_VolLightConstBuf;
+	PointMesh m_PointMesh;
+
+	VolumeLightEffect();
 	~VolumeLightEffect();
 
 	void create(ID3D11Device* d3dDevice);
 	void destroy();
-
-	js::VertexShader m_Vs;
-	js::GeometryShader m_Gs;
-	js::PixelShader m_Ps;
+	bool valid() const;
 };
 
-VolumeLightEffect::VolumeLightEffect(ID3D11Device* d3dDevice)
+VolumeLightEffect::VolumeLightEffect()
 {
 }
 
@@ -34,21 +46,38 @@ VolumeLightEffect::~VolumeLightEffect()
 
 void VolumeLightEffect::create(ID3D11Device* d3dDevice)
 {
-	m_Vs.createFromFile(d3dDevice, media(L"Example03/VolLight.Vs.hlsl"), "Main");
-	js_assert(m_Vs.valid());
+	m_VolLightVs.createFromFile(d3dDevice, media(L"Example03/VolLight.Vs.hlsl"), "Main");
+	js_assert(m_VolLightVs.valid());
 
-	m_Gs.createFromFile(d3dDevice, media(L"Example03/VolLight.Gs.hlsl"), "Main");
-	js_assert(m_Gs.valid());
+	m_VolLightGs.createFromFile(d3dDevice, media(L"Example03/VolLight.Gs.hlsl"), "Main");
+	js_assert(m_VolLightGs.valid());
 
-	m_Ps.createFromFile(d3dDevice, media(L"Example03/VolLight.Ps.hlsl"), "Main");
-	js_assert(m_Ps.valid());
+	m_VolLightPs.createFromFile(d3dDevice, media(L"Example03/VolLight.Ps.hlsl"), "Main");
+	js_assert(m_VolLightPs.valid());
+
+	m_VolLightConstBuf.create(d3dDevice);
+	js_assert(m_VolLightConstBuf.valid());
+
+	m_PointMesh.create(d3dDevice, m_VolLightVs.m_ByteCode);
+	js_assert(m_PointMesh.valid());
 }
 
 void VolumeLightEffect::destroy()
 {
-	m_Vs.destroy();
-	m_Gs.destroy();
-	m_Ps.destroy();
+	m_VolLightVs.destroy();
+	m_VolLightGs.destroy();
+	m_VolLightPs.destroy();
+	m_VolLightConstBuf.destroy();
+	m_PointMesh.destroy();
+}
+
+bool VolumeLightEffect::valid() const
+{
+	return m_VolLightVs.valid()
+		&& m_VolLightGs.valid()
+		&& m_VolLightPs.valid()
+		&& m_VolLightConstBuf.valid()
+		&& m_PointMesh.valid();
 }
 
 class Example03 : public DXUTApp
@@ -72,6 +101,7 @@ public:
 	// post processing
 	PostProcessor m_PostProcessor;
 	js::PixelShader m_PostCopyShd;
+	VolumeLightEffect m_VolLightEffect;
 
 	enum
 	{
@@ -170,6 +200,9 @@ public:
 		
 		m_PostCopyShd.createFromFile(d3dDevice, media(L"Common/Shader/Post.Copy.hlsl"), "Main");
 		js_assert(m_PostCopyShd.valid());
+
+		m_VolLightEffect.create(d3dDevice);
+		js_assert(m_VolLightEffect.valid());
 	
 		// init camera
 		D3DXVECTOR3 vecEye( 0.0f, m_Mesh.radius() * 0.5f, m_Mesh.radius() * -0.5f );
@@ -182,6 +215,21 @@ public:
 		m_Camera.FrameMove(0);
 
 		return S_OK;
+	}
+
+	__override void onD3D11DestroyDevice()
+	{
+		guiOnD3D11DestroyDevice();
+
+		m_RSCache.destroy();
+
+		DXUTGetGlobalResourceCache().OnDestroyDevice();
+		m_Mesh.destroy();
+		m_SceneShdConstBuf.destroy();
+
+		m_VolLightEffect.destroy();
+		m_PostProcessor.destroy();
+		m_PostCopyShd.destroy();
 	}
 
 	__override HRESULT onD3D11ResizedSwapChain(
@@ -230,20 +278,6 @@ public:
 			m_ColorBufferDnSamp4x[i].destroy();
 		}
 		m_DepthBuffer.destroy();
-	}
-
-	__override void onD3D11DestroyDevice()
-	{
-		guiOnD3D11DestroyDevice();
-
-		m_RSCache.destroy();
-
-		DXUTGetGlobalResourceCache().OnDestroyDevice();
-		m_Mesh.destroy();
-		m_SceneShdConstBuf.destroy();
-
-		m_PostProcessor.destroy();
-		m_PostCopyShd.destroy();
 	}
 
 	__override void onFrameMove(

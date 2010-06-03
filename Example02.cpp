@@ -17,21 +17,18 @@ public:
 
 #pragma pack(push)
 #pragma pack(1)
-	struct HistogramCompute_s
+	struct ComputeConsts
 	{
 		D3DXVECTOR4 g_vInputParams;
 	};
 
-	typedef js::ConstantBuffer_t<HistogramCompute_s> HistogramComputeConstBuf;
-
-	struct HistogramDraw_s
+	struct DrawConsts
 	{
 		D3DXVECTOR4 g_vDrawParams;
 	};
 
-	typedef js::ConstantBuffer_t<HistogramDraw_s> HistogramDrawConstBuf;
-
 #pragma pack(pop)
+
 	js::Texture2DRenderBuffer m_HistogramBuffer;
 	js::Texture2DRenderBuffer m_HdrParamBuffer;
 	js::VertexShader m_ComputeVs;
@@ -44,10 +41,9 @@ public:
 	js::GeometryShader m_DrawGs;
 	js::PixelShader m_DrawPs;
 	js::PixelShader m_UpdatePs;
-	HistogramComputeConstBuf m_ComputeCb;
-	HistogramDrawConstBuf m_DrawCb;
-	ID3D11Buffer* m_VB;
-	ID3D11InputLayout* m_IL;
+	js::ConstantBuffer_t<ComputeConsts> m_ComputeCb;
+	js::ConstantBuffer_t<DrawConsts> m_DrawCb;
+	PointMesh m_PointMesh;
 
 	float m_LastNumInputs;
 	float m_MaxInputValue;
@@ -112,15 +108,8 @@ public:
 		m_DrawCb.create(d3dDevice);
 		js_assert(m_DrawCb.valid());
 
-		static D3DXVECTOR3 v[] = {D3DXVECTOR3(0,0,0)};
-		m_VB = js::Buffers::createVertexBuffer(d3dDevice, sizeof(v), sizeof(v[0]), false, v);
-		js_assert(m_VB != nullptr);
-
-		std::vector<D3D11_INPUT_ELEMENT_DESC> ielems;
-		inputElement(ielems, "POSITION",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0);
-
-		m_IL = js::Buffers::createInputLayout(d3dDevice, &ielems[0], ielems.size(), m_ComputeVs.m_ByteCode);
-		js_assert(m_IL != nullptr);
+		m_PointMesh.create(d3dDevice, m_ComputeVs.m_ByteCode);
+		js_assert(m_PointMesh.valid());
 	}
 
 	void destroy()
@@ -139,16 +128,7 @@ public:
 		m_UpdatePs.destroy();
 		m_ComputeCb.destroy();
 		m_DrawCb.destroy();
-		js_safe_release(m_VB);
-		js_safe_release(m_IL);
-	}
-
-	float binValue(size_t bin)
-	{
-		float a = ((float)bin / SIZE) * m_MaxInputValue;
-		float b = ((float)(bin+1) / SIZE) * m_MaxInputValue;
-		a = (a+b) / 2;
-		return a;
+		m_PointMesh.destroy();
 	}
 
 	void compute(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, js::Texture2DRenderBuffer& colorBuffer)
@@ -161,11 +141,6 @@ public:
 		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
 		m_ComputeCb.data().g_vInputParams.w = (float)SIZE;
 		m_ComputeCb.unmap(d3dContext);
-
-		// vertex buffer and input assembler
-		d3dContext->IASetInputLayout(m_IL);
-		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
-		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 		
 		// render target
 		static const float clearColor[] = {0, 0, 0, 0};
@@ -204,7 +179,7 @@ public:
 		rsCache.applyToContext(d3dContext);
 
 		// draw
-		d3dContext->DrawInstanced(1, (colorBuffer.m_Width * colorBuffer.m_Height) / 16, 0, 0);
+		m_PointMesh.render(d3dContext, (colorBuffer.m_Width * colorBuffer.m_Height) / 16);
 
 		m_LastNumInputs = (float)(colorBuffer.m_Width * colorBuffer.m_Height);
 		
@@ -230,11 +205,6 @@ public:
 		m_ComputeCb.data().g_vInputParams.z = m_MaxInputValue;
 		m_ComputeCb.data().g_vInputParams.w = (float)SIZE;
 		m_ComputeCb.unmap(d3dContext);
-
-		// vertex buffer and input assembler
-		d3dContext->IASetInputLayout(m_IL);
-		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
-		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 		
 		// render target
 		static const float clearColor[] = {0, 0, 0, 0};
@@ -274,7 +244,7 @@ public:
 		rsCache.applyToContext(d3dContext);
 
 		// draw
-		d3dContext->DrawInstanced(1, iDiv * iDiv, 0, 0);
+		m_PointMesh.render(d3dContext, iDiv * iDiv);
 
 		m_LastNumInputs = (float)(((colorBuffer.m_Width / iDiv) * iDiv) * ((colorBuffer.m_Height / iDiv) * iDiv));
 		
@@ -287,7 +257,7 @@ public:
 		rsCache.gsState().restore();
 		rsCache.psState().restore();
 	}
-	
+
 	void update(ID3D11DeviceContext* d3dContext, js::RenderStateCache& rsCache, PostProcessor& postProcessor, float dt)
 	{
 		const float t = dt * m_AdaptFactor;
@@ -327,11 +297,6 @@ public:
 		m_DrawCb.data().g_vDrawParams.z = w / SIZE;
 		m_DrawCb.data().g_vDrawParams.w = h / m_LastNumInputs;
 		m_DrawCb.unmap(d3dContext);
-		
-		// vertex buffer and input assembler
-		d3dContext->IASetInputLayout(m_IL);
-		d3dContext->IASetVertexBuffers(0, 1, &m_VB, js::UintVA() << sizeof(D3DXVECTOR3), js::UintVA() << 0);
-		d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
 
 		//shader states
 		rsCache.vsState().backup();
@@ -349,7 +314,7 @@ public:
 		rsCache.applyToContext(d3dContext);
 
 		// draw
-		d3dContext->DrawInstanced(1, SIZE, 0, 0);
+		m_PointMesh.render(d3dContext, SIZE);
 
 		// restore shader resources
 		rsCache.vsState().restore();

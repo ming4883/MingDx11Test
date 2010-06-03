@@ -33,7 +33,7 @@ struct IA_OUTPUT
 
 struct VS_OUTPUT
 {
-	float4 vViewPosition	: SV_POSITION;
+	float4 vPosition	: SV_POSITION;
 };
 
 //--------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ VS_OUTPUT Main( IA_OUTPUT Input )
 {
 	VS_OUTPUT Output;
 	
-	Output.vPosition = mul(mul(float4(Input.vPosition, 1), g_mWorld), g_mView);
+	Output.vPosition = float4(0,0,0,1);
 	
 	return Output;
 }

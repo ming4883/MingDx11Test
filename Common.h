@@ -71,17 +71,41 @@ public:
 	void render(ID3D11DeviceContext* d3dContext) const;
 
 private:
-	class Impl; Impl& m_Impl;
+	ID3D11Buffer* m_VB;
+	ID3D11Buffer* m_IB;
+	ID3D11InputLayout* m_IL;
 
 	js_decl_non_copyable(ScreenQuad);
-};
+};	// ScreenQuad
+
+class PointMesh
+{
+public:
+	PointMesh();
+
+	~PointMesh();
+
+	bool valid() const;
+
+	void create(ID3D11Device* d3dDevice, ID3DBlob* shaderByteCode);
+
+	void destroy();
+
+	void render(ID3D11DeviceContext* d3dContext, size_t instanceCount) const;
+
+private:
+	ID3D11Buffer* m_VB;
+	ID3D11InputLayout* m_IL;
+
+	js_decl_non_copyable(PointMesh);
+};	// PointMesh
 
 class CBaseCamera;
 
 class PostProcessor
 {
 public:
-	struct ConstBuffer_s
+	struct Constants
 	{
 		D3DXMATRIX m_InvViewProjScaleBias;
 		D3DXVECTOR4 m_ZParams;
@@ -90,7 +114,7 @@ public:
 		void update(const CBaseCamera& camera);
 	};
 
-	typedef js::ConstantBuffer_t<ConstBuffer_s> ConstBuffer;
+	typedef js::ConstantBuffer_t<Constants> ConstBuffer;
 
 	ScreenQuad m_ScreenQuad;
 	js::VertexShader m_PostVtxShd;

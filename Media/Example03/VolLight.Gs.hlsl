@@ -33,7 +33,7 @@ cbuffer cbVolLightConstants : register( b1 )
 //--------------------------------------------------------------------------------------
 struct VS_OUTPUT
 {
-	float4 vViewPosition	: SV_POSITION;
+	float4 vPosition	: SV_POSITION;
 };
 
 struct GS_OUTPUT
@@ -57,15 +57,17 @@ void Main(point VS_OUTPUT Input[1], inout TriangleStream<GS_OUTPUT> OutputStream
 	
 	int index[6] = {0, 1, 2, 3, 2, 1};
 	
+	float4 vViewPosition = mul(float4(g_vVolSphere.xyz, 1), g_mView);
+	
 	GS_OUTPUT Output;
 	[unroll]
 	for(int i=0; i<6; ++i)
 	{
-		Output.vPosition = Input[0].vViewPosition;
+		Output.vPosition = vViewPosition;
 		Output.vPosition.xyz += vertex[index[i]] * g_vVolSphere.w;
 		Output.vPosition = mul(Output.vPosition, g_mProjection);
 		
-		Output.vViewSphere = float4(Input[0].vViewPosition, g_vVolSphere.w);
+		Output.vViewSphere = float4(vViewPosition.xyz, g_vVolSphere.w);
 		
 		OutputStream.Append(Output);
 		

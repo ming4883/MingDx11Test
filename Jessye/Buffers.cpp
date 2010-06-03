@@ -53,7 +53,7 @@ namespace js
 		size_t sizeInBytes,
 		size_t stride,
 		bool dynamic,
-		void* initialData)
+		const void* initialData)
 	{
 		D3D11_BUFFER_DESC desc;
 		desc.ByteWidth = sizeInBytes;	// size
@@ -88,7 +88,7 @@ namespace js
 		size_t sizeInBytes,
 		size_t stride,
 		bool dynamic,
-		void* initialData)
+		const void* initialData)
 	{
 		D3D11_BUFFER_DESC desc;
 		desc.ByteWidth = sizeInBytes;	// size
@@ -144,7 +144,7 @@ namespace js
 		ID3D11Device* d3dDevice,
 		size_t bufferSizeInBytes,
 		size_t structSizeInBytes,
-		void* initialData)
+		const void* initialData)
 	{
 		//if(bufferSizeInBytes % 16 != 0)
 		//	bufferSizeInBytes += 16 - (bufferSizeInBytes % 16);

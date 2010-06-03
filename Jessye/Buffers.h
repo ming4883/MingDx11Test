@@ -24,7 +24,7 @@ struct Buffers
 		size_t sizeInBytes,
 		size_t stride,
 		bool dynamic,
-		void* initialData = nullptr);
+		const void* initialData = nullptr);
 
 	/*! Create a index buffer which allows:
 		- gpu read / write
@@ -36,7 +36,7 @@ struct Buffers
 		size_t sizeInBytes,
 		size_t stride,
 		bool dynamic,
-		void* initialData = nullptr);
+		const void* initialData = nullptr);
 
 	static ID3D11Buffer* createConstantBuffer(
 		ID3D11Device* d3dDevice,
@@ -46,7 +46,7 @@ struct Buffers
 		ID3D11Device* d3dDevice,
 		size_t bufferSizeInBytes,
 		size_t structSizeInBytes,
-		void* initialData = nullptr);
+		const void* initialData = nullptr);
 
 	static ID3D11Texture2D* createTexture2DRenderBuffer(
 		ID3D11Device* d3dDevice,
@@ -192,7 +192,7 @@ struct StructComputeBuffer
 			&& (m_UAView != nullptr);
 	}
 
-	void create(ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, void* initialData = nullptr)
+	void create(ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, const void* initialData = nullptr)
 	{
 		m_BufferObject = Buffers::createStructComputeBuffer(d3dDevice, bufferSizeInBytes, structSizeInBytes, initialData);
 		m_SRView = Buffers::createShaderResourceView(d3dDevice, m_BufferObject);
