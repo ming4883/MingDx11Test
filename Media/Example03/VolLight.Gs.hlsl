@@ -63,7 +63,7 @@ void Main(point VS_OUTPUT Input[1], inout TriangleStream<GS_OUTPUT> OutputStream
 	for(int i=0; i<6; ++i)
 	{
 		Output.vPosition = vViewPosition;
-		Output.vPosition.xyz += vertex[index[i]] * g_vVolSphere.w;
+		Output.vPosition.xyz += vertex[index[i]] * g_vVolSphere.w * 1.5;
 		Output.vPosition = mul(Output.vPosition, g_mProjection);
 		
 		OutputStream.Append(Output);

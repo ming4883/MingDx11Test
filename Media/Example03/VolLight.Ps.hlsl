@@ -35,10 +35,13 @@ cbuffer cbPostConstants : register( b2 )
 	float4 g_vUserParams			: packoffset(c5);
 };
 
+Texture2D g_txDepth : register( t0 );
+
 struct GS_OUTPUT
 {
 	float4 vPosition	: SV_POSITION;
 };
+
 
 float4 ScreenToWorldPosition(float4 screenPos)
 {
@@ -73,10 +76,14 @@ bool RaySphereIntersect( float3 rO, float3 rD, float3 sO, float sR, inout float 
 
 float4 Main( GS_OUTPUT Input ) : SV_TARGET
 {
-	float3 vPosScene = ScreenToWorldPosition(float4(Input.vPosition.xy, Input.vPosition.z, 1)).xyz; 
+	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
+	float fDepthScene = g_txDepth.Load(vTexcoord).x;
+	float3 vPosScene = ScreenToWorldPosition(float4(Input.vPosition.xy, fDepthScene, 1)).xyz; 
+	
+	float3 vPosLight = ScreenToWorldPosition(float4(Input.vPosition.xy, Input.vPosition.z, 1)).xyz; 
 	
 	float3 vRayOrig = g_vCameraPosition.xyz;
-	float3 vRayDir = normalize(vPosScene - g_vCameraPosition.xyz);
+	float3 vRayDir = normalize(vPosLight - g_vCameraPosition.xyz);
 	
 	float3 vSphereCenter = g_vVolSphere.xyz;
 	float fSphereRadius = g_vVolSphere.w;
@@ -85,8 +92,10 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 	if(!RaySphereIntersect(vRayOrig, vRayDir, vSphereCenter, fSphereRadius, fHitNear, fHitFar))
 		discard;
 	
-	float d = distance(vPosScene, vSphereCenter);
-	d /= fSphereRadius;
+	//float d = distance(vPosScene, vSphereCenter);
+	float d = fHitFar - fHitNear;
+	d = d / (2 * fSphereRadius);
+	d = saturate(d * d);
 	
-	return g_vVolColor * (1 - min(d*d, 1));
+	return g_vVolColor * d;
 }

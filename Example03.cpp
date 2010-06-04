@@ -38,7 +38,8 @@ public:
 		ID3D11DeviceContext* d3dContext,
 		js::RenderStateCache& rsCache,
 		PostProcessor& postProcessor,
-		SceneShaderConstantsBuffer& sceneShaderConstBuf);
+		SceneShaderConstantsBuffer& sceneShaderConstBuf,
+		js::Texture2DRenderBuffer& depthBuffer);
 };
 
 VolumeLightEffect::VolumeLightEffect()
@@ -90,21 +91,11 @@ void VolumeLightEffect::render(
 	ID3D11DeviceContext* d3dContext,
 	js::RenderStateCache& rsCache,
 	PostProcessor& postProcessor,
-	SceneShaderConstantsBuffer& sceneShaderConstBuf
+	SceneShaderConstantsBuffer& sceneShaderConstBuf,
+	js::Texture2DRenderBuffer& depthBuffer
 	)
 {
 	// render state
-	//rsCache.blendState().backup();
-	//rsCache.blendState().RenderTarget[0].BlendEnable = TRUE;
-	//rsCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	//rsCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	//rsCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
-	//rsCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-	//rsCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-	//rsCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
-	//rsCache.blendState().RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-	//rsCache.blendState().dirty();
-	
 	rsCache.depthStencilState().backup();
 	rsCache.depthStencilState().DepthEnable = FALSE;
 	rsCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
@@ -122,7 +113,8 @@ void VolumeLightEffect::render(
 	rsCache.psState().backup();
 	rsCache.psState().setShader(m_VolLightPs);
 	rsCache.psState().setConstBuffers(0, 3, js::BufVA() << sceneShaderConstBuf << m_VolLightConstBuf << postProcessor.m_ConstBuf);
-	
+	rsCache.psState().setSRViews(0, 1, js::SrvVA() << depthBuffer);
+
 	rsCache.applyToContext(d3dContext);
 	
 	m_VolLightConstBuf.map(d3dContext);
@@ -133,7 +125,6 @@ void VolumeLightEffect::render(
 	// draw
 	m_PointMesh.render(d3dContext, 1);
 
-	//rsCache.blendState().restore();
 	rsCache.depthStencilState().restore();
 	rsCache.vsState().restore();
 	rsCache.gsState().restore();
@@ -361,7 +352,6 @@ public:
 	{
 		m_RSCache.rtState().set(1, js::RtvVA() << DXUTGetD3D11RenderTargetView(), DXUTGetD3D11DepthStencilView());
 
-		
 		m_RSCache.rtState().backup();
 		onD3D11FrameRender_ClearRenderTargets(d3dImmediateContext);
 		m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[0], m_DepthBuffer);
@@ -377,13 +367,6 @@ public:
 		m_RSCache.vsState().restore();
 		m_RSCache.psState().restore();
 		m_RSCache.gsState().restore();
-
-		// Volume light effect
-		m_VolLightEffect.render(
-			d3dImmediateContext,
-			m_RSCache,
-			m_PostProcessor,
-			m_SceneShdConstBuf);
 
 		m_RSCache.rtState().restore();
 
@@ -456,23 +439,68 @@ public:
 	
 	void onD3D11FrameRender_PostProcessing(ID3D11DeviceContext* d3dContext, float elapsedTime)
 	{
-		// depth stencil state
-		m_RSCache.depthStencilState().backup();
-		m_RSCache.depthStencilState().DepthEnable = FALSE;
-		m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-		m_RSCache.depthStencilState().dirty();
-
 		m_PostProcessor.m_ConstBuf.map(d3dContext);
 		m_PostProcessor.m_ConstBuf.data().update(m_Camera);
 		m_PostProcessor.m_ConstBuf.unmap(d3dContext);
+		
+		// Scene image
+		{
+			m_RSCache.depthStencilState().backup();
+			m_RSCache.depthStencilState().DepthEnable = FALSE;
+			m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			m_RSCache.depthStencilState().dirty();
+			
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache,
+				js::SrvVA() << m_ColorBuffer[0],
+				m_PostCopyShd);
+			
+			m_RSCache.depthStencilState().restore();
+		}
 
-		m_PostProcessor.filter(
-			d3dContext, m_RSCache,
-			js::SrvVA() << m_ColorBuffer[0],
-			m_PostCopyShd);
+		// Volume light effect
+		{
+			m_RSCache.rtState().backup();
+			d3dContext->ClearRenderTargetView(m_ColorBuffer[1].m_RTView, D3DXVECTOR4(0,0,0,0));
+			m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[1], nullptr);
 
+			m_VolLightEffect.render(
+				d3dContext,
+				m_RSCache,
+				m_PostProcessor,
+				m_SceneShdConstBuf,
+				m_DepthBuffer);
+
+			m_RSCache.rtState().restore();
+			
+			// blend to target
+			m_RSCache.blendState().backup();
+			m_RSCache.blendState().RenderTarget[0].BlendEnable = TRUE;
+			m_RSCache.blendState().RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+			m_RSCache.blendState().RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			m_RSCache.blendState().RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+			m_RSCache.blendState().RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+			m_RSCache.blendState().RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+			m_RSCache.blendState().RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
+			m_RSCache.blendState().RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+			m_RSCache.blendState().dirty();
+			
+			m_RSCache.depthStencilState().backup();
+			m_RSCache.depthStencilState().DepthEnable = FALSE;
+			m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+			m_RSCache.depthStencilState().dirty();
+			
+			m_PostProcessor.filter(
+				d3dContext, m_RSCache,
+				js::SrvVA() << m_ColorBuffer[1],
+				m_PostCopyShd);
+			
+			m_RSCache.depthStencilState().restore();
+			
+			m_RSCache.blendState().restore();
+		}
+		
 		// restore depth stencil state
-		m_RSCache.depthStencilState().restore();
 	}
 
 	__override LRESULT msgProc(

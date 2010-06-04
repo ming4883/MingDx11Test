@@ -323,6 +323,8 @@ namespace js
 		DXGI_FORMAT dsvFormat)
 	{
 		D3D11_DEPTH_STENCIL_VIEW_DESC desc;
+		memset(&desc, 0, sizeof(desc));
+
 		D3D11_TEXTURE2D_DESC texdesc;
 		texture->GetDesc(&texdesc);
 		
