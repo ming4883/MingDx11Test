@@ -83,7 +83,9 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 	float3 vPosLight = ScreenToWorldPosition(float4(Input.vPosition.xy, Input.vPosition.z, 1)).xyz; 
 	
 	float3 vRayOrig = g_vCameraPosition.xyz;
-	float3 vRayDir = normalize(vPosLight - g_vCameraPosition.xyz);
+	float3 vRayDir = vPosScene - g_vCameraPosition.xyz;
+	float fScene = length(vRayDir);
+	vRayDir /= fScene;
 	
 	float3 vSphereCenter = g_vVolSphere.xyz;
 	float fSphereRadius = g_vVolSphere.w;
@@ -91,11 +93,19 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 	float fHitNear, fHitFar;
 	if(!RaySphereIntersect(vRayOrig, vRayDir, vSphereCenter, fSphereRadius, fHitNear, fHitFar))
 		discard;
+		
+	float d;
 	
-	//float d = distance(vPosScene, vSphereCenter);
-	float d = fHitFar - fHitNear;
+	if(fScene < fHitNear)
+		d = 0;
+	//else if(fHitNear <= fScene && fScene <= fHitFar)
+	//	d = fScene - fHitNear;
+	else
+		d = fHitFar - fHitNear;
+		
 	d = d / (2 * fSphereRadius);
-	d = saturate(d * d);
+	d = saturate(d);
+	d = pow(d, 64);
 	
-	return g_vVolColor * d;
+	return float4(g_vVolColor.xyz * g_vVolColor.w * d, d);
 }
