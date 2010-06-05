@@ -118,7 +118,7 @@ void VolumeLightEffect::render(
 	rsCache.applyToContext(d3dContext);
 	
 	m_VolLightConstBuf.map(d3dContext);
-	m_VolLightConstBuf.data().m_VolSphere = D3DXVECTOR4(0, 0, 0, 2);
+	m_VolLightConstBuf.data().m_VolSphere = D3DXVECTOR4(0, 2, 0, 2);
 	m_VolLightConstBuf.data().m_VolColor = D3DXVECTOR4(1, 1, 1, 2);
 	m_VolLightConstBuf.unmap(d3dContext);
 

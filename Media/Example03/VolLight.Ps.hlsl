@@ -74,6 +74,19 @@ bool RaySphereIntersect( float3 rO, float3 rD, float3 sO, float sR, inout float 
     }
 }
 
+float VolumeOpacity(
+	float tBegin,
+	float tEnd,
+	float radius
+	)
+{
+	float opacity = tEnd - tBegin;
+	opacity = opacity / (2 * radius);
+	opacity = max(opacity, 0);
+	opacity = pow(opacity, 8);
+	return opacity;
+}
+
 float4 Main( GS_OUTPUT Input ) : SV_TARGET
 {
 	int3 vTexcoord = int3((int2)Input.vPosition.xy, 0);
@@ -93,19 +106,18 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 	float fHitNear, fHitFar;
 	if(!RaySphereIntersect(vRayOrig, vRayDir, vSphereCenter, fSphereRadius, fHitNear, fHitFar))
 		discard;
-		
-	float d;
 	
 	if(fScene < fHitNear)
-		d = 0;
-	//else if(fHitNear <= fScene && fScene <= fHitFar)
-	//	d = fScene - fHitNear;
+		return float4(0,0,0,0);
 	else
-		d = fHitFar - fHitNear;
-		
-	d = d / (2 * fSphereRadius);
-	d = saturate(d);
-	d = pow(d, 64);
-	
-	return float4(g_vVolColor.xyz * g_vVolColor.w * d, d);
+	{
+		if(fScene > fHitFar)
+		{
+			return VolumeOpacity(fHitNear, fHitFar, fSphereRadius);
+		}
+		else
+		{
+			return VolumeOpacity(fHitNear, fScene, fSphereRadius);
+		}
+	}
 }
