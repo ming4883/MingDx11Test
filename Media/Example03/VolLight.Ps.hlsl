@@ -83,7 +83,6 @@ float VolumeOpacity(
 	float opacity = tEnd - tBegin;
 	opacity = opacity / (2 * radius);
 	opacity = max(opacity, 0);
-	opacity = pow(opacity, 8);
 	return opacity;
 }
 
@@ -107,17 +106,22 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 	if(!RaySphereIntersect(vRayOrig, vRayDir, vSphereCenter, fSphereRadius, fHitNear, fHitFar))
 		discard;
 	
+	float fOpacity;
 	if(fScene < fHitNear)
-		return float4(0,0,0,0);
+		fOpacity = 0;
 	else
 	{
 		if(fScene > fHitFar)
 		{
-			return VolumeOpacity(fHitNear, fHitFar, fSphereRadius);
+			fOpacity = VolumeOpacity(fHitNear, fHitFar, fSphereRadius);
 		}
 		else
 		{
-			return VolumeOpacity(fHitNear, fScene, fSphereRadius);
+			fOpacity = VolumeOpacity(fHitNear, fScene, fSphereRadius);
 		}
 	}
+	
+	fOpacity = pow(fOpacity, 4) * g_vVolColor.w;
+	
+	return float4(g_vVolColor.xyz * fOpacity, fOpacity);
 }

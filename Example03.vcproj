@@ -675,6 +675,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Media\Example03\Post.RadialBlur.hlsl"
+				>
+			</File>
+			<File
 				RelativePath=".\Media\Common\Shader\Post.Vtx.hlsl"
 				>
 			</File>

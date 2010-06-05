@@ -21,6 +21,20 @@ public:
 #pragma pack(pop)
 	};
 
+	struct Light
+	{
+		D3DXVECTOR4 m_Sphere;
+		D3DXVECTOR4 m_Color;
+
+		Light(
+			float x, float y, float z, float radius,
+			float r, float g, float b, float a)
+			: m_Sphere(x, y, z, radius)
+			, m_Color(r, g, b, a)
+		{
+		}
+	};
+
 	js::VertexShader m_VolLightVs;
 	js::GeometryShader m_VolLightGs;
 	js::PixelShader m_VolLightPs;
@@ -39,7 +53,8 @@ public:
 		js::RenderStateCache& rsCache,
 		PostProcessor& postProcessor,
 		SceneShaderConstantsBuffer& sceneShaderConstBuf,
-		js::Texture2DRenderBuffer& depthBuffer);
+		js::Texture2DRenderBuffer& depthBuffer,
+		const Light& light);
 };
 
 VolumeLightEffect::VolumeLightEffect()
@@ -92,7 +107,8 @@ void VolumeLightEffect::render(
 	js::RenderStateCache& rsCache,
 	PostProcessor& postProcessor,
 	SceneShaderConstantsBuffer& sceneShaderConstBuf,
-	js::Texture2DRenderBuffer& depthBuffer
+	js::Texture2DRenderBuffer& depthBuffer,
+	const Light& light
 	)
 {
 	// render state
@@ -118,8 +134,8 @@ void VolumeLightEffect::render(
 	rsCache.applyToContext(d3dContext);
 	
 	m_VolLightConstBuf.map(d3dContext);
-	m_VolLightConstBuf.data().m_VolSphere = D3DXVECTOR4(0, 2, 0, 2);
-	m_VolLightConstBuf.data().m_VolColor = D3DXVECTOR4(1, 1, 1, 2);
+	m_VolLightConstBuf.data().m_VolSphere = light.m_Sphere;
+	m_VolLightConstBuf.data().m_VolColor = light.m_Color;
 	m_VolLightConstBuf.unmap(d3dContext);
 
 	// draw
@@ -152,6 +168,7 @@ public:
 	// post processing
 	PostProcessor m_PostProcessor;
 	js::PixelShader m_PostCopyShd;
+	js::PixelShader m_PostRadialBlurShd;
 	VolumeLightEffect m_VolLightEffect;
 
 	enum
@@ -252,6 +269,9 @@ public:
 		m_PostCopyShd.createFromFile(d3dDevice, media(L"Common/Shader/Post.Copy.hlsl"), "Main");
 		js_assert(m_PostCopyShd.valid());
 
+		m_PostRadialBlurShd.createFromFile(d3dDevice, media(L"Example03/Post.RadialBlur.hlsl"), "Main");
+		js_assert(m_PostRadialBlurShd.valid());
+
 		m_VolLightEffect.create(d3dDevice);
 		js_assert(m_VolLightEffect.valid());
 	
@@ -281,6 +301,7 @@ public:
 		m_VolLightEffect.destroy();
 		m_PostProcessor.destroy();
 		m_PostCopyShd.destroy();
+		m_PostRadialBlurShd.destroy();
 	}
 
 	__override HRESULT onD3D11ResizedSwapChain(
@@ -459,7 +480,12 @@ public:
 		}
 
 		// Volume light effect
-		{
+		{	
+			VolumeLightEffect::Light light(
+				0, 2, 0, 0.5f,
+				1, 1, 1, 1
+				);
+
 			m_RSCache.rtState().backup();
 			d3dContext->ClearRenderTargetView(m_ColorBuffer[1].m_RTView, D3DXVECTOR4(0,0,0,0));
 			m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[1], nullptr);
@@ -469,7 +495,8 @@ public:
 				m_RSCache,
 				m_PostProcessor,
 				m_SceneShdConstBuf,
-				m_DepthBuffer);
+				m_DepthBuffer,
+				light);
 
 			m_RSCache.rtState().restore();
 			
@@ -490,10 +517,23 @@ public:
 			m_RSCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 			m_RSCache.depthStencilState().dirty();
 			
+			m_PostProcessor.m_ConstBuf.map(d3dContext);
+			m_PostProcessor.m_ConstBuf.data().update(m_Camera);
+
+			D3DXVECTOR4 p(light.m_Sphere.x, light.m_Sphere.y, light.m_Sphere.z, 1);
+			D3DXMATRIX viewProjectionMatrix = *m_Camera.GetViewMatrix() * *m_Camera.GetProjMatrix();
+			D3DXVec4Transform(&p, &p, &viewProjectionMatrix);
+			p.x /= p.w; p.y /= p.w;
+			p.x *= 0.5f; p.y *= -0.5f;
+			p.x += 0.5f; p.y += 0.5f;
+			m_PostProcessor.m_ConstBuf.data().m_UserParams = p;
+
+			m_PostProcessor.m_ConstBuf.unmap(d3dContext);
+
 			m_PostProcessor.filter(
 				d3dContext, m_RSCache,
 				js::SrvVA() << m_ColorBuffer[1],
-				m_PostCopyShd);
+				m_PostRadialBlurShd);
 			
 			m_RSCache.depthStencilState().restore();
 			
