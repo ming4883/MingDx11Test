@@ -40,7 +40,7 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	int iWDepth, iHDepth;
 	g_txColor.GetDimensions(iWDepth, iHDepth);
 	
-	const int iNumSamples = 32;
+	const int iNumSamples = 64;
 	
 	float2 vTarget = g_UserParams.xy;
 	float2 vUVDir = vTarget - Input.vTexcoord;
@@ -57,10 +57,12 @@ float4 Main( PS_INPUT Input ) : SV_TARGET
 	{
 		float2 vTapTexcoord = Input.vTexcoord + (vUVDir * i * fUVStep);
 		float fW = (i+1) * fWStep;
-		
+		//fW *= fW;
 		vOutput += g_txColor.SampleLevel(g_samLinear, vTapTexcoord, 0) * fW;
 		fWSum += fW;
 	}
+	vOutput += g_txColor.SampleLevel(g_samLinear, Input.vTexcoord, 0);
+	fWSum += 1;
 	
 	vOutput /= fWSum;
 	
