@@ -37,34 +37,30 @@ Texture2D g_txColor : register( t0 );
 //--------------------------------------------------------------------------------------
 float4 Main( PS_INPUT Input ) : SV_TARGET
 {
-	int iWDepth, iHDepth;
-	g_txColor.GetDimensions(iWDepth, iHDepth);
-	
-	const int iNumSamples = 64;
+	const int iNumSamples = 16;
 	
 	float2 vTarget = g_UserParams.xy;
 	float2 vUVDir = vTarget - Input.vTexcoord;
 	
-	float fUVStep = 0.9 / (float)iNumSamples;
+	float fUVStep = g_UserParams.z / (float)iNumSamples;
 	float fWStep = 1 / (float)iNumSamples;
 	
 	float4 vOutput = 0;
 	float fWSum = 0;
 	
-	const float2 vBlurRadius = float2(1.0 / iWDepth, 1.0 / iHDepth);
-	
 	for(int i = 0; i < iNumSamples; ++i)
 	{
 		float2 vTapTexcoord = Input.vTexcoord + (vUVDir * i * fUVStep);
 		float fW = (i+1) * fWStep;
-		//fW *= fW;
+		//fW = pow(fW, 2);
+		
 		vOutput += g_txColor.SampleLevel(g_samLinear, vTapTexcoord, 0) * fW;
 		fWSum += fW;
 	}
-	vOutput += g_txColor.SampleLevel(g_samLinear, Input.vTexcoord, 0);
-	fWSum += 1;
 	
 	vOutput /= fWSum;
+
+	//vOutput += g_txColor.SampleLevel(g_samLinear, Input.vTexcoord, 0);
 	
 	return vOutput;
 }

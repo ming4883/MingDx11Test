@@ -121,7 +121,7 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 		}
 	}
 	
-	fOpacity = pow(fOpacity, 8) * g_vVolColor.w;
+	fOpacity = pow(fOpacity, 64) * g_vVolColor.w;
 	
 	return float4(g_vVolColor.xyz * fOpacity, fOpacity);
 }

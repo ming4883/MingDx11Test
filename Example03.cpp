@@ -179,6 +179,7 @@ public:
 		UI_LIGHTCOLOR_MULTIPLER,
 		UI_BGCOLOR_MULTIPLER,
 		UI_VOLLIGHTCOLOR_MULTIPLER,
+		UI_VOLLIGHT_SHAFT,
 	};
 
 // Methods
@@ -219,6 +220,10 @@ public:
 		dlg->AddStatic(UI_VOLLIGHTCOLOR_MULTIPLER, L"VolLight.Multipler", 0, y, w, h);
 		dlg->GetStatic(UI_VOLLIGHTCOLOR_MULTIPLER)->SetTextColor(textClr);
 		dlg->AddSlider(UI_VOLLIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 370);
+		y += h;
+
+		dlg->AddCheckBox(UI_VOLLIGHT_SHAFT, L"VolLight.LightShaft", 0, y, w, h, true);
+		dlg->GetCheckBox(UI_VOLLIGHT_SHAFT)->SetTextColor(textClr);
 		y += h;
 
 		m_GuiDlgs.push_back(dlg);
@@ -500,6 +505,8 @@ public:
 
 		float lightRadius = 1;
 
+		const bool lightShaftEnabled = m_GuiDlgs[0]->GetCheckBox(UI_VOLLIGHT_SHAFT)->GetChecked();
+
 		// Volume light effect
 		for(size_t i=0; i<2; ++i)
 		{
@@ -523,6 +530,7 @@ public:
 
 			m_RSCache.rtState().restore();
 			
+			
 			// update constants for radial blur
 			m_PostProcessor.m_ConstBuf.map(d3dContext);
 			m_PostProcessor.m_ConstBuf.data().update(m_Camera);
@@ -533,6 +541,7 @@ public:
 			p.x /= p.w; p.y /= p.w;
 			p.x *= 0.5f; p.y *= -0.5f;
 			p.x += 0.5f; p.y += 0.5f;
+			p.z = 1.0f;
 			m_PostProcessor.m_ConstBuf.data().m_UserParams = p;
 
 			m_PostProcessor.m_ConstBuf.unmap(d3dContext);
@@ -544,15 +553,18 @@ public:
 			m_RSCache.depthStencilState().dirty();
 			
 			// radial blur
-			m_RSCache.rtState().backup();
-			m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[0], nullptr);
-			
-			m_PostProcessor.filter(
-				d3dContext, m_RSCache,
-				js::SrvVA() << m_ColorBuffer[1],
-				m_PostRadialBlurShd);
+			if(lightShaftEnabled)
+			{
+				m_RSCache.rtState().backup();
+				m_RSCache.rtState().set(1, js::RtvVA() << m_ColorBuffer[0], nullptr);
+				
+				m_PostProcessor.filter(
+					d3dContext, m_RSCache,
+					js::SrvVA() << m_ColorBuffer[1],
+					m_PostRadialBlurShd);
 
-			m_RSCache.rtState().restore();
+				m_RSCache.rtState().restore();
+			}
 
 			// blend to target
 			m_RSCache.blendState().backup();
@@ -566,15 +578,23 @@ public:
 			m_RSCache.blendState().RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 			m_RSCache.blendState().dirty();
 			
+			if(lightShaftEnabled)
+			{
+				m_PostProcessor.filter(
+					d3dContext, m_RSCache,
+					js::SrvVA() << m_ColorBuffer[0],
+					m_PostRadialBlurShd);
+			}
+
 			m_PostProcessor.filter(
 				d3dContext, m_RSCache,
-				js::SrvVA() << m_ColorBuffer[0],
-				m_PostRadialBlurShd);
+				js::SrvVA() << m_ColorBuffer[1],
+				m_PostCopyShd);
 			
 			m_RSCache.blendState().restore();
 
 			m_RSCache.depthStencilState().restore();
-			
+				
 		}
 		
 		// restore depth stencil state
@@ -598,6 +618,9 @@ public:
 	{
 		if(VK_F1 == nChar && keyDown)
 			m_ShowGui = !m_ShowGui;
+
+		if(VK_INSERT == nChar && keyDown)
+			DXUTPause(!DXUTIsTimePaused(), false);
 	}
 
 };	// Example03
