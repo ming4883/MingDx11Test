@@ -81,7 +81,8 @@ float VolumeOpacity(
 	)
 {
 	float opacity = tEnd - tBegin;
-	opacity = opacity / (2 * radius);
+	//opacity = opacity / (2 * radius);
+	opacity = smoothstep(radius, 2 * radius, opacity);
 	opacity = max(opacity, 0);
 	return opacity;
 }
@@ -92,12 +93,11 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 	float fDepthScene = g_txDepth.Load(vTexcoord).x;
 	float3 vPosScene = ScreenToWorldPosition(float4(Input.vPosition.xy, fDepthScene, 1)).xyz; 
 	
-	float3 vPosLight = ScreenToWorldPosition(float4(Input.vPosition.xy, Input.vPosition.z, 1)).xyz; 
+	float3 vPosLight = ScreenToWorldPosition(float4(Input.vPosition.xy, 1, 1)).xyz; 
 	
 	float3 vRayOrig = g_vCameraPosition.xyz;
-	float3 vRayDir = vPosScene - g_vCameraPosition.xyz;
-	float fScene = length(vRayDir);
-	vRayDir /= fScene;
+	float3 vRayDir = normalize(vPosLight - g_vCameraPosition.xyz);
+	float fScene = length(vPosScene - g_vCameraPosition.xyz);
 	
 	float3 vSphereCenter = g_vVolSphere.xyz;
 	float fSphereRadius = g_vVolSphere.w;
@@ -107,6 +107,7 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 		discard;
 	
 	float fOpacity;
+	
 	if(fScene < fHitNear)
 		fOpacity = 0;
 	else
@@ -121,7 +122,7 @@ float4 Main( GS_OUTPUT Input ) : SV_TARGET
 		}
 	}
 	
-	fOpacity = pow(fOpacity, 64) * g_vVolColor.w;
+	fOpacity = pow(fOpacity, 8) * g_vVolColor.w;
 	
 	return float4(g_vVolColor.xyz * fOpacity, fOpacity);
 }

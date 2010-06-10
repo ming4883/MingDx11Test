@@ -44,31 +44,49 @@ struct GS_OUTPUT
 //--------------------------------------------------------------------------------------
 // Geometry Shader
 //--------------------------------------------------------------------------------------
-[maxvertexcount(6)]
+[maxvertexcount(36)]
 void Main(point VS_OUTPUT Input[1], inout TriangleStream<GS_OUTPUT> OutputStream )
 {
-	float3 vertex[4] = {
-		float3( 1, 1, 0),
-		float3( 1,-1, 0),
-		float3(-1, 1, 0),
-		float3(-1,-1, 0),
-	};
+	/*
+	 6 4
+	 7 5
+
+	2 0
+	3 1
+	*/
 	
-	int index[6] = {0, 1, 2, 3, 2, 1};
+	float3 vertex[8] = {
+		float3( 1, 1, 1),
+		float3( 1,-1, 1),
+		float3(-1, 1, 1),
+		float3(-1,-1, 1),
+		float3( 1, 1,-1),
+		float3( 1,-1,-1),
+		float3(-1, 1,-1),
+		float3(-1,-1,-1),
+	};
+	int index[36] = {
+		2, 3, 0, 1, 0, 3,
+		4, 5, 6, 7, 6, 5,
+		5, 1, 3, 7, 5, 3,
+		6, 2, 4, 0, 4, 2,
+		0, 1, 4, 5, 4, 1,
+		6, 7, 2, 3, 2, 7,
+	};
 	
 	float4 vViewPosition = mul(float4(g_vVolSphere.xyz, 1), g_mView);
 	
 	GS_OUTPUT Output;
 	[unroll]
-	for(int i=0; i<6; ++i)
+	for(int i=0; i<36; ++i)
 	{
 		Output.vPosition = vViewPosition;
-		Output.vPosition.xyz += vertex[index[i]] * g_vVolSphere.w * 1.5;
+		Output.vPosition.xyz += vertex[index[i]] * g_vVolSphere.w * 1.0;
 		Output.vPosition = mul(Output.vPosition, g_mProjection);
 		
 		OutputStream.Append(Output);
 		
-		if(i==2 || i==5)
+		if((i%3) == 2)
 			OutputStream.RestartStrip();
 	}
 }

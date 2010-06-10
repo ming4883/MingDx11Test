@@ -503,7 +503,7 @@ public:
 		lightColor[0] = D3DXVECTOR4(1, 0.6f, 0.6f, volLightMultipler);
 		lightColor[1] = D3DXVECTOR4(0.6f, 0.6f, 1, volLightMultipler);
 
-		float lightRadius = 1;
+		float lightRadius = 0.5f;
 
 		const bool lightShaftEnabled = m_GuiDlgs[0]->GetCheckBox(UI_VOLLIGHT_SHAFT)->GetChecked();
 
@@ -541,7 +541,7 @@ public:
 			p.x /= p.w; p.y /= p.w;
 			p.x *= 0.5f; p.y *= -0.5f;
 			p.x += 0.5f; p.y += 0.5f;
-			p.z = 1.0f;
+			p.z = 0.9f;
 			m_PostProcessor.m_ConstBuf.data().m_UserParams = p;
 
 			m_PostProcessor.m_ConstBuf.unmap(d3dContext);
