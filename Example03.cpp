@@ -117,6 +117,11 @@ void VolumeLightEffect::render(
 	rsCache.depthStencilState().DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	rsCache.depthStencilState().dirty();
 
+	rsCache.rasterizerState().backup();
+	rsCache.rasterizerState().FrontCounterClockwise = TRUE;
+	rsCache.rasterizerState().CullMode = ::D3D11_CULL_FRONT;
+	rsCache.rasterizerState().dirty();
+
 	// shader state
 	rsCache.vsState().backup();
 	rsCache.vsState().setShader(m_VolLightVs);
@@ -141,6 +146,7 @@ void VolumeLightEffect::render(
 	// draw
 	m_PointMesh.render(d3dContext, 1);
 
+	rsCache.rasterizerState().restore();
 	rsCache.depthStencilState().restore();
 	rsCache.vsState().restore();
 	rsCache.gsState().restore();
@@ -180,6 +186,7 @@ public:
 		UI_BGCOLOR_MULTIPLER,
 		UI_VOLLIGHTCOLOR_MULTIPLER,
 		UI_VOLLIGHT_SHAFT,
+		UI_VOLLIGHT_RADIUS,
 	};
 
 // Methods
@@ -220,6 +227,11 @@ public:
 		dlg->AddStatic(UI_VOLLIGHTCOLOR_MULTIPLER, L"VolLight.Multipler", 0, y, w, h);
 		dlg->GetStatic(UI_VOLLIGHTCOLOR_MULTIPLER)->SetTextColor(textClr);
 		dlg->AddSlider(UI_VOLLIGHTCOLOR_MULTIPLER, w, y, w, h, 0, 1023, 370);
+		y += h;
+
+		dlg->AddStatic(UI_VOLLIGHT_RADIUS, L"VolLight.Radius", 0, y, w, h);
+		dlg->GetStatic(UI_VOLLIGHT_RADIUS)->SetTextColor(textClr);
+		dlg->AddSlider(UI_VOLLIGHT_RADIUS, w, y, w, h, 0, 511, 127);
 		y += h;
 
 		dlg->AddCheckBox(UI_VOLLIGHT_SHAFT, L"VolLight.LightShaft", 0, y, w, h, true);
@@ -375,6 +387,7 @@ public:
 		guiUpdateStaticWithSlider(0, UI_LIGHTCOLOR_B, UI_LIGHTCOLOR_B, L"Light.B");
 		guiUpdateStaticWithSlider(0, UI_LIGHTCOLOR_MULTIPLER, UI_LIGHTCOLOR_MULTIPLER, L"Light.Multipler");
 		guiUpdateStaticWithSlider(0, UI_VOLLIGHTCOLOR_MULTIPLER, UI_VOLLIGHTCOLOR_MULTIPLER, L"VolLight.Multipler");
+		guiUpdateStaticWithSlider(0, UI_VOLLIGHT_RADIUS, UI_VOLLIGHT_RADIUS, L"VolLight.Radius");
 	}
 
 	__override void onD3D11FrameRender(
@@ -491,8 +504,8 @@ public:
 			m_RSCache.depthStencilState().restore();
 		}
 
-		float cost = cosf((float)::DXUTGetTime() * 0.25f);
-		float sint = sinf((float)::DXUTGetTime() * 0.25f);
+		float cost = cosf((float)::DXUTGetTime() * 0.125f);
+		float sint = sinf((float)::DXUTGetTime() * 0.125f);
 
 		D3DXVECTOR3 lightPos[2];
 		lightPos[0] = D3DXVECTOR3(0,2.5f,4) + D3DXVECTOR3(cost,0,sint) * 4;
@@ -503,7 +516,7 @@ public:
 		lightColor[0] = D3DXVECTOR4(1, 0.6f, 0.6f, volLightMultipler);
 		lightColor[1] = D3DXVECTOR4(0.6f, 0.6f, 1, volLightMultipler);
 
-		float lightRadius = 0.5f;
+		float lightRadius = m_GuiDlgs[0]->GetSlider(UI_VOLLIGHT_RADIUS)->GetValue() / 255.0f;
 
 		const bool lightShaftEnabled = m_GuiDlgs[0]->GetCheckBox(UI_VOLLIGHT_SHAFT)->GetChecked();
 
@@ -585,12 +598,14 @@ public:
 					js::SrvVA() << m_ColorBuffer[0],
 					m_PostRadialBlurShd);
 			}
+			else
+			{
+				m_PostProcessor.filter(
+					d3dContext, m_RSCache,
+					js::SrvVA() << m_ColorBuffer[1],
+					m_PostCopyShd);
+			}
 
-			m_PostProcessor.filter(
-				d3dContext, m_RSCache,
-				js::SrvVA() << m_ColorBuffer[1],
-				m_PostCopyShd);
-			
 			m_RSCache.blendState().restore();
 
 			m_RSCache.depthStencilState().restore();

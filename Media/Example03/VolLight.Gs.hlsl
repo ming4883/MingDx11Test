@@ -48,22 +48,22 @@ struct GS_OUTPUT
 void Main(point VS_OUTPUT Input[1], inout TriangleStream<GS_OUTPUT> OutputStream )
 {
 	/*
-	 6 4
-	 7 5
+	 4 6
+	 5 7
 
-	2 0
-	3 1
+	0 2
+	1 3
 	*/
 	
 	float3 vertex[8] = {
-		float3( 1, 1, 1),
-		float3( 1,-1, 1),
 		float3(-1, 1, 1),
 		float3(-1,-1, 1),
-		float3( 1, 1,-1),
-		float3( 1,-1,-1),
+		float3( 1, 1, 1),
+		float3( 1,-1, 1),
 		float3(-1, 1,-1),
 		float3(-1,-1,-1),
+		float3( 1, 1,-1),
+		float3( 1,-1,-1),
 	};
 	int index[36] = {
 		2, 3, 0, 1, 0, 3,
@@ -74,15 +74,15 @@ void Main(point VS_OUTPUT Input[1], inout TriangleStream<GS_OUTPUT> OutputStream
 		6, 7, 2, 3, 2, 7,
 	};
 	
-	float4 vViewPosition = mul(float4(g_vVolSphere.xyz, 1), g_mView);
+	float4 vWorldPosition = float4(g_vVolSphere.xyz, 1);
 	
 	GS_OUTPUT Output;
 	[unroll]
 	for(int i=0; i<36; ++i)
 	{
-		Output.vPosition = vViewPosition;
+		Output.vPosition = vWorldPosition;
 		Output.vPosition.xyz += vertex[index[i]] * g_vVolSphere.w * 1.0;
-		Output.vPosition = mul(Output.vPosition, g_mProjection);
+		Output.vPosition = mul(Output.vPosition, g_mViewProjection);
 		
 		OutputStream.Append(Output);
 		
