@@ -33,6 +33,18 @@ xprVec3 xprVec3_Sub(const xprVec3* a, const xprVec3* b);
 /* _out -= with */
 void xprVec3_SubTo(xprVec3* _out, const xprVec3* with);
 
+/* return a * b */
+xprVec3 xprVec3_Mult(const xprVec3* a, const xprVec3* b);
+
+/* _out *= with */
+void xprVec3_MultTo(xprVec3* _out, const xprVec3* with);
+
+/* return a * b */
+xprVec3 xprVec3_MultS(const xprVec3* a, float b);
+
+/* _out *= with */
+void xprVec3_MultSTo(xprVec3* _out, float with);
+
 /* return a dot b */
 float xprVec3_Dot(const xprVec3* a, const xprVec3* b);
 

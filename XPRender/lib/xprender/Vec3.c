@@ -87,6 +87,38 @@ void xprVec3_SubTo(xprVec3* _out, const xprVec3* with)
 	_out->z -= with->z;
 }
 
+xprVec3 xprVec3_Mult(const xprVec3* a, const xprVec3* b)
+{
+	xprVec3 _out;
+	_out.x = a->x * b->x;
+	_out.y = a->y * b->y;
+	_out.z = a->z * b->z;
+	return _out;
+}
+
+void xprVec3_MultTo(xprVec3* _out, const xprVec3* with)
+{
+	_out->x *= with->x;
+	_out->y *= with->y;
+	_out->z *= with->z;
+}
+
+xprVec3 xprVec3_MultS(const xprVec3* a, float b)
+{
+	xprVec3 _out;
+	_out.x = a->x * b;
+	_out.y = a->y * b;
+	_out.z = a->z * b;
+	return _out;
+}
+
+void xprVec3_MultSTo(xprVec3* _out, float with)
+{
+	_out->x *= with;
+	_out->y *= with;
+	_out->z *= with;
+}
+
 float xprVec3_Dot(const xprVec3* a, const xprVec3* b)
 {
 	return (a->x * b->x) + (a->y * b->y) + (a->z * b->z);
