@@ -17,7 +17,7 @@ IF( WIN32 )
     #ADD_DEFINITIONS( -DGLEW_STATIC )
     #ADD_DEFINITIONS( -DOPENCTM_STATIC )
     ADD_DEFINITIONS( /wd4996 )
-    SET( PLATFORM_LIBS opengl32 winmm )
+    SET( PLATFORM_LIBS opengl32 glu32 winmm )
     #SET( CONSOLE_SYSTEM WIN32 )
 
 ELSEIF( UNIX )
@@ -39,5 +39,9 @@ ADD_LIBRARY( xprender
 
 # ANSI C SAMPLES:
 
-ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM} example/ClothSimulation.c )
+ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
+	example/ClothSimulation.c
+	example/Cloth.c
+	example/Cloth.h
+	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )

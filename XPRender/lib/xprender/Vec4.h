@@ -65,5 +65,4 @@ float xprVec4_Normalize(xprVec4* a);
 /* return normalized copy of a */
 xprVec4 xprVec4_NormalizedCopy(const xprVec4* a);
 
-
 #endif	// __XPRENDER_VEC4_H__

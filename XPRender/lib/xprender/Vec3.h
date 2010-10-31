@@ -63,5 +63,4 @@ xprVec3 xprVec3_NormalizedCopy(const xprVec3* a);
 /* return a cross b */
 xprVec3 xprVec3_Cross(const xprVec3* a, const xprVec3* b);
 
-
 #endif	// __XPRENDER_VEC3_H__
