@@ -19,4 +19,6 @@ void Cloth_free(Cloth* self);
 
 void Cloth_timeStep(Cloth* self);
 
+void Cloth_draw(Cloth* self);
+
 #endif	// __EXAMPLE_CLOTH_H__

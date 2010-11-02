@@ -1,19 +1,23 @@
 #include <GL/glut.h>
-#include "../lib/xprender/Vec3.h"
 #include <stdio.h>
+
+#include "../lib/xprender/Vec3.h"
+#include "Cloth.h"
+
 
 float aspectWidth = 0;
 float aspectHeight = 0;
+Cloth* cloth = nullptr;
 
 void display(void)
 {
-	xprVec3 eyeAt = xprVec3_(0, 1, 10);
+	xprVec3 eyeAt = xprVec3_(0, 2, 6);
 	xprVec3 lookAt = xprVec3_(0, 0, 0);
 	xprVec3 eyeUp = *xprVec3_c010();
 
 	GLenum glerr;
 
-	int r, c;
+	//int r, c;
 
 	glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 	glClearDepth(1);
@@ -30,16 +34,7 @@ void display(void)
 
 	glEnable(GL_DEPTH_TEST);
 
-	glBegin(GL_POINTS);
-
-	glColor3f(1, 1, 1);
-	for(r=-2; r<=2; ++r)
-		for(c=-2; c<=2; ++c)
-		{
-			glVertex3f((float)r, (float)c, 0);
-		}
-
-	glEnd();
+	Cloth_draw(cloth);
 
 	glPopMatrix();
 
@@ -53,7 +48,7 @@ void display(void)
 	}
 }
 
-void reshape (int w, int h)
+void reshape(int w, int h)
 {
 	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
 	aspectWidth = (float)w;
@@ -72,6 +67,25 @@ void keyboard(unsigned char key, int x, int y)
 	}
 }
 
+void idle(void)
+{
+	static int lastTime = 0;
+
+	int currTime = glutGet(GLUT_ELAPSED_TIME);
+	int deltaTime = currTime - lastTime;
+	lastTime = currTime;
+
+	cloth->timeStep = deltaTime * 0.0001f;//0.001f;
+	Cloth_timeStep(cloth);
+
+	glutPostRedisplay();
+}
+
+void quit(void)
+{
+	Cloth_free(cloth);
+}
+
 int main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
@@ -80,9 +94,14 @@ int main(int argc, char** argv)
 	glutInitWindowSize(500, 500); 
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow ("ClothSimulation");
+
+	cloth = Cloth_new(4);
+
+	atexit(quit);
 	glutDisplayFunc(display); 
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
+	glutIdleFunc(idle);
 	glutMainLoop();
 
    return 0;
