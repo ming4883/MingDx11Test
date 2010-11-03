@@ -3,6 +3,12 @@
 
 #include "../lib/xprender/Vec3.h"
 
+typedef struct ClothConstraint
+{
+	unsigned int pIdx[2];
+	float restDistance;
+} ClothConstraint;
+
 typedef struct Cloth
 {
 	unsigned int segmentCount;
@@ -11,6 +17,7 @@ typedef struct Cloth
 	xprVec3* a;		// accelerations
 	xprVec3 g;		// gravity
 	float timeStep;	// system time step
+	ClothConstraint* constraints;
 } Cloth;
 
 Cloth* Cloth_new(unsigned int segmentCount);

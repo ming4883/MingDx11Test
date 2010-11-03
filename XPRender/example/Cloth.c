@@ -12,7 +12,7 @@ Cloth* Cloth_new(unsigned int segmentCount)
 	self->p = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
 	self->p2 = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
 	self->a = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
-	self->g = xprVec3_(0, -1, 0);
+	self->g = xprVec3_(0, -0.1f, 0);
 	self->timeStep = 0;
 
 	for(r=0; r<segmentCount; ++r)
