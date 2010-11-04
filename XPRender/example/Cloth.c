@@ -3,6 +3,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+void Cloth_makeConstraint(Cloth* self, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1)
+{
+	unsigned int idx0 = y0 * self->segmentCount + x0;
+	unsigned int idx1 = y1 * self->segmentCount + x1;
+
+	ClothConstraint* constraint = &self->constraints[self->constraintCount];
+	constraint->pIdx[0] = idx0;
+	constraint->pIdx[1] = idx1;
+	constraint->restDistance = xprVec3_Distance(&self->p[idx0], &self->p[idx1]);
+
+	++self->constraintCount;
+}
+
 Cloth* Cloth_new(unsigned int segmentCount)
 {
 	unsigned int r, c;
@@ -36,6 +49,21 @@ Cloth* Cloth_new(unsigned int segmentCount)
 		}
 	}
 
+	// setup constraints
+	self->constraints = (ClothConstraint*)malloc(sizeof(ClothConstraint) * (self->segmentCount-1) * (self->segmentCount-1) * 4);
+	self->constraintCount = 0;
+
+	for(r=0; r<segmentCount-1; ++r)
+	{
+		for(c=0; c<segmentCount-1; ++c)
+		{
+			Cloth_makeConstraint(self, r, c, r+1, c);
+			Cloth_makeConstraint(self, r, c, r, c+1);
+			Cloth_makeConstraint(self, r, c, r+1, c+1);
+			Cloth_makeConstraint(self, r+1, c, r, c+1);
+		}
+	}
+
 	return self;
 }
 
@@ -44,12 +72,13 @@ void Cloth_free(Cloth* self)
 	free(self->p);
 	free(self->p2);
 	free(self->a);
+	free(self->constraints);
 	free(self);
 }
 
 void Cloth_timeStep(Cloth* self)
 {
-	unsigned int i;
+	unsigned int i, iter;
 	unsigned int cnt = self->segmentCount * self->segmentCount;
 
 	float t2 = self->timeStep * self->timeStep;
@@ -79,11 +108,31 @@ void Cloth_timeStep(Cloth* self)
 	}
 
 	// constraints
-	for(i=0; i<cnt; ++i)
+	for(iter = 0; iter < 10; ++iter)
 	{
-		xprVec3* x = &self->p[i];
-		if(x->y < -1)
-			x->y = -1;
+		for(i=0; i<self->constraintCount; ++i)
+		{
+			ClothConstraint* c = &self->constraints[i];
+			xprVec3* x1 = &self->p[c->pIdx[0]];
+			xprVec3* x2 = &self->p[c->pIdx[1]];
+			xprVec3 delta = xprVec3_Sub(x2, x1);
+			float sqRestDistance = c->restDistance * c->restDistance;
+			float scale = sqRestDistance / (xprVec3_Dot(&delta, &delta) + sqRestDistance) - 0.5f;
+			delta = xprVec3_MultS(&delta, scale);
+			xprVec3_SubTo(x1, &delta);
+			xprVec3_AddTo(x2, &delta);
+		}
+
+		for(i=0; i<cnt; ++i)
+		{
+			xprVec3* x = &self->p[i];
+			if(x->y < -1)
+				x->y = -1;
+		}
+
+		self->p[0].x = 0;
+		self->p[0].y = 0;
+		self->p[0].z = 0;
 	}
 }
 

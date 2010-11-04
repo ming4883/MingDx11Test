@@ -17,7 +17,10 @@ typedef struct Cloth
 	xprVec3* a;		// accelerations
 	xprVec3 g;		// gravity
 	float timeStep;	// system time step
+
 	ClothConstraint* constraints;
+	unsigned int constraintCount;
+
 } Cloth;
 
 Cloth* Cloth_new(unsigned int segmentCount);

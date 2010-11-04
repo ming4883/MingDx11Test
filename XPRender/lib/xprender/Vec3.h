@@ -54,6 +54,9 @@ float xprVec3_SqLength(const xprVec3* a);
 /* return |a| */
 float xprVec3_Length(const xprVec3* a);
 
+/* return |a-b| */
+float xprVec3_Distance(const xprVec3* a, const xprVec3* b);
+
 /* normalize a and return |a| */
 float xprVec3_Normalize(xprVec3* a);
 

@@ -134,6 +134,12 @@ float xprVec3_Length(const xprVec3* a)
 	return sqrtf(xprVec3_SqLength(a));
 }
 
+float xprVec3_Distance(const xprVec3* a, const xprVec3* b)
+{
+	xprVec3 diff = xprVec3_Sub(a, b);
+	return xprVec3_Length(&diff);
+}
+
 float xprVec3_Normalize(xprVec3* a)
 {
 	float len = xprVec3_Length(a);
