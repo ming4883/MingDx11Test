@@ -17,8 +17,6 @@ void display(void)
 
 	GLenum glerr;
 
-	//int r, c;
-
 	glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
 	glClearDepth(1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -75,7 +73,7 @@ void idle(void)
 	int deltaTime = currTime - lastTime;
 	lastTime = currTime;
 
-	cloth->timeStep = deltaTime * 0.0001f;//0.001f;
+	cloth->timeStep = deltaTime * 0.001f;
 	Cloth_timeStep(cloth);
 
 	glutPostRedisplay();
@@ -95,7 +93,7 @@ int main(int argc, char** argv)
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow ("ClothSimulation");
 
-	cloth = Cloth_new(4);
+	cloth = Cloth_new(1, 1, 8);
 
 	atexit(quit);
 	glutDisplayFunc(display); 

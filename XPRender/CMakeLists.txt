@@ -45,3 +45,8 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Cloth.h
 	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
+
+ADD_EXECUTABLE( MosegaardsClothTutorial ${CONSOLE_SYSTEM}
+	example/MosegaardsClothTutorial.cpp
+	)
+TARGET_LINK_LIBRARIES( MosegaardsClothTutorial xprender ${PLATFORM_LIBS} )

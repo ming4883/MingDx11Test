@@ -16,7 +16,7 @@ void Cloth_makeConstraint(Cloth* self, unsigned int x0, unsigned int y0, unsigne
 	++self->constraintCount;
 }
 
-Cloth* Cloth_new(unsigned int segmentCount)
+Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 {
 	unsigned int r, c;
 
@@ -30,18 +30,18 @@ Cloth* Cloth_new(unsigned int segmentCount)
 
 	for(r=0; r<segmentCount; ++r)
 	{
-		float z = (float)r / segmentCount;
+		float y = height * (float)r / segmentCount;
 		for(c=0; c<segmentCount; ++c)
 		{
 			unsigned int i = r * segmentCount + c;
-			float x = (float)c / segmentCount;
+			float x = width * (float)c / segmentCount;
 			self->p[i].x = x;
-			self->p[i].y = 0;
-			self->p[i].z = z;
+			self->p[i].y = y;
+			self->p[i].z = 0;
 
 			self->p2[i].x = x;
-			self->p2[i].y = 0;
-			self->p2[i].z = z;
+			self->p2[i].y = y;
+			self->p2[i].z = 0;
 
 			self->a[i].x = 0;
 			self->a[i].y = 0;
@@ -84,10 +84,11 @@ void Cloth_timeStep(Cloth* self)
 	float t2 = self->timeStep * self->timeStep;
 
 	// add force
+	xprVec3 force = xprVec3_MultS(&self->g, self->timeStep);
 	for(i=0; i<cnt; ++i)
 	{
 		xprVec3* a = &self->a[i];
-		*a = self->g;
+		*a = force;
 	}
 
 	// verlet integration
@@ -108,7 +109,7 @@ void Cloth_timeStep(Cloth* self)
 	}
 
 	// constraints
-	for(iter = 0; iter < 10; ++iter)
+	for(iter = 0; iter < 1; ++iter)
 	{
 		for(i=0; i<self->constraintCount; ++i)
 		{
@@ -123,16 +124,19 @@ void Cloth_timeStep(Cloth* self)
 			xprVec3_AddTo(x2, &delta);
 		}
 
-		for(i=0; i<cnt; ++i)
-		{
-			xprVec3* x = &self->p[i];
-			if(x->y < -1)
-				x->y = -1;
-		}
+		//for(i=0; i<cnt; ++i)
+		//{
+		//	xprVec3* x = &self->p[i];
+		//	if(x->y < -1)
+		//		x->y = -1;
+		//}
 
-		self->p[0].x = 0;
-		self->p[0].y = 0;
-		self->p[0].z = 0;
+		for(i=0; i<self->segmentCount; ++i)
+		{
+			//self->p[i].x = 0;
+			self->p[i].y = 0;
+			//self->p[i].z = 0;
+		}
 	}
 }
 
@@ -141,6 +145,20 @@ void Cloth_draw(Cloth* self)
 	unsigned int i;
 	unsigned int cnt = self->segmentCount * self->segmentCount;
 
+	
+	glColor3f(1, 0, 0);
+	glBegin(GL_LINES);
+	for(i=0; i<self->constraintCount; ++i)
+	{
+		xprVec3* x0 = &self->p[self->constraints[i].pIdx[0]];
+		xprVec3* x1 = &self->p[self->constraints[i].pIdx[1]];
+		glVertex3f(x0->x, x0->y, x0->z);
+		glVertex3f(x1->x, x1->y, x1->z);
+	}
+
+	glEnd();
+
+	glColor3f(1, 1, 1);
 	glBegin(GL_POINTS);
 	for(i=0; i<cnt; ++i)
 	{

@@ -23,7 +23,7 @@ typedef struct Cloth
 
 } Cloth;
 
-Cloth* Cloth_new(unsigned int segmentCount);
+Cloth* Cloth_new(float width, float height, unsigned int segmentCount);
 
 void Cloth_free(Cloth* self);
 
