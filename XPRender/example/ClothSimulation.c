@@ -1,9 +1,9 @@
 #include <GL/glut.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "../lib/xprender/Vec3.h"
 #include "Cloth.h"
-
 
 float aspectWidth = 0;
 float aspectHeight = 0;
@@ -23,7 +23,7 @@ void display(void)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, aspectWidth / aspectHeight, 0.1f, 50.0f);
+	gluPerspective(45.0f, aspectWidth / aspectHeight, 0.1f, 20.0f);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -69,11 +69,19 @@ void idle(void)
 {
 	static int lastTime = 0;
 
+	xprVec3 force = {0, -1, 0};
 	int currTime = glutGet(GLUT_ELAPSED_TIME);
 	int deltaTime = currTime - lastTime;
 	lastTime = currTime;
 
-	cloth->timeStep = deltaTime * 0.001f;
+	cloth->timeStep = 0.01f;	// fixed time step
+
+	cloth->fixPos[0].z = cosf(currTime * 1e-3f);
+
+	xprVec3_MultSTo(&force, cloth->timeStep);
+
+	Cloth_addForceToAll(cloth, &force);
+
 	Cloth_timeStep(cloth);
 
 	glutPostRedisplay();
@@ -91,9 +99,10 @@ int main(int argc, char** argv)
 
 	glutInitWindowSize(500, 500); 
 	glutInitWindowPosition(100, 100);
-	glutCreateWindow ("ClothSimulation");
+	glutCreateWindow("ClothSimulation");
 
-	cloth = Cloth_new(1, 1, 8);
+	cloth = Cloth_new(2, 2, 16);
+	cloth->dumping = 1e-5f;
 
 	atexit(quit);
 	glutDisplayFunc(display); 

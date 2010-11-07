@@ -4,7 +4,7 @@
 #define nullptr 0
 
 typedef char xprBool;
+#define xprFalse 0
 #define xprTrue 1
-#define xprFalse 1
 
 #endif	// __XPRENDER_PLATFORM_H__

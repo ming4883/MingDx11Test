@@ -22,11 +22,15 @@ Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 
 	Cloth* self = (Cloth*)malloc(sizeof(Cloth));
 	self->segmentCount = segmentCount;
+	self->g = xprVec3_(0, -1, 0);
+	self->timeStep = 0;
+	self->dumping = 0;
+
 	self->p = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
 	self->p2 = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
 	self->a = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
-	self->g = xprVec3_(0, -0.1f, 0);
-	self->timeStep = 0;
+	self->fixPos = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
+	self->fixed = (xprBool*)malloc(sizeof(xprBool) * segmentCount * segmentCount);
 
 	for(r=0; r<segmentCount; ++r)
 	{
@@ -35,13 +39,12 @@ Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 		{
 			unsigned int i = r * segmentCount + c;
 			float x = width * (float)c / segmentCount;
-			self->p[i].x = x;
-			self->p[i].y = y;
-			self->p[i].z = 0;
+			xprVec3 p = xprVec3_(x, 0, y);
 
-			self->p2[i].x = x;
-			self->p2[i].y = y;
-			self->p2[i].z = 0;
+			self->p[i] = p;
+			self->p2[i] = p;
+			self->fixPos[i] = p;
+			self->fixed[i] = xprFalse;
 
 			self->a[i].x = 0;
 			self->a[i].y = 0;
@@ -49,18 +52,42 @@ Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 		}
 	}
 
+	self->fixed[0] = xprTrue;
+	self->fixed[segmentCount-1] = xprTrue;
+
 	// setup constraints
-	self->constraints = (ClothConstraint*)malloc(sizeof(ClothConstraint) * (self->segmentCount-1) * (self->segmentCount-1) * 4);
+	self->constraints = (ClothConstraint*)malloc(sizeof(ClothConstraint) * self->segmentCount * self->segmentCount * 8);
 	self->constraintCount = 0;
 
-	for(r=0; r<segmentCount-1; ++r)
+	for(r=0; r<segmentCount; ++r)
 	{
-		for(c=0; c<segmentCount-1; ++c)
+		for(c=0; c<segmentCount; ++c)
 		{
-			Cloth_makeConstraint(self, r, c, r+1, c);
-			Cloth_makeConstraint(self, r, c, r, c+1);
-			Cloth_makeConstraint(self, r, c, r+1, c+1);
-			Cloth_makeConstraint(self, r+1, c, r, c+1);
+			if(r+1 < segmentCount)
+				Cloth_makeConstraint(self, r, c, r+1, c);
+
+			if(c+1 < segmentCount)
+				Cloth_makeConstraint(self, r, c, r, c+1);
+
+			if(r+1 < segmentCount && c+1 < segmentCount)
+			{
+				Cloth_makeConstraint(self, r, c, r+1, c+1);
+				Cloth_makeConstraint(self, r+1, c, r, c+1);
+			}
+
+			
+			if(r+2 < segmentCount)
+				Cloth_makeConstraint(self, r, c, r+2, c);
+
+			if(c+2 < segmentCount)
+				Cloth_makeConstraint(self, r, c, r, c+2);
+
+			if(r+2 < segmentCount && c+2 < segmentCount)
+			{
+				Cloth_makeConstraint(self, r, c, r+2, c+2);
+				Cloth_makeConstraint(self, r+2, c, r, c+2);
+			}
+			/**/
 		}
 	}
 
@@ -73,7 +100,19 @@ void Cloth_free(Cloth* self)
 	free(self->p2);
 	free(self->a);
 	free(self->constraints);
+	free(self->fixed);
+	free(self->fixPos);
 	free(self);
+}
+
+void Cloth_addForceToAll(Cloth* self, const xprVec3* const force)
+{
+	unsigned int i, cnt = self->segmentCount * self->segmentCount;
+	for(i = 0; i < cnt; ++i)
+	{
+		xprVec3* a = &self->a[i];
+		xprVec3_AddTo(a, force);
+	}
 }
 
 void Cloth_timeStep(Cloth* self)
@@ -83,16 +122,8 @@ void Cloth_timeStep(Cloth* self)
 
 	float t2 = self->timeStep * self->timeStep;
 
-	// add force
-	xprVec3 force = xprVec3_MultS(&self->g, self->timeStep);
-	for(i=0; i<cnt; ++i)
-	{
-		xprVec3* a = &self->a[i];
-		*a = force;
-	}
-
-	// verlet integration
-	for(i=0; i<cnt; ++i)
+	// Verlet Integration
+	for(i = 0; i < cnt; ++i)
 	{
 		xprVec3* x = &self->p[i];
 		xprVec3* oldx = &self->p2[i];
@@ -101,15 +132,17 @@ void Cloth_timeStep(Cloth* self)
 		xprVec3 tmp = *x;
 		xprVec3 dx = xprVec3_Sub(x, oldx);
 		xprVec3 da = xprVec3_MultS(a, t2);
+		dx = xprVec3_MultS(&dx, 1-self->dumping);
 		dx = xprVec3_Add(&dx, &da);
 
 		xprVec3_AddTo(x, &dx);
 
+		*a = *xprVec3_c000();
 		*oldx = tmp;
 	}
 
-	// constraints
-	for(iter = 0; iter < 1; ++iter)
+	// performs Euler iterations on the constraints
+	for(iter = 0; iter < 2; ++iter)
 	{
 		for(i=0; i<self->constraintCount; ++i)
 		{
@@ -117,25 +150,18 @@ void Cloth_timeStep(Cloth* self)
 			xprVec3* x1 = &self->p[c->pIdx[0]];
 			xprVec3* x2 = &self->p[c->pIdx[1]];
 			xprVec3 delta = xprVec3_Sub(x2, x1);
-			float sqRestDistance = c->restDistance * c->restDistance;
-			float scale = sqRestDistance / (xprVec3_Dot(&delta, &delta) + sqRestDistance) - 0.5f;
+			
+			float scale = (1 - c->restDistance / xprVec3_Length(&delta)) * 0.5f;
 			delta = xprVec3_MultS(&delta, scale);
-			xprVec3_SubTo(x1, &delta);
-			xprVec3_AddTo(x2, &delta);
+
+			xprVec3_AddTo(x1, &delta);
+			xprVec3_SubTo(x2, &delta);
 		}
 
-		//for(i=0; i<cnt; ++i)
-		//{
-		//	xprVec3* x = &self->p[i];
-		//	if(x->y < -1)
-		//		x->y = -1;
-		//}
-
-		for(i=0; i<self->segmentCount; ++i)
+		for(i = 0; i < cnt; ++i)
 		{
-			//self->p[i].x = 0;
-			self->p[i].y = 0;
-			//self->p[i].z = 0;
+			if(xprTrue == self->fixed[i])
+				self->p[i] = self->fixPos[i];
 		}
 	}
 }
@@ -145,7 +171,6 @@ void Cloth_draw(Cloth* self)
 	unsigned int i;
 	unsigned int cnt = self->segmentCount * self->segmentCount;
 
-	
 	glColor3f(1, 0, 0);
 	glBegin(GL_LINES);
 	for(i=0; i<self->constraintCount; ++i)
