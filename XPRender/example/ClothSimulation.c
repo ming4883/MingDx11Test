@@ -5,9 +5,24 @@
 #include "../lib/xprender/Vec3.h"
 #include "Cloth.h"
 
-float aspectWidth = 0;
-float aspectHeight = 0;
 Cloth* cloth = nullptr;
+
+typedef struct Aspect
+{
+	float width;
+	float height;
+} Aspect;
+
+Aspect _aspect;
+
+void reshape(int w, int h)
+{
+	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
+	_aspect.width = (float)w;
+	_aspect.height = (float)h;
+
+	glutPostRedisplay();
+}
 
 void display(void)
 {
@@ -23,14 +38,14 @@ void display(void)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, aspectWidth / aspectHeight, 0.1f, 20.0f);
+	gluPerspective(45.0f, _aspect.width / _aspect.height, 0.1f, 20.0f);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	gluLookAt(eyeAt.x, eyeAt.y, eyeAt.z, lookAt.x, lookAt.y, lookAt.z, eyeUp.x, eyeUp.y, eyeUp.z);
 	glPushMatrix();
 
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 
 	Cloth_draw(cloth);
 
@@ -46,15 +61,6 @@ void display(void)
 	}
 }
 
-void reshape(int w, int h)
-{
-	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
-	aspectWidth = (float)w;
-	aspectHeight = (float)h;
-
-	glutPostRedisplay();
-}
-
 void keyboard(unsigned char key, int x, int y)
 {
 	switch (key)
@@ -62,6 +68,45 @@ void keyboard(unsigned char key, int x, int y)
 	case 27:
 		exit(0);
 		break;
+	}
+}
+
+typedef struct Mouse
+{
+	int button;
+	int state;
+	int x;
+	int y;
+} Mouse;
+
+Mouse _mouse;
+
+xprVec3 clothOffsets[2];
+
+void mouse(int button, int state, int x, int y)
+{
+	_mouse.button = button;
+	_mouse.state = state;
+	_mouse.x = x;
+	_mouse.y = y;
+
+	clothOffsets[0] = cloth->fixPos[0];
+	clothOffsets[1] = cloth->fixPos[cloth->segmentCount-1];
+}
+
+void motion(int x, int y)
+{
+	int dx = x - _mouse.x;
+	int dy = y - _mouse.y;
+
+	if(_mouse.state == GLUT_DOWN && _mouse.button == GLUT_LEFT_BUTTON)
+	{
+		float mouseSensitivity = 0.005f;
+		cloth->fixPos[0].x = clothOffsets[0].x + dx * mouseSensitivity;
+		cloth->fixPos[cloth->segmentCount-1].x = clothOffsets[1].x + dx * mouseSensitivity;
+
+		cloth->fixPos[0].y = clothOffsets[0].y - dy * mouseSensitivity;
+		cloth->fixPos[cloth->segmentCount-1].y = clothOffsets[1].y - dy * mouseSensitivity;
 	}
 }
 
@@ -75,8 +120,7 @@ void idle(void)
 	lastTime = currTime;
 
 	cloth->timeStep = 0.01f;	// fixed time step
-
-	cloth->fixPos[0].z = cosf(currTime * 1e-3f);
+	cloth->dumping = 1e-3f;
 
 	xprVec3_MultSTo(&force, cloth->timeStep);
 
@@ -101,13 +145,14 @@ int main(int argc, char** argv)
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow("ClothSimulation");
 
-	cloth = Cloth_new(2, 2, 16);
-	cloth->dumping = 1e-5f;
-
+	cloth = Cloth_new(2, 2, 32);
+	
 	atexit(quit);
 	glutDisplayFunc(display); 
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
+	glutMouseFunc(mouse);
+	glutMotionFunc(motion);
 	glutIdleFunc(idle);
 	glutMainLoop();
 
