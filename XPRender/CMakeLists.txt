@@ -4,17 +4,19 @@ PROJECT( xprender )
 
 
 FILE( GLOB FREEGLUT lib/freeglut/*.c lib/freeglut/*.h )
+FILE( GLOB GLEW lib/glew/*.c lib/glew/*.h )
 
 IF( WIN32 )
 
     FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
 
     SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
+    SOURCE_GROUP( "glew" FILES ${GLEW} )
 	SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
 
     ADD_DEFINITIONS( -DFREEGLUT_STATIC )
     ADD_DEFINITIONS( -DFREEGLUT_LIB_PRAGMAS=0 )
-    #ADD_DEFINITIONS( -DGLEW_STATIC )
+    ADD_DEFINITIONS( -DGLEW_STATIC )
     #ADD_DEFINITIONS( -DOPENCTM_STATIC )
     ADD_DEFINITIONS( /wd4996 )
     SET( PLATFORM_LIBS opengl32 glu32 winmm )
@@ -30,10 +32,12 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(
     lib/freeglut
+	lib/glew
 )
 
 ADD_LIBRARY( xprender
     ${FREEGLUT}
+	${GLEW}
     ${XPRENDER}
 	)
 

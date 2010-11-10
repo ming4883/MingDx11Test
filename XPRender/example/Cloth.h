@@ -3,15 +3,17 @@
 
 #include "../lib/xprender/Vec3.h"
 
+typedef struct xprBuffer xprBuffer;
+
 typedef struct ClothConstraint
 {
-	unsigned int pIdx[2];
+	size_t pIdx[2];
 	float restDistance;
 } ClothConstraint;
 
 typedef struct Cloth
 {
-	unsigned int segmentCount;
+	size_t segmentCount;
 	xprVec3* p;		// current positions
 	xprVec3* p2;	// last positions
 	xprVec3* a;		// accelerations
@@ -22,11 +24,14 @@ typedef struct Cloth
 	float dumping;	// dumping due to air resistence, 0-1, 0 = no dumping
 
 	ClothConstraint* constraints;
-	unsigned int constraintCount;
+	size_t constraintCount;
+
+	xprBuffer* vertexBuffer;
+	xprBuffer* indexBuffer;
 
 } Cloth;
 
-Cloth* Cloth_new(float width, float height, unsigned int segmentCount);
+Cloth* Cloth_new(float width, float height, size_t segmentCount);
 
 void Cloth_free(Cloth* self);
 

@@ -1,12 +1,13 @@
 #include "Cloth.h"
-#include <GL/glut.h>
-#include <stdlib.h>
+
+#include "../lib/xprender/Buffer.h"
+#include <GL/glew.h>
 #include <stdio.h>
 
-void Cloth_makeConstraint(Cloth* self, unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1)
+void Cloth_makeConstraint(Cloth* self, size_t x0, size_t y0, size_t x1, size_t y1)
 {
-	unsigned int idx0 = y0 * self->segmentCount + x0;
-	unsigned int idx1 = y1 * self->segmentCount + x1;
+	size_t idx0 = y0 * self->segmentCount + x0;
+	size_t idx1 = y1 * self->segmentCount + x1;
 
 	ClothConstraint* constraint = &self->constraints[self->constraintCount];
 	constraint->pIdx[0] = idx0;
@@ -16,9 +17,9 @@ void Cloth_makeConstraint(Cloth* self, unsigned int x0, unsigned int y0, unsigne
 	++self->constraintCount;
 }
 
-Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
+Cloth* Cloth_new(float width, float height, size_t segmentCount)
 {
-	unsigned int r, c;
+	size_t r, c;
 
 	Cloth* self = (Cloth*)malloc(sizeof(Cloth));
 	self->segmentCount = segmentCount;
@@ -32,12 +33,15 @@ Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 	self->fixPos = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
 	self->fixed = (xprBool*)malloc(sizeof(xprBool) * segmentCount * segmentCount);
 
+	self->vertexBuffer = xprBuffer_new(xprBufferType_Vertex, sizeof(xprVec3) * segmentCount * segmentCount, nullptr);
+	self->indexBuffer = xprBuffer_new(xprBufferType_Index, sizeof(short) * (segmentCount-1) * (segmentCount-1) * 6, nullptr);
+
 	for(r=0; r<segmentCount; ++r)
 	{
 		float y = height * (float)r / segmentCount;
 		for(c=0; c<segmentCount; ++c)
 		{
-			unsigned int i = r * segmentCount + c;
+			size_t i = r * segmentCount + c;
 			float x = width * (float)c / segmentCount;
 			xprVec3 p = xprVec3_(x, 0, y);
 
@@ -75,7 +79,7 @@ Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 				Cloth_makeConstraint(self, r+1, c, r, c+1);
 			}
 
-			
+			/*
 			if(r+2 < segmentCount)
 				Cloth_makeConstraint(self, r, c, r+2, c);
 
@@ -87,7 +91,7 @@ Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 				Cloth_makeConstraint(self, r, c, r+2, c+2);
 				Cloth_makeConstraint(self, r+2, c, r, c+2);
 			}
-			/**/
+			*/
 		}
 	}
 
@@ -96,6 +100,9 @@ Cloth* Cloth_new(float width, float height, unsigned int segmentCount)
 
 void Cloth_free(Cloth* self)
 {
+	xprBuffer_free(self->vertexBuffer);
+	xprBuffer_free(self->indexBuffer);
+
 	free(self->p);
 	free(self->p2);
 	free(self->a);
@@ -107,7 +114,7 @@ void Cloth_free(Cloth* self)
 
 void Cloth_addForceToAll(Cloth* self, const xprVec3* const force)
 {
-	unsigned int i, cnt = self->segmentCount * self->segmentCount;
+	size_t i, cnt = self->segmentCount * self->segmentCount;
 	for(i = 0; i < cnt; ++i)
 	{
 		xprVec3* a = &self->a[i];
@@ -117,8 +124,8 @@ void Cloth_addForceToAll(Cloth* self, const xprVec3* const force)
 
 void Cloth_timeStep(Cloth* self)
 {
-	unsigned int i, iter;
-	unsigned int cnt = self->segmentCount * self->segmentCount;
+	size_t i, iter;
+	size_t cnt = self->segmentCount * self->segmentCount;
 
 	float t2 = self->timeStep * self->timeStep;
 
@@ -164,12 +171,14 @@ void Cloth_timeStep(Cloth* self)
 				self->p[i] = self->fixPos[i];
 		}
 	}
+
+	xprBuffer_update(self->vertexBuffer, 0, self->vertexBuffer->sizeInBytes, self->p);
 }
 
 void Cloth_draw(Cloth* self)
 {
-	unsigned int i;
-	unsigned int cnt = self->segmentCount * self->segmentCount;
+	size_t i;
+	size_t cnt = self->segmentCount * self->segmentCount;
 
 	glColor3f(1, 0, 0);
 	glBegin(GL_LINES);
@@ -184,13 +193,21 @@ void Cloth_draw(Cloth* self)
 	glEnd();
 
 	glColor3f(1, 1, 1);
+	/*
 	glBegin(GL_POINTS);
 	for(i=0; i<cnt; ++i)
 	{
 		xprVec3* x = &self->p[i];
 		glVertex3f(x->x, x->y, x->z);
 	}
-
 	glEnd();
+	*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, sizeof(xprVec3), 0);
+	glDrawArrays(GL_POINTS, 0, cnt);
+	glDisableClientState(GL_VERTEX_ARRAY);
+
 }
 

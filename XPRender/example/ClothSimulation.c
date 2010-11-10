@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
@@ -105,8 +106,8 @@ void motion(int x, int y)
 		cloth->fixPos[0].x = clothOffsets[0].x + dx * mouseSensitivity;
 		cloth->fixPos[cloth->segmentCount-1].x = clothOffsets[1].x + dx * mouseSensitivity;
 
-		cloth->fixPos[0].y = clothOffsets[0].y - dy * mouseSensitivity;
-		cloth->fixPos[cloth->segmentCount-1].y = clothOffsets[1].y - dy * mouseSensitivity;
+		cloth->fixPos[0].z = clothOffsets[0].z + dy * mouseSensitivity;
+		cloth->fixPos[cloth->segmentCount-1].z = clothOffsets[1].z + dy * mouseSensitivity;
 	}
 }
 
@@ -114,7 +115,7 @@ void idle(void)
 {
 	static int lastTime = 0;
 
-	xprVec3 force = {0, -1, 0};
+	xprVec3 force = {0, -10, 0};
 	int currTime = glutGet(GLUT_ELAPSED_TIME);
 	int deltaTime = currTime - lastTime;
 	lastTime = currTime;
@@ -145,7 +146,9 @@ int main(int argc, char** argv)
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow("ClothSimulation");
 
-	cloth = Cloth_new(2, 2, 32);
+	glewInit();
+
+	cloth = Cloth_new(2, 2, 16);
 	
 	atexit(quit);
 	glutDisplayFunc(display); 

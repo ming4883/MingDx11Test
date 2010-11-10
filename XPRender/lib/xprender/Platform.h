@@ -1,6 +1,8 @@
 #ifndef __XPRENDER_PLATFORM_H__
 #define __XPRENDER_PLATFORM_H__
 
+#include <stdlib.h>
+
 #define nullptr 0
 
 typedef char xprBool;
