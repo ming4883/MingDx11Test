@@ -20,6 +20,7 @@ void Cloth_makeConstraint(Cloth* self, size_t x0, size_t y0, size_t x1, size_t y
 Cloth* Cloth_new(float width, float height, size_t segmentCount)
 {
 	size_t r, c;
+	unsigned short* mapped = nullptr;
 
 	Cloth* self = (Cloth*)malloc(sizeof(Cloth));
 	self->segmentCount = segmentCount;
@@ -34,7 +35,28 @@ Cloth* Cloth_new(float width, float height, size_t segmentCount)
 	self->fixed = (xprBool*)malloc(sizeof(xprBool) * segmentCount * segmentCount);
 
 	self->vertexBuffer = xprBuffer_new(xprBufferType_Vertex, sizeof(xprVec3) * segmentCount * segmentCount, nullptr);
-	self->indexBuffer = xprBuffer_new(xprBufferType_Index, sizeof(short) * (segmentCount-1) * (segmentCount-1) * 6, nullptr);
+	self->indexBuffer = xprBuffer_new(xprBufferType_Index, sizeof(unsigned short) * (segmentCount-1) * (segmentCount-1) * 6, nullptr);
+
+	mapped = (unsigned short*)xprBuffer_map(self->indexBuffer, xprBufferMapAccess_Write);
+	for(r=0; r<segmentCount-1; ++r)
+	{
+		for(c=0; c<segmentCount-1; ++c)
+		{
+			unsigned short p0 = (unsigned short)(r * segmentCount + c);
+			unsigned short p1 = (unsigned short)((r+1) * segmentCount + c);
+			unsigned short p2 = (unsigned short)(r * segmentCount + (c+1));
+			unsigned short p3 = (unsigned short)((r+1) * segmentCount + (c+1));
+
+			(*mapped++) = p0;
+			(*mapped++) = p1;
+			(*mapped++) = p2;
+
+			(*mapped++) = p3;
+			(*mapped++) = p2;
+			(*mapped++) = p1;
+		}
+	}
+	xprBuffer_unmap(self->indexBuffer);
 
 	for(r=0; r<segmentCount; ++r)
 	{
@@ -180,6 +202,7 @@ void Cloth_draw(Cloth* self)
 	size_t i;
 	size_t cnt = self->segmentCount * self->segmentCount;
 
+	/*
 	glColor3f(1, 0, 0);
 	glBegin(GL_LINES);
 	for(i=0; i<self->constraintCount; ++i)
@@ -193,7 +216,7 @@ void Cloth_draw(Cloth* self)
 	glEnd();
 
 	glColor3f(1, 1, 1);
-	/*
+	
 	glBegin(GL_POINTS);
 	for(i=0; i<cnt; ++i)
 	{
@@ -206,7 +229,15 @@ void Cloth_draw(Cloth* self)
 	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3, GL_FLOAT, sizeof(xprVec3), 0);
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->indexBuffer->name);
+
+	glColor3f(1, 1, 1);
+	glDrawElements(GL_TRIANGLES, self->indexBuffer->sizeInBytes / sizeof(unsigned short), GL_UNSIGNED_SHORT, 0);
+
+	glColor3f(1, 0, 0);
 	glDrawArrays(GL_POINTS, 0, cnt);
+	
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 }
