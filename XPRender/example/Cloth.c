@@ -140,7 +140,7 @@ void Cloth_addForceToAll(Cloth* self, const xprVec3* const force)
 	for(i = 0; i < cnt; ++i)
 	{
 		xprVec3* a = &self->a[i];
-		xprVec3_AddTo(a, force);
+		xprVec3_Add(a, a, force);
 	}
 }
 
@@ -159,12 +159,14 @@ void Cloth_timeStep(Cloth* self)
 		xprVec3* a = &self->a[i];
 
 		xprVec3 tmp = *x;
-		xprVec3 dx = xprVec3_Sub(x, oldx);
-		xprVec3 da = xprVec3_MultS(a, t2);
-		dx = xprVec3_MultS(&dx, 1-self->dumping);
-		dx = xprVec3_Add(&dx, &da);
+		xprVec3 dx;
+		xprVec3 da;
+		xprVec3_MultS(&da, a, t2);
+		xprVec3_Sub(&dx, x, oldx);
+		xprVec3_MultS(&dx, &dx, 1-self->dumping);
+		xprVec3_Add(&dx, &dx, &da);
 
-		xprVec3_AddTo(x, &dx);
+		xprVec3_Add(x, x, &dx);
 
 		*a = *xprVec3_c000();
 		*oldx = tmp;
@@ -178,13 +180,15 @@ void Cloth_timeStep(Cloth* self)
 			ClothConstraint* c = &self->constraints[i];
 			xprVec3* x1 = &self->p[c->pIdx[0]];
 			xprVec3* x2 = &self->p[c->pIdx[1]];
-			xprVec3 delta = xprVec3_Sub(x2, x1);
+			xprVec3 delta;
+			float scale;
+			xprVec3_Sub(&delta, x2, x1);
 			
-			float scale = (1 - c->restDistance / xprVec3_Length(&delta)) * 0.5f;
-			delta = xprVec3_MultS(&delta, scale);
+			scale = (1 - c->restDistance / xprVec3_Length(&delta)) * 0.5f;
+			xprVec3_MultS(&delta, &delta, scale);
 
-			xprVec3_AddTo(x1, &delta);
-			xprVec3_SubTo(x2, &delta);
+			xprVec3_Add(x1, x1, &delta);
+			xprVec3_Sub(x2, x2, &delta);
 		}
 
 		for(i = 0; i < cnt; ++i)

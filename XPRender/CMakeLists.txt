@@ -5,6 +5,7 @@ PROJECT( xprender )
 
 FILE( GLOB FREEGLUT lib/freeglut/*.c lib/freeglut/*.h )
 FILE( GLOB GLEW lib/glew/*.c lib/glew/*.h )
+FILE( GLOB GLSW lib/glsw/*.c lib/glsw/*.h )
 
 IF( WIN32 )
 
@@ -12,6 +13,7 @@ IF( WIN32 )
 
     SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
     SOURCE_GROUP( "glew" FILES ${GLEW} )
+    SOURCE_GROUP( "glsw" FILES ${GLSW} )
 	SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
 
     ADD_DEFINITIONS( -DFREEGLUT_STATIC )
@@ -33,11 +35,13 @@ ENDIF()
 INCLUDE_DIRECTORIES(
     lib/freeglut
 	lib/glew
+	lib/glsw
 )
 
 ADD_LIBRARY( xprender
     ${FREEGLUT}
 	${GLEW}
+	${GLSW}
     ${XPRENDER}
 	)
 

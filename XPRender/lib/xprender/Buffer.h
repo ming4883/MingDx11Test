@@ -3,6 +3,10 @@
 
 #include "Platform.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum xprBufferType
 {
 	xprBufferType_Vertex,
@@ -41,5 +45,8 @@ void* xprBuffer_map(xprBuffer* self, xprBufferMapAccess usage);
 
 void xprBuffer_unmap(xprBuffer* self);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif	// __XPRENDER_BUFFER_H__

@@ -55,68 +55,36 @@ xprBool xprVec3_isEquals(const xprVec3* const a, const xprVec3* const b, float e
 	return xprFalse;
 }
 
-xprVec3 xprVec3_Add(const xprVec3* const a, const xprVec3* const b)
+xprVec3* xprVec3_Add(xprVec3* _out, const xprVec3* const a, const xprVec3* const b)
 {
-	xprVec3 _out;
-	_out.x = a->x + b->x;
-	_out.y = a->y + b->y;
-	_out.z = a->z + b->z;
+	_out->x = a->x + b->x;
+	_out->y = a->y + b->y;
+	_out->z = a->z + b->z;
 	return _out;
 }
 
-void xprVec3_AddTo(xprVec3* _out, const xprVec3* const with)
+xprVec3* xprVec3_Sub(xprVec3* _out, const xprVec3* const a, const xprVec3* const b)
 {
-	_out->x += with->x;
-	_out->y += with->y;
-	_out->z += with->z;
-}
-
-xprVec3 xprVec3_Sub(const xprVec3* const a, const xprVec3* const b)
-{
-	xprVec3 _out;
-	_out.x = a->x - b->x;
-	_out.y = a->y - b->y;
-	_out.z = a->z - b->z;
+	_out->x = a->x - b->x;
+	_out->y = a->y - b->y;
+	_out->z = a->z - b->z;
 	return _out;
 }
 
-void xprVec3_SubTo(xprVec3* _out, const xprVec3* const with)
+xprVec3* xprVec3_Mult(xprVec3* _out, const xprVec3* const a, const xprVec3* const b)
 {
-	_out->x -= with->x;
-	_out->y -= with->y;
-	_out->z -= with->z;
-}
-
-xprVec3 xprVec3_Mult(const xprVec3* const a, const xprVec3* const b)
-{
-	xprVec3 _out;
-	_out.x = a->x * b->x;
-	_out.y = a->y * b->y;
-	_out.z = a->z * b->z;
+	_out->x = a->x * b->x;
+	_out->y = a->y * b->y;
+	_out->z = a->z * b->z;
 	return _out;
 }
 
-void xprVec3_MultTo(xprVec3* _out, const xprVec3* const with)
+xprVec3* xprVec3_MultS(xprVec3* _out, const xprVec3* const a, float b)
 {
-	_out->x *= with->x;
-	_out->y *= with->y;
-	_out->z *= with->z;
-}
-
-xprVec3 xprVec3_MultS(const xprVec3* const a, float b)
-{
-	xprVec3 _out;
-	_out.x = a->x * b;
-	_out.y = a->y * b;
-	_out.z = a->z * b;
+	_out->x = a->x * b;
+	_out->y = a->y * b;
+	_out->z = a->z * b;
 	return _out;
-}
-
-void xprVec3_MultSTo(xprVec3* _out, float with)
-{
-	_out->x *= with;
-	_out->y *= with;
-	_out->z *= with;
 }
 
 float xprVec3_Dot(const xprVec3* const a, const xprVec3* const b)
@@ -136,8 +104,8 @@ float xprVec3_Length(const xprVec3* const a)
 
 float xprVec3_Distance(const xprVec3* const a, const xprVec3* const b)
 {
-	xprVec3 diff = xprVec3_Sub(a, b);
-	return xprVec3_Length(&diff);
+	xprVec3 diff;
+	return xprVec3_Length(xprVec3_Sub(&diff, a, b));
 }
 
 float xprVec3_Normalize(xprVec3* a)

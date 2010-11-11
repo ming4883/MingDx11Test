@@ -123,7 +123,7 @@ void idle(void)
 	cloth->timeStep = 0.01f;	// fixed time step
 	cloth->dumping = 1e-3f;
 
-	xprVec3_MultSTo(&force, cloth->timeStep);
+	xprVec3_MultS(&force, &force, cloth->timeStep);
 
 	Cloth_addForceToAll(cloth, &force);
 

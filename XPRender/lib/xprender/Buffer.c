@@ -1,13 +1,13 @@
 #include "Buffer.h"
 #include <GL/glew.h>
 
-static GLenum GL_BUFFER_TARGETS[] = {
+static GLenum xprGL_BUFFER_TARGETS[] = {
 	GL_ARRAY_BUFFER,
 	GL_ELEMENT_ARRAY_BUFFER,
 	GL_UNIFORM_BUFFER,
 };
 
-static GLenum GL_BUFFER_MAP_ACCESS[] = {
+static GLenum xprGL_BUFFER_MAP_ACCESS[] = {
 	GL_READ_ONLY,
 	GL_WRITE_ONLY,
 	GL_READ_WRITE,
@@ -22,8 +22,8 @@ xprBuffer* xprBuffer_new(xprBufferType type, size_t sizeInBytes, void* initialDa
 	self->flags = 0;
 
 	glGenBuffers(1, &self->name);
-	glBindBuffer(GL_BUFFER_TARGETS[self->type], self->name);
-	glBufferData(GL_BUFFER_TARGETS[self->type], self->sizeInBytes, initialData, GL_STREAM_DRAW);
+	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->name);
+	glBufferData(xprGL_BUFFER_TARGETS[self->type], self->sizeInBytes, initialData, GL_STREAM_DRAW);
 
 	return self;
 }
@@ -45,8 +45,8 @@ void xprBuffer_update(xprBuffer* self, size_t offsetInBytes, size_t sizeInBytes,
 	if(offsetInBytes + sizeInBytes > self->sizeInBytes)
 		return;
 
-	glBindBuffer(GL_BUFFER_TARGETS[self->type], self->name);
-	glBufferSubData(GL_BUFFER_TARGETS[self->type], offsetInBytes, sizeInBytes, data);
+	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->name);
+	glBufferSubData(xprGL_BUFFER_TARGETS[self->type], offsetInBytes, sizeInBytes, data);
 }
 
 void* xprBuffer_map(xprBuffer* self, xprBufferMapAccess access)
@@ -59,9 +59,9 @@ void* xprBuffer_map(xprBuffer* self, xprBufferMapAccess access)
 	if(0 != (self->flags & xprBufferFlag_Mapped))
 		return nullptr;
 
-	glBindBuffer(GL_BUFFER_TARGETS[self->type], self->name);
+	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->name);
 
-	ret = glMapBuffer(GL_BUFFER_TARGETS[self->type], GL_BUFFER_MAP_ACCESS[access]);
+	ret = glMapBuffer(xprGL_BUFFER_TARGETS[self->type], xprGL_BUFFER_MAP_ACCESS[access]);
 
 	self->flags |= xprBufferFlag_Mapped;
 
@@ -76,8 +76,8 @@ void xprBuffer_unmap(xprBuffer* self)
 	if(0 == (self->flags & xprBufferFlag_Mapped))
 		return;
 
-	glBindBuffer(GL_BUFFER_TARGETS[self->type], self->name);
-	glUnmapBuffer(GL_BUFFER_TARGETS[self->type]);
+	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->name);
+	glUnmapBuffer(xprGL_BUFFER_TARGETS[self->type]);
 
 	self->flags &= ~xprBufferFlag_Mapped;
 }

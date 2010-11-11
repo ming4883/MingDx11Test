@@ -70,76 +70,40 @@ xprBool xprVec4_isEquals(const xprVec4* const a, const xprVec4* const b, float e
 	return xprFalse;
 }
 
-xprVec4 xprVec4_Add(const xprVec4* const a, const xprVec4* const b)
+xprVec4* xprVec4_Add(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
 {
-	xprVec4 _out;
-	_out.x = a->x + b->x;
-	_out.y = a->y + b->y;
-	_out.z = a->z + b->z;
-	_out.w = a->w + b->w;
+	_out->x = a->x + b->x;
+	_out->y = a->y + b->y;
+	_out->z = a->z + b->z;
+	_out->w = a->w + b->w;
 	return _out;
 }
 
-void xprVec4_AddTo(xprVec4* _out, const xprVec4* const with)
+xprVec4* xprVec4_Sub(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
 {
-	_out->x += with->x;
-	_out->y += with->y;
-	_out->z += with->z;
-	_out->w += with->w;
-}
-
-xprVec4 xprVec4_Sub(const xprVec4* const a, const xprVec4* const b)
-{
-	xprVec4 _out;
-	_out.x = a->x - b->x;
-	_out.y = a->y - b->y;
-	_out.z = a->z - b->z;
-	_out.w = a->w - b->w;
+	_out->x = a->x - b->x;
+	_out->y = a->y - b->y;
+	_out->z = a->z - b->z;
+	_out->w = a->w - b->w;
 	return _out;
 }
 
-void xprVec4_SubTo(xprVec4* _out, const xprVec4* const with)
+xprVec4* xprVec4_Mult(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
 {
-	_out->x -= with->x;
-	_out->y -= with->y;
-	_out->z -= with->z;
-	_out->w -= with->w;
-}
-
-xprVec4 xprVec4_Mult(const xprVec4* const a, const xprVec4* const b)
-{
-	xprVec4 _out;
-	_out.x = a->x * b->x;
-	_out.y = a->y * b->y;
-	_out.z = a->z * b->z;
-	_out.w = a->w * b->w;
+	_out->x = a->x * b->x;
+	_out->y = a->y * b->y;
+	_out->z = a->z * b->z;
+	_out->w = a->w * b->w;
 	return _out;
 }
 
-void xprVec4_MultTo(xprVec4* _out, const xprVec4* const with)
+xprVec4* xprVec4_MultS(xprVec4* _out, const xprVec4* const a, float b)
 {
-	_out->x *= with->x;
-	_out->y *= with->y;
-	_out->z *= with->z;
-	_out->w *= with->w;
-}
-
-xprVec4 xprVec4_MultS(const xprVec4* const a, float b)
-{
-	xprVec4 _out;
-	_out.x = a->x * b;
-	_out.y = a->y * b;
-	_out.z = a->z * b;
-	_out.w = a->w * b;
+	_out->x = a->x * b;
+	_out->y = a->y * b;
+	_out->z = a->z * b;
+	_out->w = a->w * b;
 	return _out;
-}
-
-void xprVec4_MultSTo(xprVec4* _out, float with)
-{
-	_out->x *= with;
-	_out->y *= with;
-	_out->z *= with;
-	_out->w *= with;
 }
 
 float xprVec4_Dot(const xprVec4* const a, const xprVec4* const b)
@@ -159,7 +123,8 @@ float xprVec4_Length(const xprVec4* const a)
 
 float xprVec4_Distance(const xprVec4* const a, const xprVec4* const b)
 {
-	xprVec4 diff = xprVec4_Sub(a, b);
+	xprVec4 diff;
+	xprVec4_Sub(&diff, a, b);
 	return xprVec4_Length(&diff);
 }
 

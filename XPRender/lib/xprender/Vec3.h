@@ -3,6 +3,10 @@
 
 #include "Platform.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct xprVec3
 {
 	float x;
@@ -22,28 +26,16 @@ void xprVec3_Set(xprVec3* _out, float x, float y, float z);
 xprBool xprVec3_isEquals(const xprVec3* const a, const xprVec3* const b, float epsilon);
 
 /* return a + b */
-xprVec3 xprVec3_Add(const xprVec3* const a, const xprVec3* const b);
-
-/* _out += with */
-void xprVec3_AddTo(xprVec3* _out, const xprVec3* const with);
+xprVec3* xprVec3_Add(xprVec3* _out, const xprVec3* const a, const xprVec3* const b);
 
 /* return a - b */
-xprVec3 xprVec3_Sub(const xprVec3* const a, const xprVec3* const b);
+xprVec3* xprVec3_Sub(xprVec3* _out, const xprVec3* const a, const xprVec3* const b);
 
-/* _out -= with */
-void xprVec3_SubTo(xprVec3* _out, const xprVec3* const with);
-
-/* return a * b */
-xprVec3 xprVec3_Mult(const xprVec3* const a, const xprVec3* const b);
-
-/* _out *= with */
-void xprVec3_MultTo(xprVec3* _out, const xprVec3* const with);
+/* return term by term a * b */
+xprVec3* xprVec3_Mult(xprVec3* _out, const xprVec3* const a, const xprVec3* const b);
 
 /* return a * b */
-xprVec3 xprVec3_MultS(const xprVec3* const a, float b);
-
-/* _out *= with */
-void xprVec3_MultSTo(xprVec3* _out, float with);
+xprVec3* xprVec3_MultS(xprVec3* _out, const xprVec3* const a, float b);
 
 /* return a dot b */
 float xprVec3_Dot(const xprVec3* const a, const xprVec3* const b);
@@ -65,5 +57,9 @@ xprVec3 xprVec3_NormalizedCopy(const xprVec3* const a);
 
 /* return a cross b */
 xprVec3 xprVec3_Cross(const xprVec3* const a, const xprVec3* const b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	// __XPRENDER_VEC3_H__
