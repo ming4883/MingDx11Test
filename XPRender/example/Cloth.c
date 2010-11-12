@@ -35,6 +35,7 @@ Cloth* Cloth_new(float width, float height, size_t segmentCount)
 	self->fixed = (xprBool*)malloc(sizeof(xprBool) * segmentCount * segmentCount);
 
 	self->vertexBuffer = xprBuffer_new(xprBufferType_Vertex, sizeof(xprVec3) * segmentCount * segmentCount, nullptr);
+	self->normalBuffer = xprBuffer_new(xprBufferType_Vertex, sizeof(xprVec3) * segmentCount * segmentCount, nullptr);
 	self->indexBuffer = xprBuffer_new(xprBufferType_Index, sizeof(unsigned short) * (segmentCount-1) * (segmentCount-1) * 6, nullptr);
 
 	mapped = (unsigned short*)xprBuffer_map(self->indexBuffer, xprBufferMapAccess_Write);
@@ -123,6 +124,7 @@ Cloth* Cloth_new(float width, float height, size_t segmentCount)
 void Cloth_free(Cloth* self)
 {
 	xprBuffer_free(self->vertexBuffer);
+	xprBuffer_free(self->normalBuffer);
 	xprBuffer_free(self->indexBuffer);
 
 	free(self->p);
@@ -203,36 +205,15 @@ void Cloth_timeStep(Cloth* self)
 
 void Cloth_draw(Cloth* self)
 {
-	size_t i;
 	size_t cnt = self->segmentCount * self->segmentCount;
-
-	/*
-	glColor3f(1, 0, 0);
-	glBegin(GL_LINES);
-	for(i=0; i<self->constraintCount; ++i)
-	{
-		xprVec3* x0 = &self->p[self->constraints[i].pIdx[0]];
-		xprVec3* x1 = &self->p[self->constraints[i].pIdx[1]];
-		glVertex3f(x0->x, x0->y, x0->z);
-		glVertex3f(x1->x, x1->y, x1->z);
-	}
-
-	glEnd();
-
-	glColor3f(1, 1, 1);
-	
-	glBegin(GL_POINTS);
-	for(i=0; i<cnt; ++i)
-	{
-		xprVec3* x = &self->p[i];
-		glVertex3f(x->x, x->y, x->z);
-	}
-	glEnd();
-	*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(3, GL_FLOAT, sizeof(xprVec3), 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->name);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glNormalPointer(GL_FLOAT, sizeof(xprVec3), 0);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->indexBuffer->name);
 
@@ -243,6 +224,7 @@ void Cloth_draw(Cloth* self)
 	glDrawArrays(GL_POINTS, 0, cnt);
 	
 	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
 
 }
 

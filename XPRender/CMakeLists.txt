@@ -49,6 +49,7 @@ ADD_LIBRARY( xprender
 
 ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/ClothSimulation.c
+	example/ClothSimulation.glsl
 	example/Cloth.c
 	example/Cloth.h
 	)

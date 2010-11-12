@@ -42,6 +42,9 @@ xprShader* xprShader_new(const char** sources, size_t srcCnt, xprShaderType type
 
 void xprShader_free(xprShader* self)
 {
+	if(nullptr == self)
+		return;
+
 	glDeleteShader(self->name);
 	free(self);
 }

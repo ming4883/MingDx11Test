@@ -27,6 +27,7 @@ typedef struct Cloth
 	size_t constraintCount;
 
 	xprBuffer* vertexBuffer;
+	xprBuffer* normalBuffer;
 	xprBuffer* indexBuffer;
 
 } Cloth;

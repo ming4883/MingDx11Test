@@ -1,12 +1,17 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <glsw.h>
 #include <stdio.h>
 #include <math.h>
 
 #include "../lib/xprender/Vec3.h"
+#include "../lib/xprender/Shader.h"
 #include "Cloth.h"
 
 Cloth* cloth = nullptr;
+xprShader* objectVp = nullptr;
+xprShader* objectFp = nullptr;
+int objProgName = 0;
 
 typedef struct Aspect
 {
@@ -48,6 +53,7 @@ void display(void)
 
 	//glEnable(GL_DEPTH_TEST);
 
+	glUseProgram(objProgName);
 	Cloth_draw(cloth);
 
 	glPopMatrix();
@@ -134,6 +140,9 @@ void idle(void)
 
 void quit(void)
 {
+	glDeleteProgram(objProgName);
+	xprShader_free(objectVp);
+	xprShader_free(objectFp);
 	Cloth_free(cloth);
 }
 
@@ -147,6 +156,49 @@ int main(int argc, char** argv)
 	glutCreateWindow("ClothSimulation");
 
 	glewInit();
+
+	{
+		const char* code;
+		
+		glswInit();
+		glswSetPath("../example/", ".glsl");
+
+		code = glswGetShader("ClothSimulation.Vertex");
+		if(nullptr != code)
+			objectVp = xprShader_new(&code, 1, xprShaderType_Vertex);
+		else
+			printf(glswGetError());
+
+		code = glswGetShader("ClothSimulation.Fragment");
+		if(nullptr != code)
+			objectFp = xprShader_new(&code, 1, xprShaderType_Fragment);
+		else
+			printf(glswGetError());
+
+		glswShutdown();
+
+		objProgName = glCreateProgram();
+		glAttachShader(objProgName, objectVp->name);
+		glAttachShader(objProgName, objectFp->name);
+		glLinkProgram(objProgName);
+
+		{
+			int linkStatus;
+			glGetProgramiv(objProgName, GL_LINK_STATUS, &linkStatus);
+			if(GL_FALSE == linkStatus)
+			{
+				GLint len;
+				glGetProgramiv(objProgName, GL_INFO_LOG_LENGTH, &len);
+				if(len > 0)
+				{
+					char* buf = (char*)malloc(len);
+					glGetProgramInfoLog(objProgName, len, nullptr, buf);
+					printf(buf);
+					free(buf);
+				}
+			}
+		}
+	}
 
 	cloth = Cloth_new(2, 2, 16);
 	
