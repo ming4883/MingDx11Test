@@ -46,7 +46,7 @@ const xprVec4* const xprVec4_c0001()
 	return &_xprVec4_c0001;
 }
 
-void xprVec4_Set(xprVec4* _out, float x, float y, float z, float w)
+void xprVec4_set(xprVec4* _out, float x, float y, float z, float w)
 {
 	if(nullptr == _out)
 		return;
@@ -70,7 +70,7 @@ xprBool xprVec4_isEquals(const xprVec4* const a, const xprVec4* const b, float e
 	return xprFalse;
 }
 
-xprVec4* xprVec4_Add(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
+xprVec4* xprVec4_add(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
 {
 	_out->x = a->x + b->x;
 	_out->y = a->y + b->y;
@@ -79,7 +79,7 @@ xprVec4* xprVec4_Add(xprVec4* _out, const xprVec4* const a, const xprVec4* const
 	return _out;
 }
 
-xprVec4* xprVec4_Sub(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
+xprVec4* xprVec4_sub(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
 {
 	_out->x = a->x - b->x;
 	_out->y = a->y - b->y;
@@ -88,7 +88,7 @@ xprVec4* xprVec4_Sub(xprVec4* _out, const xprVec4* const a, const xprVec4* const
 	return _out;
 }
 
-xprVec4* xprVec4_Mult(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
+xprVec4* xprVec4_mult(xprVec4* _out, const xprVec4* const a, const xprVec4* const b)
 {
 	_out->x = a->x * b->x;
 	_out->y = a->y * b->y;
@@ -97,7 +97,7 @@ xprVec4* xprVec4_Mult(xprVec4* _out, const xprVec4* const a, const xprVec4* cons
 	return _out;
 }
 
-xprVec4* xprVec4_MultS(xprVec4* _out, const xprVec4* const a, float b)
+xprVec4* xprVec4_multS(xprVec4* _out, const xprVec4* const a, float b)
 {
 	_out->x = a->x * b;
 	_out->y = a->y * b;
@@ -106,31 +106,31 @@ xprVec4* xprVec4_MultS(xprVec4* _out, const xprVec4* const a, float b)
 	return _out;
 }
 
-float xprVec4_Dot(const xprVec4* const a, const xprVec4* const b)
+float xprVec4_dot(const xprVec4* const a, const xprVec4* const b)
 {
 	return (a->x * b->x) + (a->y * b->y) + (a->z * b->z) + (a->w * b->w);
 }
 
-float xprVec4_SqLength(const xprVec4* const a)
+float xprVec4_sqLength(const xprVec4* const a)
 {
-	return xprVec4_Dot(a, a);
+	return xprVec4_dot(a, a);
 }
 
-float xprVec4_Length(const xprVec4* const a)
+float xprVec4_length(const xprVec4* const a)
 {
-	return sqrtf(xprVec4_SqLength(a));
+	return sqrtf(xprVec4_sqLength(a));
 }
 
-float xprVec4_Distance(const xprVec4* const a, const xprVec4* const b)
+float xprVec4_distance(const xprVec4* const a, const xprVec4* const b)
 {
 	xprVec4 diff;
-	xprVec4_Sub(&diff, a, b);
-	return xprVec4_Length(&diff);
+	xprVec4_sub(&diff, a, b);
+	return xprVec4_length(&diff);
 }
 
-float xprVec4_Normalize(xprVec4* a)
+float xprVec4_normalize(xprVec4* a)
 {
-	float len = xprVec4_Length(a);
+	float len = xprVec4_length(a);
 	
 	if(len > 1e-5f || len < -1e-5f)
 	{
@@ -145,9 +145,9 @@ float xprVec4_Normalize(xprVec4* a)
 	return len;
 }
 
-xprVec4 xprVec4_NormalizedCopy(const xprVec4* const a)
+xprVec4 xprVec4_normalizedCopy(const xprVec4* const a)
 {
 	xprVec4 _out = *a;
-	xprVec4_Normalize(&_out);
+	xprVec4_normalize(&_out);
 	return _out;
 }

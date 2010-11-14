@@ -7,11 +7,15 @@
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Shader.h"
 #include "Cloth.h"
+#include "Sphere.h"
+#include "Mesh.h"
 
 Cloth* cloth = nullptr;
 xprShader* objectVp = nullptr;
 xprShader* objectFp = nullptr;
 int objProgName = 0;
+Sphere ball;
+Mesh* ballMesh = nullptr;
 
 typedef struct Aspect
 {
@@ -51,10 +55,16 @@ void display(void)
 	gluLookAt(eyeAt.x, eyeAt.y, eyeAt.z, lookAt.x, lookAt.y, lookAt.z, eyeUp.x, eyeUp.y, eyeUp.z);
 	glPushMatrix();
 
-	//glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 
 	glUseProgram(objProgName);
-	Cloth_draw(cloth);
+	Mesh_draw(cloth->mesh);
+
+	glPushMatrix();
+	glTranslatef(ball.center.x, ball.center.y, ball.center.z);
+	glScalef(ball.radius, ball.radius, ball.radius);
+	Mesh_draw(ballMesh);
+	glPopMatrix();
 
 	glPopMatrix();
 
@@ -126,14 +136,18 @@ void idle(void)
 	int deltaTime = currTime - lastTime;
 	lastTime = currTime;
 
-	cloth->timeStep = 0.01f;	// fixed time step
-	cloth->dumping = 1e-3f;
+	ball.center.z = cosf(currTime * 0.0005f) * 5.f;
 
-	xprVec3_MultS(&force, &force, cloth->timeStep);
+	cloth->timeStep = 0.01f;	// fixed time step
+	cloth->dumping = 5e-3f;
+
+	xprVec3_multS(&force, &force, cloth->timeStep);
 
 	Cloth_addForceToAll(cloth, &force);
 
 	Cloth_timeStep(cloth);
+
+	Cloth_collideWithSphere(cloth, &ball);
 
 	glutPostRedisplay();
 }
@@ -144,6 +158,7 @@ void quit(void)
 	xprShader_free(objectVp);
 	xprShader_free(objectFp);
 	Cloth_free(cloth);
+	Mesh_free(ballMesh);
 }
 
 int main(int argc, char** argv)
@@ -200,7 +215,14 @@ int main(int argc, char** argv)
 		}
 	}
 
-	cloth = Cloth_new(2, 2, 16);
+	{
+		xprVec3 offset = {-1, 1, 0};
+		cloth = Cloth_new(2, 2, &offset, 32);
+	}
+
+	ball.center = xprVec3_(0, 0, 0);
+	ball.radius = 0.5f;
+	ballMesh = Mesh_createUnitSphere(16);
 	
 	atexit(quit);
 	glutDisplayFunc(display); 

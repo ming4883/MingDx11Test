@@ -50,8 +50,12 @@ ADD_LIBRARY( xprender
 ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/ClothSimulation.c
 	example/ClothSimulation.glsl
+	example/Mesh.c
+	example/Mesh.h
 	example/Cloth.c
 	example/Cloth.h
+	example/Sphere.c
+	example/Sphere.h
 	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
 

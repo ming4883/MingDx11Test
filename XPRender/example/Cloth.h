@@ -3,7 +3,12 @@
 
 #include "../lib/xprender/Vec3.h"
 
-typedef struct xprBuffer xprBuffer;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct Mesh Mesh;
+typedef struct Sphere Sphere;
 
 typedef struct ClothConstraint
 {
@@ -26,13 +31,11 @@ typedef struct Cloth
 	ClothConstraint* constraints;
 	size_t constraintCount;
 
-	xprBuffer* vertexBuffer;
-	xprBuffer* normalBuffer;
-	xprBuffer* indexBuffer;
+	Mesh* mesh;
 
 } Cloth;
 
-Cloth* Cloth_new(float width, float height, size_t segmentCount);
+Cloth* Cloth_new(float width, float height, const xprVec3* const offset, size_t segmentCount);
 
 void Cloth_free(Cloth* self);
 
@@ -40,6 +43,10 @@ void Cloth_addForceToAll(Cloth* self, const xprVec3* const force);
 
 void Cloth_timeStep(Cloth* self);
 
-void Cloth_draw(Cloth* self);
+void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	// __EXAMPLE_CLOTH_H__
