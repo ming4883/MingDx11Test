@@ -35,11 +35,11 @@ typedef struct Cloth
 
 } Cloth;
 
-Cloth* Cloth_new(float width, float height, const xprVec3* const offset, size_t segmentCount);
+Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmentCount);
 
 void Cloth_free(Cloth* self);
 
-void Cloth_addForceToAll(Cloth* self, const xprVec3* const force);
+void Cloth_addForceToAll(Cloth* self, const xprVec3* force);
 
 void Cloth_timeStep(Cloth* self);
 

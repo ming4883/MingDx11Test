@@ -9,56 +9,62 @@ extern "C" {
 
 typedef struct xprVec4
 {
-	float x;
-	float y;
-	float z;
-	float w;
+	union
+	{
+		struct {
+			float x;
+			float y;
+			float z;
+			float w;
+		};
+		float v[4];
+	};
 } xprVec4;
 
 typedef struct xprVec3 xprVec3;
 
 xprVec4 xprVec4_(float x, float y, float z, float w);
-xprVec4 xprVec4_FromVec3(const xprVec3* const xyz, float w);
+xprVec4 xprVec4_FromVec3(const xprVec3* xyz, float w);
 
-const xprVec4* const xprVec4_c0000();
-const xprVec4* const xprVec4_c1000();
-const xprVec4* const xprVec4_c0100();
-const xprVec4* const xprVec4_c0010();
-const xprVec4* const xprVec4_c0001();
+const xprVec4* xprVec4_c0000();
+const xprVec4* xprVec4_c1000();
+const xprVec4* xprVec4_c0100();
+const xprVec4* xprVec4_c0010();
+const xprVec4* xprVec4_c0001();
 
 void xprVec4_set(xprVec4* _out, float x, float y, float z, float w);
 
-xprBool xprVec4_isEquals(const xprVec4* const a, const xprVec4* const b, float epsilon);
+xprBool xprVec4_isEquals(const xprVec4* a, const xprVec4* b, float epsilon);
 
 /* return a + b */
-xprVec4* xprVec4_add(xprVec4* _out, const xprVec4* const a, const xprVec4* const b);
+xprVec4* xprVec4_add(xprVec4* _out, const xprVec4* a, const xprVec4* b);
 
 /* return a - b */
-xprVec4* xprVec4_sub(xprVec4* _out, const xprVec4* const a, const xprVec4* const b);
+xprVec4* xprVec4_sub(xprVec4* _out, const xprVec4* a, const xprVec4* b);
 
 /* return a * b */
-xprVec4* xprVec4_mult(xprVec4* _out, const xprVec4* const a, const xprVec4* const b);
+xprVec4* xprVec4_mult(xprVec4* _out, const xprVec4* a, const xprVec4* b);
 
 /* return a * b */
-xprVec4* xprVec4_multS(xprVec4* _out, const xprVec4* const a, float b);
+xprVec4* xprVec4_multS(xprVec4* _out, const xprVec4* a, float b);
 
 /* return a dot b */
-float xprVec4_dot(const xprVec4* const a, const xprVec4* const b);
+float xprVec4_dot(const xprVec4* a, const xprVec4* b);
 
 /* return |a|^2 */
-float xprVec4_sqLength(const xprVec4* const a);
+float xprVec4_sqLength(const xprVec4* a);
 
 /* return |a| */
-float xprVec4_length(const xprVec4* const a);
+float xprVec4_length(const xprVec4* a);
 
 /* return |a-b| */
-float xprVec4_distance(const xprVec4* const a, const xprVec4* const b);
+float xprVec4_distance(const xprVec4* a, const xprVec4* b);
 
 /* normalize a and return |a| */
 float xprVec4_normalize(xprVec4* a);
 
 /* return normalized copy of a */
-xprVec4 xprVec4_normalizedCopy(const xprVec4* const a);
+xprVec4 xprVec4_normalizedCopy(const xprVec4* a);
 
 #ifdef __cplusplus
 }

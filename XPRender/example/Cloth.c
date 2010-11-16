@@ -18,7 +18,7 @@ void Cloth_makeConstraint(Cloth* self, size_t x0, size_t y0, size_t x1, size_t y
 	++self->constraintCount;
 }
 
-Cloth* Cloth_new(float width, float height, const xprVec3* const offset, size_t segmentCount)
+Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmentCount)
 {
 	size_t r, c;
 	unsigned short* mapped = nullptr;
@@ -132,7 +132,7 @@ void Cloth_free(Cloth* self)
 	free(self);
 }
 
-void Cloth_addForceToAll(Cloth* self, const xprVec3* const force)
+void Cloth_addForceToAll(Cloth* self, const xprVec3* force)
 {
 	size_t i, cnt = self->segmentCount * self->segmentCount;
 	for(i = 0; i < cnt; ++i)

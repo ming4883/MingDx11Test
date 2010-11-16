@@ -18,6 +18,23 @@ xprShadingProgram* objectProg = nullptr;
 Sphere ball;
 Mesh* ballMesh = nullptr;
 
+void makePlanarReflector(float* _out, const xprVec3* normal, const xprVec3* point)
+{
+	float vxx = -2 * normal->x * normal->x;
+	float vxy = -2 * normal->x * normal->y;
+	float vxz = -2 * normal->x * normal->z;
+	float vyy = -2 * normal->y * normal->y;
+	float vyz = -2 * normal->y * normal->z;
+	float vzz = -2 * normal->z * normal->z;
+
+	float pv = 2 * xprVec3_dot(normal, point);
+
+	(*_out++) = 1 + vxx; (*_out++) = vxy; (*_out++) = vxz; (*_out++) = pv * normal->x;
+	(*_out++) = vxy; (*_out++) = 1 + vyy; (*_out++) = vyz; (*_out++) = pv * normal->y;
+	(*_out++) = vxz; (*_out++) = vyz; (*_out++) = 1 + vzz; (*_out++) = pv * normal->z;
+	(*_out++) = 0; (*_out++) = 0; (*_out++) = 0; (*_out++) = 1;
+}
+
 typedef struct Aspect
 {
 	float width;
