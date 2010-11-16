@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+// xprShader
 typedef enum xprShaderType
 {
 	xprShaderType_Vertex,
@@ -14,17 +15,39 @@ typedef enum xprShaderType
 	xprShaderType_Fragment,
 } xprShaderType;
 
+typedef enum xprShaderFlag
+{
+	xprShaderFlag_Compiled = 1 << 0,
+} xprShaderFlag;
+
 typedef struct xprShader
 {
 	int name;
 	xprShaderType type;
-	size_t flags;	// combinations of xprBufferFlag
+	size_t flags;
 
 } xprShader;
 
 xprShader* xprShader_new(const char** sources, size_t srcCnt, xprShaderType type);
 
 void xprShader_free(xprShader* self);
+
+// xprShadingProgram
+typedef enum xprShadingProgramFlag
+{
+	xprShadingProgramFlag_Linked = 1 << 0,
+} xprShadingProgramFlag;
+
+typedef struct xprShadingProgram
+{
+	int name;
+	size_t flags;
+
+} xprShadingProgram;
+
+xprShadingProgram* xprShadingProgram_new(const xprShader** const shaders, size_t shaderCnt);
+
+void xprShadingProgram_free(xprShadingProgram* self);
 
 #ifdef __cplusplus
 }

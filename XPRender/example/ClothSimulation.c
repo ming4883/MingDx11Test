@@ -13,7 +13,8 @@
 Cloth* cloth = nullptr;
 xprShader* objectVp = nullptr;
 xprShader* objectFp = nullptr;
-int objProgName = 0;
+xprShadingProgram* objectProg = nullptr;
+
 Sphere ball;
 Mesh* ballMesh = nullptr;
 
@@ -57,7 +58,7 @@ void display(void)
 
 	glEnable(GL_DEPTH_TEST);
 
-	glUseProgram(objProgName);
+	glUseProgram(objectProg->name);
 	Mesh_draw(cloth->mesh);
 
 	glPushMatrix();
@@ -154,7 +155,7 @@ void idle(void)
 
 void quit(void)
 {
-	glDeleteProgram(objProgName);
+	xprShadingProgram_free(objectProg);
 	xprShader_free(objectVp);
 	xprShader_free(objectFp);
 	Cloth_free(cloth);
@@ -172,6 +173,7 @@ int main(int argc, char** argv)
 
 	glewInit();
 
+	// shaders
 	{
 		const char* code;
 		
@@ -191,30 +193,15 @@ int main(int argc, char** argv)
 			printf(glswGetError());
 
 		glswShutdown();
-
-		objProgName = glCreateProgram();
-		glAttachShader(objProgName, objectVp->name);
-		glAttachShader(objProgName, objectFp->name);
-		glLinkProgram(objProgName);
-
-		{
-			int linkStatus;
-			glGetProgramiv(objProgName, GL_LINK_STATUS, &linkStatus);
-			if(GL_FALSE == linkStatus)
-			{
-				GLint len;
-				glGetProgramiv(objProgName, GL_INFO_LOG_LENGTH, &len);
-				if(len > 0)
-				{
-					char* buf = (char*)malloc(len);
-					glGetProgramInfoLog(objProgName, len, nullptr, buf);
-					printf(buf);
-					free(buf);
-				}
-			}
-		}
 	}
 
+	// shading programs
+	{
+		xprShader* shaders[] = {objectVp, objectFp};
+		objectProg = xprShadingProgram_new(shaders, 2);
+	}
+
+	// cloth
 	{
 		xprVec3 offset = {-1, 1, 0};
 		cloth = Cloth_new(2, 2, &offset, 32);
