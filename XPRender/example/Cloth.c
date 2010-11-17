@@ -27,7 +27,7 @@ Cloth* Cloth_new(float width, float height, const float offset[3], size_t segmen
 	self->segmentCount = segmentCount;
 	self->g = xprVec3_(0, -1, 0);
 	self->timeStep = 0;
-	self->dumping = 0;
+	self->damping = 0;
 
 	self->p = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
 	self->p2 = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
@@ -101,7 +101,7 @@ Cloth* Cloth_new(float width, float height, const float offset[3], size_t segmen
 				Cloth_makeConstraint(self, r+1, c, r, c+1);
 			}
 
-			/*
+			
 			if(r+2 < segmentCount)
 				Cloth_makeConstraint(self, r, c, r+2, c);
 
@@ -113,7 +113,6 @@ Cloth* Cloth_new(float width, float height, const float offset[3], size_t segmen
 				Cloth_makeConstraint(self, r, c, r+2, c+2);
 				Cloth_makeConstraint(self, r+2, c, r, c+2);
 			}
-			*/
 		}
 	}
 
@@ -132,13 +131,13 @@ void Cloth_free(Cloth* self)
 	free(self);
 }
 
-void Cloth_addForceToAll(Cloth* self, const xprVec3* force)
+void Cloth_addForceToAll(Cloth* self, const float force[3])
 {
 	size_t i, cnt = self->segmentCount * self->segmentCount;
 	for(i = 0; i < cnt; ++i)
 	{
 		xprVec3* a = &self->a[i];
-		xprVec3_add(a, a, force);
+		xprVec3_add(a, a, (xprVec3*)force);
 	}
 }
 
@@ -246,7 +245,7 @@ void Cloth_verletIntegration(Cloth* self)
 		xprVec3 da;
 		xprVec3_multS(&da, a, t2);
 		xprVec3_sub(&dx, x, oldx);
-		xprVec3_multS(&dx, &dx, 1-self->dumping);
+		xprVec3_multS(&dx, &dx, 1-self->damping);
 		xprVec3_add(&dx, &dx, &da);
 
 		xprVec3_add(x, x, &dx);
@@ -284,6 +283,8 @@ void Cloth_satisfyConstraints(Cloth* self)
 	}
 }
 
+const float collisionEpsilon = 1e-1f;
+
 void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere)
 {
 	size_t i;
@@ -301,7 +302,7 @@ void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere)
 		if(l < sphere->radius)
 		{
 			xprVec3_normalize(&d);
-			xprVec3_multS(&d, &d, sphere->radius - (l - 1e-3f));
+			xprVec3_multS(&d, &d, sphere->radius - (l - collisionEpsilon));
 			xprVec3_add(x, x, &d);
 		}
 	}
@@ -317,10 +318,10 @@ void Cloth_collideWithPlane(Cloth* self, const float normal[3], const float poin
 	{
 		xprVec3* x = &self->p[i];
 		float l = xprVec3_dot((xprVec3*)normal, x) + d;
-		if(l < 0)
+		if(l < collisionEpsilon)
 		{
 			xprVec3 dx;
-			xprVec3_multS(&dx, (xprVec3*)normal, -(l - 1e-3f));
+			xprVec3_multS(&dx, (xprVec3*)normal, -(l - collisionEpsilon));
 			xprVec3_add(x, x, &dx);
 		}
 	}

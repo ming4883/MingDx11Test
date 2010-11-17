@@ -8,14 +8,19 @@
 #include "Cloth.h"
 #include "Sphere.h"
 #include "Mesh.h"
+#include "Menu.h"
 
-Cloth* cloth = nullptr;
-Sphere ball;
-Mesh* ballMesh = nullptr;
-Mesh* floorMesh = nullptr;
+Menu* _menu = nullptr;
+Cloth* _cloth = nullptr;
+#define BallCount 2
+Sphere _ball[BallCount];
+Mesh* _ballMesh = nullptr;
+Mesh* _floorMesh = nullptr;
 xprVec3 _floorN = {0, 1, 0};
 xprVec3 _floorP = {0, 0, 0};
-xprVec3 _force = {0, -10, 0};
+float _gravity = 50;
+float _airResistance = 5;
+float _impact = 3;
 
 typedef struct Aspect
 {
@@ -30,6 +35,9 @@ void reshape(int w, int h)
 	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
 	_aspect.width = (float)w;
 	_aspect.height = (float)h;
+
+	_menu->windowWidth = w;
+	_menu->windowHeight = h;
 
 	glutPostRedisplay();
 }
@@ -74,7 +82,7 @@ void drawBackground()
 
 void drawScene()
 {
-	xprVec3 eyeAt = xprVec3_(-1, 1.5f, 5);
+	xprVec3 eyeAt = xprVec3_(-2.5f, 1.5f, 5);
 	xprVec3 lookAt = xprVec3_(0, 0, 0);
 	xprVec3 eyeUp = *xprVec3_c010();
 	xprMat44 viewMtx;
@@ -118,11 +126,11 @@ void drawScene()
 
 		glPushMatrix();
 		glRotatef(-90, 1, 0, 0);
-		Mesh_draw(floorMesh);
+		Mesh_draw(_floorMesh);
 		glPopMatrix();
 	}
 
-	// draw cloth
+	// draw _cloth
 	{
 		float d[] = {1.0f, 0.22f, 0.0f, 1};
 		float s[] = {0, 0, 0, 1};
@@ -132,25 +140,58 @@ void drawScene()
 
 		glDisable(GL_CULL_FACE);
 		glPushMatrix();
-		Mesh_draw(cloth->mesh);
+		Mesh_draw(_cloth->mesh);
 		glPopMatrix();
 		glEnable(GL_CULL_FACE);
 	}
 
-	// draw ball
+	// draw _ball
 	{
+		int i;
 		float d[] = {0.9f, 0.64f, 0.35f, 1};
 		float s[] = {1, 1, 1, 1};
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
 		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
 
-		glPushMatrix();
-		glTranslatef(ball.center.x, ball.center.y, ball.center.z);
-		glScalef(ball.radius, ball.radius, ball.radius);
-		Mesh_draw(ballMesh);
-		glPopMatrix();
+		for(i=0; i<BallCount; ++i)
+		{
+			glPushMatrix();
+			glTranslatef(_ball[i].center.x, _ball[i].center.y, _ball[i].center.z);
+			glScalef(_ball[i].radius, _ball[i].radius, _ball[i].radius);
+			Mesh_draw(_ballMesh);
+			glPopMatrix();
+		}
 	}
+}
+
+void drawItem(float x, float y, int selected, const char* str)
+{
+	const char *c;
+
+	if(1 == selected)
+		glColor4f(0.94f, 0.21f, 0, 1);
+	else
+		glColor4f(0.3f, 0.52f, 0.64f, 1);
+
+	glRasterPos2f(x, y);
+
+	for(c=str; *c != '\0'; ++c)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, *c);
+}
+
+void drawMenu()
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	Menu_draw(_menu, -1, 1, 5, drawItem);
 }
 
 void display(void)
@@ -160,6 +201,7 @@ void display(void)
 	
 	drawBackground();
 	drawScene();
+	drawMenu();
 
 	glutSwapBuffers();
 
@@ -173,10 +215,22 @@ void display(void)
 
 void keyboard(unsigned char key, int x, int y)
 {
-	switch (key)
+	switch(key)
 	{
 	case 27:
 		exit(0);
+		break;
+	case GLUT_KEY_UP:
+		Menu_selectPrevItem(_menu);
+		break;
+	case GLUT_KEY_DOWN:
+		Menu_selectNextItem(_menu);
+		break;
+	case GLUT_KEY_LEFT:
+		MenuItem_decreaseValue(_menu->currentItem);
+		break;
+	case GLUT_KEY_RIGHT:
+		MenuItem_increaseValue(_menu->currentItem);
 		break;
 	}
 }
@@ -199,8 +253,8 @@ void mouse(int button, int state, int x, int y)
 	_mouse.x = x;
 	_mouse.y = y;
 
-	_mouse.clothOffsets[0] = cloth->fixPos[0];
-	_mouse.clothOffsets[1] = cloth->fixPos[cloth->segmentCount-1];
+	_mouse.clothOffsets[0] = _cloth->fixPos[0];
+	_mouse.clothOffsets[1] = _cloth->fixPos[_cloth->segmentCount-1];
 }
 
 void motion(int x, int y)
@@ -211,47 +265,52 @@ void motion(int x, int y)
 	if(_mouse.state == GLUT_DOWN && _mouse.button == GLUT_LEFT_BUTTON)
 	{
 		float mouseSensitivity = 0.0025f;
-		cloth->fixPos[0].x = _mouse.clothOffsets[0].x + dx * mouseSensitivity;
-		cloth->fixPos[cloth->segmentCount-1].x = _mouse.clothOffsets[1].x + dx * mouseSensitivity;
+		_cloth->fixPos[0].x = _mouse.clothOffsets[0].x + dx * mouseSensitivity;
+		_cloth->fixPos[_cloth->segmentCount-1].x = _mouse.clothOffsets[1].x + dx * mouseSensitivity;
 
-		cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
-		cloth->fixPos[cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
+		_cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
+		_cloth->fixPos[_cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
 	}
 }
 
 void idle(void)
 {
 	int iter;
-	xprVec3 f;
 
-	ball.center.z = cosf(glutGet(GLUT_ELAPSED_TIME) * 0.0005f) * 5.f;
+	static float t = 0;
+	t += 0.0005f * _impact;
+	
+	_ball[0].center.z = cosf(t) * 5.f;
+	_ball[1].center.z = sinf(t) * 5.f;
 
-	cloth->timeStep = 0.01f;	// fixed time step
-	cloth->dumping = 5e-3f;
-
-	xprVec3_multS(&f, &_force, cloth->timeStep);
+	_cloth->timeStep = 0.01f;	// fixed time step
+	_cloth->damping = _airResistance * 1e-3f;
 
 	// Euler iteration
 	for(iter = 0; iter < 5; ++iter)
 	{
-		Cloth_collideWithSphere(cloth, &ball);
-		Cloth_collideWithPlane(cloth, _floorN.v, _floorP.v);
-		Cloth_satisfyConstraints(cloth);
+		int i;
+		for(i=0; i<BallCount; ++i)
+			Cloth_collideWithSphere(_cloth, &_ball[i]);
+
+		Cloth_collideWithPlane(_cloth, _floorN.v, _floorP.v);
+		Cloth_satisfyConstraints(_cloth);
 	}
 	
-	Cloth_addForceToAll(cloth, &f);
-	Cloth_verletIntegration(cloth);
+	Cloth_addForceToAll(_cloth, xprVec3_(0, -_gravity * _cloth->timeStep, 0).v);
+	Cloth_verletIntegration(_cloth);
 
-	Cloth_updateMesh(cloth);
+	Cloth_updateMesh(_cloth);
 
 	glutPostRedisplay();
 }
 
 void quit(void)
 {
-	Cloth_free(cloth);
-	Mesh_free(ballMesh);
-	Mesh_free(floorMesh);
+	Menu_free(_menu);
+	Cloth_free(_cloth);
+	Mesh_free(_ballMesh);
+	Mesh_free(_floorMesh);
 }
 
 int main(int argc, char** argv)
@@ -268,18 +327,45 @@ int main(int argc, char** argv)
 	if(GLEW_OK != (err = glewInit()))
 		printf("failed to initialize GLEW %s\n", glewGetErrorString(err));
 
-	cloth = Cloth_new(2, 2, xprVec3_(-1, 1.5, 0).v, 32);
+	_cloth = Cloth_new(2, 2, xprVec3_(-1, 1.5f, 0).v, 32);
 
-	ball.center = xprVec3_(0, 0.5, 0);
-	ball.radius = 0.25f;
-	ballMesh = Mesh_createUnitSphere(32);
+	_ball[0].center = xprVec3_(-0.5f, 0.5f, 0);
+	_ball[0].radius = 0.25f;
+	_ball[1].center = xprVec3_(0.5f, 0.5f, 0);
+	_ball[1].radius = 0.25f;
+	_ballMesh = Mesh_createUnitSphere(32);
 
-	floorMesh = Mesh_createQuad(5, 5, xprVec3_(-2.5f, -2.5f, 0).v, 1);
+	_floorMesh = Mesh_createQuad(5, 5, xprVec3_(-2.5f, -2.5f, 0).v, 1);
+
+	// set up on screen menu
+	{
+		MenuItem* item;
+
+		_menu = Menu_new();
+	
+		item = MenuItem_new(&_gravity);
+		Menu_addItem(_menu, item);
+		MenuItem_setText(item, "Gravity");
+		MenuItem_setBounds(item, 0.0f, 100.0f, 0.5f);
+
+		item = MenuItem_new(&_airResistance);
+		Menu_addItem(_menu, item);
+		MenuItem_setText(item, "Air Resistance");
+		MenuItem_setBounds(item, 0, 20, 1);		
+		
+		item = MenuItem_new(&_impact);
+		Menu_addItem(_menu, item);
+		MenuItem_setText(item, "Impact");
+		MenuItem_setBounds(item, 0, 10, 1);
+
+		Menu_selectNextItem(_menu);
+	}
 	
 	atexit(quit);
 	glutDisplayFunc(display); 
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
+	glutSpecialFunc(keyboard);
 	glutMouseFunc(mouse);
 	glutMotionFunc(motion);
 	glutIdleFunc(idle);

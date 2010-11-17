@@ -26,7 +26,7 @@ typedef struct Cloth
 	xprBool* fixed;		// fixed
 	xprVec3* fixPos;	// fix positions
 	float timeStep;	// system time step
-	float dumping;	// dumping due to air resistence, 0-1, 0 = no dumping
+	float damping;	// dumping due to air resistence, 0-1, 0 = no dumping
 
 	ClothConstraint* constraints;
 	size_t constraintCount;
@@ -41,7 +41,7 @@ void Cloth_free(Cloth* self);
 
 void Cloth_updateMesh(Cloth* self);
 
-void Cloth_addForceToAll(Cloth* self, const xprVec3* force);
+void Cloth_addForceToAll(Cloth* self, const float force[3]);
 
 void Cloth_verletIntegration(Cloth* self);
 

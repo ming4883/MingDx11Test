@@ -56,6 +56,8 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Cloth.h
 	example/Sphere.c
 	example/Sphere.h
+	example/Menu.c
+	example/Menu.h
 	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
 
