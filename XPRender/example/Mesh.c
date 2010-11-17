@@ -88,24 +88,24 @@ Mesh* Mesh_createUnitSphere(size_t segmentCount)
 		for(i=0; i<width-1; ++i)
 		{
 			idx[t++] = (j  )*width + i  ;
-			idx[t++] = (j  )*width + i+1;
 			idx[t++] = (j+1)*width + i+1;
+			idx[t++] = (j  )*width + i+1;
 			
 			idx[t++] = (j  )*width + i  ;
-			idx[t++] = (j+1)*width + i+1;
 			idx[t++] = (j+1)*width + i  ;
+			idx[t++] = (j+1)*width + i+1;
 		}
 	}
 
 	for( i=0; i<width-1; i++ )
 	{
 		idx[t++] = (height-2)*width;
-		idx[t++] = i+1;
 		idx[t++] = i;
+		idx[t++] = i+1;
 
 		idx[t++] = (height-2)*width+1;
-		idx[t++] = (height-3)*width + i;
 		idx[t++] = (height-3)*width + i+1;
+		idx[t++] = (height-3)*width + i;
 		
 	}
 
@@ -118,3 +118,61 @@ Mesh* Mesh_createUnitSphere(size_t segmentCount)
 #undef PI
 }
 
+Mesh* Mesh_createQuad(float width, float height, const float offset[3], size_t segmentCount)
+{
+	xprVec3* pos;
+	xprVec3* nor;
+	unsigned short* idx;
+
+	size_t r, c;
+	int stride = segmentCount+1;
+	
+	Mesh* mesh = Mesh_new(
+		stride * stride,
+		(stride-1) * (stride-1) * 6
+		);
+
+	pos = xprBuffer_map(mesh->vertexBuffer, xprBufferMapAccess_Write);
+	nor = xprBuffer_map(mesh->normalBuffer, xprBufferMapAccess_Write);
+	idx = xprBuffer_map(mesh->indexBuffer, xprBufferMapAccess_Write);
+
+	for(r=0; r<(stride-1); ++r)
+	{
+		for(c=0; c<(stride-1); ++c)
+		{
+			
+			unsigned short p0 = (unsigned short)(r * stride + (c+1));
+			unsigned short p1 = (unsigned short)((r+1) * stride + (c+1));
+			unsigned short p2 = (unsigned short)(r * stride + c);
+			unsigned short p3 = (unsigned short)((r+1) * stride + c);
+
+			(*idx++) = p0;
+			(*idx++) = p1;
+			(*idx++) = p2;
+
+			(*idx++) = p3;
+			(*idx++) = p2;
+			(*idx++) = p1;
+		}
+	}
+
+	for(r=0; r<stride; ++r)
+	{
+		float y = offset[1] + height * (float)r / segmentCount;
+
+		for(c=0; c<stride; ++c)
+		{
+			float x = offset[0] + width * (float)c / segmentCount;
+
+			size_t i = r * stride + c;
+			pos[i] = xprVec3_(x, y, offset[2]);
+			nor[i] = xprVec3_(0, 0, 1);
+		}
+	}
+	
+	xprBuffer_unmap(mesh->vertexBuffer);
+	xprBuffer_unmap(mesh->normalBuffer);
+	xprBuffer_unmap(mesh->indexBuffer);
+
+	return mesh;
+}

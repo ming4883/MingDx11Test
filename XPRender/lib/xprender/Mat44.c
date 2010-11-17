@@ -17,6 +17,32 @@ xprMat44 xprMat44_(
 	return self;
 }
 
+void xprMat44_mult(xprMat44* _out, const xprMat44* a, const xprMat44* b)
+{
+	xprMat44 ta = *a;
+	xprMat44 tb = *b;
+
+	_out->m00 = ta.m00 * tb.m00 + ta.m01 * tb.m10 + ta.m02 * tb.m20 + ta.m03 * tb.m30;
+	_out->m01 = ta.m00 * tb.m01 + ta.m01 * tb.m11 + ta.m02 * tb.m21 + ta.m03 * tb.m31;
+	_out->m02 = ta.m00 * tb.m02 + ta.m01 * tb.m12 + ta.m02 * tb.m22 + ta.m03 * tb.m32;
+	_out->m03 = ta.m00 * tb.m03 + ta.m01 * tb.m13 + ta.m02 * tb.m23 + ta.m03 * tb.m33;
+
+	_out->m10 = ta.m10 * tb.m00 + ta.m11 * tb.m10 + ta.m12 * tb.m20 + ta.m13 * tb.m30;
+	_out->m11 = ta.m10 * tb.m01 + ta.m11 * tb.m11 + ta.m12 * tb.m21 + ta.m13 * tb.m31;
+	_out->m12 = ta.m10 * tb.m02 + ta.m11 * tb.m12 + ta.m12 * tb.m22 + ta.m13 * tb.m32;
+	_out->m13 = ta.m10 * tb.m03 + ta.m11 * tb.m13 + ta.m12 * tb.m23 + ta.m13 * tb.m33;
+
+	_out->m20 = ta.m20 * tb.m00 + ta.m21 * tb.m10 + ta.m22 * tb.m20 + ta.m23 * tb.m30;
+	_out->m21 = ta.m20 * tb.m01 + ta.m21 * tb.m11 + ta.m22 * tb.m21 + ta.m23 * tb.m31;
+	_out->m22 = ta.m20 * tb.m02 + ta.m21 * tb.m12 + ta.m22 * tb.m22 + ta.m23 * tb.m32;
+	_out->m23 = ta.m20 * tb.m03 + ta.m21 * tb.m13 + ta.m22 * tb.m23 + ta.m23 * tb.m33;
+
+	_out->m30 = ta.m30 * tb.m00 + ta.m31 * tb.m10 + ta.m32 * tb.m20 + ta.m33 * tb.m30;
+	_out->m31 = ta.m30 * tb.m01 + ta.m31 * tb.m11 + ta.m32 * tb.m21 + ta.m33 * tb.m31;
+	_out->m32 = ta.m30 * tb.m02 + ta.m31 * tb.m12 + ta.m32 * tb.m22 + ta.m33 * tb.m32;
+	_out->m33 = ta.m30 * tb.m03 + ta.m31 * tb.m13 + ta.m32 * tb.m23 + ta.m33 * tb.m33;
+}
+
 void xprMat44_transpose(xprMat44* _out, const xprMat44* m)
 {
 	xprMat44 t = *m;
@@ -51,7 +77,75 @@ void xprMat44_transformAffinePt(xprVec3* _out, const xprMat44* m)
 	_out->z = m->m20 * v.x + m->m21 * v.y + m->m22 * v.z + m->m23;
 }
 
-void xprMat44_cameraLookAt(xprMat44* _out, const xprVec3* eyeAt, const xprVec3* looAt, const xprVec3* eyeUp)
+void xprMat44_setIdentity(xprMat44* _out)
 {
+	_out->m00 = 1; _out->m01 = 0; _out->m02 = 0; _out->m03 = 0;
+	_out->m10 = 0; _out->m11 = 1; _out->m12 = 0; _out->m13 = 0;
+	_out->m20 = 0; _out->m21 = 0; _out->m22 = 1; _out->m23 = 0;
+	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
+}
 
+void xprMat44_setTranslation(xprMat44* _out, const float v[3])
+{
+	_out->m03 = v[0];
+	_out->m13 = v[1];
+	_out->m23 = v[2];
+}
+
+void xprMat44_cameraLookAt(xprMat44* _out, const xprVec3* eyeAt, const xprVec3* lookAt, const xprVec3* eyeUp)
+{
+	xprVec3 fwd, side, up;
+
+	xprVec3_normalize(xprVec3_sub(&fwd, eyeAt, lookAt));
+	xprVec3_normalize(xprVec3_cross(&side, eyeUp, &fwd));
+	xprVec3_cross(&up, &fwd, &side);
+
+	xprMat44_setIdentity(_out);
+	_out->m00 = side.x; 
+	_out->m01 = side.y;
+	_out->m02 = side.z;
+
+	_out->m10 = up.x;
+	_out->m11 = up.y;
+	_out->m12 = up.z;
+
+	_out->m20 = fwd.x;
+	_out->m21 = fwd.y;
+	_out->m22 = fwd.z;
+
+	_out->m03 = -xprVec3_dot(&side, eyeAt);
+	_out->m13 = -xprVec3_dot(&up, eyeAt);
+	_out->m23 = -xprVec3_dot(&fwd, eyeAt);
+}
+
+void xprMat44_planarReflect(xprMat44* _out, const xprVec3* normal, const xprVec3* point)
+{
+	float vxx = -2 * normal->x * normal->x;
+	float vxy = -2 * normal->x * normal->y;
+	float vxz = -2 * normal->x * normal->z;
+	float vyy = -2 * normal->y * normal->y;
+	float vyz = -2 * normal->y * normal->z;
+	float vzz = -2 * normal->z * normal->z;
+
+	float pv = 2 * xprVec3_dot(normal, point);
+
+	_out->m00 = 1 + vxx;
+	_out->m01 = vxy;
+	_out->m02 = vxz;
+	_out->m03 = pv * normal->x;
+
+	_out->m10 = vxy;
+	_out->m11 = 1 + vyy;
+	_out->m12 = vyz;
+	_out->m13 = pv * normal->y;
+
+	_out->m20 = vxz;
+	_out->m21 = vyz;
+	_out->m22 = 1 + vzz;
+	_out->m23 = pv * normal->z;
+
+	_out->m30 = 0;
+	_out->m31 = 0;
+	_out->m32 = 0;
+	_out->m33 = 1;
 }

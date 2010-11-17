@@ -496,10 +496,7 @@ void display(void)
 	cloth1.timeStep(); // calculate the particle positions of the next frame
 	cloth1.ballCollision(ball_pos,ball_radius); // resolve collision with the ball
 
-
-
 	// drawing
-
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
 

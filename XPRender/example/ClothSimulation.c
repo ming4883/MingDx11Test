@@ -1,39 +1,21 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
-#include <glsw.h>
 #include <stdio.h>
 #include <math.h>
 
 #include "../lib/xprender/Vec3.h"
-#include "../lib/xprender/Shader.h"
+#include "../lib/xprender/Mat44.h"
 #include "Cloth.h"
 #include "Sphere.h"
 #include "Mesh.h"
 
 Cloth* cloth = nullptr;
-xprShader* objectVp = nullptr;
-xprShader* objectFp = nullptr;
-xprShadingProgram* objectProg = nullptr;
-
 Sphere ball;
 Mesh* ballMesh = nullptr;
-
-void makePlanarReflector(float* _out, const xprVec3* normal, const xprVec3* point)
-{
-	float vxx = -2 * normal->x * normal->x;
-	float vxy = -2 * normal->x * normal->y;
-	float vxz = -2 * normal->x * normal->z;
-	float vyy = -2 * normal->y * normal->y;
-	float vyz = -2 * normal->y * normal->z;
-	float vzz = -2 * normal->z * normal->z;
-
-	float pv = 2 * xprVec3_dot(normal, point);
-
-	(*_out++) = 1 + vxx; (*_out++) = vxy; (*_out++) = vxz; (*_out++) = pv * normal->x;
-	(*_out++) = vxy; (*_out++) = 1 + vyy; (*_out++) = vyz; (*_out++) = pv * normal->y;
-	(*_out++) = vxz; (*_out++) = vyz; (*_out++) = 1 + vzz; (*_out++) = pv * normal->z;
-	(*_out++) = 0; (*_out++) = 0; (*_out++) = 0; (*_out++) = 1;
-}
+Mesh* floorMesh = nullptr;
+xprVec3 _floorN = {0, 1, 0};
+xprVec3 _floorP = {0, 0, 0};
+xprVec3 _force = {0, -10, 0};
 
 typedef struct Aspect
 {
@@ -52,47 +34,140 @@ void reshape(int w, int h)
 	glutPostRedisplay();
 }
 
-void display(void)
+void drawBackground()
 {
-	xprVec3 eyeAt = xprVec3_(0, 2, 6);
-	xprVec3 lookAt = xprVec3_(0, 0, 0);
-	xprVec3 eyeUp = *xprVec3_c010();
+	static const xprVec3 v[] = {
+		{-1,  1, 0},
+		{-1, -1, 0},
+		{ 1,  1, 0},
+		{ 1, -1, 0},
+	};
 
-	GLenum glerr;
-
-	glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-	glClearDepth(1);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	static const xprVec3 c[] = {
+		{0.57f, 0.85f, 1.0f},
+		{0.29f, 0.62f, 0.81f},
+		{0.57f, 0.85f, 1.0f},
+		{0.57f, 0.85f, 1.0f},
+	};
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, _aspect.width / _aspect.height, 0.1f, 20.0f);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(eyeAt.x, eyeAt.y, eyeAt.z, lookAt.x, lookAt.y, lookAt.z, eyeUp.x, eyeUp.y, eyeUp.z);
-	glPushMatrix();
+
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	glBegin(GL_TRIANGLES);
+
+	glColor3fv(c[0].v); glVertex3fv(v[0].v);
+	glColor3fv(c[1].v);	glVertex3fv(v[1].v);
+	glColor3fv(c[2].v); glVertex3fv(v[2].v);
+
+	glColor3fv(c[3].v); glVertex3fv(v[3].v);
+	glColor3fv(c[2].v); glVertex3fv(v[2].v);
+	glColor3fv(c[1].v); glVertex3fv(v[1].v);
+
+	glEnd();
+}
+
+void drawScene()
+{
+	xprVec3 eyeAt = xprVec3_(-1, 1.5f, 5);
+	xprVec3 lookAt = xprVec3_(0, 0, 0);
+	xprVec3 eyeUp = *xprVec3_c010();
+	xprMat44 viewMtx;
+
+	xprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
+	xprMat44_transpose(&viewMtx, &viewMtx);
+
+	// projection transform
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
+
+	// viewing transform
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glMultMatrixf(viewMtx.v);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_NORMALIZE);
+	{
+		float p[] = {-10, 10, 6, 1};
+		float a[] = {0.2f, 0.2f, 0.2f, 1};
+		float d[] = {1, 1, 1, 1};
+		float s[] = {2, 2, 2, 1};
+		glLightfv(GL_LIGHT0, GL_POSITION, p);
+		glLightfv(GL_LIGHT0, GL_AMBIENT, a);
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, d);
+		glLightfv(GL_LIGHT0, GL_SPECULAR, s);
+		glEnable(GL_LIGHT0);
+	}
 
-	glUseProgram(objectProg->name);
-	Mesh_draw(cloth->mesh);
+	// draw floor
+	{
+		float d[] = {1.0f, 0.88f, 0.33f, 1};
+		float s[] = {0, 0, 0, 1};
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
 
-	glPushMatrix();
-	glTranslatef(ball.center.x, ball.center.y, ball.center.z);
-	glScalef(ball.radius, ball.radius, ball.radius);
-	Mesh_draw(ballMesh);
-	glPopMatrix();
+		glPushMatrix();
+		glRotatef(-90, 1, 0, 0);
+		Mesh_draw(floorMesh);
+		glPopMatrix();
+	}
 
-	glPopMatrix();
+	// draw cloth
+	{
+		float d[] = {1.0f, 0.22f, 0.0f, 1};
+		float s[] = {0, 0, 0, 1};
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
+
+		glDisable(GL_CULL_FACE);
+		glPushMatrix();
+		Mesh_draw(cloth->mesh);
+		glPopMatrix();
+		glEnable(GL_CULL_FACE);
+	}
+
+	// draw ball
+	{
+		float d[] = {0.9f, 0.64f, 0.35f, 1};
+		float s[] = {1, 1, 1, 1};
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
+		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
+
+		glPushMatrix();
+		glTranslatef(ball.center.x, ball.center.y, ball.center.z);
+		glScalef(ball.radius, ball.radius, ball.radius);
+		Mesh_draw(ballMesh);
+		glPopMatrix();
+	}
+}
+
+void display(void)
+{
+	glClearDepth(1);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	
+	drawBackground();
+	drawScene();
 
 	glutSwapBuffers();
 
-	glerr = glGetError();
+	{	// check for any OpenGL errors
+		GLenum glerr = glGetError();
 
-	if(glerr != GL_NO_ERROR)
-	{
-		printf("GL has error %d!\n", glerr);
+		if(glerr != GL_NO_ERROR)
+			printf("GL has error %d!\r", glerr);
 	}
 }
 
@@ -112,11 +187,10 @@ typedef struct Mouse
 	int state;
 	int x;
 	int y;
+	xprVec3 clothOffsets[2];
 } Mouse;
 
 Mouse _mouse;
-
-xprVec3 clothOffsets[2];
 
 void mouse(int button, int state, int x, int y)
 {
@@ -125,8 +199,8 @@ void mouse(int button, int state, int x, int y)
 	_mouse.x = x;
 	_mouse.y = y;
 
-	clothOffsets[0] = cloth->fixPos[0];
-	clothOffsets[1] = cloth->fixPos[cloth->segmentCount-1];
+	_mouse.clothOffsets[0] = cloth->fixPos[0];
+	_mouse.clothOffsets[1] = cloth->fixPos[cloth->segmentCount-1];
 }
 
 void motion(int x, int y)
@@ -136,51 +210,54 @@ void motion(int x, int y)
 
 	if(_mouse.state == GLUT_DOWN && _mouse.button == GLUT_LEFT_BUTTON)
 	{
-		float mouseSensitivity = 0.005f;
-		cloth->fixPos[0].x = clothOffsets[0].x + dx * mouseSensitivity;
-		cloth->fixPos[cloth->segmentCount-1].x = clothOffsets[1].x + dx * mouseSensitivity;
+		float mouseSensitivity = 0.0025f;
+		cloth->fixPos[0].x = _mouse.clothOffsets[0].x + dx * mouseSensitivity;
+		cloth->fixPos[cloth->segmentCount-1].x = _mouse.clothOffsets[1].x + dx * mouseSensitivity;
 
-		cloth->fixPos[0].z = clothOffsets[0].z + dy * mouseSensitivity;
-		cloth->fixPos[cloth->segmentCount-1].z = clothOffsets[1].z + dy * mouseSensitivity;
+		cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
+		cloth->fixPos[cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
 	}
 }
 
 void idle(void)
 {
-	static int lastTime = 0;
+	int iter;
+	xprVec3 f;
 
-	xprVec3 force = {0, -10, 0};
-	int currTime = glutGet(GLUT_ELAPSED_TIME);
-	int deltaTime = currTime - lastTime;
-	lastTime = currTime;
-
-	ball.center.z = cosf(currTime * 0.0005f) * 5.f;
+	ball.center.z = cosf(glutGet(GLUT_ELAPSED_TIME) * 0.0005f) * 5.f;
 
 	cloth->timeStep = 0.01f;	// fixed time step
 	cloth->dumping = 5e-3f;
 
-	xprVec3_multS(&force, &force, cloth->timeStep);
+	xprVec3_multS(&f, &_force, cloth->timeStep);
 
-	Cloth_addForceToAll(cloth, &force);
+	// Euler iteration
+	for(iter = 0; iter < 5; ++iter)
+	{
+		Cloth_collideWithSphere(cloth, &ball);
+		Cloth_collideWithPlane(cloth, _floorN.v, _floorP.v);
+		Cloth_satisfyConstraints(cloth);
+	}
+	
+	Cloth_addForceToAll(cloth, &f);
+	Cloth_verletIntegration(cloth);
 
-	Cloth_timeStep(cloth);
-
-	Cloth_collideWithSphere(cloth, &ball);
+	Cloth_updateMesh(cloth);
 
 	glutPostRedisplay();
 }
 
 void quit(void)
 {
-	xprShadingProgram_free(objectProg);
-	xprShader_free(objectVp);
-	xprShader_free(objectFp);
 	Cloth_free(cloth);
 	Mesh_free(ballMesh);
+	Mesh_free(floorMesh);
 }
 
 int main(int argc, char** argv)
 {
+	GLenum err;
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB);
 
@@ -188,45 +265,16 @@ int main(int argc, char** argv)
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow("ClothSimulation");
 
-	glewInit();
+	if(GLEW_OK != (err = glewInit()))
+		printf("failed to initialize GLEW %s\n", glewGetErrorString(err));
 
-	// shaders
-	{
-		const char* code;
-		
-		glswInit();
-		glswSetPath("../example/", ".glsl");
+	cloth = Cloth_new(2, 2, xprVec3_(-1, 1.5, 0).v, 32);
 
-		code = glswGetShader("ClothSimulation.Vertex");
-		if(nullptr != code)
-			objectVp = xprShader_new(&code, 1, xprShaderType_Vertex);
-		else
-			printf(glswGetError());
+	ball.center = xprVec3_(0, 0.5, 0);
+	ball.radius = 0.25f;
+	ballMesh = Mesh_createUnitSphere(32);
 
-		code = glswGetShader("ClothSimulation.Fragment");
-		if(nullptr != code)
-			objectFp = xprShader_new(&code, 1, xprShaderType_Fragment);
-		else
-			printf(glswGetError());
-
-		glswShutdown();
-	}
-
-	// shading programs
-	{
-		xprShader* shaders[] = {objectVp, objectFp};
-		objectProg = xprShadingProgram_new(shaders, 2);
-	}
-
-	// cloth
-	{
-		xprVec3 offset = {-1, 1, 0};
-		cloth = Cloth_new(2, 2, &offset, 32);
-	}
-
-	ball.center = xprVec3_(0, 0, 0);
-	ball.radius = 0.5f;
-	ballMesh = Mesh_createUnitSphere(16);
+	floorMesh = Mesh_createQuad(5, 5, xprVec3_(-2.5f, -2.5f, 0).v, 1);
 	
 	atexit(quit);
 	glutDisplayFunc(display); 

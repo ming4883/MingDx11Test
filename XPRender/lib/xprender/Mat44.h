@@ -32,6 +32,8 @@ xprMat44 xprMat44_(
 	float m20, float m21, float m22, float m23,
 	float m30, float m31, float m32, float m33);
 
+void xprMat44_mult(xprMat44* _out, const xprMat44* a, const xprMat44* b);
+
 void xprMat44_transpose(xprMat44* _out, const xprMat44* m);
 
 void xprMat44_transform(xprVec4* _out, const xprMat44* m);
@@ -40,7 +42,13 @@ void xprMat44_transformAffineDir(xprVec3* _out, const xprMat44* m);
 
 void xprMat44_transformAffinePt(xprVec3* _out, const xprMat44* m);
 
-void xprMat44_cameraLookAt(xprMat44* _out, const xprVec3* eyeAt, const xprVec3* looAt, const xprVec3* eyeUp);
+void xprMat44_setIdentity(xprMat44* _out);
+
+void xprMat44_setTranslation(xprMat44* _out, const float v[3]);
+
+void xprMat44_cameraLookAt(xprMat44* _out, const xprVec3* eyeAt, const xprVec3* lookAt, const xprVec3* eyeUp);
+
+void xprMat44_planarReflect(xprMat44* _out, const xprVec3* normal, const xprVec3* point);
 
 #ifdef __cplusplus
 }

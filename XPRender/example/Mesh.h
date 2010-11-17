@@ -27,6 +27,8 @@ void Mesh_draw(Mesh* self);
 
 Mesh* Mesh_createUnitSphere(size_t segmentCount);
 
+Mesh* Mesh_createQuad(float width, float height, const float offset[3], size_t segmentCount);
+
 #ifdef __cplusplus
 }
 #endif

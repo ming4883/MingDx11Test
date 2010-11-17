@@ -35,15 +35,21 @@ typedef struct Cloth
 
 } Cloth;
 
-Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmentCount);
+Cloth* Cloth_new(float width, float height, const float offset[3], size_t segmentCount);
 
 void Cloth_free(Cloth* self);
 
+void Cloth_updateMesh(Cloth* self);
+
 void Cloth_addForceToAll(Cloth* self, const xprVec3* force);
 
-void Cloth_timeStep(Cloth* self);
+void Cloth_verletIntegration(Cloth* self);
+
+void Cloth_satisfyConstraints(Cloth* self);
 
 void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere);
+
+void Cloth_collideWithPlane(Cloth* self, const float normal[3], const float point[3]);
 
 #ifdef __cplusplus
 }
