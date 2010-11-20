@@ -25,6 +25,8 @@ void Mesh_free(Mesh* self);
 
 void Mesh_draw(Mesh* self);
 
+void Mesh_drawPoints(Mesh* self);
+
 Mesh* Mesh_createUnitSphere(size_t segmentCount);
 
 Mesh* Mesh_createQuad(float width, float height, const float offset[3], size_t segmentCount);

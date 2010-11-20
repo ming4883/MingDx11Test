@@ -163,6 +163,17 @@ void drawScene()
 			glPopMatrix();
 		}
 	}
+
+	{
+		glDisable(GL_LIGHTING);
+		glDisable(GL_DEPTH_TEST);
+		glPushMatrix();
+
+		glColor3f(1, 1, 1);
+		Mesh_drawPoints(_cloth->mesh);
+
+		glPopMatrix();
+	}
 }
 
 void drawItem(float x, float y, int selected, const char* str)

@@ -44,6 +44,22 @@ void Mesh_draw(Mesh* self)
 	glDisableClientState(GL_NORMAL_ARRAY);
 }
 
+void Mesh_drawPoints(Mesh* self)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, sizeof(xprVec3), 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->name);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glNormalPointer(GL_FLOAT, sizeof(xprVec3), 0);
+	
+	glDrawArrays(GL_POINTS, 0, self->vertexCount);
+	
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+}
+
 Mesh* Mesh_createUnitSphere(size_t segmentCount)
 {	
 #define PI 3.14159265358979323846f
@@ -125,7 +141,7 @@ Mesh* Mesh_createQuad(float width, float height, const float offset[3], size_t s
 	unsigned short* idx;
 
 	size_t r, c;
-	int stride = segmentCount+1;
+	size_t stride = segmentCount+1;
 	
 	Mesh* mesh = Mesh_new(
 		stride * stride,
