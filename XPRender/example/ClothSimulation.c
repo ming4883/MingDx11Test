@@ -21,6 +21,7 @@ xprVec3 _floorP = {0, 0, 0};
 float _gravity = 50;
 float _airResistance = 5;
 float _impact = 3;
+xprBool _showDebug = xprFalse;
 
 typedef struct Aspect
 {
@@ -139,10 +140,12 @@ void drawScene()
 		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
 
 		glDisable(GL_CULL_FACE);
+		glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
 		glPushMatrix();
 		Mesh_draw(_cloth->mesh);
 		glPopMatrix();
 		glEnable(GL_CULL_FACE);
+		glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0);
 	}
 
 	// draw _ball
@@ -164,6 +167,7 @@ void drawScene()
 		}
 	}
 
+	if(xprTrue == _showDebug)
 	{
 		glDisable(GL_LIGHTING);
 		glDisable(GL_DEPTH_TEST);
@@ -224,7 +228,7 @@ void display(void)
 	}
 }
 
-void keyboard(unsigned char key, int x, int y)
+void keyboard(int key, int x, int y)
 {
 	switch(key)
 	{
@@ -242,6 +246,9 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 	case GLUT_KEY_RIGHT:
 		MenuItem_increaseValue(_menu->currentItem);
+		break;
+	case GLUT_KEY_F1:
+		_showDebug = !_showDebug;
 		break;
 	}
 }
@@ -297,7 +304,7 @@ void idle(void)
 	_cloth->timeStep = 0.01f;	// fixed time step
 	_cloth->damping = _airResistance * 1e-3f;
 
-	// Euler iteration
+	// perform relaxation
 	for(iter = 0; iter < 5; ++iter)
 	{
 		int i;
@@ -375,7 +382,7 @@ int main(int argc, char** argv)
 	atexit(quit);
 	glutDisplayFunc(display); 
 	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
+	//glutKeyboardFunc(keyboard);
 	glutSpecialFunc(keyboard);
 	glutMouseFunc(mouse);
 	glutMotionFunc(motion);

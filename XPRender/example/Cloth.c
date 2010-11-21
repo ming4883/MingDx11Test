@@ -301,8 +301,8 @@ void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere)
 
 		if(l < sphere->radius)
 		{
-			xprVec3_normalize(&d);
-			xprVec3_multS(&d, &d, sphere->radius - (l - collisionEpsilon));
+			//xprVec3_normalize(&d);
+			xprVec3_multS(&d, &d, (sphere->radius - (l - collisionEpsilon)) / (l - collisionEpsilon));
 			xprVec3_add(x, x, &d);
 		}
 	}
