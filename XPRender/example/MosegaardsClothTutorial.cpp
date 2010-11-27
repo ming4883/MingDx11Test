@@ -452,7 +452,7 @@ float ball_radius = 2; // the radius of our one ball
 addForce(), windForce(), timeStep(), ballCollision(), and drawShaded()*/
 
 
-void init(GLvoid)
+void init()
 {
 	glShadeModel(GL_SMOOTH);
 	glClearColor(0.2f, 0.2f, 0.4f, 0.5f);				

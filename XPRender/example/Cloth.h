@@ -7,8 +7,8 @@
 extern "C" {
 #endif
 
-typedef struct Mesh Mesh;
-typedef struct Sphere Sphere;
+struct Mesh;
+struct Sphere;
 
 typedef struct ClothConstraint
 {
@@ -31,7 +31,7 @@ typedef struct Cloth
 	ClothConstraint* constraints;
 	size_t constraintCount;
 
-	Mesh* mesh;
+	struct Mesh* mesh;
 
 } Cloth;
 
@@ -47,7 +47,7 @@ void Cloth_verletIntegration(Cloth* self);
 
 void Cloth_satisfyConstraints(Cloth* self);
 
-void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere);
+void Cloth_collideWithSphere(Cloth* self, const struct Sphere* sphere);
 
 void Cloth_collideWithPlane(Cloth* self, const float normal[3], const float point[3]);
 

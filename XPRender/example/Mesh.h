@@ -7,15 +7,15 @@
 extern "C" {
 #endif
 
-typedef struct xprBuffer xprBuffer;
+struct xprBuffer;
 
 typedef struct Mesh
 {
 	size_t vertexCount;
 	size_t indexCount;
-	xprBuffer* vertexBuffer;
-	xprBuffer* normalBuffer;
-	xprBuffer* indexBuffer;
+	struct xprBuffer* vertexBuffer;
+	struct xprBuffer* normalBuffer;
+	struct xprBuffer* indexBuffer;
 
 } Mesh;
 

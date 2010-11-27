@@ -21,10 +21,10 @@ typedef struct xprVec4
 	};
 } xprVec4;
 
-typedef struct xprVec3 xprVec3;
+struct xprVec3;
 
 xprVec4 xprVec4_(float x, float y, float z, float w);
-xprVec4 xprVec4_FromVec3(const xprVec3* xyz, float w);
+xprVec4 xprVec4_FromVec3(const struct xprVec3* xyz, float w);
 
 const xprVec4* xprVec4_c0000();
 const xprVec4* xprVec4_c1000();

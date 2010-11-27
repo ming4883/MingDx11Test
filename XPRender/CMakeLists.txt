@@ -2,38 +2,45 @@ CMAKE_MINIMUM_REQUIRED( VERSION 2.6 )
 
 PROJECT( xprender )
 
-
 FILE( GLOB FREEGLUT lib/freeglut/*.c lib/freeglut/*.h )
 FILE( GLOB GLEW lib/glew/*.c lib/glew/*.h )
 FILE( GLOB GLSW lib/glsw/*.c lib/glsw/*.h )
 
+ADD_DEFINITIONS( -DFREEGLUT_STATIC )
+ADD_DEFINITIONS( -DFREEGLUT_LIB_PRAGMAS=0 )
+ADD_DEFINITIONS( -DGLEW_STATIC )
+
 IF( WIN32 )
 
-    FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
+	FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
 
-    SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
-    SOURCE_GROUP( "glew" FILES ${GLEW} )
-    SOURCE_GROUP( "glsw" FILES ${GLSW} )
-	SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
-
-    ADD_DEFINITIONS( -DFREEGLUT_STATIC )
-    ADD_DEFINITIONS( -DFREEGLUT_LIB_PRAGMAS=0 )
-    ADD_DEFINITIONS( -DGLEW_STATIC )
-    #ADD_DEFINITIONS( -DOPENCTM_STATIC )
-    ADD_DEFINITIONS( /wd4996 )
-    SET( PLATFORM_LIBS opengl32 glu32 winmm )
-    #SET( CONSOLE_SYSTEM WIN32 )
-
+	IF( CYGWIN )
+		#ADD_DEFINITIONS( -DTIME_WITH_SYS_TIME )
+		ADD_DEFINITIONS( -DX_DISPLAY_MISSING )
+		#ADD_DEFINITIONS( -std=c99 )
+		#SET( PLATFORM_LIBS GL GLU X11 )
+		SET( PLATFORM_LIBS opengl32 glu32 winmm gdi32 )
+	
+	ELSE()
+		# assume MSVC
+		ADD_DEFINITIONS( /wd4996 )
+		SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
+		SOURCE_GROUP( "glew" FILES ${GLEW} )
+		SOURCE_GROUP( "glsw" FILES ${GLSW} )
+		SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
+		SET( PLATFORM_LIBS opengl32 glu32 winmm )
+		#SET( CONSOLE_SYSTEM WIN32 )
+	ENDIF()
+	
 ELSEIF( UNIX )
 
-    FILE( GLOB XPRENDER xprender/*.c xprender/*.h )
-	
-    SET( PLATFORM_LIBS X11 GL )
+	FILE( GLOB XPRENDER xprender/*.c xprender/*.h )
+	SET( PLATFORM_LIBS GL GLU X11 )
 
 ENDIF()
 
 INCLUDE_DIRECTORIES(
-    lib/freeglut
+	lib/freeglut
 	lib/glew
 	lib/glsw
 )
