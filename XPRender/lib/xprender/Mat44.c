@@ -85,11 +85,11 @@ void xprMat44_setIdentity(xprMat44* _out)
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void xprMat44_setTranslation(xprMat44* _out, const float v[3])
+void xprMat44_setTranslation(xprMat44* _out, const xprVec3* v)
 {
-	_out->m03 = v[0];
-	_out->m13 = v[1];
-	_out->m23 = v[2];
+	_out->m03 = v->x;
+	_out->m13 = v->y;
+	_out->m23 = v->z;
 }
 
 void xprMat44_cameraLookAt(xprMat44* _out, const xprVec3* eyeAt, const xprVec3* lookAt, const xprVec3* eyeUp)

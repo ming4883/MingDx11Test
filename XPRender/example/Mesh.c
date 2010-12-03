@@ -134,7 +134,7 @@ Mesh* Mesh_createUnitSphere(size_t segmentCount)
 #undef PI
 }
 
-Mesh* Mesh_createQuad(float width, float height, const float offset[3], size_t segmentCount)
+Mesh* Mesh_createQuad(float width, float height, const xprVec3* offset, size_t segmentCount)
 {
 	xprVec3* pos;
 	xprVec3* nor;
@@ -174,14 +174,14 @@ Mesh* Mesh_createQuad(float width, float height, const float offset[3], size_t s
 
 	for(r=0; r<stride; ++r)
 	{
-		float y = offset[1] + height * (float)r / segmentCount;
+		float y = offset->v[1] + height * (float)r / segmentCount;
 
 		for(c=0; c<stride; ++c)
 		{
-			float x = offset[0] + width * (float)c / segmentCount;
+			float x = offset->v[0] + width * (float)c / segmentCount;
 
 			size_t i = r * stride + c;
-			pos[i] = xprVec3_(x, y, offset[2]);
+			pos[i] = xprVec3_(x, y, offset->v[2]);
 			nor[i] = xprVec3_(0, 0, 1);
 		}
 	}

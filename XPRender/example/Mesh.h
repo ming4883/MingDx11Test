@@ -2,6 +2,7 @@
 #define __EXAMPLE_MESH_H__
 
 #include "../lib/xprender/Platform.h"
+#include "../lib/xprender/Vec3.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +30,7 @@ void Mesh_drawPoints(Mesh* self);
 
 Mesh* Mesh_createUnitSphere(size_t segmentCount);
 
-Mesh* Mesh_createQuad(float width, float height, const float offset[3], size_t segmentCount);
+Mesh* Mesh_createQuad(float width, float height, const xprVec3* offset, size_t segmentCount);
 
 #ifdef __cplusplus
 }

@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+struct xprVec3;
+
 typedef struct xprVec4
 {
 	union
@@ -20,8 +22,6 @@ typedef struct xprVec4
 		float v[4];
 	};
 } xprVec4;
-
-struct xprVec3;
 
 xprVec4 xprVec4_(float x, float y, float z, float w);
 xprVec4 xprVec4_FromVec3(const struct xprVec3* xyz, float w);

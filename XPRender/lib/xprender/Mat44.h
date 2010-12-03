@@ -44,7 +44,7 @@ void xprMat44_transformAffinePt(struct xprVec3* _out, const xprMat44* m);
 
 void xprMat44_setIdentity(xprMat44* _out);
 
-void xprMat44_setTranslation(xprMat44* _out, const float v[3]);
+void xprMat44_setTranslation(xprMat44* _out, const struct xprVec3* v);
 
 void xprMat44_cameraLookAt(xprMat44* _out, const struct xprVec3* eyeAt, const struct xprVec3* lookAt, const struct xprVec3* eyeUp);
 

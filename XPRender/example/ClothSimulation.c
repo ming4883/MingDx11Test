@@ -311,12 +311,12 @@ void idle(void)
 		for(i=0; i<BallCount; ++i)
 			Cloth_collideWithSphere(_cloth, &_ball[i]);
 
-		Cloth_collideWithPlane(_cloth, _floorN.v, _floorP.v);
+		Cloth_collideWithPlane(_cloth, &_floorN, &_floorP);
 		Cloth_satisfyConstraints(_cloth);
 	}
 	
 	{	xprVec3 f = {0, -_gravity * _cloth->timeStep, 0};
-		Cloth_addForceToAll(_cloth, f.v);
+		Cloth_addForceToAll(_cloth, &f);
 	}
 	Cloth_verletIntegration(_cloth);
 
@@ -348,7 +348,7 @@ int main(int argc, char** argv)
 		printf("failed to initialize GLEW %s\n", glewGetErrorString(err));
 
 	{	xprVec3 offset = {-1, 1.5f, 0};
-		_cloth = Cloth_new(2, 2, offset.v, 32);
+		_cloth = Cloth_new(2, 2, &offset, 32);
 	}
 
 	_ball[0].center = xprVec3_(-0.5f, 0.5f, 0);
@@ -358,7 +358,7 @@ int main(int argc, char** argv)
 	_ballMesh = Mesh_createUnitSphere(32);
 
 	{	xprVec3 offset = {-2.5f, -2.5f, 0};
-		_floorMesh = Mesh_createQuad(5, 5, offset.v, 1);
+		_floorMesh = Mesh_createQuad(5, 5, &offset, 1);
 	}
 
 	// set up on screen menu

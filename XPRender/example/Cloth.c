@@ -18,7 +18,7 @@ void Cloth_makeConstraint(Cloth* self, size_t x0, size_t y0, size_t x1, size_t y
 	++self->constraintCount;
 }
 
-Cloth* Cloth_new(float width, float height, const float offset[3], size_t segmentCount)
+Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmentCount)
 {
 	size_t r, c;
 	unsigned short* mapped = nullptr;
@@ -60,12 +60,12 @@ Cloth* Cloth_new(float width, float height, const float offset[3], size_t segmen
 
 	for(r=0; r<segmentCount; ++r)
 	{
-		float y = offset[2] - height * (float)r / segmentCount;
+		float y = offset->v[2] - height * (float)r / segmentCount;
 		for(c=0; c<segmentCount; ++c)
 		{
 			size_t i = r * segmentCount + c;
-			float x = offset[0] + width * (float)c / segmentCount;
-			xprVec3 p = xprVec3_(x, offset[1], y);
+			float x = offset->v[0] + width * (float)c / segmentCount;
+			xprVec3 p = xprVec3_(x, offset->v[1], y);
 
 			self->p[i] = p;
 			self->p2[i] = p;
@@ -131,7 +131,7 @@ void Cloth_free(Cloth* self)
 	free(self);
 }
 
-void Cloth_addForceToAll(Cloth* self, const float force[3])
+void Cloth_addForceToAll(Cloth* self, const xprVec3* force)
 {
 	size_t i, cnt = self->segmentCount * self->segmentCount;
 	for(i = 0; i < cnt; ++i)
@@ -308,11 +308,11 @@ void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere)
 	}
 }
 
-void Cloth_collideWithPlane(Cloth* self, const float normal[3], const float point[3])
+void Cloth_collideWithPlane(Cloth* self, const xprVec3* normal, const xprVec3* point)
 {
 	size_t i;
 	size_t cnt = self->segmentCount * self->segmentCount;
-	float d = -xprVec3_dot((xprVec3*)normal, (xprVec3*)point);
+	float d = -xprVec3_dot(normal, point);
 
 	for(i = 0; i < cnt; ++i)
 	{
@@ -321,7 +321,7 @@ void Cloth_collideWithPlane(Cloth* self, const float normal[3], const float poin
 		if(l < collisionEpsilon)
 		{
 			xprVec3 dx;
-			xprVec3_multS(&dx, (xprVec3*)normal, -(l - collisionEpsilon));
+			xprVec3_multS(&dx, normal, -(l - collisionEpsilon));
 			xprVec3_add(x, x, &dx);
 		}
 	}
