@@ -7,11 +7,11 @@
 extern "C" {
 #endif
 
-typedef struct xprTexture
+typedef struct XprTexture
 {
 	int name;
 	size_t flags;
-} xprTexture;
+} XprTexture;
 
 	
 #ifdef __cplusplus

@@ -9,7 +9,7 @@ extern "C" {
 
 typedef struct Sphere
 {
-	xprVec3 center;
+	XprVec3 center;
 	float radius;
 
 } Sphere;

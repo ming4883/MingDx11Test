@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 
-struct xprVec3;
-struct xprVec4;
+struct XprVec3;
+struct XprVec4;
 
-typedef struct xprMat44
+typedef struct XprMat44
 {
 	union
 	{
@@ -24,31 +24,35 @@ typedef struct xprMat44
 		float v[16];
 	};
 
-} xprMat44;
+} XprMat44;
 
-xprMat44 xprMat44_(
+XprMat44 XprMat44_(
 	float m00, float m01, float m02, float m03,
 	float m10, float m11, float m12, float m13,
 	float m20, float m21, float m22, float m23,
 	float m30, float m31, float m32, float m33);
 
-void xprMat44_mult(xprMat44* _out, const xprMat44* a, const xprMat44* b);
+void XprMat44_mult(XprMat44* _out, const XprMat44* a, const XprMat44* b);
 
-void xprMat44_transpose(xprMat44* _out, const xprMat44* m);
+void XprMat44_transpose(XprMat44* _out, const XprMat44* m);
 
-void xprMat44_transform(struct xprVec4* _out, const xprMat44* m);
+void XprMat44_transform(struct XprVec4* _out, const XprMat44* m);
 
-void xprMat44_transformAffineDir(struct xprVec3* _out, const xprMat44* m);
+void XprMat44_transformAffineDir(struct XprVec3* _out, const XprMat44* m);
 
-void xprMat44_transformAffinePt(struct xprVec3* _out, const xprMat44* m);
+void XprMat44_transformAffinePt(struct XprVec3* _out, const XprMat44* m);
 
-void xprMat44_setIdentity(xprMat44* _out);
+void XprMat44_setIdentity(XprMat44* _out);
 
-void xprMat44_setTranslation(xprMat44* _out, const struct xprVec3* v);
+void XprMat44_setTranslation(XprMat44* _out, const struct XprVec3* v);
 
-void xprMat44_cameraLookAt(xprMat44* _out, const struct xprVec3* eyeAt, const struct xprVec3* lookAt, const struct xprVec3* eyeUp);
+void XprMat44_getTranslation(struct XprVec3* v, const XprMat44* m);
 
-void xprMat44_planarReflect(xprMat44* _out, const struct xprVec3* normal, const struct xprVec3* point);
+void XprMat44_getBasis(struct XprVec3* xaxis, struct XprVec3* yaxis, struct XprVec3* zaxis, const XprMat44* m);
+
+void XprMat44_cameraLookAt(XprMat44* _out, const struct XprVec3* eyeAt, const struct XprVec3* lookAt, const struct XprVec3* eyeUp);
+
+void XprMat44_planarReflect(XprMat44* _out, const struct XprVec3* normal, const struct XprVec3* point);
 
 #ifdef __cplusplus
 }

@@ -9,11 +9,11 @@ GLenum xprGL_SHADER_TYPE[] = {
 	GL_FRAGMENT_SHADER,
 };
 
-xprShader* xprShader_new(const char** sources, size_t srcCnt, xprShaderType type)
+XprShader* XprSdhader_new(const char** sources, size_t srcCnt, XprShaderType type)
 {
 	int compileStatus;
 
-	xprShader* self = (xprShader*)malloc(sizeof(xprShader));
+	XprShader* self = (XprShader*)malloc(sizeof(XprShader));
 
 	self->type = type;
 	self->name = glCreateShader(xprGL_SHADER_TYPE[self->type]);
@@ -38,13 +38,13 @@ xprShader* xprShader_new(const char** sources, size_t srcCnt, xprShaderType type
 	}
 	else
 	{
-		self->flags |= xprShaderFlag_Compiled;
+		self->flags |= XprShaderFlag_Compiled;
 	}
 
 	return self;
 }
 
-void xprShader_free(xprShader* self)
+void XprShader_free(XprShader* self)
 {
 	if(nullptr == self)
 		return;
@@ -53,9 +53,9 @@ void xprShader_free(xprShader* self)
 	free(self);
 }
 
-xprShadingProgram* xprShadingProgram_new(const xprShader** const shaders, size_t shaderCnt)
+XprPipeline* XprPipeline_new(const XprShader** const shaders, size_t shaderCnt)
 {
-	xprShadingProgram* self = (xprShadingProgram*)malloc(sizeof(xprShadingProgram));
+	XprPipeline* self = (XprPipeline*)malloc(sizeof(XprPipeline));
 
 	self->name = glCreateProgram();
 	self->flags = 0;
@@ -88,14 +88,14 @@ xprShadingProgram* xprShadingProgram_new(const xprShader** const shaders, size_t
 		}
 		else
 		{
-			self->flags |= xprShadingProgramFlag_Linked;
+			self->flags |= XprPipelineFlag_Linked;
 		}
 	}
 
 	return self;
 }
 
-void xprShadingProgram_free(xprShadingProgram* self)
+void XprPipeline_free(XprPipeline* self)
 {
 	if(nullptr == self)
 		return;

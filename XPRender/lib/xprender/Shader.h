@@ -7,47 +7,47 @@
 extern "C" {
 #endif
 
-// xprShader
-typedef enum xprShaderType
+// XprShader
+typedef enum XprShaderType
 {
-	xprShaderType_Vertex,
-	xprShaderType_Geometry,
-	xprShaderType_Fragment,
-} xprShaderType;
+	XprShaderType_Vertex,
+	XprShaderType_Geometry,
+	XprShaderType_Fragment,
+} XprShaderType;
 
-typedef enum xprShaderFlag
+typedef enum XprShaderFlag
 {
-	xprShaderFlag_Compiled = 1 << 0,
-} xprShaderFlag;
+	XprShaderFlag_Compiled = 1 << 0,
+} XprShaderFlag;
 
-typedef struct xprShader
-{
-	int name;
-	xprShaderType type;
-	size_t flags;
-
-} xprShader;
-
-xprShader* xprShader_new(const char** sources, size_t srcCnt, xprShaderType type);
-
-void xprShader_free(xprShader* self);
-
-// xprShadingProgram
-typedef enum xprShadingProgramFlag
-{
-	xprShadingProgramFlag_Linked = 1 << 0,
-} xprShadingProgramFlag;
-
-typedef struct xprShadingProgram
+typedef struct XprShader
 {
 	int name;
+	XprShaderType type;
 	size_t flags;
 
-} xprShadingProgram;
+} XprShader;
 
-xprShadingProgram* xprShadingProgram_new(const xprShader** const shaders, size_t shaderCnt);
+XprShader* XprShader_new(const char** sources, size_t srcCnt, XprShaderType type);
 
-void xprShadingProgram_free(xprShadingProgram* self);
+void XprShader_free(XprShader* self);
+
+// XprPipeline
+typedef enum XprPipelineFlag
+{
+	XprPipelineFlag_Linked = 1 << 0,
+} XprPipelineFlag;
+
+typedef struct XprPipeline
+{
+	int name;
+	size_t flags;
+
+} XprPipeline;
+
+XprPipeline* XprPipeline_new(const XprShader** const shaders, size_t shaderCnt);
+
+void XprPipeline_free(XprPipeline* self);
 
 #ifdef __cplusplus
 }

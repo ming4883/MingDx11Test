@@ -8,15 +8,15 @@
 extern "C" {
 #endif
 
-struct xprBuffer;
+struct XprBuffer;
 
 typedef struct Mesh
 {
 	size_t vertexCount;
 	size_t indexCount;
-	struct xprBuffer* vertexBuffer;
-	struct xprBuffer* normalBuffer;
-	struct xprBuffer* indexBuffer;
+	struct XprBuffer* vertexBuffer;
+	struct XprBuffer* normalBuffer;
+	struct XprBuffer* indexBuffer;
 
 } Mesh;
 
@@ -30,7 +30,7 @@ void Mesh_drawPoints(Mesh* self);
 
 Mesh* Mesh_createUnitSphere(size_t segmentCount);
 
-Mesh* Mesh_createQuad(float width, float height, const xprVec3* offset, size_t segmentCount);
+Mesh* Mesh_createQuad(float width, float height, const XprVec3* offset, size_t segmentCount);
 
 #ifdef __cplusplus
 }

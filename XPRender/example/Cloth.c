@@ -13,31 +13,31 @@ void Cloth_makeConstraint(Cloth* self, size_t x0, size_t y0, size_t x1, size_t y
 	ClothConstraint* constraint = &self->constraints[self->constraintCount];
 	constraint->pIdx[0] = idx0;
 	constraint->pIdx[1] = idx1;
-	constraint->restDistance = xprVec3_distance(&self->p[idx0], &self->p[idx1]);
+	constraint->restDistance = XprVec3_distance(&self->p[idx0], &self->p[idx1]);
 
 	++self->constraintCount;
 }
 
-Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmentCount)
+Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmentCount)
 {
 	size_t r, c;
 	unsigned short* mapped = nullptr;
 
 	Cloth* self = (Cloth*)malloc(sizeof(Cloth));
 	self->segmentCount = segmentCount;
-	self->g = xprVec3_(0, -1, 0);
+	self->g = XprVec3_(0, -1, 0);
 	self->timeStep = 0;
 	self->damping = 0;
 
-	self->p = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
-	self->p2 = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
-	self->a = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
-	self->fixPos = (xprVec3*)malloc(sizeof(xprVec3) * segmentCount * segmentCount);
+	self->p = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
+	self->p2 = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
+	self->a = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
+	self->fixPos = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
 	self->fixed = (xprBool*)malloc(sizeof(xprBool) * segmentCount * segmentCount);
 
 	self->mesh = Mesh_new(segmentCount * segmentCount, (segmentCount-1) * (segmentCount-1) * 6);
 	
-	mapped = (unsigned short*)xprBuffer_map(self->mesh->indexBuffer, xprBufferMapAccess_Write);
+	mapped = (unsigned short*)XprBuffer_map(self->mesh->indexBuffer, XprBufferMapAccess_Write);
 	for(r=0; r<segmentCount-1; ++r)
 	{
 		for(c=0; c<segmentCount-1; ++c)
@@ -56,7 +56,7 @@ Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmen
 			(*mapped++) = p1;
 		}
 	}
-	xprBuffer_unmap(self->mesh->indexBuffer);
+	XprBuffer_unmap(self->mesh->indexBuffer);
 
 	for(r=0; r<segmentCount; ++r)
 	{
@@ -65,7 +65,7 @@ Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmen
 		{
 			size_t i = r * segmentCount + c;
 			float x = offset->v[0] + width * (float)c / segmentCount;
-			xprVec3 p = xprVec3_(x, offset->v[1], y);
+			XprVec3 p = XprVec3_(x, offset->v[1], y);
 
 			self->p[i] = p;
 			self->p2[i] = p;
@@ -131,34 +131,34 @@ void Cloth_free(Cloth* self)
 	free(self);
 }
 
-void Cloth_addForceToAll(Cloth* self, const xprVec3* force)
+void Cloth_addForceToAll(Cloth* self, const XprVec3* force)
 {
 	size_t i, cnt = self->segmentCount * self->segmentCount;
 	for(i = 0; i < cnt; ++i)
 	{
-		xprVec3* a = &self->a[i];
-		xprVec3_add(a, a, (xprVec3*)force);
+		XprVec3* a = &self->a[i];
+		XprVec3_add(a, a, (XprVec3*)force);
 	}
 }
 
 void Cloth_updateMesh(Cloth* self)
 {
-	xprBuffer_update(self->mesh->vertexBuffer, 0, self->mesh->vertexBuffer->sizeInBytes, self->p);
+	XprBuffer_update(self->mesh->vertexBuffer, 0, self->mesh->vertexBuffer->sizeInBytes, self->p);
 
 	{
 		size_t r, c;
 
-		xprVec3* normals = (xprVec3*)xprBuffer_map(self->mesh->normalBuffer, xprBufferMapAccess_Write);
+		XprVec3* normals = (XprVec3*)XprBuffer_map(self->mesh->normalBuffer, XprBufferMapAccess_Write);
 
 		for(r = 0; r < self->segmentCount; ++r)
 		{
 			for(c = 0; c < self->segmentCount; ++c)
 			{
-				xprVec3 n = *xprVec3_c000();
+				XprVec3 n = *XprVec3_c000();
 				int cnt = 0;
 
-				xprVec3* p1, *p2, *p3;
-				xprVec3 v1, v2, n2;
+				XprVec3* p1, *p2, *p3;
+				XprVec3 v1, v2, n2;
 				p1 = &self->p[r * self->segmentCount + c];
 
 				if(r>0 && c>0)
@@ -166,11 +166,11 @@ void Cloth_updateMesh(Cloth* self)
 					p2 = &self->p[(r) * self->segmentCount + (c-1)];
 					p3 = &self->p[(r-1) * self->segmentCount + c];
 					
-					xprVec3_sub(&v1, p2, p1);
-					xprVec3_sub(&v2, p3, p1);
-					xprVec3_cross(&n2, &v1, &v2);
-					xprVec3_normalize(&n2);
-					xprVec3_add(&n, &n, &n2);
+					XprVec3_sub(&v1, p2, p1);
+					XprVec3_sub(&v2, p3, p1);
+					XprVec3_cross(&n2, &v1, &v2);
+					XprVec3_normalize(&n2);
+					XprVec3_add(&n, &n, &n2);
 					++cnt;
 				}
 
@@ -179,11 +179,11 @@ void Cloth_updateMesh(Cloth* self)
 					p2 = &self->p[(r-1) * self->segmentCount + c];
 					p3 = &self->p[(r) * self->segmentCount + (c+1)];
 					
-					xprVec3_sub(&v1, p2, p1);
-					xprVec3_sub(&v2, p3, p1);
-					xprVec3_cross(&n2, &v1, &v2);
-					xprVec3_normalize(&n2);
-					xprVec3_add(&n, &n, &n2);
+					XprVec3_sub(&v1, p2, p1);
+					XprVec3_sub(&v2, p3, p1);
+					XprVec3_cross(&n2, &v1, &v2);
+					XprVec3_normalize(&n2);
+					XprVec3_add(&n, &n, &n2);
 					++cnt;
 				}
 
@@ -192,11 +192,11 @@ void Cloth_updateMesh(Cloth* self)
 					p2 = &self->p[(r) * self->segmentCount + (c+1)];
 					p3 = &self->p[(r+1) * self->segmentCount + c];
 					
-					xprVec3_sub(&v1, p2, p1);
-					xprVec3_sub(&v2, p3, p1);
-					xprVec3_cross(&n2, &v1, &v2);
-					xprVec3_normalize(&n2);
-					xprVec3_add(&n, &n, &n2);
+					XprVec3_sub(&v1, p2, p1);
+					XprVec3_sub(&v2, p3, p1);
+					XprVec3_cross(&n2, &v1, &v2);
+					XprVec3_normalize(&n2);
+					XprVec3_add(&n, &n, &n2);
 					++cnt;
 				}
 
@@ -205,16 +205,16 @@ void Cloth_updateMesh(Cloth* self)
 					p2 = &self->p[(r+1) * self->segmentCount + c];
 					p3 = &self->p[(r) * self->segmentCount + (c-1)];
 					
-					xprVec3_sub(&v1, p2, p1);
-					xprVec3_sub(&v2, p3, p1);
-					xprVec3_cross(&n2, &v1, &v2);
-					xprVec3_normalize(&n2);
-					xprVec3_add(&n, &n, &n2);
+					XprVec3_sub(&v1, p2, p1);
+					XprVec3_sub(&v2, p3, p1);
+					XprVec3_cross(&n2, &v1, &v2);
+					XprVec3_normalize(&n2);
+					XprVec3_add(&n, &n, &n2);
 					++cnt;
 				}
 			
 				if(cnt > 0)
-					xprVec3_normalize(&n);
+					XprVec3_normalize(&n);
 				n.x *= -1;
 				n.y *= -1;
 				n.z *= -1;
@@ -222,7 +222,7 @@ void Cloth_updateMesh(Cloth* self)
 			}
 		}
 
-		xprBuffer_unmap(self->mesh->normalBuffer);
+		XprBuffer_unmap(self->mesh->normalBuffer);
 	}
 }
 
@@ -236,21 +236,21 @@ void Cloth_verletIntegration(Cloth* self)
 	// Verlet Integration
 	for(i = 0; i < cnt; ++i)
 	{
-		xprVec3* x = &self->p[i];
-		xprVec3* oldx = &self->p2[i];
-		xprVec3* a = &self->a[i];
+		XprVec3* x = &self->p[i];
+		XprVec3* oldx = &self->p2[i];
+		XprVec3* a = &self->a[i];
 
-		xprVec3 tmp = *x;
-		xprVec3 dx;
-		xprVec3 da;
-		xprVec3_multS(&da, a, t2);
-		xprVec3_sub(&dx, x, oldx);
-		xprVec3_multS(&dx, &dx, 1-self->damping);
-		xprVec3_add(&dx, &dx, &da);
+		XprVec3 tmp = *x;
+		XprVec3 dx;
+		XprVec3 da;
+		XprVec3_multS(&da, a, t2);
+		XprVec3_sub(&dx, x, oldx);
+		XprVec3_multS(&dx, &dx, 1-self->damping);
+		XprVec3_add(&dx, &dx, &da);
 
-		xprVec3_add(x, x, &dx);
+		XprVec3_add(x, x, &dx);
 
-		*a = *xprVec3_c000();
+		*a = *XprVec3_c000();
 		*oldx = tmp;
 	}
 }
@@ -269,17 +269,17 @@ void Cloth_satisfyConstraints(Cloth* self)
 	for(i=0; i<self->constraintCount; ++i)
 	{
 		ClothConstraint* c = &self->constraints[i];
-		xprVec3* x1 = &self->p[c->pIdx[0]];
-		xprVec3* x2 = &self->p[c->pIdx[1]];
-		xprVec3 delta;
+		XprVec3* x1 = &self->p[c->pIdx[0]];
+		XprVec3* x2 = &self->p[c->pIdx[1]];
+		XprVec3 delta;
 		float scale;
-		xprVec3_sub(&delta, x2, x1);
+		XprVec3_sub(&delta, x2, x1);
 		
-		scale = (1 - c->restDistance / xprVec3_length(&delta)) * 0.5f;
-		xprVec3_multS(&delta, &delta, scale);
+		scale = (1 - c->restDistance / XprVec3_length(&delta)) * 0.5f;
+		XprVec3_multS(&delta, &delta, scale);
 
-		xprVec3_add(x1, x1, &delta);
-		xprVec3_sub(x2, x2, &delta);
+		XprVec3_add(x1, x1, &delta);
+		XprVec3_sub(x2, x2, &delta);
 	}
 }
 
@@ -292,37 +292,37 @@ void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere)
 
 	for(i = 0; i < cnt; ++i)
 	{
-		xprVec3* x = &self->p[i];
-		xprVec3 d;
+		XprVec3* x = &self->p[i];
+		XprVec3 d;
 		float l;
 
-		xprVec3_sub(&d, x, &sphere->center);
-		l = xprVec3_length(&d);
+		XprVec3_sub(&d, x, &sphere->center);
+		l = XprVec3_length(&d);
 
 		if(l < sphere->radius)
 		{
-			//xprVec3_normalize(&d);
-			xprVec3_multS(&d, &d, (sphere->radius - (l - collisionEpsilon)) / (l - collisionEpsilon));
-			xprVec3_add(x, x, &d);
+			//XprVec3_normalize(&d);
+			XprVec3_multS(&d, &d, (sphere->radius - (l - collisionEpsilon)) / (l - collisionEpsilon));
+			XprVec3_add(x, x, &d);
 		}
 	}
 }
 
-void Cloth_collideWithPlane(Cloth* self, const xprVec3* normal, const xprVec3* point)
+void Cloth_collideWithPlane(Cloth* self, const XprVec3* normal, const XprVec3* point)
 {
 	size_t i;
 	size_t cnt = self->segmentCount * self->segmentCount;
-	float d = -xprVec3_dot(normal, point);
+	float d = -XprVec3_dot(normal, point);
 
 	for(i = 0; i < cnt; ++i)
 	{
-		xprVec3* x = &self->p[i];
-		float l = xprVec3_dot((xprVec3*)normal, x) + d;
+		XprVec3* x = &self->p[i];
+		float l = XprVec3_dot((XprVec3*)normal, x) + d;
 		if(l < collisionEpsilon)
 		{
-			xprVec3 dx;
-			xprVec3_multS(&dx, normal, -(l - collisionEpsilon));
-			xprVec3_add(x, x, &dx);
+			XprVec3 dx;
+			XprVec3_multS(&dx, normal, -(l - collisionEpsilon));
+			XprVec3_add(x, x, &dx);
 		}
 	}
 }

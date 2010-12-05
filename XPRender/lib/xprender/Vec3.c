@@ -2,38 +2,41 @@
 
 #include <math.h>
 
-xprVec3 xprVec3_(float x, float y, float z)
+XprVec3 XprVec3_(float x, float y, float z)
 {
-	xprVec3 _out = {x, y, z};
+	XprVec3 _out;
+	_out.x = x;
+	_out.y = y;
+	_out.z = z;
 	return _out;
 }
 
-static const xprVec3 _xprVec3_c000 = {0, 0, 0};
-static const xprVec3 _xprVec3_c100 = {1, 0, 0};
-static const xprVec3 _xprVec3_c010 = {0, 1, 0};
-static const xprVec3 _xprVec3_c001 = {0, 0, 1};
+static const XprVec3 _XprVec3_c000 = {0, 0, 0};
+static const XprVec3 _XprVec3_c100 = {1, 0, 0};
+static const XprVec3 _XprVec3_c010 = {0, 1, 0};
+static const XprVec3 _XprVec3_c001 = {0, 0, 1};
 
-const xprVec3* xprVec3_c000()
+const XprVec3* XprVec3_c000()
 {
-	return &_xprVec3_c000;
+	return &_XprVec3_c000;
 }
 
-const xprVec3* xprVec3_c100()
+const XprVec3* XprVec3_c100()
 {
-	return &_xprVec3_c100;
+	return &_XprVec3_c100;
 }
 
-const xprVec3* xprVec3_c010()
+const XprVec3* XprVec3_c010()
 {
-	return &_xprVec3_c010;
+	return &_XprVec3_c010;
 }
 
-const xprVec3* xprVec3_c001()
+const XprVec3* XprVec3_c001()
 {
-	return &_xprVec3_c001;
+	return &_XprVec3_c001;
 }
 
-void xprVec3_set(xprVec3* _out, float x, float y, float z)
+void XprVec3_set(XprVec3* _out, float x, float y, float z)
 {
 	if(nullptr == _out)
 		return;
@@ -43,7 +46,7 @@ void xprVec3_set(xprVec3* _out, float x, float y, float z)
 	_out->z = z;
 }
 
-xprBool xprVec3_isEquals(const xprVec3* a, const xprVec3* b, float epsilon)
+xprBool XprVec3_isEquals(const XprVec3* a, const XprVec3* b, float epsilon)
 {
 	float ex = a->x - b->x;
 	float ey = a->y - b->y;
@@ -55,7 +58,7 @@ xprBool xprVec3_isEquals(const xprVec3* a, const xprVec3* b, float epsilon)
 	return xprFalse;
 }
 
-xprVec3* xprVec3_add(xprVec3* _out, const xprVec3* a, const xprVec3* b)
+XprVec3* XprVec3_add(XprVec3* _out, const XprVec3* a, const XprVec3* b)
 {
 	_out->x = a->x + b->x;
 	_out->y = a->y + b->y;
@@ -63,7 +66,7 @@ xprVec3* xprVec3_add(xprVec3* _out, const xprVec3* a, const xprVec3* b)
 	return _out;
 }
 
-xprVec3* xprVec3_sub(xprVec3* _out, const xprVec3* a, const xprVec3* b)
+XprVec3* XprVec3_sub(XprVec3* _out, const XprVec3* a, const XprVec3* b)
 {
 	_out->x = a->x - b->x;
 	_out->y = a->y - b->y;
@@ -71,7 +74,7 @@ xprVec3* xprVec3_sub(xprVec3* _out, const xprVec3* a, const xprVec3* b)
 	return _out;
 }
 
-xprVec3* xprVec3_mult(xprVec3* _out, const xprVec3* a, const xprVec3* b)
+XprVec3* XprVec3_mult(XprVec3* _out, const XprVec3* a, const XprVec3* b)
 {
 	_out->x = a->x * b->x;
 	_out->y = a->y * b->y;
@@ -79,7 +82,7 @@ xprVec3* xprVec3_mult(xprVec3* _out, const xprVec3* a, const xprVec3* b)
 	return _out;
 }
 
-xprVec3* xprVec3_multS(xprVec3* _out, const xprVec3* a, float b)
+XprVec3* XprVec3_multS(XprVec3* _out, const XprVec3* a, float b)
 {
 	_out->x = a->x * b;
 	_out->y = a->y * b;
@@ -87,30 +90,30 @@ xprVec3* xprVec3_multS(xprVec3* _out, const xprVec3* a, float b)
 	return _out;
 }
 
-float xprVec3_dot(const xprVec3* a, const xprVec3* b)
+float XprVec3_dot(const XprVec3* a, const XprVec3* b)
 {
 	return (a->x * b->x) + (a->y * b->y) + (a->z * b->z);
 }
 
-float xprVec3_sqLength(const xprVec3* a)
+float XprVec3_sqLength(const XprVec3* a)
 {
-	return xprVec3_dot(a, a);
+	return XprVec3_dot(a, a);
 }
 
-float xprVec3_length(const xprVec3* a)
+float XprVec3_length(const XprVec3* a)
 {
-	return sqrtf(xprVec3_sqLength(a));
+	return sqrtf(XprVec3_sqLength(a));
 }
 
-float xprVec3_distance(const xprVec3* a, const xprVec3* b)
+float XprVec3_distance(const XprVec3* a, const XprVec3* b)
 {
-	xprVec3 diff;
-	return xprVec3_length(xprVec3_sub(&diff, a, b));
+	XprVec3 diff;
+	return XprVec3_length(XprVec3_sub(&diff, a, b));
 }
 
-float xprVec3_normalize(xprVec3* a)
+float XprVec3_normalize(XprVec3* a)
 {
-	float len = xprVec3_length(a);
+	float len = XprVec3_length(a);
 	
 	if(len > 1e-5f || len < -1e-5f)
 	{
@@ -124,14 +127,14 @@ float xprVec3_normalize(xprVec3* a)
 	return len;
 }
 
-xprVec3 xprVec3_normalizedCopy(const xprVec3* a)
+XprVec3 XprVec3_normalizedCopy(const XprVec3* a)
 {
-	xprVec3 _out = *a;
-	xprVec3_normalize(&_out);
+	XprVec3 _out = *a;
+	XprVec3_normalize(&_out);
 	return _out;
 }
 
-xprVec3* xprVec3_cross(xprVec3* _out, const xprVec3* a, const xprVec3* b)
+XprVec3* XprVec3_cross(XprVec3* _out, const XprVec3* a, const XprVec3* b)
 {
 	/* reference: http://en.wikipedia.org/wiki/Cross_product#Cross_product_and_handedness */
 	_out->x = a->y * b->z - a->z * b->y;

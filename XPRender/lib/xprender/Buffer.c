@@ -13,9 +13,9 @@ static GLenum xprGL_BUFFER_MAP_ACCESS[] = {
 	GL_READ_WRITE,
 };
 
-xprBuffer* xprBuffer_new(xprBufferType type, size_t sizeInBytes, void* initialData)
+XprBuffer* XprBuffer_new(XprBufferType type, size_t sizeInBytes, void* initialData)
 {
-	xprBuffer* self = (xprBuffer*)malloc(sizeof(xprBuffer));
+	XprBuffer* self = (XprBuffer*)malloc(sizeof(XprBuffer));
 
 	self->sizeInBytes = sizeInBytes;
 	self->type = type;
@@ -28,7 +28,7 @@ xprBuffer* xprBuffer_new(xprBufferType type, size_t sizeInBytes, void* initialDa
 	return self;
 }
 
-void xprBuffer_free(xprBuffer* self)
+void XprBuffer_free(XprBuffer* self)
 {
 	if(nullptr == self)
 		return;
@@ -37,7 +37,7 @@ void xprBuffer_free(xprBuffer* self)
 
 	free(self);
 }
-void xprBuffer_update(xprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data)
+void XprBuffer_update(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data)
 {
 	if(nullptr == self)
 		return;
@@ -49,35 +49,35 @@ void xprBuffer_update(xprBuffer* self, size_t offsetInBytes, size_t sizeInBytes,
 	glBufferSubData(xprGL_BUFFER_TARGETS[self->type], offsetInBytes, sizeInBytes, data);
 }
 
-void* xprBuffer_map(xprBuffer* self, xprBufferMapAccess access)
+void* XprBuffer_map(XprBuffer* self, XprBufferMapAccess access)
 {
 	void* ret = nullptr;
 	
 	if(nullptr == self)
 		return nullptr;
 
-	if(0 != (self->flags & xprBufferFlag_Mapped))
+	if(0 != (self->flags & XprBufferFlag_Mapped))
 		return nullptr;
 
 	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->name);
 
 	ret = glMapBuffer(xprGL_BUFFER_TARGETS[self->type], xprGL_BUFFER_MAP_ACCESS[access]);
 
-	self->flags |= xprBufferFlag_Mapped;
+	self->flags |= XprBufferFlag_Mapped;
 
 	return ret;
 }
 
-void xprBuffer_unmap(xprBuffer* self)
+void XprBuffer_unmap(XprBuffer* self)
 {
 	if(nullptr == self)
 		return;
 
-	if(0 == (self->flags & xprBufferFlag_Mapped))
+	if(0 == (self->flags & XprBufferFlag_Mapped))
 		return;
 
 	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->name);
 	glUnmapBuffer(xprGL_BUFFER_TARGETS[self->type]);
 
-	self->flags &= ~xprBufferFlag_Mapped;
+	self->flags &= ~XprBufferFlag_Mapped;
 }

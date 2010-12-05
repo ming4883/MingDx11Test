@@ -16,8 +16,8 @@ Cloth* _cloth = nullptr;
 Sphere _ball[BallCount];
 Mesh* _ballMesh = nullptr;
 Mesh* _floorMesh = nullptr;
-xprVec3 _floorN = {0, 1, 0};
-xprVec3 _floorP = {0, 0, 0};
+XprVec3 _floorN = {0, 1, 0};
+XprVec3 _floorP = {0, 0, 0};
 float _gravity = 50;
 float _airResistance = 5;
 float _impact = 3;
@@ -45,14 +45,14 @@ void reshape(int w, int h)
 
 void drawBackground()
 {
-	static const xprVec3 v[] = {
+	static const XprVec3 v[] = {
 		{-1,  1, 0},
 		{-1, -1, 0},
 		{ 1,  1, 0},
 		{ 1, -1, 0},
 	};
 
-	static const xprVec3 c[] = {
+	static const XprVec3 c[] = {
 		{0.57f, 0.85f, 1.0f},
 		{0.29f, 0.62f, 0.81f},
 		{0.57f, 0.85f, 1.0f},
@@ -83,13 +83,13 @@ void drawBackground()
 
 void drawScene()
 {
-	xprVec3 eyeAt = xprVec3_(-2.5f, 1.5f, 5);
-	xprVec3 lookAt = xprVec3_(0, 0, 0);
-	xprVec3 eyeUp = *xprVec3_c010();
-	xprMat44 viewMtx;
+	XprVec3 eyeAt = XprVec3_(-2.5f, 1.5f, 5);
+	XprVec3 lookAt = XprVec3_(0, 0, 0);
+	XprVec3 eyeUp = *XprVec3_c010();
+	XprMat44 viewMtx;
 
-	xprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
-	xprMat44_transpose(&viewMtx, &viewMtx);
+	XprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
+	XprMat44_transpose(&viewMtx, &viewMtx);
 
 	// projection transform
 	glMatrixMode(GL_PROJECTION);
@@ -259,7 +259,7 @@ typedef struct Mouse
 	int state;
 	int x;
 	int y;
-	xprVec3 clothOffsets[2];
+	XprVec3 clothOffsets[2];
 } Mouse;
 
 Mouse _mouse;
@@ -294,6 +294,7 @@ void motion(int x, int y)
 void idle(void)
 {
 	int iter;
+	XprVec3 f;
 
 	static float t = 0;
 	t += 0.0005f * _impact;
@@ -315,9 +316,9 @@ void idle(void)
 		Cloth_satisfyConstraints(_cloth);
 	}
 	
-	{	xprVec3 f = {0, -_gravity * _cloth->timeStep, 0};
-		Cloth_addForceToAll(_cloth, &f);
-	}
+	f = XprVec3_(0, -_gravity * _cloth->timeStep, 0);
+	Cloth_addForceToAll(_cloth, &f);
+
 	Cloth_verletIntegration(_cloth);
 
 	Cloth_updateMesh(_cloth);
@@ -336,6 +337,7 @@ void quit(void)
 int main(int argc, char** argv)
 {
 	GLenum err;
+	XprVec3 offset;
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB);
@@ -347,19 +349,17 @@ int main(int argc, char** argv)
 	if(GLEW_OK != (err = glewInit()))
 		printf("failed to initialize GLEW %s\n", glewGetErrorString(err));
 
-	{	xprVec3 offset = {-1, 1.5f, 0};
-		_cloth = Cloth_new(2, 2, &offset, 32);
-	}
+	offset = XprVec3_(-1, 1.5f, 0);
+	_cloth = Cloth_new(2, 2, &offset, 32);
 
-	_ball[0].center = xprVec3_(-0.5f, 0.5f, 0);
+	_ball[0].center = XprVec3_(-0.5f, 0.5f, 0);
 	_ball[0].radius = 0.25f;
-	_ball[1].center = xprVec3_(0.5f, 0.5f, 0);
+	_ball[1].center = XprVec3_(0.5f, 0.5f, 0);
 	_ball[1].radius = 0.25f;
 	_ballMesh = Mesh_createUnitSphere(32);
 
-	{	xprVec3 offset = {-2.5f, -2.5f, 0};
-		_floorMesh = Mesh_createQuad(5, 5, &offset, 1);
-	}
+	offset = XprVec3_(-2.5f, -2.5f, 0);
+	_floorMesh = Mesh_createQuad(5, 5, &offset, 1);
 
 	// set up on screen menu
 	{

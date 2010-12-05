@@ -17,6 +17,7 @@ IF( WIN32 )
 	IF( CYGWIN )
 		#ADD_DEFINITIONS( -DTIME_WITH_SYS_TIME )
 		ADD_DEFINITIONS( -DX_DISPLAY_MISSING )
+		ADD_DEFINITIONS( -D_WIN32 )
 		#ADD_DEFINITIONS( -std=c99 )
 		#SET( PLATFORM_LIBS GL GLU X11 )
 		SET( PLATFORM_LIBS opengl32 glu32 winmm gdi32 )
@@ -59,6 +60,8 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/ClothSimulation.glsl
 	example/Mesh.c
 	example/Mesh.h
+	example/Material.c
+	example/Material.h
 	example/Cloth.c
 	example/Cloth.h
 	example/Sphere.c

@@ -7,43 +7,43 @@
 extern "C" {
 #endif
 
-typedef enum xprBufferType
+typedef enum XprBufferType
 {
-	xprBufferType_Vertex,
-	xprBufferType_Index,
-	xprBufferType_Uniform,
-} xprBufferType;
+	XprBufferType_Vertex,
+	XprBufferType_Index,
+	XprBufferType_Uniform,
+} XprBufferType;
 
-typedef enum xprBufferFlag
+typedef enum XprBufferFlag
 {
-	xprBufferFlag_Mapped = 1 << 0,
-} xprBufferFlag;
+	XprBufferFlag_Mapped = 1 << 0,
+} XprBufferFlag;
 
-typedef enum xprBufferMapAccess
+typedef enum XprBufferMapAccess
 {
-	xprBufferMapAccess_Read,
-	xprBufferMapAccess_Write,
-	xprBufferMapAccess_ReadWrite,
-} xprBufferMapAccess;
+	XprBufferMapAccess_Read,
+	XprBufferMapAccess_Write,
+	XprBufferMapAccess_ReadWrite,
+} XprBufferMapAccess;
 
-typedef struct xprBuffer
+typedef struct XprBuffer
 {
 	int name;
-	xprBufferType type;
+	XprBufferType type;
 	size_t sizeInBytes;
-	size_t flags;	// combinations of xprBufferFlag
+	size_t flags;	// combinations of XprBufferFlag
 
-} xprBuffer;
+} XprBuffer;
 
-xprBuffer* xprBuffer_new(xprBufferType type, size_t sizeInBytes, void* initialData);
+XprBuffer* XprBuffer_new(XprBufferType type, size_t sizeInBytes, void* initialData);
 
-void xprBuffer_free(xprBuffer* self);
+void XprBuffer_free(XprBuffer* self);
 
-void xprBuffer_update(xprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data);
+void XprBuffer_update(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data);
 
-void* xprBuffer_map(xprBuffer* self, xprBufferMapAccess usage);
+void* XprBuffer_map(XprBuffer* self, XprBufferMapAccess usage);
 
-void xprBuffer_unmap(xprBuffer* self);
+void XprBuffer_unmap(XprBuffer* self);
 
 #ifdef __cplusplus
 }

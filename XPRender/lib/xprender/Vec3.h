@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-typedef struct xprVec3
+typedef struct XprVec3
 {
 	union
 	{
@@ -18,51 +18,51 @@ typedef struct xprVec3
 		};
 		float v[3];
 	};
-} xprVec3;
+} XprVec3;
 
-xprVec3 xprVec3_(float x, float y, float z);
+XprVec3 XprVec3_(float x, float y, float z);
 
-const xprVec3* xprVec3_c000();
-const xprVec3* xprVec3_c100();
-const xprVec3* xprVec3_c010();
-const xprVec3* xprVec3_c001();
+const XprVec3* XprVec3_c000();
+const XprVec3* XprVec3_c100();
+const XprVec3* XprVec3_c010();
+const XprVec3* XprVec3_c001();
 
-void xprVec3_set(xprVec3* _out, float x, float y, float z);
+void XprVec3_set(XprVec3* _out, float x, float y, float z);
 
-xprBool xprVec3_isEquals(const xprVec3* a, const xprVec3* b, float epsilon);
+xprBool XprVec3_isEquals(const XprVec3* a, const XprVec3* b, float epsilon);
 
 /* return a + b */
-xprVec3* xprVec3_add(xprVec3* _out, const xprVec3* a, const xprVec3* b);
+XprVec3* XprVec3_add(XprVec3* _out, const XprVec3* a, const XprVec3* b);
 
 /* return a - b */
-xprVec3* xprVec3_sub(xprVec3* _out, const xprVec3* a, const xprVec3* b);
+XprVec3* XprVec3_sub(XprVec3* _out, const XprVec3* a, const XprVec3* b);
 
 /* return term by term a * b */
-xprVec3* xprVec3_mult(xprVec3* _out, const xprVec3* a, const xprVec3* b);
+XprVec3* XprVec3_mult(XprVec3* _out, const XprVec3* a, const XprVec3* b);
 
 /* return a * b */
-xprVec3* xprVec3_multS(xprVec3* _out, const xprVec3* a, float b);
+XprVec3* XprVec3_multS(XprVec3* _out, const XprVec3* a, float b);
 
 /* return a dot b */
-float xprVec3_dot(const xprVec3* a, const xprVec3* b);
+float XprVec3_dot(const XprVec3* a, const XprVec3* b);
 
 /* return |a|^2 */
-float xprVec3_sqLength(const xprVec3* a);
+float XprVec3_sqLength(const XprVec3* a);
 
 /* return |a| */
-float xprVec3_length(const xprVec3* a);
+float XprVec3_length(const XprVec3* a);
 
 /* return |a-b| */
-float xprVec3_distance(const xprVec3* a, const xprVec3* b);
+float XprVec3_distance(const XprVec3* a, const XprVec3* b);
 
 /* normalize a and return |a| */
-float xprVec3_normalize(xprVec3* a);
+float XprVec3_normalize(XprVec3* a);
 
 /* return normalized copy of a */
-xprVec3 xprVec3_normalizedCopy(const xprVec3* a);
+XprVec3 XprVec3_normalizedCopy(const XprVec3* a);
 
 /* return a cross b */
-xprVec3* xprVec3_cross(xprVec3* _out, const xprVec3* a, const xprVec3* b);
+XprVec3* XprVec3_cross(XprVec3* _out, const XprVec3* a, const XprVec3* b);
 
 #ifdef __cplusplus
 }

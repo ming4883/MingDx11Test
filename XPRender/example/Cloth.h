@@ -19,12 +19,12 @@ typedef struct ClothConstraint
 typedef struct Cloth
 {
 	size_t segmentCount;
-	xprVec3* p;		// current positions
-	xprVec3* p2;	// last positions
-	xprVec3* a;		// accelerations
-	xprVec3 g;		// gravity
+	XprVec3* p;		// current positions
+	XprVec3* p2;	// last positions
+	XprVec3* a;		// accelerations
+	XprVec3 g;		// gravity
 	xprBool* fixed;		// fixed
-	xprVec3* fixPos;	// fix positions
+	XprVec3* fixPos;	// fix positions
 	float timeStep;	// system time step
 	float damping;	// dumping due to air resistence, 0-1, 0 = no dumping
 
@@ -35,13 +35,13 @@ typedef struct Cloth
 
 } Cloth;
 
-Cloth* Cloth_new(float width, float height, const xprVec3* offset, size_t segmentCount);
+Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmentCount);
 
 void Cloth_free(Cloth* self);
 
 void Cloth_updateMesh(Cloth* self);
 
-void Cloth_addForceToAll(Cloth* self, const xprVec3* force);
+void Cloth_addForceToAll(Cloth* self, const XprVec3* force);
 
 void Cloth_verletIntegration(Cloth* self);
 
@@ -49,7 +49,7 @@ void Cloth_satisfyConstraints(Cloth* self);
 
 void Cloth_collideWithSphere(Cloth* self, const struct Sphere* sphere);
 
-void Cloth_collideWithPlane(Cloth* self, const xprVec3* normal, const xprVec3* point);
+void Cloth_collideWithPlane(Cloth* self, const XprVec3* normal, const XprVec3* point);
 
 #ifdef __cplusplus
 }

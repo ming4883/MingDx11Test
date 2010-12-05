@@ -7,15 +7,15 @@
 extern "C" {
 #endif
 
-typedef struct xprRenderTarget
+typedef struct XprRenderTarget
 {
 	int name;
 	size_t flags;
-} xprRenderTarget;
+} XprRenderTarget;
 
-xprRenderTarget* xprRenderTarget_new();
+XprRenderTarget* XprRenderTarget_new();
 
-void xprRenderTarget_free(xprRenderTarget* self);
+void XprRenderTarget_free(XprRenderTarget* self);
 
 #ifdef __cplusplus
 }

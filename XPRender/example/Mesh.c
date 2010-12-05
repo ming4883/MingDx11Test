@@ -11,18 +11,18 @@ Mesh* Mesh_new(size_t vertexCount, size_t indexCount)
 	self->vertexCount = vertexCount;
 	self->indexCount = indexCount;
 	
-	self->vertexBuffer = xprBuffer_new(xprBufferType_Vertex, sizeof(xprVec3) * self->vertexCount, nullptr);
-	self->normalBuffer = xprBuffer_new(xprBufferType_Vertex, sizeof(xprVec3) * self->vertexCount, nullptr);
-	self->indexBuffer = xprBuffer_new(xprBufferType_Index, sizeof(unsigned short) * self->indexCount, nullptr);
+	self->vertexBuffer = XprBuffer_new(XprBufferType_Vertex, sizeof(XprVec3) * self->vertexCount, nullptr);
+	self->normalBuffer = XprBuffer_new(XprBufferType_Vertex, sizeof(XprVec3) * self->vertexCount, nullptr);
+	self->indexBuffer = XprBuffer_new(XprBufferType_Index, sizeof(unsigned short) * self->indexCount, nullptr);
 
 	return self;
 }
 
 void Mesh_free(Mesh* self)
 {
-	xprBuffer_free(self->vertexBuffer);
-	xprBuffer_free(self->normalBuffer);
-	xprBuffer_free(self->indexBuffer);
+	XprBuffer_free(self->vertexBuffer);
+	XprBuffer_free(self->normalBuffer);
+	XprBuffer_free(self->indexBuffer);
 	free(self);
 }
 
@@ -30,11 +30,11 @@ void Mesh_draw(Mesh* self)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(xprVec3), 0);
+	glVertexPointer(3, GL_FLOAT, sizeof(XprVec3), 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->name);
 	glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_FLOAT, sizeof(xprVec3), 0);
+	glNormalPointer(GL_FLOAT, sizeof(XprVec3), 0);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->indexBuffer->name);
 
@@ -48,11 +48,11 @@ void Mesh_drawPoints(Mesh* self)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(xprVec3), 0);
+	glVertexPointer(3, GL_FLOAT, sizeof(XprVec3), 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->name);
 	glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_FLOAT, sizeof(xprVec3), 0);
+	glNormalPointer(GL_FLOAT, sizeof(XprVec3), 0);
 	
 	glDrawArrays(GL_POINTS, 0, self->vertexCount);
 	
@@ -64,8 +64,8 @@ Mesh* Mesh_createUnitSphere(size_t segmentCount)
 {	
 #define PI 3.14159265358979323846f
 
-	xprVec3* pos;
-	xprVec3* nor;
+	XprVec3* pos;
+	XprVec3* nor;
 	unsigned short* idx;
 
 	float theta, phi;
@@ -79,9 +79,9 @@ Mesh* Mesh_createUnitSphere(size_t segmentCount)
 		(height-2)*(width-1)*2 * 3
 		);
 
-	pos = xprBuffer_map(mesh->vertexBuffer, xprBufferMapAccess_Write);
-	nor = xprBuffer_map(mesh->normalBuffer, xprBufferMapAccess_Write);
-	idx = xprBuffer_map(mesh->indexBuffer, xprBufferMapAccess_Write);
+	pos = XprBuffer_map(mesh->vertexBuffer, XprBufferMapAccess_Write);
+	nor = XprBuffer_map(mesh->normalBuffer, XprBufferMapAccess_Write);
+	idx = XprBuffer_map(mesh->indexBuffer, XprBufferMapAccess_Write);
 
 	for(t=0, j=1; j<height-1; ++j)
 	{
@@ -96,8 +96,8 @@ Mesh* Mesh_createUnitSphere(size_t segmentCount)
 			++t;
 		}
 	}
-	pos[t] = xprVec3_(0, 1, 0); nor[t] = pos[t]; ++t;
-	pos[t] = xprVec3_(0,-1, 0); nor[t] = pos[t]; ++t;
+	pos[t] = XprVec3_(0, 1, 0); nor[t] = pos[t]; ++t;
+	pos[t] = XprVec3_(0,-1, 0); nor[t] = pos[t]; ++t;
 
 	for(t=0, j=0; j<height-3; ++j)
 	{
@@ -125,19 +125,19 @@ Mesh* Mesh_createUnitSphere(size_t segmentCount)
 		
 	}
 
-	xprBuffer_unmap(mesh->vertexBuffer);
-	xprBuffer_unmap(mesh->normalBuffer);
-	xprBuffer_unmap(mesh->indexBuffer);
+	XprBuffer_unmap(mesh->vertexBuffer);
+	XprBuffer_unmap(mesh->normalBuffer);
+	XprBuffer_unmap(mesh->indexBuffer);
 
 	return mesh;
 
 #undef PI
 }
 
-Mesh* Mesh_createQuad(float width, float height, const xprVec3* offset, size_t segmentCount)
+Mesh* Mesh_createQuad(float width, float height, const XprVec3* offset, size_t segmentCount)
 {
-	xprVec3* pos;
-	xprVec3* nor;
+	XprVec3* pos;
+	XprVec3* nor;
 	unsigned short* idx;
 
 	size_t r, c;
@@ -148,9 +148,9 @@ Mesh* Mesh_createQuad(float width, float height, const xprVec3* offset, size_t s
 		(stride-1) * (stride-1) * 6
 		);
 
-	pos = xprBuffer_map(mesh->vertexBuffer, xprBufferMapAccess_Write);
-	nor = xprBuffer_map(mesh->normalBuffer, xprBufferMapAccess_Write);
-	idx = xprBuffer_map(mesh->indexBuffer, xprBufferMapAccess_Write);
+	pos = XprBuffer_map(mesh->vertexBuffer, XprBufferMapAccess_Write);
+	nor = XprBuffer_map(mesh->normalBuffer, XprBufferMapAccess_Write);
+	idx = XprBuffer_map(mesh->indexBuffer, XprBufferMapAccess_Write);
 
 	for(r=0; r<(stride-1); ++r)
 	{
@@ -181,14 +181,14 @@ Mesh* Mesh_createQuad(float width, float height, const xprVec3* offset, size_t s
 			float x = offset->v[0] + width * (float)c / segmentCount;
 
 			size_t i = r * stride + c;
-			pos[i] = xprVec3_(x, y, offset->v[2]);
-			nor[i] = xprVec3_(0, 0, 1);
+			pos[i] = XprVec3_(x, y, offset->v[2]);
+			nor[i] = XprVec3_(0, 0, 1);
 		}
 	}
 	
-	xprBuffer_unmap(mesh->vertexBuffer);
-	xprBuffer_unmap(mesh->normalBuffer);
-	xprBuffer_unmap(mesh->indexBuffer);
+	XprBuffer_unmap(mesh->vertexBuffer);
+	XprBuffer_unmap(mesh->normalBuffer);
+	XprBuffer_unmap(mesh->indexBuffer);
 
 	return mesh;
 }
