@@ -53,8 +53,16 @@ ADD_LIBRARY( xprender
     ${XPRENDER}
 	)
 
-# ANSI C SAMPLES:
+# UNIT test_xprender
+ADD_EXECUTABLE( test_xprender ${CONSOLE_SYSTEM}
+	test/TestXPRender.c
+	lib/cutest/CuTest.c
+	lib/cutest/CuTest.h
+	)
+	
+TARGET_LINK_LIBRARIES( test_xprender xprender ${PLATFORM_LIBS} )
 
+# example_cloth_simulation
 ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/ClothSimulation.c
 	example/ClothSimulation.glsl
@@ -71,6 +79,7 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
 
+# MosegaardsClothTutorial
 ADD_EXECUTABLE( MosegaardsClothTutorial ${CONSOLE_SYSTEM}
 	example/MosegaardsClothTutorial.cpp
 	)
