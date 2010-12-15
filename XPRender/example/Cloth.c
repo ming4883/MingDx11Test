@@ -33,7 +33,7 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 	self->p2 = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
 	self->a = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
 	self->fixPos = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
-	self->fixed = (xprBool*)malloc(sizeof(xprBool) * segmentCount * segmentCount);
+	self->fixed = (XprBool*)malloc(sizeof(XprBool) * segmentCount * segmentCount);
 
 	self->mesh = Mesh_new(segmentCount * segmentCount, (segmentCount-1) * (segmentCount-1) * 6);
 	
@@ -70,7 +70,7 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 			self->p[i] = p;
 			self->p2[i] = p;
 			self->fixPos[i] = p;
-			self->fixed[i] = xprFalse;
+			self->fixed[i] = XprFalse;
 
 			self->a[i].x = 0;
 			self->a[i].y = 0;
@@ -78,8 +78,8 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 		}
 	}
 
-	self->fixed[0] = xprTrue;
-	self->fixed[segmentCount-1] = xprTrue;
+	self->fixed[0] = XprTrue;
+	self->fixed[segmentCount-1] = XprTrue;
 
 	// setup constraints
 	self->constraints = (ClothConstraint*)malloc(sizeof(ClothConstraint) * self->segmentCount * self->segmentCount * 8);
@@ -262,7 +262,7 @@ void Cloth_satisfyConstraints(Cloth* self)
 
 	for(i = 0; i < cnt; ++i)
 	{
-		if(xprTrue == self->fixed[i])
+		if(XprTrue == self->fixed[i])
 			self->p[i] = self->fixPos[i];
 	}
 

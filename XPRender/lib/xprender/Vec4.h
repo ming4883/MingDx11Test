@@ -34,7 +34,7 @@ const XprVec4* XprVec4_c0001();
 
 void XprVec4_set(XprVec4* _out, float x, float y, float z, float w);
 
-xprBool XprVec4_isEquals(const XprVec4* a, const XprVec4* b, float epsilon);
+XprBool XprVec4_isEquals(const XprVec4* a, const XprVec4* b, float epsilon);
 
 /* return a + b */
 XprVec4* XprVec4_add(XprVec4* _out, const XprVec4* a, const XprVec4* b);

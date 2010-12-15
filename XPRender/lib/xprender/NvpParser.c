@@ -5,13 +5,13 @@ void XprNvpParser_init(XprNvpParser* self, const char* str)
 	self->mStr = self->mPos = (char*)str;
 }
 
-xprBool advancePos(char** pos)
+XprBool advancePos(char** pos)
 {
 	if(**pos != '\0') {
 		++(*pos);
-		return xprTrue;
+		return XprTrue;
 	}
-	return xprFalse;
+	return XprFalse;
 }
 
 static void skipSeps(char** pos)
@@ -43,7 +43,7 @@ void skipNonSeps(char** pos)
 	} while(advancePos(pos));
 }
 
-xprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** value)
+XprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** value)
 {
 	static const char cQuots[] = "'\"";
 	char* name_;
@@ -60,7 +60,7 @@ xprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** va
 
 	// Should be '='
 	if(*self->mPos != '=')
-		return xprFalse;
+		return XprFalse;
 	*(self->mPos++) = '\0';
 
 	// Get the value
@@ -79,5 +79,5 @@ xprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** va
 		*(self->mPos-1) = '\0';
 
 	*name = name_;
-	return xprTrue;
+	return XprTrue;
 }

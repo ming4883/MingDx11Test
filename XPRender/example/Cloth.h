@@ -23,7 +23,7 @@ typedef struct Cloth
 	XprVec3* p2;	// last positions
 	XprVec3* a;		// accelerations
 	XprVec3 g;		// gravity
-	xprBool* fixed;		// fixed
+	XprBool* fixed;		// fixed
 	XprVec3* fixPos;	// fix positions
 	float timeStep;	// system time step
 	float damping;	// dumping due to air resistence, 0-1, 0 = no dumping

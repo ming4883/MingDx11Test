@@ -58,6 +58,7 @@ ADD_EXECUTABLE( test_xprender ${CONSOLE_SYSTEM}
 	test/TestXPRender.c
 	lib/cutest/CuTest.c
 	lib/cutest/CuTest.h
+	lib/cutest/README.txt
 	)
 	
 TARGET_LINK_LIBRARIES( test_xprender xprender ${PLATFORM_LIBS} )

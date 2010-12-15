@@ -15,7 +15,7 @@ typedef struct XprNvpParser
 
 void XprNvpParser_init(XprNvpParser* self, const char* str);
 
-xprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** value);
+XprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** value);
 
 #ifdef __cplusplus
 }

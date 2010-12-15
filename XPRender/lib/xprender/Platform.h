@@ -9,9 +9,9 @@ extern "C" {
 
 #define nullptr 0
 
-typedef char xprBool;
-#define xprFalse 0
-#define xprTrue 1
+typedef char XprBool;
+#define XprFalse 0
+#define XprTrue 1
 
 #ifdef __cplusplus
 }

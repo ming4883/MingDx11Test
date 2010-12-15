@@ -46,16 +46,16 @@ void XprVec3_set(XprVec3* _out, float x, float y, float z)
 	_out->z = z;
 }
 
-xprBool XprVec3_isEquals(const XprVec3* a, const XprVec3* b, float epsilon)
+XprBool XprVec3_isEquals(const XprVec3* a, const XprVec3* b, float epsilon)
 {
 	float ex = a->x - b->x;
 	float ey = a->y - b->y;
 	float ez = a->z - b->z;
 
 	if(ex * ex + ey * ey + ez * ez < epsilon)
-		return xprTrue;
+		return XprTrue;
 
-	return xprFalse;
+	return XprFalse;
 }
 
 XprVec3* XprVec3_add(XprVec3* _out, const XprVec3* a, const XprVec3* b)

@@ -29,7 +29,7 @@ const XprVec3* XprVec3_c001();
 
 void XprVec3_set(XprVec3* _out, float x, float y, float z);
 
-xprBool XprVec3_isEquals(const XprVec3* a, const XprVec3* b, float epsilon);
+XprBool XprVec3_isEquals(const XprVec3* a, const XprVec3* b, float epsilon);
 
 /* return a + b */
 XprVec3* XprVec3_add(XprVec3* _out, const XprVec3* a, const XprVec3* b);

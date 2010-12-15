@@ -21,7 +21,7 @@ XprVec3 _floorP = {0, 0, 0};
 float _gravity = 50;
 float _airResistance = 5;
 float _impact = 3;
-xprBool _showDebug = xprFalse;
+XprBool _showDebug = XprFalse;
 
 typedef struct Aspect
 {
@@ -167,7 +167,7 @@ void drawScene()
 		}
 	}
 
-	if(xprTrue == _showDebug)
+	if(XprTrue == _showDebug)
 	{
 		glDisable(GL_LIGHTING);
 		glDisable(GL_DEPTH_TEST);
