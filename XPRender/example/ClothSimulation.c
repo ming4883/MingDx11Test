@@ -5,9 +5,12 @@
 
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Mat44.h"
+#include "../lib/glsw/glsw.h"
+
 #include "Cloth.h"
 #include "Sphere.h"
 #include "Mesh.h"
+#include "Material.h"
 #include "Menu.h"
 
 Menu* _menu = nullptr;
@@ -16,6 +19,7 @@ Cloth* _cloth = nullptr;
 Sphere _ball[BallCount];
 Mesh* _ballMesh = nullptr;
 Mesh* _floorMesh = nullptr;
+Material* _material = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
 float _gravity = 50;
@@ -332,6 +336,7 @@ void quit(void)
 	Cloth_free(_cloth);
 	Mesh_free(_ballMesh);
 	Mesh_free(_floorMesh);
+	Material_free(_material);
 }
 
 int main(int argc, char** argv)
@@ -348,6 +353,22 @@ int main(int argc, char** argv)
 
 	if(GLEW_OK != (err = glewInit()))
 		printf("failed to initialize GLEW %s\n", glewGetErrorString(err));
+
+	glswInit();
+	glswSetPath("../example/", ".glsl");
+
+	_material = Material_new();
+	{
+		const char* args[] = {
+			"vs", glswGetShader("ClothSimulation.Vertex"),
+			"fs", glswGetShader("ClothSimulation.Fragment"),
+			nullptr,
+		};
+		if(XprFalse == Material_load(_material, args))
+			printf("failed to load material!\n");
+	}
+	
+	glswShutdown();
 
 	offset = XprVec3_(-1, 1.5f, 0);
 	_cloth = Cloth_new(2, 2, &offset, 32);

@@ -55,41 +55,39 @@ void XprShader_free(XprShader* self)
 
 XprPipeline* XprPipeline_new(const XprShader** const shaders, size_t shaderCnt)
 {
+	size_t i;
+	int linkStatus;
 	XprPipeline* self = (XprPipeline*)malloc(sizeof(XprPipeline));
 
 	self->name = glCreateProgram();
 	self->flags = 0;
 
 	// attach shaders
+	for(i=0; i<shaderCnt; ++i)
 	{
-		size_t i;
-		for(i=0; i<shaderCnt; ++i)
+		if(nullptr != shaders[i])
 			glAttachShader(self->name, shaders[i]->name);
 	}
 
 	// link program
+	glLinkProgram(self->name);
+
+	glGetProgramiv(self->name, GL_LINK_STATUS, &linkStatus);
+	if(GL_FALSE == linkStatus)
 	{
-		int linkStatus;
-
-		glLinkProgram(self->name);
-
-		glGetProgramiv(self->name, GL_LINK_STATUS, &linkStatus);
-		if(GL_FALSE == linkStatus)
+		GLint len;
+		glGetProgramiv(self->name, GL_INFO_LOG_LENGTH, &len);
+		if(len > 0)
 		{
-			GLint len;
-			glGetProgramiv(self->name, GL_INFO_LOG_LENGTH, &len);
-			if(len > 0)
-			{
-				char* buf = (char*)malloc(len);
-				glGetProgramInfoLog(self->name, len, nullptr, buf);
-				printf(buf);
-				free(buf);
-			}
+			char* buf = (char*)malloc(len);
+			glGetProgramInfoLog(self->name, len, nullptr, buf);
+			printf(buf);
+			free(buf);
 		}
-		else
-		{
-			self->flags |= XprPipelineFlag_Linked;
-		}
+	}
+	else
+	{
+		self->flags |= XprPipelineFlag_Linked;
 	}
 
 	return self;
