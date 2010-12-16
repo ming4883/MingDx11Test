@@ -9,7 +9,7 @@ GLenum xprGL_SHADER_TYPE[] = {
 	GL_FRAGMENT_SHADER,
 };
 
-XprShader* XprSdhader_new(const char** sources, size_t srcCnt, XprShaderType type)
+XprShader* XprShader_new(const char** sources, size_t srcCnt, XprShaderType type)
 {
 	int compileStatus;
 

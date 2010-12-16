@@ -12,8 +12,7 @@ struct XprPipeline;
 
 typedef struct Material
 {
-	struct XprShader* vs;
-	struct XprShader* ps;
+	struct XprShader** shaders;
 	struct XprPipeline* pipeline;
 } Material;
 
@@ -21,7 +20,7 @@ Material* Material_new();
 
 void Material_free(Material* self);
 
-void Material_loadFromFile(Material* self, const char* effectFilename);
+XprBool Material_load(Material* self, const char** args);
 
 #ifdef __cplusplus
 }
