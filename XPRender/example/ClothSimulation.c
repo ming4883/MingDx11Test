@@ -5,6 +5,7 @@
 
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Mat44.h"
+#include "../lib/xprender/Shader.h"
 #include "../lib/glsw/glsw.h"
 
 #include "Cloth.h"
@@ -19,7 +20,8 @@ Cloth* _cloth = nullptr;
 Sphere _ball[BallCount];
 Mesh* _ballMesh = nullptr;
 Mesh* _floorMesh = nullptr;
-Material* _material = nullptr;
+Material* _sceneMaterial = nullptr;
+Material* _uiMaterial = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
 float _gravity = 50;
@@ -121,6 +123,8 @@ void drawScene()
 		glEnable(GL_LIGHT0);
 	}
 
+	glUseProgram(_sceneMaterial->pipeline->name);
+
 	// draw floor
 	{
 		float d[] = {1.0f, 0.88f, 0.33f, 1};
@@ -138,7 +142,7 @@ void drawScene()
 	// draw _cloth
 	{
 		float d[] = {1.0f, 0.22f, 0.0f, 1};
-		float s[] = {0, 0, 0, 1};
+		float s[] = {0.125f, 0.125f, 0.125f, 1};
 		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
 		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
@@ -171,6 +175,8 @@ void drawScene()
 		}
 	}
 
+	glUseProgram(0);
+
 	if(XprTrue == _showDebug)
 	{
 		glDisable(GL_LIGHTING);
@@ -182,6 +188,8 @@ void drawScene()
 
 		glPopMatrix();
 	}
+
+	
 }
 
 void drawItem(float x, float y, int selected, const char* str)
@@ -336,7 +344,24 @@ void quit(void)
 	Cloth_free(_cloth);
 	Mesh_free(_ballMesh);
 	Mesh_free(_floorMesh);
-	Material_free(_material);
+	Material_free(_sceneMaterial);
+	Material_free(_uiMaterial);
+}
+
+Material* loadMaterial(const char* vsKey, const char* fsKey)
+{
+	const char* args[] = {
+		"vs", glswGetShader(vsKey),
+		"fs", glswGetShader(fsKey),
+		nullptr,
+	};
+	
+	Material* material = Material_new(args);
+
+	if(0 == (material->flags & MaterialFlag_Ready))
+		printf("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
+
+	return material;
 }
 
 int main(int argc, char** argv)
@@ -354,19 +379,17 @@ int main(int argc, char** argv)
 	if(GLEW_OK != (err = glewInit()))
 		printf("failed to initialize GLEW %s\n", glewGetErrorString(err));
 
+	// materials
 	glswInit();
 	glswSetPath("../example/", ".glsl");
 
-	_material = Material_new();
-	{
-		const char* args[] = {
-			"vs", glswGetShader("ClothSimulation.Vertex"),
-			"fs", glswGetShader("ClothSimulation.Fragment"),
-			nullptr,
-		};
-		if(XprFalse == Material_load(_material, args))
-			printf("failed to load material!\n");
-	}
+	_sceneMaterial = loadMaterial(
+		"ClothSimulation.Scene.Vertex",
+		"ClothSimulation.Scene.Fragment");
+	
+	_uiMaterial = loadMaterial(
+		"ClothSimulation.UI.Vertex",
+		"ClothSimulation.UI.Fragment");
 	
 	glswShutdown();
 
@@ -415,6 +438,6 @@ int main(int argc, char** argv)
 	glutMotionFunc(motion);
 	glutIdleFunc(idle);
 	glutMainLoop();
-
-   return 0;
+	
+	return 0;
 }

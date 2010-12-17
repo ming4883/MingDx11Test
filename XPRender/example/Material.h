@@ -10,17 +10,21 @@ extern "C" {
 struct XprShader;
 struct XprPipeline;
 
+typedef enum MaterialFlag
+{
+	MaterialFlag_Ready = 1 << 0,
+} MaterialFlag;
+
 typedef struct Material
 {
 	struct XprShader** shaders;
 	struct XprPipeline* pipeline;
+	size_t flags;
 } Material;
 
-Material* Material_new();
+Material* Material_new(const char** args);
 
 void Material_free(Material* self);
-
-XprBool Material_load(Material* self, const char** args);
 
 #ifdef __cplusplus
 }

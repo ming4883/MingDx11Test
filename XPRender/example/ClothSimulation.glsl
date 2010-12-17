@@ -1,4 +1,4 @@
--- Vertex
+-- Scene.Vertex
 varying vec3 v_normal;
 varying vec3 v_pos;
 
@@ -8,7 +8,7 @@ void main() {
 	v_pos = (gl_ModelViewMatrix * gl_Vertex).xyz;
 }
 
--- Fragment
+-- Scene.Fragment
 varying vec3 v_normal;
 varying vec3 v_pos;
 
@@ -22,11 +22,28 @@ void main() {
 		
 	float ndl = max(0, dot(n, l)) * 0.8 + 0.2;
 	float ndh = max(0, dot(n, h));
-	ndh = pow(ndh, 64);
+	ndh = pow(ndh, gl_FrontMaterial.shininess);
 	
 	vec4 color = gl_FrontMaterial.diffuse;
 	color.xyz *= ndl;
-	color.xyz += vec3(ndh, ndh, ndh);
+	color.xyz += gl_FrontMaterial.specular.xyz * ndh;
 	
 	gl_FragColor = color;
+}
+
+-- UI.Vertex
+varying vec4 v_texcoord;
+
+void main() {
+	gl_Position = ftransform();
+	v_texcoord = gl_MultiTexCoord0;
+}
+
+-- UI.Fragment
+uniform sampler2D u_tex;
+
+varying vec4 v_texcoord;
+
+void main() {
+	gl_FragColor = tex2D(u_tex, v_texcoord.xy);
 }
