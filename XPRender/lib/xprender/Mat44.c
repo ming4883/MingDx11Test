@@ -2,6 +2,8 @@
 #include "Vec3.h"
 #include "Vec4.h"
 
+#include <math.h>
+
 XprMat44 XprMat44_(
 	float m00, float m01, float m02, float m03,
 	float m10, float m11, float m12, float m13,
@@ -139,6 +141,20 @@ void XprMat44_cameraLookAt(XprMat44* _out, const XprVec3* eyeAt, const XprVec3* 
 	_out->m03 = -XprVec3_dot(&side, eyeAt);
 	_out->m13 = -XprVec3_dot(&up, eyeAt);
 	_out->m23 = -XprVec3_dot(&fwd, eyeAt);
+}
+
+void XprMat44_prespective(XprMat44* _out, float fovyDeg, float aspect, float znear, float zfar)
+{
+	float f = 1 / tanf((fovyDeg * 3.1415926f / 180) * 0.5f);
+	float nf = 1 / (znear - zfar);
+
+	XprMat44_setIdentity(_out);
+	_out->m00 = f / aspect;
+	_out->m11 = f;
+	_out->m22 = (zfar + znear) * nf;
+	_out->m23 = (2 * zfar * znear) * nf;
+	_out->m32 = -1;
+	_out->m33 = 0;
 }
 
 void XprMat44_planarReflect(XprMat44* _out, const XprVec3* normal, const XprVec3* point)

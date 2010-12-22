@@ -52,6 +52,8 @@ void XprMat44_getBasis(struct XprVec3* xaxis, struct XprVec3* yaxis, struct XprV
 
 void XprMat44_cameraLookAt(XprMat44* _out, const struct XprVec3* eyeAt, const struct XprVec3* lookAt, const struct XprVec3* eyeUp);
 
+void XprMat44_prespective(XprMat44* _out, float fovyDeg, float aspect, float znear, float zfar);
+
 void XprMat44_planarReflect(XprMat44* _out, const struct XprVec3* normal, const struct XprVec3* point);
 
 #ifdef __cplusplus

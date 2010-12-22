@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "../lib/xprender/Vec3.h"
+#include "../lib/xprender/Vec4.h"
 #include "../lib/xprender/Mat44.h"
 #include "../lib/xprender/Shader.h"
 #include "../lib/glsw/glsw.h"
@@ -35,6 +36,17 @@ typedef struct Aspect
 } Aspect;
 
 Aspect _aspect;
+
+typedef struct RenderContext
+{
+	XprMat44 worldViewProjMtx;
+	XprVec4 matDiffuse;
+	XprVec4 matSpecular;
+	float matShininess;
+
+} RenderContext;
+
+RenderContext _renderContext;
 
 
 void drawBackground()
@@ -81,14 +93,18 @@ void drawScene()
 	XprVec3 lookAt = XprVec3_(0, 0, 0);
 	XprVec3 eyeUp = *XprVec3_c010();
 	XprMat44 viewMtx;
+	XprMat44 projMtx;
 
 	XprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	XprMat44_transpose(&viewMtx, &viewMtx);
+	
+	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
+	XprMat44_transpose(&projMtx, &projMtx);
 
 	// projection transform
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
+	glMultMatrixf(projMtx.v);
 
 	// viewing transform
 	glMatrixMode(GL_MODELVIEW);
@@ -245,8 +261,6 @@ void PezRender()
 {
 	glClearDepth(1);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	//glClearColor(0.5f, 0.5f, 0.5f, 1);
-	//glClear(GL_COLOR_BUFFER_BIT);
 	
 	drawBackground();
 	drawScene();
@@ -270,14 +284,9 @@ void PezConfig()
 
 const char* PezInitialize(int width, int height)
 {
-	GLenum err;
-
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
-
-	if(GLEW_OK != (err = glewInit()))
-		PezDebugString("failed to initialize GLEW %s\n", glewGetErrorString(err));
 
 	// materials
 	glswInit();
@@ -313,47 +322,6 @@ const char* PezInitialize(int width, int height)
 
 	return "Cloth Simulation";
 }
-//
-//void reshape(int w, int h)
-//{
-//	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
-//	_aspect.width = (float)w;
-//	_aspect.height = (float)h;
-//
-//	glutPostRedisplay();
-//}
-
-
-//void display(void)
-//{
-//	glClearDepth(1);
-//	glClear(GL_DEPTH_BUFFER_BIT);
-//	
-//	drawBackground();
-//	drawScene();
-//
-//	glutSwapBuffers();
-//
-//	{	// check for any OpenGL errors
-//		GLenum glerr = glGetError();
-//
-//		if(glerr != GL_NO_ERROR)
-//			PezDebugString("GL has error %d!\r", glerr);
-//	}
-//}
-//
-//void keyboard(int key, int x, int y)
-//{
-//	switch(key)
-//	{
-//	case 27:
-//		exit(0);
-//		break;
-//	case GLUT_KEY_F1:
-//		_showDebug = !_showDebug;
-//		break;
-//	}
-//}
 
 typedef struct Mouse
 {
@@ -391,96 +359,5 @@ void motion(int x, int y)
 		_cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
 		_cloth->fixPos[_cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
 	}
-}
-*/
-//
-//void idle(void)
-//{
-//	int iter;
-//	XprVec3 f;
-//
-//	static float t = 0;
-//	t += 0.0005f * _impact;
-//	
-//	_ball[0].center.z = cosf(t) * 5.f;
-//	_ball[1].center.z = sinf(t) * 5.f;
-//
-//	_cloth->timeStep = 0.01f;	// fixed time step
-//	_cloth->damping = _airResistance * 1e-3f;
-//
-//	// perform relaxation
-//	for(iter = 0; iter < 5; ++iter)
-//	{
-//		int i;
-//		for(i=0; i<BallCount; ++i)
-//			Cloth_collideWithSphere(_cloth, &_ball[i]);
-//
-//		Cloth_collideWithPlane(_cloth, &_floorN, &_floorP);
-//		Cloth_satisfyConstraints(_cloth);
-//	}
-//	
-//	f = XprVec3_(0, -_gravity * _cloth->timeStep, 0);
-//	Cloth_addForceToAll(_cloth, &f);
-//
-//	Cloth_verletIntegration(_cloth);
-//
-//	Cloth_updateMesh(_cloth);
-//
-//	glutPostRedisplay();
-//}
-
-/*
-int main(int argc, char** argv)
-{
-	GLenum err;
-	XprVec3 offset;
-
-	glutInit(&argc, argv);
-	glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB);
-
-	glutInitWindowSize(500, 500); 
-	glutInitWindowPosition(100, 100);
-	glutCreateWindow("ClothSimulation");
-
-	if(GLEW_OK != (err = glewInit()))
-		PezDebugString("failed to initialize GLEW %s\n", glewGetErrorString(err));
-
-	// materials
-	glswInit();
-	glswSetPath("../example/", ".glsl");
-
-	_sceneMaterial = loadMaterial(
-		"ClothSimulation.Scene.Vertex",
-		"ClothSimulation.Scene.Fragment");
-	
-	_uiMaterial = loadMaterial(
-		"ClothSimulation.UI.Vertex",
-		"ClothSimulation.UI.Fragment");
-	
-	glswShutdown();
-
-	offset = XprVec3_(-1, 1.5f, 0);
-	_cloth = Cloth_new(2, 2, &offset, 32);
-
-	_ball[0].center = XprVec3_(-0.5f, 0.5f, 0);
-	_ball[0].radius = 0.25f;
-	_ball[1].center = XprVec3_(0.5f, 0.5f, 0);
-	_ball[1].radius = 0.25f;
-	_ballMesh = Mesh_createUnitSphere(32);
-
-	offset = XprVec3_(-2.5f, -2.5f, 0);
-	_floorMesh = Mesh_createQuad(5, 5, &offset, 1);
-	
-	atexit(quit);
-	glutDisplayFunc(display); 
-	glutReshapeFunc(reshape);
-	//glutKeyboardFunc(keyboard);
-	glutSpecialFunc(keyboard);
-	glutMouseFunc(mouse);
-	glutMotionFunc(motion);
-	glutIdleFunc(idle);
-	glutMainLoop();
-	
-	return 0;
 }
 */
