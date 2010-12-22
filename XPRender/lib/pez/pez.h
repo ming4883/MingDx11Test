@@ -10,25 +10,19 @@ extern "C" {
 // Pez is a platform abstraction layer for OpenGL; it's an extra-tiny alternative to GLUT.
 // To create a cross-platform app, simply link against the Pez source and implement these four functions.
 //
+void PezConfig();
 const char* PezInitialize(int width, int height); // receive window size and return window title
 void PezRender();                                 // draw scene (Pez swaps the backbuffer for you)
 void PezUpdate(unsigned int milliseconds);        // receive elapsed time (e.g., update physics)
 void PezHandleMouse(int x, int y, int action);    // handle mouse action: PEZ_DOWN, PEZ_UP, or PEZ_MOVE
 
-// Here's the Pez configuration section.  Modify these constants to your liking!
+// Here's the Pez configuration section.  Modify these constants in PezConfig()!
 //
-#define PEZ_VIEWPORT_WIDTH 853
-#define PEZ_VIEWPORT_HEIGHT 480
-#define PEZ_ENABLE_MULTISAMPLING 1
-#define PEZ_VERTICAL_SYNC 1
-
-#if defined(__APPLE__)
-#define PEZ_GL_VERSION_TOKEN "GL2"
-#define PEZ_FORWARD_COMPATIBLE_GL 0
-#else
-#define PEZ_GL_VERSION_TOKEN "GL3"
-#define PEZ_FORWARD_COMPATIBLE_GL 1
-#endif
+extern int PEZ_VIEWPORT_WIDTH;
+extern int PEZ_VIEWPORT_HEIGHT;
+extern int PEZ_ENABLE_MULTISAMPLING;
+extern int PEZ_VERTICAL_SYNC;
+extern int PEZ_FORWARD_COMPATIBLE_GL;
 
 // Pez also defines a small handful of fixed constants and macros:
 //

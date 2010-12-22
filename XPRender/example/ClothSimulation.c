@@ -1,5 +1,5 @@
 #include <GL/glew.h>
-//#include <GL/glut.h>
+
 #include <stdio.h>
 #include <math.h>
 
@@ -245,10 +245,10 @@ void PezRender()
 {
 	glClearDepth(1);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	glClearColor(0.5f, 0.5f, 0.5f, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	//glClearColor(0.5f, 0.5f, 0.5f, 1);
+	//glClear(GL_COLOR_BUFFER_BIT);
 	
-	//drawBackground();
+	drawBackground();
 	drawScene();
 
 	{ // check for any OpenGL errors
@@ -257,6 +257,15 @@ void PezRender()
 	if(glerr != GL_NO_ERROR)
 		PezDebugString("GL has error %d!", glerr);
 	}
+}
+
+void PezConfig()
+{
+	PEZ_VIEWPORT_WIDTH = 800;
+	PEZ_VIEWPORT_HEIGHT = 600;
+	PEZ_ENABLE_MULTISAMPLING = 0;
+	PEZ_VERTICAL_SYNC = 0;
+	PEZ_FORWARD_COMPATIBLE_GL = 0;
 }
 
 const char* PezInitialize(int width, int height)

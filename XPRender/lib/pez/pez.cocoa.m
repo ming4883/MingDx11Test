@@ -155,8 +155,16 @@
 
 @end
 
+int PEZ_VIEWPORT_WIDTH = 853;
+int PEZ_VIEWPORT_HEIGHT = 480;
+int PEZ_ENABLE_MULTISAMPLING = 1;
+int PEZ_VERTICAL_SYNC = 1;
+int PEZ_FORWARD_COMPATIBLE_GL = 0;
+
 int main(int argc, const char *argv[])
 {
+    PezConfig();
+
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
     NSApplication *NSApp = [NSApplication sharedApplication];
     NSRect frame = NSMakeRect( 100., 100., 300., 300. );

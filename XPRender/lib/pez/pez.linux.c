@@ -22,6 +22,12 @@ unsigned int GetMilliseconds()
     return tp.tv_sec * 1000 + tp.tv_usec / 1000;
 }
 
+int PEZ_VIEWPORT_WIDTH = 853;
+int PEZ_VIEWPORT_HEIGHT = 480;
+int PEZ_ENABLE_MULTISAMPLING = 1;
+int PEZ_VERTICAL_SYNC = 1;
+int PEZ_FORWARD_COMPATIBLE_GL = 1;
+
 int main(int argc, char** argv)
 {
     int attrib[] = {
@@ -37,6 +43,8 @@ int main(int argc, char** argv)
 #endif
         None
     };
+    
+    PezConfig();
     
     PlatformContext context;
 

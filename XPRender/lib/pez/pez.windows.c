@@ -10,6 +10,12 @@
 #include <GL\glew.h>
 #include <GL\wglew.h>
 
+int PEZ_VIEWPORT_WIDTH = 853;
+int PEZ_VIEWPORT_HEIGHT = 480;
+int PEZ_ENABLE_MULTISAMPLING = 1;
+int PEZ_VERTICAL_SYNC = 1;
+int PEZ_FORWARD_COMPATIBLE_GL = 1;
+
 LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ignoreMe2)
@@ -28,6 +34,8 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
     GLenum err;
     DWORD previousTime = GetTickCount();
     MSG msg = {0};
+
+    PezConfig();
 
     wc.hCursor = LoadCursor(0, IDC_ARROW);
     RegisterClassExA(&wc);
