@@ -1,5 +1,5 @@
 #include <GL/glew.h>
-//#include <GL/glut.h>
+#include <GL/glut.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -7,13 +7,14 @@
 #include "../lib/xprender/Mat44.h"
 #include "../lib/xprender/Shader.h"
 #include "../lib/glsw/glsw.h"
-#include "../lib/pez/pez.h"
 
 #include "Cloth.h"
 #include "Sphere.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "Menu.h"
 
+Menu* _menu = nullptr;
 Cloth* _cloth = nullptr;
 #define BallCount 2
 Sphere _ball[BallCount];
@@ -36,6 +37,17 @@ typedef struct Aspect
 
 Aspect _aspect;
 
+void reshape(int w, int h)
+{
+	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
+	_aspect.width = (float)w;
+	_aspect.height = (float)h;
+
+	_menu->windowWidth = w;
+	_menu->windowHeight = h;
+
+	glutPostRedisplay();
+}
 
 void drawBackground()
 {
@@ -176,34 +188,122 @@ void drawScene()
 
 		glPopMatrix();
 	}
-}
 
-void quit(void)
-{
-	Cloth_free(_cloth);
-	Mesh_free(_ballMesh);
-	Mesh_free(_floorMesh);
-	Material_free(_sceneMaterial);
-	Material_free(_uiMaterial);
-}
-
-Material* loadMaterial(const char* vsKey, const char* fsKey)
-{
-	const char* args[] = {
-		"vs", glswGetShader(vsKey),
-		"fs", glswGetShader(fsKey),
-		nullptr,
-	};
 	
-	Material* material = Material_new(args);
-
-	if(0 == (material->flags & MaterialFlag_Ready))
-		PezDebugString("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
-
-	return material;
 }
 
-void PezUpdate(unsigned int elapsedMilliseconds)
+void drawItem(float x, float y, int selected, const char* str)
+{
+	const char *c;
+
+	if(1 == selected)
+		glColor4f(0.94f, 0.21f, 0, 1);
+	else
+		glColor4f(0.3f, 0.52f, 0.64f, 1);
+
+	glRasterPos2f(x, y);
+
+	for(c=str; *c != '\0'; ++c)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, *c);
+}
+
+void drawMenu()
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	Menu_draw(_menu, -1, 1, 5, drawItem);
+}
+
+void display(void)
+{
+	glClearDepth(1);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	
+	drawBackground();
+	drawScene();
+	drawMenu();
+
+	glutSwapBuffers();
+
+	{	// check for any OpenGL errors
+		GLenum glerr = glGetError();
+
+		if(glerr != GL_NO_ERROR)
+			printf("GL has error %d!\r", glerr);
+	}
+}
+
+void keyboard(int key, int x, int y)
+{
+	switch(key)
+	{
+	case 27:
+		exit(0);
+		break;
+	case GLUT_KEY_UP:
+		Menu_selectPrevItem(_menu);
+		break;
+	case GLUT_KEY_DOWN:
+		Menu_selectNextItem(_menu);
+		break;
+	case GLUT_KEY_LEFT:
+		MenuItem_decreaseValue(_menu->currentItem);
+		break;
+	case GLUT_KEY_RIGHT:
+		MenuItem_increaseValue(_menu->currentItem);
+		break;
+	case GLUT_KEY_F1:
+		_showDebug = !_showDebug;
+		break;
+	}
+}
+
+typedef struct Mouse
+{
+	int button;
+	int state;
+	int x;
+	int y;
+	XprVec3 clothOffsets[2];
+} Mouse;
+
+Mouse _mouse;
+
+void mouse(int button, int state, int x, int y)
+{
+	_mouse.button = button;
+	_mouse.state = state;
+	_mouse.x = x;
+	_mouse.y = y;
+
+	_mouse.clothOffsets[0] = _cloth->fixPos[0];
+	_mouse.clothOffsets[1] = _cloth->fixPos[_cloth->segmentCount-1];
+}
+
+void motion(int x, int y)
+{
+	int dx = x - _mouse.x;
+	int dy = y - _mouse.y;
+
+	if(_mouse.state == GLUT_DOWN && _mouse.button == GLUT_LEFT_BUTTON)
+	{
+		float mouseSensitivity = 0.0025f;
+		_cloth->fixPos[0].x = _mouse.clothOffsets[0].x + dx * mouseSensitivity;
+		_cloth->fixPos[_cloth->segmentCount-1].x = _mouse.clothOffsets[1].x + dx * mouseSensitivity;
+
+		_cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
+		_cloth->fixPos[_cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
+	}
+}
+
+void idle(void)
 {
 	int iter;
 	XprVec3 f;
@@ -234,193 +334,36 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 	Cloth_verletIntegration(_cloth);
 
 	Cloth_updateMesh(_cloth);
+
+	glutPostRedisplay();
 }
 
-void PezHandleMouse(int x, int y, int action)
+void quit(void)
 {
-
+	Menu_free(_menu);
+	Cloth_free(_cloth);
+	Mesh_free(_ballMesh);
+	Mesh_free(_floorMesh);
+	Material_free(_sceneMaterial);
+	Material_free(_uiMaterial);
 }
 
-void PezRender()
+Material* loadMaterial(const char* vsKey, const char* fsKey)
 {
-	glClearDepth(1);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glClearColor(0.5f, 0.5f, 0.5f, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	const char* args[] = {
+		"vs", glswGetShader(vsKey),
+		"fs", glswGetShader(fsKey),
+		nullptr,
+	};
 	
-	//drawBackground();
-	drawScene();
+	Material* material = Material_new(args);
 
-	{ // check for any OpenGL errors
-	GLenum glerr = glGetError();
+	if(0 == (material->flags & MaterialFlag_Ready))
+		printf("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
 
-	if(glerr != GL_NO_ERROR)
-		PezDebugString("GL has error %d!", glerr);
-	}
+	return material;
 }
 
-const char* PezInitialize(int width, int height)
-{
-	GLenum err;
-
-	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
-	_aspect.width = (float)width;
-	_aspect.height = (float)height;
-
-	if(GLEW_OK != (err = glewInit()))
-		PezDebugString("failed to initialize GLEW %s\n", glewGetErrorString(err));
-
-	// materials
-	glswInit();
-	glswSetPath("../example/", ".glsl");
-
-	_sceneMaterial = loadMaterial(
-		"ClothSimulation.Scene.Vertex",
-		"ClothSimulation.Scene.Fragment");
-	
-	_uiMaterial = loadMaterial(
-		"ClothSimulation.UI.Vertex",
-		"ClothSimulation.UI.Fragment");
-	
-	glswShutdown();
-
-	{
-	XprVec3 offset = XprVec3_(-1, 1.5f, 0);
-	_cloth = Cloth_new(2, 2, &offset, 32);
-	}
-
-	_ball[0].center = XprVec3_(-0.5f, 0.5f, 0);
-	_ball[0].radius = 0.25f;
-	_ball[1].center = XprVec3_(0.5f, 0.5f, 0);
-	_ball[1].radius = 0.25f;
-	_ballMesh = Mesh_createUnitSphere(32);
-
-	{
-	XprVec3 offset = XprVec3_(-2.5f, -2.5f, 0);
-	_floorMesh = Mesh_createQuad(5, 5, &offset, 1);
-	}
-	
-	atexit(quit);
-
-	return "Cloth Simulation";
-}
-//
-//void reshape(int w, int h)
-//{
-//	glViewport (0, 0, (GLsizei) w, (GLsizei) h);
-//	_aspect.width = (float)w;
-//	_aspect.height = (float)h;
-//
-//	glutPostRedisplay();
-//}
-
-
-//void display(void)
-//{
-//	glClearDepth(1);
-//	glClear(GL_DEPTH_BUFFER_BIT);
-//	
-//	drawBackground();
-//	drawScene();
-//
-//	glutSwapBuffers();
-//
-//	{	// check for any OpenGL errors
-//		GLenum glerr = glGetError();
-//
-//		if(glerr != GL_NO_ERROR)
-//			PezDebugString("GL has error %d!\r", glerr);
-//	}
-//}
-//
-//void keyboard(int key, int x, int y)
-//{
-//	switch(key)
-//	{
-//	case 27:
-//		exit(0);
-//		break;
-//	case GLUT_KEY_F1:
-//		_showDebug = !_showDebug;
-//		break;
-//	}
-//}
-
-typedef struct Mouse
-{
-	int button;
-	int state;
-	int x;
-	int y;
-	XprVec3 clothOffsets[2];
-} Mouse;
-
-Mouse _mouse;
-/*
-void mouse(int button, int state, int x, int y)
-{
-	_mouse.button = button;
-	_mouse.state = state;
-	_mouse.x = x;
-	_mouse.y = y;
-
-	_mouse.clothOffsets[0] = _cloth->fixPos[0];
-	_mouse.clothOffsets[1] = _cloth->fixPos[_cloth->segmentCount-1];
-}
-
-void motion(int x, int y)
-{
-	int dx = x - _mouse.x;
-	int dy = y - _mouse.y;
-
-	if(_mouse.state == GLUT_DOWN && _mouse.button == GLUT_LEFT_BUTTON)
-	{
-		float mouseSensitivity = 0.0025f;
-		_cloth->fixPos[0].x = _mouse.clothOffsets[0].x + dx * mouseSensitivity;
-		_cloth->fixPos[_cloth->segmentCount-1].x = _mouse.clothOffsets[1].x + dx * mouseSensitivity;
-
-		_cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
-		_cloth->fixPos[_cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
-	}
-}
-*/
-//
-//void idle(void)
-//{
-//	int iter;
-//	XprVec3 f;
-//
-//	static float t = 0;
-//	t += 0.0005f * _impact;
-//	
-//	_ball[0].center.z = cosf(t) * 5.f;
-//	_ball[1].center.z = sinf(t) * 5.f;
-//
-//	_cloth->timeStep = 0.01f;	// fixed time step
-//	_cloth->damping = _airResistance * 1e-3f;
-//
-//	// perform relaxation
-//	for(iter = 0; iter < 5; ++iter)
-//	{
-//		int i;
-//		for(i=0; i<BallCount; ++i)
-//			Cloth_collideWithSphere(_cloth, &_ball[i]);
-//
-//		Cloth_collideWithPlane(_cloth, &_floorN, &_floorP);
-//		Cloth_satisfyConstraints(_cloth);
-//	}
-//	
-//	f = XprVec3_(0, -_gravity * _cloth->timeStep, 0);
-//	Cloth_addForceToAll(_cloth, &f);
-//
-//	Cloth_verletIntegration(_cloth);
-//
-//	Cloth_updateMesh(_cloth);
-//
-//	glutPostRedisplay();
-//}
-
-/*
 int main(int argc, char** argv)
 {
 	GLenum err;
@@ -434,7 +377,7 @@ int main(int argc, char** argv)
 	glutCreateWindow("ClothSimulation");
 
 	if(GLEW_OK != (err = glewInit()))
-		PezDebugString("failed to initialize GLEW %s\n", glewGetErrorString(err));
+		printf("failed to initialize GLEW %s\n", glewGetErrorString(err));
 
 	// materials
 	glswInit();
@@ -461,6 +404,30 @@ int main(int argc, char** argv)
 
 	offset = XprVec3_(-2.5f, -2.5f, 0);
 	_floorMesh = Mesh_createQuad(5, 5, &offset, 1);
+
+	// set up on screen menu
+	{
+		MenuItem* item;
+
+		_menu = Menu_new();
+	
+		item = MenuItem_new(&_gravity);
+		Menu_addItem(_menu, item);
+		MenuItem_setText(item, "Gravity");
+		MenuItem_setBounds(item, 0.0f, 100.0f, 0.5f);
+
+		item = MenuItem_new(&_airResistance);
+		Menu_addItem(_menu, item);
+		MenuItem_setText(item, "Air Resistance");
+		MenuItem_setBounds(item, 0, 20, 1);		
+		
+		item = MenuItem_new(&_impact);
+		Menu_addItem(_menu, item);
+		MenuItem_setText(item, "Impact");
+		MenuItem_setBounds(item, 0, 10, 1);
+
+		Menu_selectNextItem(_menu);
+	}
 	
 	atexit(quit);
 	glutDisplayFunc(display); 
@@ -474,4 +441,3 @@ int main(int argc, char** argv)
 	
 	return 0;
 }
-*/

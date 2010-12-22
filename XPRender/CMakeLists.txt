@@ -13,6 +13,10 @@ ADD_DEFINITIONS( -DGLEW_STATIC )
 IF( WIN32 )
 
 	FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
+	
+	SET( PEZ lib/pez/pez.windows.c lib/pez/pez.h )
+	
+	SET( CONSOLE_SYSTEM WIN32 )
 
 	IF( CYGWIN )
 		#ADD_DEFINITIONS( -DTIME_WITH_SYS_TIME )
@@ -29,13 +33,16 @@ IF( WIN32 )
 		SOURCE_GROUP( "glew" FILES ${GLEW} )
 		SOURCE_GROUP( "glsw" FILES ${GLSW} )
 		SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
+		SOURCE_GROUP( "pez" FILES ${PEZ} )
 		SET( PLATFORM_LIBS opengl32 glu32 winmm )
-		#SET( CONSOLE_SYSTEM WIN32 )
+		
 	ENDIF()
 	
 ELSEIF( UNIX )
 
 	FILE( GLOB XPRENDER xprender/*.c xprender/*.h )
+	SET( PEZ lib/pez/pez.linux.c lib/pez/pez.h )
+	
 	SET( PLATFORM_LIBS GL GLU X11 )
 
 ENDIF()
@@ -44,13 +51,15 @@ INCLUDE_DIRECTORIES(
 	lib/freeglut
 	lib/glew
 	lib/glsw
+	lib/pez
 )
 
 ADD_LIBRARY( xprender
     ${FREEGLUT}
 	${GLEW}
 	${GLSW}
-    ${XPRENDER}
+	${XPRENDER}
+	${PEZ}
 	)
 
 # UNIT test_xprender
