@@ -48,6 +48,18 @@ void XprMat44_setTranslation(XprMat44* _out, const struct XprVec3* v);
 
 void XprMat44_getTranslation(struct XprVec3* v, const XprMat44* m);
 
+void XprMat44_makeTranslation(XprMat44* _out, const struct XprVec3* v);
+
+void XprMat44_makeScale(XprMat44* _out, const struct XprVec3* v);
+
+void XprMat44_makeRotationX(XprMat44* _out, float angleInDeg);
+
+void XprMat44_makeRotationY(XprMat44* _out, float angleInDeg);
+
+void XprMat44_makeRotationZ(XprMat44* _out, float angleInDeg);
+
+void XprMat44_makeRotation(XprMat44* _out, const struct XprVec3* axis, float angleInDeg);
+
 void XprMat44_getBasis(struct XprVec3* xaxis, struct XprVec3* yaxis, struct XprVec3* zaxis, const XprMat44* m);
 
 void XprMat44_cameraLookAt(XprMat44* _out, const struct XprVec3* eyeAt, const struct XprVec3* lookAt, const struct XprVec3* eyeUp);

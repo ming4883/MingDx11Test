@@ -94,11 +94,13 @@ void drawScene()
 	XprVec3 eyeUp = *XprVec3_c010();
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
+	XprMat44 viewProjMtx;
 
 	XprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
-	XprMat44_transpose(&viewMtx, &viewMtx);
-	
 	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
+	XprMat44_mult(&viewProjMtx, &projMtx, &viewMtx);
+
+	XprMat44_transpose(&viewMtx, &viewMtx);
 	XprMat44_transpose(&projMtx, &projMtx);
 
 	// projection transform

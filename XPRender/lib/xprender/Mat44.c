@@ -101,6 +101,70 @@ void XprMat44_getTranslation(struct XprVec3* v, const XprMat44* m)
 	v->z = m->m23;
 }
 
+void XprMat44_makeTranslation(XprMat44* _out, const struct XprVec3* v)
+{
+	_out->m00 = 1; _out->m01 = 0; _out->m02 = 0; _out->m03 = v->x;
+	_out->m10 = 0; _out->m11 = 1; _out->m12 = 0; _out->m13 = v->y;
+	_out->m20 = 0; _out->m21 = 0; _out->m22 = 1; _out->m23 = v->z;
+	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
+}
+
+void XprMat44_makeScale(XprMat44* _out, const struct XprVec3* v)
+{
+	_out->m00 = v->x; _out->m01 = 0; _out->m02 = 0; _out->m03 = 0;
+	_out->m10 = 0; _out->m11 = v->y; _out->m12 = 0; _out->m13 = 0;
+	_out->m20 = 0; _out->m21 = 0; _out->m22 = v->z; _out->m23 = 0;
+	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
+}
+
+void XprMat44_makeRotationX(XprMat44* _out, float angleInDeg)
+{
+	float a = angleInDeg * 3.1415926f / 180;
+	float sa = sinf(a);
+	float ca = cosf(a);
+
+	_out->m00 = 1; _out->m01 = 0; _out->m02 = 0; _out->m03 = 0;
+	_out->m10 = 0; _out->m11 = ca; _out->m12 = -sa; _out->m13 = 0;
+	_out->m20 = 0; _out->m21 = sa; _out->m22 = ca; _out->m23 = 0;
+	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
+}
+
+void XprMat44_makeRotationY(XprMat44* _out, float angleInDeg)
+{
+	float a = angleInDeg * 3.1415926f / 180;
+	float sa = sinf(a);
+	float ca = cosf(a);
+
+	_out->m00 = ca; _out->m01 = 0; _out->m02 = sa; _out->m03 = 0;
+	_out->m10 = 0; _out->m11 = 1; _out->m12 = 0; _out->m13 = 0;
+	_out->m20 = -sa; _out->m21 = 0; _out->m22 = ca; _out->m23 = 0;
+	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
+}
+
+void XprMat44_makeRotationZ(XprMat44* _out, float angleInDeg)
+{
+	float a = angleInDeg * 3.1415926f / 180;
+	float sa = sinf(a);
+	float ca = cosf(a);
+
+	_out->m00 = ca; _out->m01 = -sa; _out->m02 = 0; _out->m03 = 0;
+	_out->m10 = sa; _out->m11 = ca; _out->m12 = 0; _out->m13 = 0;
+	_out->m20 = 0; _out->m21 = 0; _out->m22 = 1; _out->m23 = 0;
+	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
+}
+
+void XprMat44_makeRotation(XprMat44* _out, const struct XprVec3* axis, float angleInDeg)
+{
+	float a = angleInDeg * 3.1415926f / 180;
+	float sa = sinf(a);
+	float ca = cosf(a);
+
+	_out->m00 = ca; _out->m01 = -sa; _out->m02 = 0; _out->m03 = 0;
+	_out->m10 = sa; _out->m11 = ca; _out->m12 = 0; _out->m13 = 0;
+	_out->m20 = 0; _out->m21 = 0; _out->m22 = 1; _out->m23 = 0;
+	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
+}
+
 void XprMat44_getBasis(struct XprVec3* xaxis, struct XprVec3* yaxis, struct XprVec3* zaxis, const XprMat44* m)
 {
 	// reference: http://web.archive.org/web/20041029003853/http://www.j3d.org/matrix_faq/matrfaq_latest.html#Q5
