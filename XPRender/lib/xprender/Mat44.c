@@ -158,10 +158,29 @@ void XprMat44_makeRotation(XprMat44* _out, const struct XprVec3* axis, float ang
 	float a = angleInDeg * 3.1415926f / 180;
 	float sa = sinf(a);
 	float ca = cosf(a);
+	float _ca = 1 - ca;
+	float xx = axis->x * axis->x;
+	float xy = axis->x * axis->y;
+	float xz = axis->x * axis->z;
+	float yy = axis->y * axis->y;
+	float yz = axis->y * axis->z;
+	float zz = axis->z * axis->z;
 
-	_out->m00 = ca; _out->m01 = -sa; _out->m02 = 0; _out->m03 = 0;
-	_out->m10 = sa; _out->m11 = ca; _out->m12 = 0; _out->m13 = 0;
-	_out->m20 = 0; _out->m21 = 0; _out->m22 = 1; _out->m23 = 0;
+	_out->m00 = ca + xx * _ca;
+	_out->m01 = xy * _ca - axis->z * sa;
+	_out->m02 = xz * _ca + axis->y * sa;
+	_out->m03 = 0;
+
+	_out->m10 = xy * _ca + axis->z * sa;
+	_out->m11 = ca + yy * _ca;
+	_out->m12 = yz * _ca - axis->x * sa;
+	_out->m13 = 0;
+
+	_out->m20 = xz * _ca - axis->y * sa;
+	_out->m21 = yz * _ca + axis->x * sa;
+	_out->m22 = ca + zz * _ca;
+	_out->m23 = 0;
+
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 

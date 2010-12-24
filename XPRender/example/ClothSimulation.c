@@ -140,7 +140,13 @@ void drawScene()
 		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
 
 		glPushMatrix();
-		glRotatef(-90, 1, 0, 0);
+		{
+			XprMat44 m;
+			XprVec3 axis = {1, 0, 0};
+			XprMat44_makeRotation(&m, &axis, -90);
+			XprMat44_transpose(&m, &m);
+			glMultMatrixf(m.v);
+		}
 		Mesh_draw(_floorMesh);
 		glPopMatrix();
 	}
