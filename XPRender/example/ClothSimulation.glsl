@@ -2,10 +2,13 @@
 varying vec3 v_normal;
 varying vec3 v_pos;
 
+uniform mat4 u_worldViewMtx;
+uniform mat4 u_worldViewProjMtx;
+
 void main() {
-	gl_Position = ftransform();
-	v_normal = gl_NormalMatrix * gl_Normal;
-	v_pos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+	gl_Position = u_worldViewProjMtx * gl_Vertex;
+	v_normal = u_worldViewMtx * vec4(gl_Normal, 0);
+	v_pos = (u_worldViewMtx * gl_Vertex).xyz;
 }
 
 -- Scene.Fragment

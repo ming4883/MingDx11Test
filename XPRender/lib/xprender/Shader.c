@@ -32,7 +32,7 @@ XprShader* XprShader_new(const char** sources, size_t srcCnt, XprShaderType type
 		{
 			char* buf = (char*)malloc(len);
 			glGetShaderInfoLog(self->name, len, nullptr, buf);
-			printf(buf);
+			XprDbgStr(buf);
 			free(buf);
 		}
 	}
@@ -81,7 +81,7 @@ XprPipeline* XprPipeline_new(const XprShader** const shaders, size_t shaderCnt)
 		{
 			char* buf = (char*)malloc(len);
 			glGetProgramInfoLog(self->name, len, nullptr, buf);
-			printf(buf);
+			XprDbgStr(buf);
 			free(buf);
 		}
 	}

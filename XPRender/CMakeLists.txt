@@ -17,6 +17,8 @@ IF( WIN32 )
 	SET( PEZ lib/pez/pez.windows.c lib/pez/pez.h )
 	
 	SET( CONSOLE_SYSTEM WIN32 )
+	
+	ADD_DEFINITIONS( -DXPR_WIN32 )
 
 	IF( CYGWIN )
 		#ADD_DEFINITIONS( -DTIME_WITH_SYS_TIME )
@@ -44,6 +46,8 @@ ELSEIF( UNIX )
 	SET( PEZ lib/pez/pez.linux.c lib/pez/pez.h )
 	
 	SET( PLATFORM_LIBS GL GLU X11 )
+	
+	ADD_DEFINITIONS( -DXPR_LINUX )
 
 ENDIF()
 

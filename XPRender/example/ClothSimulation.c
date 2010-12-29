@@ -95,23 +95,14 @@ void drawScene()
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
 	XprMat44 viewProjMtx;
+	XprMat44 worldViewMtx;
+	XprMat44 worldViewProjMtx;
+	int locWorldView;
+	int locWorldViewProj;
 
 	XprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
 	XprMat44_mult(&viewProjMtx, &projMtx, &viewMtx);
-
-	XprMat44_transpose(&viewMtx, &viewMtx);
-	XprMat44_transpose(&projMtx, &projMtx);
-
-	// projection transform
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glMultMatrixf(projMtx.v);
-
-	// viewing transform
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glMultMatrixf(viewMtx.v);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -129,6 +120,8 @@ void drawScene()
 		glEnable(GL_LIGHT0);
 	}
 
+	locWorldView = glGetUniformLocation(_sceneMaterial->pipeline->name, "u_worldViewMtx");
+	locWorldViewProj = glGetUniformLocation(_sceneMaterial->pipeline->name, "u_worldViewProjMtx");
 	glUseProgram(_sceneMaterial->pipeline->name);
 
 	// draw floor
@@ -139,16 +132,18 @@ void drawScene()
 		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
 		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
 
-		glPushMatrix();
 		{
 			XprMat44 m;
 			XprVec3 axis = {1, 0, 0};
 			XprMat44_makeRotation(&m, &axis, -90);
-			XprMat44_transpose(&m, &m);
-			glMultMatrixf(m.v);
+			
+			XprMat44_mult(&worldViewMtx, &viewMtx, &m);
+			XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
 		}
+		glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
+		glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+
 		Mesh_draw(_floorMesh);
-		glPopMatrix();
 	}
 
 	// draw _cloth
@@ -161,9 +156,18 @@ void drawScene()
 
 		glDisable(GL_CULL_FACE);
 		glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
-		glPushMatrix();
+		{
+			XprMat44 m;
+			XprMat44_setIdentity(&m);
+			XprMat44_mult(&worldViewMtx, &viewMtx, &m);
+			XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
+		}
+
+		glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
+		glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+
 		Mesh_draw(_cloth->mesh);
-		glPopMatrix();
+		
 		glEnable(GL_CULL_FACE);
 		glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0);
 	}
@@ -179,11 +183,19 @@ void drawScene()
 
 		for(i=0; i<BallCount; ++i)
 		{
-			glPushMatrix();
-			glTranslatef(_ball[i].center.x, _ball[i].center.y, _ball[i].center.z);
-			glScalef(_ball[i].radius, _ball[i].radius, _ball[i].radius);
+			{
+				XprMat44 m;
+				XprVec3 scale = {_ball[i].radius, _ball[i].radius, _ball[i].radius};
+				XprMat44_makeScale(&m, &scale);
+				XprMat44_setTranslation(&m, &_ball[i].center);
+				
+				XprMat44_mult(&worldViewMtx, &viewMtx, &m);
+				XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
+			}
+			glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
+			glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+
 			Mesh_draw(_ballMesh);
-			glPopMatrix();
 		}
 	}
 
@@ -193,12 +205,20 @@ void drawScene()
 	{
 		glDisable(GL_LIGHTING);
 		glDisable(GL_DEPTH_TEST);
-		glPushMatrix();
-
+		
 		glColor3f(1, 1, 1);
-		Mesh_drawPoints(_cloth->mesh);
 
-		glPopMatrix();
+		{
+			XprMat44 m;
+			XprMat44_setIdentity(&m);
+			XprMat44_mult(&worldViewMtx, &viewMtx, &m);
+			XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
+		}
+
+		glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
+		glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+
+		Mesh_drawPoints(_cloth->mesh);
 	}
 }
 
@@ -277,7 +297,7 @@ void PezRender()
 	GLenum glerr = glGetError();
 
 	if(glerr != GL_NO_ERROR)
-		PezDebugString("GL has error %d!", glerr);
+		PezDebugString("GL has error %4x!", glerr);
 	}
 }
 
