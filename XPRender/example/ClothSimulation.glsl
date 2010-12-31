@@ -15,6 +15,10 @@ void main() {
 varying vec3 v_normal;
 varying vec3 v_pos;
 
+uniform vec4 u_matDiffuse;
+uniform vec4 u_matSpecular;
+uniform float u_matShininess;
+
 void main() {
 	vec3 n = normalize(v_normal.xyz);
 	vec3 l = normalize(vec3(0,10,10) - v_pos.xyz);
@@ -25,11 +29,11 @@ void main() {
 		
 	float ndl = max(0, dot(n, l)) * 0.8 + 0.2;
 	float ndh = max(0, dot(n, h));
-	ndh = pow(ndh, gl_FrontMaterial.shininess);
+	ndh = pow(ndh, u_matShininess);
 	
-	vec4 color = gl_FrontMaterial.diffuse;
+	vec4 color = u_matDiffuse;
 	color.xyz *= ndl;
-	color.xyz += gl_FrontMaterial.specular.xyz * ndh;
+	color.xyz += u_matSpecular.xyz * ndh;
 	
 	gl_FragColor = color;
 }

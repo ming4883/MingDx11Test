@@ -7,15 +7,21 @@
 extern "C" {
 #endif
 
+typedef struct XprTexture;
+
 typedef struct XprRenderTarget
 {
 	int name;
 	size_t flags;
 } XprRenderTarget;
 
-XprRenderTarget* XprRenderTarget_new();
+XprRenderTarget* XprRenderTarget_request(size_t width, size_t height);
 
-void XprRenderTarget_free(XprRenderTarget* self);
+XprHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format);
+
+void XprRenderTarget_releaseBuffer(XprRenderTarget* self, XprHandle handle);
+
+struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprHandle handle);
 
 #ifdef __cplusplus
 }

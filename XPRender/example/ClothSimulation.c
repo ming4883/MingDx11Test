@@ -40,14 +40,29 @@ Aspect _aspect;
 typedef struct RenderContext
 {
 	XprMat44 worldViewProjMtx;
+	XprMat44 worldViewMtx;
 	XprVec4 matDiffuse;
 	XprVec4 matSpecular;
 	float matShininess;
 
 } RenderContext;
 
-RenderContext _renderContext;
+void RenderContext_apply(RenderContext* self, Material* material)
+{
+	int locWorldView = glGetUniformLocation(material->pipeline->name, "u_worldViewMtx");
+	int locWorldViewProj = glGetUniformLocation(material->pipeline->name, "u_worldViewProjMtx");
+	int locMatDiffuse = glGetUniformLocation(material->pipeline->name, "u_matDiffuse");
+	int locMatSpecular = glGetUniformLocation(material->pipeline->name, "u_matSpecular");
+	int locMatShininess = glGetUniformLocation(material->pipeline->name, "u_matShininess");
 
+	glUniformMatrix4fv(locWorldView, 1, XprTrue, self->worldViewMtx.v);
+	glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, self->worldViewProjMtx.v);
+	glUniform4fv(locMatDiffuse, 1, self->matDiffuse.v);
+	glUniform4fv(locMatSpecular, 1, self->matSpecular.v);
+	glUniform1fv(locMatShininess, 1, &self->matShininess);
+}
+
+RenderContext _renderContext;
 
 void drawBackground()
 {
@@ -95,105 +110,70 @@ void drawScene()
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
 	XprMat44 viewProjMtx;
-	XprMat44 worldViewMtx;
-	XprMat44 worldViewProjMtx;
-	int locWorldView;
-	int locWorldViewProj;
-
+	
 	XprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
 	XprMat44_mult(&viewProjMtx, &projMtx, &viewMtx);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_NORMALIZE);
-	{
-		float p[] = {-10, 10, 6, 1};
-		float a[] = {0.2f, 0.2f, 0.2f, 1};
-		float d[] = {1, 1, 1, 1};
-		float s[] = {2, 2, 2, 1};
-		glLightfv(GL_LIGHT0, GL_POSITION, p);
-		glLightfv(GL_LIGHT0, GL_AMBIENT, a);
-		glLightfv(GL_LIGHT0, GL_DIFFUSE, d);
-		glLightfv(GL_LIGHT0, GL_SPECULAR, s);
-		glEnable(GL_LIGHT0);
-	}
 
-	locWorldView = glGetUniformLocation(_sceneMaterial->pipeline->name, "u_worldViewMtx");
-	locWorldViewProj = glGetUniformLocation(_sceneMaterial->pipeline->name, "u_worldViewProjMtx");
 	glUseProgram(_sceneMaterial->pipeline->name);
 
-	// draw floor
-	{
-		float d[] = {1.0f, 0.88f, 0.33f, 1};
-		float s[] = {0, 0, 0, 1};
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
-		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
-
+	{	// draw floor
+		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
+		_renderContext.matSpecular = XprVec4_(0, 0, 0, 1);
+		_renderContext.matShininess = 32;
 		{
 			XprMat44 m;
 			XprVec3 axis = {1, 0, 0};
 			XprMat44_makeRotation(&m, &axis, -90);
 			
-			XprMat44_mult(&worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
+			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
-		glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
-		glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+		RenderContext_apply(&_renderContext, _sceneMaterial);
 
 		Mesh_draw(_floorMesh);
 	}
 
-	// draw _cloth
-	{
-		float d[] = {1.0f, 0.22f, 0.0f, 1};
-		float s[] = {0.125f, 0.125f, 0.125f, 1};
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
-		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
+	{	// draw cloth
+		_renderContext.matDiffuse = XprVec4_(1.0f, 0.22f, 0.0f, 1);
+		_renderContext.matSpecular = XprVec4_(0.125f, 0.125f, 0.125f, 1);
+		_renderContext.matShininess = 32;
 
 		glDisable(GL_CULL_FACE);
-		glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
 		{
 			XprMat44 m;
 			XprMat44_setIdentity(&m);
-			XprMat44_mult(&worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
-		}
 
-		glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
-		glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
+		}
+		RenderContext_apply(&_renderContext, _sceneMaterial);
 
 		Mesh_draw(_cloth->mesh);
 		
 		glEnable(GL_CULL_FACE);
-		glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0);
 	}
 
-	// draw _ball
-	{
+	{	// draw ball
 		int i;
-		float d[] = {0.9f, 0.64f, 0.35f, 1};
-		float s[] = {1, 1, 1, 1};
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, d);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, s);
-		glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 32);
+		_renderContext.matDiffuse = XprVec4_(0.9f, 0.64f, 0.35f, 1);
+		_renderContext.matSpecular = XprVec4_(1, 1, 1, 1);
+		_renderContext.matShininess = 32;
 
 		for(i=0; i<BallCount; ++i)
 		{
-			{
-				XprMat44 m;
-				XprVec3 scale = {_ball[i].radius, _ball[i].radius, _ball[i].radius};
-				XprMat44_makeScale(&m, &scale);
-				XprMat44_setTranslation(&m, &_ball[i].center);
-				
-				XprMat44_mult(&worldViewMtx, &viewMtx, &m);
-				XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
-			}
-			glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
-			glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+			XprMat44 m;
+			XprVec3 scale = {_ball[i].radius, _ball[i].radius, _ball[i].radius};
+			XprMat44_makeScale(&m, &scale);
+			XprMat44_setTranslation(&m, &_ball[i].center);
+			
+			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
+
+			RenderContext_apply(&_renderContext, _sceneMaterial);
 
 			Mesh_draw(_ballMesh);
 		}
@@ -211,12 +191,10 @@ void drawScene()
 		{
 			XprMat44 m;
 			XprMat44_setIdentity(&m);
-			XprMat44_mult(&worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&worldViewProjMtx, &viewProjMtx, &m);
+			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
-
-		glUniformMatrix4fv(locWorldView, 1, XprTrue, worldViewMtx.v);
-		glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, worldViewProjMtx.v);
+		RenderContext_apply(&_renderContext, _sceneMaterial);
 
 		Mesh_drawPoints(_cloth->mesh);
 	}

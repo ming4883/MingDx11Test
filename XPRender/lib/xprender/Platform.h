@@ -21,6 +21,8 @@ typedef char XprBool;
 #define XprFalse 0
 #define XprTrue 1
 
+typedef int XprHandle;
+
 void XprDbgStr(const char* str, ...);
 
 
