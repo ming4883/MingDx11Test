@@ -1,5 +1,6 @@
 #include "Shader.h"
 #include <stdio.h>
+#include <string.h>
 
 #include<GL/glew.h>
 
@@ -9,11 +10,21 @@ GLenum xprGL_SHADER_TYPE[] = {
 	GL_FRAGMENT_SHADER,
 };
 
-XprShader* XprShader_new(const char** sources, size_t srcCnt, XprShaderType type)
+XprGpuShader* XprGpuShader_alloc()
+{
+	XprGpuShader* self = (XprGpuShader*)malloc(sizeof(XprGpuShader));
+	memset(self, 0, sizeof(XprGpuShader));
+	return self;
+}
+
+void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type)
 {
 	int compileStatus;
 
-	XprShader* self = (XprShader*)malloc(sizeof(XprShader));
+	if(self->flags & XprGpuShaderFlag_Compiled) {
+		XprDbgStr("XprGpuShader already inited!\n");
+		return;
+	}
 
 	self->type = type;
 	self->name = glCreateShader(xprGL_SHADER_TYPE[self->type]);
@@ -38,13 +49,11 @@ XprShader* XprShader_new(const char** sources, size_t srcCnt, XprShaderType type
 	}
 	else
 	{
-		self->flags |= XprShaderFlag_Compiled;
+		self->flags |= XprGpuShaderFlag_Compiled;
 	}
-
-	return self;
 }
 
-void XprShader_free(XprShader* self)
+void XprGpuShader_free(XprGpuShader* self)
 {
 	if(nullptr == self)
 		return;
@@ -53,12 +62,23 @@ void XprShader_free(XprShader* self)
 	free(self);
 }
 
-XprPipeline* XprPipeline_new(const XprShader** const shaders, size_t shaderCnt)
+XprGpuProgram* XprGpuProgram_alloc()
+{
+	XprGpuProgram* self = (XprGpuProgram*)malloc(sizeof(XprGpuProgram));
+	memset(self, 0, sizeof(XprGpuProgram));
+	return self;
+}
+
+void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt)
 {
 	size_t i;
 	int linkStatus;
-	XprPipeline* self = (XprPipeline*)malloc(sizeof(XprPipeline));
 
+	if(self->flags & XprGpuProgramFlag_Linked) {
+		XprDbgStr("XprGpuProgram already inited!\n");
+		return;
+	}
+	
 	self->name = glCreateProgram();
 	self->flags = 0;
 
@@ -87,13 +107,11 @@ XprPipeline* XprPipeline_new(const XprShader** const shaders, size_t shaderCnt)
 	}
 	else
 	{
-		self->flags |= XprPipelineFlag_Linked;
+		self->flags |= XprGpuProgramFlag_Linked;
 	}
-
-	return self;
 }
 
-void XprPipeline_free(XprPipeline* self)
+void XprGpuProgram_free(XprGpuProgram* self)
 {
 	if(nullptr == self)
 		return;

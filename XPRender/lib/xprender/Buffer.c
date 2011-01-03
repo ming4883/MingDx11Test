@@ -1,5 +1,6 @@
 #include "Buffer.h"
 #include <GL/glew.h>
+#include <string.h>
 
 static GLenum xprGL_BUFFER_TARGETS[] = {
 	GL_ARRAY_BUFFER,
@@ -13,20 +14,25 @@ static GLenum xprGL_BUFFER_MAP_ACCESS[] = {
 	GL_READ_WRITE,
 };
 
-XprBuffer* XprBuffer_new(XprBufferType type, size_t sizeInBytes, void* initialData)
+XprBuffer* XprBuffer_alloc()
 {
 	XprBuffer* self = (XprBuffer*)malloc(sizeof(XprBuffer));
+	memset(self, 0, sizeof(XprBuffer));
+	return self;
+}
 
+void XprBuffer_init(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData)
+{
 	self->sizeInBytes = sizeInBytes;
 	self->type = type;
-	self->flags = 0;
 
 	glGenBuffers(1, &self->name);
 	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->name);
 	glBufferData(xprGL_BUFFER_TARGETS[self->type], self->sizeInBytes, initialData, GL_STREAM_DRAW);
 
-	return self;
+	self->flags = XprBufferFlag_Inited;
 }
+
 
 void XprBuffer_free(XprBuffer* self)
 {

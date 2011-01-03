@@ -234,9 +234,10 @@ Material* loadMaterial(const char* vsKey, const char* fsKey)
 		nullptr,
 	};
 	
-	Material* material = Material_new(args);
+	Material* material = Material_alloc();
+	Material_initWithShaders(material, args);
 
-	if(0 == (material->flags & MaterialFlag_Ready))
+	if(0 == (material->flags & MaterialFlag_Inited))
 		PezDebugString("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
 
 	return material;

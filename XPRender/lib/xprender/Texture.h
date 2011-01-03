@@ -28,11 +28,11 @@ typedef enum XprTextureFlag
 
 XprTexture* XprTexture_alloc();
 
+void XprTexture_free(XprTexture* self);
+
 void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLevels, size_t arraySize, const char* format);
 
 void XprTexture_commit(XprTexture* self);
-
-void XprTexture_free(XprTexture* self);
 
 #ifdef __cplusplus
 }

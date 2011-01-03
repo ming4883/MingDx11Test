@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 struct XprBuffer;
-struct XprPipeline;
+struct XprGpuProgram;
 
 typedef struct Mesh
 {
@@ -26,7 +26,7 @@ Mesh* Mesh_new(size_t vertexCount, size_t indexCount);
 
 void Mesh_free(Mesh* self);
 
-void Mesh_bindInputs(Mesh* self, struct XprPipeline* pipeline);
+void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* pipeline);
 
 void Mesh_draw(Mesh* self);
 

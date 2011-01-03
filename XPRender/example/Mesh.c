@@ -12,9 +12,14 @@ Mesh* Mesh_new(size_t vertexCount, size_t indexCount)
 	self->vertexCount = vertexCount;
 	self->indexCount = indexCount;
 	
-	self->vertexBuffer = XprBuffer_new(XprBufferType_Vertex, sizeof(XprVec3) * self->vertexCount, nullptr);
-	self->normalBuffer = XprBuffer_new(XprBufferType_Vertex, sizeof(XprVec3) * self->vertexCount, nullptr);
-	self->indexBuffer = XprBuffer_new(XprBufferType_Index, sizeof(unsigned short) * self->indexCount, nullptr);
+	self->vertexBuffer = XprBuffer_alloc();
+	XprBuffer_init(self->vertexBuffer, XprBufferType_Vertex, sizeof(XprVec3) * self->vertexCount, nullptr);
+	
+	self->normalBuffer = XprBuffer_alloc();
+	XprBuffer_init(self->normalBuffer, XprBufferType_Vertex, sizeof(XprVec3) * self->vertexCount, nullptr);
+	
+	self->indexBuffer = XprBuffer_alloc();
+	XprBuffer_init(self->indexBuffer, XprBufferType_Index, sizeof(unsigned short) * self->indexCount, nullptr);
 
 	glGenVertexArrays(1, &self->ia);
 
@@ -30,7 +35,7 @@ void Mesh_free(Mesh* self)
 	free(self);
 }
 
-void Mesh_bindInputs(Mesh* self, struct XprPipeline* pipeline)
+void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* pipeline)
 {
 	int vertLoc = glGetAttribLocation(pipeline->name, "i_vertex");
 	int normLoc = glGetAttribLocation(pipeline->name, "i_normal");

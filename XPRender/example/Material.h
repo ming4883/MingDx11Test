@@ -7,24 +7,26 @@
 extern "C" {
 #endif
 
-struct XprShader;
-struct XprPipeline;
+struct XprGpuShader;
+struct XprGpuProgram;
 
 typedef enum MaterialFlag
 {
-	MaterialFlag_Ready = 1 << 0,
+	MaterialFlag_Inited = 1 << 0,
 } MaterialFlag;
 
 typedef struct Material
 {
-	struct XprShader** shaders;
-	struct XprPipeline* pipeline;
+	struct XprGpuShader** shaders;
+	struct XprGpuProgram* pipeline;
 	size_t flags;
 } Material;
 
-Material* Material_new(const char** args);
+Material* Material_alloc();
 
 void Material_free(Material* self);
+
+void Material_initWithShaders(Material* self, const char** args);
 
 #ifdef __cplusplus
 }

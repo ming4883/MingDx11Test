@@ -16,7 +16,8 @@ typedef enum XprBufferType
 
 typedef enum XprBufferFlag
 {
-	XprBufferFlag_Mapped = 1 << 0,
+	XprBufferFlag_Inited = 1 << 0,
+	XprBufferFlag_Mapped = 1 << 1,
 } XprBufferFlag;
 
 typedef enum XprBufferMapAccess
@@ -35,9 +36,11 @@ typedef struct XprBuffer
 
 } XprBuffer;
 
-XprBuffer* XprBuffer_new(XprBufferType type, size_t sizeInBytes, void* initialData);
+XprBuffer* XprBuffer_alloc();
 
 void XprBuffer_free(XprBuffer* self);
+
+void XprBuffer_init(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData);
 
 void XprBuffer_update(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data);
 

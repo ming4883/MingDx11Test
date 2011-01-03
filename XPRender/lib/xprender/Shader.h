@@ -7,47 +7,52 @@
 extern "C" {
 #endif
 
-// XprShader
-typedef enum XprShaderType
+// XprGpuShader
+typedef enum XprGpuShaderType
 {
-	XprShaderType_Vertex,
-	XprShaderType_Geometry,
-	XprShaderType_Fragment,
-} XprShaderType;
+	XprGpuShaderType_Vertex,
+	XprGpuShaderType_Geometry,
+	XprGpuShaderType_Fragment,
+} XprGpuShaderType;
 
-typedef enum XprShaderFlag
+typedef enum XprGpuShaderFlag
 {
-	XprShaderFlag_Compiled = 1 << 0,
-} XprShaderFlag;
+	XprGpuShaderFlag_Compiled = 1 << 0,
+} XprGpuShaderFlag;
 
-typedef struct XprShader
-{
-	int name;
-	XprShaderType type;
-	size_t flags;
-
-} XprShader;
-
-XprShader* XprShader_new(const char** sources, size_t srcCnt, XprShaderType type);
-
-void XprShader_free(XprShader* self);
-
-// XprPipeline
-typedef enum XprPipelineFlag
-{
-	XprPipelineFlag_Linked = 1 << 0,
-} XprPipelineFlag;
-
-typedef struct XprPipeline
+typedef struct XprGpuShader
 {
 	int name;
+	XprGpuShaderType type;
 	size_t flags;
 
-} XprPipeline;
+} XprGpuShader;
 
-XprPipeline* XprPipeline_new(const XprShader** const shaders, size_t shaderCnt);
 
-void XprPipeline_free(XprPipeline* self);
+XprGpuShader* XprGpuShader_alloc();
+
+void XprGpuShader_free(XprGpuShader* self);
+
+void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type);
+
+// XprGpuProgram
+typedef enum XprGpuProgramFlag
+{
+	XprGpuProgramFlag_Linked = 1 << 0,
+} XprGpuProgramFlag;
+
+typedef struct XprGpuProgram
+{
+	int name;
+	size_t flags;
+
+} XprGpuProgram;
+
+XprGpuProgram* XprGpuProgram_alloc();
+
+void XprGpuProgram_free(XprGpuProgram* self);
+
+void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt);
 
 #ifdef __cplusplus
 }
