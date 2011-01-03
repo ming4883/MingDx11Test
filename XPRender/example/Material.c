@@ -50,10 +50,10 @@ void Material_initWithShaders(Material* self, const char** args)
 	if(nullptr == self->shaders[VS] || nullptr == self->shaders[FS])
 		return;
 
-	self->pipeline = XprGpuProgram_alloc();
-	XprGpuProgram_init(self->pipeline, self->shaders, ShaderCount);
+	self->program = XprGpuProgram_alloc();
+	XprGpuProgram_init(self->program, self->shaders, ShaderCount);
 
-	if(!(self->pipeline->flags & XprGpuProgramFlag_Linked))
+	if(!(self->program->flags & XprGpuProgramFlag_Linked))
 		return;
 
 	self->flags |= MaterialFlag_Inited;
@@ -67,8 +67,8 @@ void Material_free(Material* self)
 	if(nullptr == self)
 		return;
 
-	if(nullptr != self->pipeline)
-		XprGpuProgram_free(self->pipeline);
+	if(nullptr != self->program)
+		XprGpuProgram_free(self->program);
 
 	for(i=0; i<ShaderCount; ++i)
 	{

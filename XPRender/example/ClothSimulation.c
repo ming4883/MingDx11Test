@@ -6,7 +6,7 @@
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Vec4.h"
 #include "../lib/xprender/Mat44.h"
-#include "../lib/xprender/Shader.h"
+#include "../lib/xprender/Shader.GL3.h"
 #include "../lib/glsw/glsw.h"
 #include "../lib/pez/pez.h"
 
@@ -58,11 +58,11 @@ typedef struct RenderContext
 
 void RenderContext_apply(RenderContext* self, Material* material)
 {
-	int locWorldView = glGetUniformLocation(material->pipeline->name, "u_worldViewMtx");
-	int locWorldViewProj = glGetUniformLocation(material->pipeline->name, "u_worldViewProjMtx");
-	int locMatDiffuse = glGetUniformLocation(material->pipeline->name, "u_matDiffuse");
-	int locMatSpecular = glGetUniformLocation(material->pipeline->name, "u_matSpecular");
-	int locMatShininess = glGetUniformLocation(material->pipeline->name, "u_matShininess");
+	int locWorldView = glGetUniformLocation(material->program->impl->glName, "u_worldViewMtx");
+	int locWorldViewProj = glGetUniformLocation(material->program->impl->glName, "u_worldViewProjMtx");
+	int locMatDiffuse = glGetUniformLocation(material->program->impl->glName, "u_matDiffuse");
+	int locMatSpecular = glGetUniformLocation(material->program->impl->glName, "u_matSpecular");
+	int locMatShininess = glGetUniformLocation(material->program->impl->glName, "u_matShininess");
 
 	glUniformMatrix4fv(locWorldView, 1, XprTrue, self->worldViewMtx.v);
 	glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, self->worldViewProjMtx.v);
@@ -132,7 +132,7 @@ void drawScene()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	glUseProgram(_sceneMaterial->pipeline->name);
+	glUseProgram(_sceneMaterial->program->impl->glName);
 
 	{	// draw floor
 		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
@@ -148,7 +148,7 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		Mesh_bindInputs(_floorMesh, _sceneMaterial->pipeline);
+		Mesh_bindInputs(_floorMesh, _sceneMaterial->program);
 		Mesh_draw(_floorMesh);
 	}
 
@@ -167,7 +167,7 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		Mesh_bindInputs(_cloth->mesh, _sceneMaterial->pipeline);
+		Mesh_bindInputs(_cloth->mesh, _sceneMaterial->program);
 		Mesh_draw(_cloth->mesh);
 		
 		glEnable(GL_CULL_FACE);
@@ -191,7 +191,7 @@ void drawScene()
 
 			RenderContext_apply(&_renderContext, _sceneMaterial);
 
-			Mesh_bindInputs(_ballMesh, _sceneMaterial->pipeline);
+			Mesh_bindInputs(_ballMesh, _sceneMaterial->program);
 			Mesh_draw(_ballMesh);
 		}
 	}

@@ -20,11 +20,13 @@ typedef enum XprGpuShaderFlag
 	XprGpuShaderFlag_Compiled = 1 << 0,
 } XprGpuShaderFlag;
 
+typedef struct XprGpuShaderImpl;
+
 typedef struct XprGpuShader
 {
-	int name;
-	XprGpuShaderType type;
 	size_t flags;
+	XprGpuShaderType type;
+	struct XprGpuShaderImpl* impl;
 
 } XprGpuShader;
 
@@ -41,10 +43,12 @@ typedef enum XprGpuProgramFlag
 	XprGpuProgramFlag_Linked = 1 << 0,
 } XprGpuProgramFlag;
 
+typedef struct XprGpuProgramImpl;
+
 typedef struct XprGpuProgram
 {
-	int name;
 	size_t flags;
+	struct XprGpuProgramImpl* impl;
 
 } XprGpuProgram;
 

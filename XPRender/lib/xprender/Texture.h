@@ -7,6 +7,14 @@
 extern "C" {
 #endif
 
+typedef enum XprTextureFlag
+{
+	XprTextureFlag_Inited = 1 << 0,
+	XprTextureFlag_Dirty = 1 << 1,
+} XprTextureFlag;
+
+typedef struct XprTextureImpl;
+
 typedef struct XprTexture
 {
 	size_t flags;
@@ -14,23 +22,19 @@ typedef struct XprTexture
 	size_t height;
 	size_t mipLevels;
 	size_t arraySize;
+	size_t elementSizeInByte;
 	char format[32];
 	unsigned char* data;
-	int name;
-	int target;
+	struct XprTextureImpl* impl;
 } XprTexture;
-
-typedef enum XprTextureFlag
-{
-	XprTextureFlag_Inited = 1 << 0,
-	XprTextureFlag_Dirty = 1 << 1,
-} XprTextureFlag;
 
 XprTexture* XprTexture_alloc();
 
 void XprTexture_free(XprTexture* self);
 
 void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLevels, size_t arraySize, const char* format);
+
+unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t arrayIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight);
 
 void XprTexture_commit(XprTexture* self);
 

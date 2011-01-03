@@ -27,12 +27,15 @@ typedef enum XprBufferMapAccess
 	XprBufferMapAccess_ReadWrite,
 } XprBufferMapAccess;
 
+typedef struct XprBufferImpl;
+
 typedef struct XprBuffer
 {
-	int name;
+	size_t flags;	// combinations of XprBufferFlag
 	XprBufferType type;
 	size_t sizeInBytes;
-	size_t flags;	// combinations of XprBufferFlag
+	
+	struct XprBufferImpl* impl;
 
 } XprBuffer;
 

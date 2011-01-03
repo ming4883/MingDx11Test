@@ -1,9 +1,9 @@
 #include "Mesh.h"
 
-#include "../lib/xprender/Buffer.h"
+#include "../lib/xprender/Buffer.GL3.h"
+#include "../lib/xprender/Shader.GL3.h"
 #include "../lib/xprender/Vec3.h"
-#include "../lib/xprender/Shader.h"
-#include <GL/glew.h>
+
 #include <math.h>
 
 Mesh* Mesh_new(size_t vertexCount, size_t indexCount)
@@ -35,22 +35,22 @@ void Mesh_free(Mesh* self)
 	free(self);
 }
 
-void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* pipeline)
+void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* program)
 {
-	int vertLoc = glGetAttribLocation(pipeline->name, "i_vertex");
-	int normLoc = glGetAttribLocation(pipeline->name, "i_normal");
+	int vertLoc = glGetAttribLocation(program->impl->glName, "i_vertex");
+	int normLoc = glGetAttribLocation(program->impl->glName, "i_normal");
 
 	glBindVertexArray(self->ia);
 
-	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
+	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->impl->glName);
 	glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
 	glEnableVertexAttribArray(vertLoc);
 
-	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->name);
+	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->impl->glName);
 	glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
 	glEnableVertexAttribArray(normLoc);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->indexBuffer->name);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->indexBuffer->impl->glName);
 }
 
 void Mesh_draw(Mesh* self)

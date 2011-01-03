@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED( VERSION 2.6 )
 
 PROJECT( xprender )
 
-FILE( GLOB FREEGLUT lib/freeglut/*.c lib/freeglut/*.h )
+#FILE( GLOB FREEGLUT lib/freeglut/*.c lib/freeglut/*.h )
 FILE( GLOB GLEW lib/glew/*.c lib/glew/*.h )
 FILE( GLOB GLSW lib/glsw/*.c lib/glsw/*.h )
 
@@ -31,7 +31,7 @@ IF( WIN32 )
 	ELSE()
 		# assume MSVC
 		ADD_DEFINITIONS( /wd4996 )
-		SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
+		#SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
 		SOURCE_GROUP( "glew" FILES ${GLEW} )
 		SOURCE_GROUP( "glsw" FILES ${GLSW} )
 		SOURCE_GROUP( "xprender" FILES ${XPRENDER} )

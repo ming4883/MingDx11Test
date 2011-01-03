@@ -1,8 +1,5 @@
-#include "Shader.h"
+#include "Shader.GL3.h"
 #include <stdio.h>
-#include <string.h>
-
-#include<GL/glew.h>
 
 GLenum xprGL_SHADER_TYPE[] = {
 	GL_VERTEX_SHADER,
@@ -12,8 +9,9 @@ GLenum xprGL_SHADER_TYPE[] = {
 
 XprGpuShader* XprGpuShader_alloc()
 {
-	XprGpuShader* self = (XprGpuShader*)malloc(sizeof(XprGpuShader));
-	memset(self, 0, sizeof(XprGpuShader));
+	XprGpuShader* self;
+	XprAllocWithImpl(self, XprGpuShader, XprGpuShaderImpl);
+
 	return self;
 }
 
@@ -27,28 +25,25 @@ void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, 
 	}
 
 	self->type = type;
-	self->name = glCreateShader(xprGL_SHADER_TYPE[self->type]);
+	self->impl->glName = glCreateShader(xprGL_SHADER_TYPE[self->type]);
 	self->flags = 0;
 
-	glShaderSource(self->name, srcCnt, sources, nullptr);
-	glCompileShader(self->name);
+	glShaderSource(self->impl->glName, srcCnt, sources, nullptr);
+	glCompileShader(self->impl->glName);
 
-	glGetShaderiv(self->name, GL_COMPILE_STATUS, &compileStatus);
+	glGetShaderiv(self->impl->glName, GL_COMPILE_STATUS, &compileStatus);
 
-	if(GL_FALSE == compileStatus)
-	{
+	if(GL_FALSE == compileStatus) {
 		GLint len;
-		glGetShaderiv(self->name, GL_INFO_LOG_LENGTH, &len);
-		if(len > 0)
-		{
+		glGetShaderiv(self->impl->glName, GL_INFO_LOG_LENGTH, &len);
+		if(len > 0) {
 			char* buf = (char*)malloc(len);
-			glGetShaderInfoLog(self->name, len, nullptr, buf);
+			glGetShaderInfoLog(self->impl->glName, len, nullptr, buf);
 			XprDbgStr(buf);
 			free(buf);
 		}
 	}
-	else
-	{
+	else {
 		self->flags |= XprGpuShaderFlag_Compiled;
 	}
 }
@@ -58,14 +53,15 @@ void XprGpuShader_free(XprGpuShader* self)
 	if(nullptr == self)
 		return;
 
-	glDeleteShader(self->name);
+	glDeleteShader(self->impl->glName);
 	free(self);
 }
 
 XprGpuProgram* XprGpuProgram_alloc()
 {
-	XprGpuProgram* self = (XprGpuProgram*)malloc(sizeof(XprGpuProgram));
-	memset(self, 0, sizeof(XprGpuProgram));
+	XprGpuProgram* self;
+	XprAllocWithImpl(self, XprGpuProgram, XprGpuProgramImpl);
+
 	return self;
 }
 
@@ -79,34 +75,31 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 		return;
 	}
 	
-	self->name = glCreateProgram();
+	self->impl->glName = glCreateProgram();
 	self->flags = 0;
 
 	// attach shaders
-	for(i=0; i<shaderCnt; ++i)
-	{
-		if(nullptr != shaders[i])
-			glAttachShader(self->name, shaders[i]->name);
+	for(i=0; i<shaderCnt; ++i) {
+		if(nullptr != shaders[i]) {
+			glAttachShader(self->impl->glName, shaders[i]->impl->glName);
+		}
 	}
 
 	// link program
-	glLinkProgram(self->name);
+	glLinkProgram(self->impl->glName);
 
-	glGetProgramiv(self->name, GL_LINK_STATUS, &linkStatus);
-	if(GL_FALSE == linkStatus)
-	{
+	glGetProgramiv(self->impl->glName, GL_LINK_STATUS, &linkStatus);
+	if(GL_FALSE == linkStatus) {
 		GLint len;
-		glGetProgramiv(self->name, GL_INFO_LOG_LENGTH, &len);
-		if(len > 0)
-		{
+		glGetProgramiv(self->impl->glName, GL_INFO_LOG_LENGTH, &len);
+		if(len > 0) {
 			char* buf = (char*)malloc(len);
-			glGetProgramInfoLog(self->name, len, nullptr, buf);
+			glGetProgramInfoLog(self->impl->glName, len, nullptr, buf);
 			XprDbgStr(buf);
 			free(buf);
 		}
 	}
-	else
-	{
+	else {
 		self->flags |= XprGpuProgramFlag_Linked;
 	}
 }
@@ -116,6 +109,6 @@ void XprGpuProgram_free(XprGpuProgram* self)
 	if(nullptr == self)
 		return;
 
-	glDeleteProgram(self->name);
+	glDeleteProgram(self->impl->glName);
 	free(self);
 }

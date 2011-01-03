@@ -1,8 +1,6 @@
 #ifndef __XPRENDER_PLATFORM_H__
 #define __XPRENDER_PLATFORM_H__
 
-#include <stdlib.h>
-
 #if defined(_MSC_VER)
 #	define XPR_VC
 
@@ -10,6 +8,9 @@
 #	define XPR_GCC
 
 #endif
+
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +27,11 @@ typedef int XprHandle;
 void XprDbgStr(const char* str, ...);
 
 #define XprCountOf(A) (sizeof(A) / sizeof(A[0]))
+
+#define XprAllocWithImpl(obj, CLASS, CLASSIMPL) \
+	obj = (CLASS*)malloc(sizeof(CLASS)+sizeof(CLASSIMPL));\
+	memset(obj, 0, sizeof(CLASS)+sizeof(CLASSIMPL));\
+	obj->impl = (CLASSIMPL*)((char*)obj + sizeof(CLASS));
 
 #ifdef __cplusplus
 }

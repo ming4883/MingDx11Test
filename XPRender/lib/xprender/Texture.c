@@ -1,11 +1,5 @@
-#include "Texture.h"
-
-#include <GL/glew.h>
-
-#include <string.h>
-#if defined(XPR_VC)
-#define strcasecmp stricmp
-#endif
+#include "Texture.gl3.h"
+#include "StrUtil.h"
 
 typedef struct XprTextureFormatMapping
 {
@@ -38,8 +32,8 @@ XprTextureFormatMapping* XprTextureFormatMapping_Get(const char* name)
 
 XprTexture* XprTexture_alloc()
 {
-	XprTexture* self = (XprTexture*)malloc(sizeof(XprTexture));
-	memset(self, 0, sizeof(XprTexture));
+	XprTexture* self;
+	XprAllocWithImpl(self, XprTexture, XprTextureImpl);
 	return self;
 }
 
@@ -67,17 +61,59 @@ void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLe
 	self->height = height;
 	self->mipLevels = mipLevels;
 	self->arraySize = arraySize;
-	self->data = malloc(mapping->pixelSize * self->width * self->height * self->arraySize);
 
-	glGenTextures(1, &self->name);
+	{
+		size_t tmpw, tmph;
+		unsigned char* tmpPtr = XprTexture_getMipLevel(self, 0, mipLevels, &tmpw, &tmph);
+		self->elementSizeInByte = (size_t)tmpPtr;
+		self->data = (unsigned char*)malloc(self->elementSizeInByte);
+	}
 
+	glGenTextures(1, &self->impl->glName);
+	
 	if(arraySize == 1) {
 		size_t i;
-		self->target = GL_TEXTURE_2D;
-		glTexImage2D(self->target, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, nullptr);
+		self->impl->glTarget = GL_TEXTURE_2D;
+
+		glBindTexture(self->impl->glTarget, self->impl->glName);
+
+		glTexImage2D(self->impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, nullptr);
 		for(i=0; i<self->mipLevels; ++i)
-			glTexImage2D(self->target, i, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, nullptr);
+			glTexImage2D(self->impl->glTarget, i, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, nullptr);
 	}
+}
+
+unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t arrayIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
+{
+	size_t i;
+	size_t offset;
+	XprTextureFormatMapping* mapping;
+
+	if(nullptr == self)
+		return nullptr;
+
+	if(arrayIndex >= self->arraySize)
+		return nullptr;
+
+	if(mipIndex > self->mipLevels)
+		return nullptr;
+
+	mapping = XprTextureFormatMapping_Get(self->format);
+
+	*mipWidth = self->width;
+	*mipHeight = self->height;
+	offset = 0;
+	i = 0;
+
+	do {
+		if(i < mipIndex) {
+			offset += mapping->pixelSize * (*mipWidth) * (*mipHeight);
+			if(*mipWidth > 1) *mipWidth /= 2;
+			if(*mipHeight > 1) *mipHeight /= 2;
+		}
+	} while(++i < mipIndex);
+
+	return self->data + offset;
 }
 
 void XprTexture_commit(XprTexture* self)
@@ -89,9 +125,11 @@ void XprTexture_free(XprTexture* self)
 	if(nullptr == self)
 		return;
 
-	if(0 != self->name)
-		glDeleteTextures(1, &self->name);
+	if(0 != self->impl->glName)
+		glDeleteTextures(1, &self->impl->glName);
 
 	if(nullptr != self->data)
 		free(self->data);
+
+	free(self);
 }
