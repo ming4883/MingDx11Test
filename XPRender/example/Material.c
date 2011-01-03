@@ -36,8 +36,12 @@ void Material_newFromShaders(Material* self, const char** args)
 	if(nullptr == self->shaders[VS] || nullptr == self->shaders[FS])
 		return;
 
-	self->flags |= MaterialFlag_Ready;
 	self->pipeline = XprPipeline_new(self->shaders, ShaderCount);
+
+	if(!(self->pipeline->flags & XprPipelineFlag_Linked))
+		return;
+
+	self->flags |= MaterialFlag_Ready;
 }
 
 Material* Material_new(const char** args)
@@ -56,6 +60,9 @@ Material* Material_new(const char** args)
 void Material_free(Material* self)
 {
 	int i;
+
+	if(nullptr == self)
+		return;
 
 	if(nullptr != self->pipeline)
 		XprPipeline_free(self->pipeline);

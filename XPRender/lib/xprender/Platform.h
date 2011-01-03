@@ -25,6 +25,7 @@ typedef int XprHandle;
 
 void XprDbgStr(const char* str, ...);
 
+#define XprCountOf(A) (sizeof(A) / sizeof(A[0]))
 
 #ifdef __cplusplus
 }

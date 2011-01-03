@@ -37,6 +37,15 @@ typedef struct Aspect
 
 Aspect _aspect;
 
+typedef struct Mouse
+{
+	int x;
+	int y;
+	XprVec3 clothOffsets[2];
+} Mouse;
+
+Mouse _mouse;
+
 typedef struct RenderContext
 {
 	XprMat44 worldViewProjMtx;
@@ -66,6 +75,7 @@ RenderContext _renderContext;
 
 void drawBackground()
 {
+	/*
 	static const XprVec3 v[] = {
 		{-1,  1, 0},
 		{-1, -1, 0},
@@ -100,6 +110,10 @@ void drawBackground()
 	glColor3fv(c[1].v); glVertex3fv(v[1].v);
 
 	glEnd();
+	*/
+
+	glClearColor(0.57f, 0.85f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void drawScene()
@@ -134,6 +148,7 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
+		Mesh_bindInputs(_floorMesh, _sceneMaterial->pipeline);
 		Mesh_draw(_floorMesh);
 	}
 
@@ -152,6 +167,7 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
+		Mesh_bindInputs(_cloth->mesh, _sceneMaterial->pipeline);
 		Mesh_draw(_cloth->mesh);
 		
 		glEnable(GL_CULL_FACE);
@@ -175,6 +191,7 @@ void drawScene()
 
 			RenderContext_apply(&_renderContext, _sceneMaterial);
 
+			Mesh_bindInputs(_ballMesh, _sceneMaterial->pipeline);
 			Mesh_draw(_ballMesh);
 		}
 	}
@@ -260,7 +277,11 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 
 void PezHandleMouse(int x, int y, int action)
 {
+	_mouse.x = x;
+	_mouse.y = y;
 
+	_mouse.clothOffsets[0] = _cloth->fixPos[0];
+	_mouse.clothOffsets[1] = _cloth->fixPos[_cloth->segmentCount-1];
 }
 
 void PezRender()
@@ -283,9 +304,9 @@ void PezConfig()
 {
 	PEZ_VIEWPORT_WIDTH = 800;
 	PEZ_VIEWPORT_HEIGHT = 600;
-	PEZ_ENABLE_MULTISAMPLING = 0;
+	PEZ_ENABLE_MULTISAMPLING = 1;
 	PEZ_VERTICAL_SYNC = 0;
-	PEZ_FORWARD_COMPATIBLE_GL = 0;
+	PEZ_FORWARD_COMPATIBLE_GL = 1;
 }
 
 const char* PezInitialize(int width, int height)
@@ -297,14 +318,15 @@ const char* PezInitialize(int width, int height)
 	// materials
 	glswInit();
 	glswSetPath("../example/", ".glsl");
+	glswAddDirectiveToken("","#version 150");
 
 	_sceneMaterial = loadMaterial(
 		"ClothSimulation.Scene.Vertex",
 		"ClothSimulation.Scene.Fragment");
 	
-	_uiMaterial = loadMaterial(
-		"ClothSimulation.UI.Vertex",
-		"ClothSimulation.UI.Fragment");
+	//_uiMaterial = loadMaterial(
+	//	"ClothSimulation.UI.Vertex",
+	//	"ClothSimulation.UI.Fragment");
 	
 	glswShutdown();
 
@@ -328,17 +350,6 @@ const char* PezInitialize(int width, int height)
 
 	return "Cloth Simulation";
 }
-
-typedef struct Mouse
-{
-	int button;
-	int state;
-	int x;
-	int y;
-	XprVec3 clothOffsets[2];
-} Mouse;
-
-Mouse _mouse;
 /*
 void mouse(int button, int state, int x, int y)
 {

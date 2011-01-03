@@ -9,11 +9,31 @@ extern "C" {
 
 typedef struct XprTexture
 {
-	int name;
 	size_t flags;
+	size_t width;
+	size_t height;
+	size_t mipLevels;
+	size_t arraySize;
+	char format[32];
+	unsigned char* data;
+	int name;
+	int target;
 } XprTexture;
 
-	
+typedef enum XprTextureFlag
+{
+	XprTextureFlag_Inited = 1 << 0,
+	XprTextureFlag_Dirty = 1 << 1,
+} XprTextureFlag;
+
+XprTexture* XprTexture_alloc();
+
+void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLevels, size_t arraySize, const char* format);
+
+void XprTexture_commit(XprTexture* self);
+
+void XprTexture_free(XprTexture* self);
+
 #ifdef __cplusplus
 }
 #endif

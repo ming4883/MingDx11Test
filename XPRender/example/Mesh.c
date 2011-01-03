@@ -2,6 +2,7 @@
 
 #include "../lib/xprender/Buffer.h"
 #include "../lib/xprender/Vec3.h"
+#include "../lib/xprender/Shader.h"
 #include <GL/glew.h>
 #include <math.h>
 
@@ -15,49 +16,46 @@ Mesh* Mesh_new(size_t vertexCount, size_t indexCount)
 	self->normalBuffer = XprBuffer_new(XprBufferType_Vertex, sizeof(XprVec3) * self->vertexCount, nullptr);
 	self->indexBuffer = XprBuffer_new(XprBufferType_Index, sizeof(unsigned short) * self->indexCount, nullptr);
 
+	glGenVertexArrays(1, &self->ia);
+
 	return self;
 }
 
 void Mesh_free(Mesh* self)
 {
+	glDeleteVertexArrays(1, &self->ia);
 	XprBuffer_free(self->vertexBuffer);
 	XprBuffer_free(self->normalBuffer);
 	XprBuffer_free(self->indexBuffer);
 	free(self);
 }
 
-void Mesh_draw(Mesh* self)
+void Mesh_bindInputs(Mesh* self, struct XprPipeline* pipeline)
 {
+	int vertLoc = glGetAttribLocation(pipeline->name, "i_vertex");
+	int normLoc = glGetAttribLocation(pipeline->name, "i_normal");
+
+	glBindVertexArray(self->ia);
+
 	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(XprVec3), 0);
+	glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
+	glEnableVertexAttribArray(vertLoc);
 
 	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->name);
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_FLOAT, sizeof(XprVec3), 0);
-	
+	glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
+	glEnableVertexAttribArray(normLoc);
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->indexBuffer->name);
+}
 
+void Mesh_draw(Mesh* self)
+{
 	glDrawElements(GL_TRIANGLES, self->indexCount, GL_UNSIGNED_SHORT, 0);
-
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 void Mesh_drawPoints(Mesh* self)
 {
-	glBindBuffer(GL_ARRAY_BUFFER, self->vertexBuffer->name);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, sizeof(XprVec3), 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, self->normalBuffer->name);
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glNormalPointer(GL_FLOAT, sizeof(XprVec3), 0);
-	
 	glDrawArrays(GL_POINTS, 0, self->vertexCount);
-	
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
 }
 
 Mesh* Mesh_createUnitSphere(size_t segmentCount)
