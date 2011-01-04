@@ -14,6 +14,7 @@
 #include "Sphere.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "red_tile_texture.h"
 
 Cloth* _cloth = nullptr;
 #define BallCount 2

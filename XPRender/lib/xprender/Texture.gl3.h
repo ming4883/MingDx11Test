@@ -8,10 +8,21 @@
 extern "C" {
 #endif
 
+
+typedef struct XprTextureFormatMapping
+{
+	const char* name;
+	size_t pixelSize;
+	int internalFormat;
+	int format;
+	int type;
+} XprTextureFormatMapping;
+
 typedef struct XprTextureImpl
 {
 	int glTarget;
 	int glName;
+	struct XprTextureFormatMapping* glFormatMapping;
 } XprTextureImpl;
 
 #ifdef __cplusplus

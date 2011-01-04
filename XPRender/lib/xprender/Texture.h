@@ -21,8 +21,8 @@ typedef struct XprTexture
 	size_t width;
 	size_t height;
 	size_t mipLevels;
-	size_t arraySize;
-	size_t elementSizeInByte;
+	size_t sliceCount;
+	size_t sliceSizeInByte;
 	char format[32];
 	unsigned char* data;
 	struct XprTextureImpl* impl;
@@ -32,9 +32,9 @@ XprTexture* XprTexture_alloc();
 
 void XprTexture_free(XprTexture* self);
 
-void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLevels, size_t arraySize, const char* format);
+void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLevels, size_t sliceCount, const char* format);
 
-unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t arrayIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight);
+unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t sliceIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight);
 
 void XprTexture_commit(XprTexture* self);
 
