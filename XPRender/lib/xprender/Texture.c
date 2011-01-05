@@ -47,7 +47,7 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 	return offset;
 }
 
-void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLevels, size_t sliceCount, const char* format)
+void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t sliceCount, const char* format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		XprDbgStr("texture already inited!\n");
@@ -69,12 +69,12 @@ void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipLe
 	strcpy(self->format, format);
 	self->width = width;
 	self->height = height;
-	self->mipLevels = mipLevels;
+	self->mipCount = mipCount;
 	self->sliceCount = sliceCount;
 
 	{
 		size_t tmpw, tmph;
-		self->sliceSizeInByte = XprTexture_getMipLevelOffset(self, self->mipLevels, &tmpw, &tmph);
+		self->sliceSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount, &tmpw, &tmph);
 		self->data = (unsigned char*)malloc(self->sliceSizeInByte * self->sliceCount);
 		memset(self->data, 0, self->sliceSizeInByte * self->sliceCount);
 	}
@@ -96,16 +96,16 @@ unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t sliceIndex, size_
 	if(sliceIndex >= self->sliceCount)
 		return nullptr;
 
-	if(mipIndex > self->mipLevels)
+	if(mipIndex > self->mipCount)
 		return nullptr;
 
-	return self->data + sliceIndex * self->sliceSizeInByte + XprTexture_getMipLevelOffset(self, self->mipLevels, mipWidth, mipHeight);
+	return self->data + (sliceIndex * self->sliceSizeInByte) + XprTexture_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
 }
 
 void XprTexture_commit(XprTexture* self)
 {
 	size_t i;
-	XprTextureFormatMapping* mapping;
+	const XprTextureFormatMapping* mapping;
 
 	if(nullptr == self)
 		return;
@@ -117,12 +117,11 @@ void XprTexture_commit(XprTexture* self)
 
 	if(self->sliceCount == 1) {
 		
-		self->impl->glTarget = GL_TEXTURE_2D;
-
 		glBindTexture(self->impl->glTarget, self->impl->glName);
 
 		glTexImage2D(self->impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, self->data);
-		for(i=1; i<=self->mipLevels; ++i) {
+		
+		for(i=1; i<=self->mipCount; ++i) {
 			size_t mipW, mipH;
 			unsigned char* data = XprTexture_getMipLevel(self, 0, i, &mipW, &mipH);
 			glTexImage2D(self->impl->glTarget, i, mapping->internalFormat, mipW, mipH, 0, mapping->format, mapping->type, data);
@@ -135,11 +134,11 @@ void XprTexture_free(XprTexture* self)
 	if(nullptr == self)
 		return;
 
+	//if(nullptr != self->data)
+	//	free(self->data);
+
 	if(0 != self->impl->glName)
 		glDeleteTextures(1, &self->impl->glName);
-
-	if(nullptr != self->data)
-		free(self->data);
-
+	
 	free(self);
 }

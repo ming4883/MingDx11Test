@@ -7,6 +7,7 @@
 #include "../lib/xprender/Vec4.h"
 #include "../lib/xprender/Mat44.h"
 #include "../lib/xprender/Shader.GL3.h"
+#include "../lib/xprender/Texture.GL3.h"
 #include "../lib/glsw/glsw.h"
 #include "../lib/pez/pez.h"
 
@@ -14,6 +15,7 @@
 #include "Sphere.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "Pvr.h"
 #include "red_tile_texture.h"
 
 Cloth* _cloth = nullptr;
@@ -23,6 +25,7 @@ Mesh* _ballMesh = nullptr;
 Mesh* _floorMesh = nullptr;
 Material* _sceneMaterial = nullptr;
 Material* _uiMaterial = nullptr;
+XprTexture* _texture = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
 float _gravity = 50;
@@ -225,6 +228,7 @@ void quit(void)
 	Mesh_free(_floorMesh);
 	Material_free(_sceneMaterial);
 	Material_free(_uiMaterial);
+	XprTexture_free(_texture);
 }
 
 Material* loadMaterial(const char* vsKey, const char* fsKey)
@@ -326,9 +330,11 @@ const char* PezInitialize(int width, int height)
 		"ClothSimulation.Scene.Vertex",
 		"ClothSimulation.Scene.Fragment");
 	
-	//_uiMaterial = loadMaterial(
-	//	"ClothSimulation.UI.Vertex",
-	//	"ClothSimulation.UI.Fragment");
+	_uiMaterial = loadMaterial(
+		"ClothSimulation.UI.Vertex",
+		"ClothSimulation.UI.Fragment");
+
+	_texture = Pvr_createTexture(red_tile_texture);
 	
 	glswShutdown();
 
