@@ -47,15 +47,15 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 	return offset;
 }
 
-void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t sliceCount, const char* format)
+void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		XprDbgStr("texture already inited!\n");
 		return;
 	}
 
-	if(sliceCount > 1) {
-		XprDbgStr("Current not support sliceCount > 1!\n");
+	if(surfCount > 1) {
+		XprDbgStr("Current not support surfCount > 1!\n");
 		return;
 	}
 
@@ -70,36 +70,36 @@ void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipCo
 	self->width = width;
 	self->height = height;
 	self->mipCount = mipCount;
-	self->sliceCount = sliceCount;
+	self->surfCount = surfCount;
 
 	{
 		size_t tmpw, tmph;
-		self->sliceSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount, &tmpw, &tmph);
-		self->data = (unsigned char*)malloc(self->sliceSizeInByte * self->sliceCount);
-		memset(self->data, 0, self->sliceSizeInByte * self->sliceCount);
+		self->surfSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
+		self->data = (unsigned char*)malloc(self->surfSizeInByte * self->surfCount);
+		memset(self->data, 0, self->surfSizeInByte * self->surfCount);
 	}
 
 	glGenTextures(1, &self->impl->glName);
 	
-	if(self->sliceCount == 1) {
+	if(self->surfCount == 1) {
 		self->impl->glTarget = GL_TEXTURE_2D;
 	}
 
 	XprTexture_commit(self);
 }
 
-unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t sliceIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
+unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t surfIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
 {
 	if(nullptr == self)
 		return nullptr;
 
-	if(sliceIndex >= self->sliceCount)
+	if(surfIndex >= self->surfCount)
 		return nullptr;
 
 	if(mipIndex > self->mipCount)
 		return nullptr;
 
-	return self->data + (sliceIndex * self->sliceSizeInByte) + XprTexture_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
+	return self->data + (surfIndex * self->surfSizeInByte) + XprTexture_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
 }
 
 void XprTexture_commit(XprTexture* self)
@@ -115,7 +115,7 @@ void XprTexture_commit(XprTexture* self)
 	
 	mapping = self->impl->glFormatMapping;
 
-	if(self->sliceCount == 1) {
+	if(self->surfCount == 1) {
 		
 		glBindTexture(self->impl->glTarget, self->impl->glName);
 
@@ -134,8 +134,8 @@ void XprTexture_free(XprTexture* self)
 	if(nullptr == self)
 		return;
 
-	//if(nullptr != self->data)
-	//	free(self->data);
+	if(nullptr != self->data)
+		free(self->data);
 
 	if(0 != self->impl->glName)
 		glDeleteTextures(1, &self->impl->glName);
