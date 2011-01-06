@@ -347,11 +347,13 @@ const char* PezInitialize(int width, int height)
 	_ball[0].radius = 0.25f;
 	_ball[1].center = XprVec3_(0.5f, 0.5f, 0);
 	_ball[1].radius = 0.25f;
-	_ballMesh = Mesh_createUnitSphere(32);
+	_ballMesh = Mesh_alloc();
+	Mesh_initWithUnitSphere(_ballMesh, 32);
 
 	{
 	XprVec3 offset = XprVec3_(-2.5f, -2.5f, 0);
-	_floorMesh = Mesh_createQuad(5, 5, &offset, 1);
+	_floorMesh = Mesh_alloc();
+	Mesh_initWithQuad(_floorMesh, 5, 5, &offset, 1);
 	}
 	
 	atexit(quit);

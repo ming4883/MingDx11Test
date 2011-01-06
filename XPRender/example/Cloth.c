@@ -35,9 +35,10 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 	self->fixPos = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
 	self->fixed = (XprBool*)malloc(sizeof(XprBool) * segmentCount * segmentCount);
 
-	self->mesh = Mesh_new(segmentCount * segmentCount, (segmentCount-1) * (segmentCount-1) * 6);
+	self->mesh = Mesh_alloc();
+	Mesh_init(self->mesh, segmentCount * segmentCount, (segmentCount-1) * (segmentCount-1) * 6);
 	
-	mapped = (unsigned short*)XprBuffer_map(self->mesh->indexBuffer, XprBufferMapAccess_Write);
+	mapped = (unsigned short*)self->mesh->index.buffer;
 	for(r=0; r<segmentCount-1; ++r)
 	{
 		for(c=0; c<segmentCount-1; ++c)
@@ -56,7 +57,6 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 			(*mapped++) = p1;
 		}
 	}
-	XprBuffer_unmap(self->mesh->indexBuffer);
 
 	for(r=0; r<segmentCount; ++r)
 	{
@@ -143,17 +143,16 @@ void Cloth_addForceToAll(Cloth* self, const XprVec3* force)
 
 void Cloth_updateMesh(Cloth* self)
 {
-	XprBuffer_update(self->mesh->vertexBuffer, 0, self->mesh->vertexBuffer->sizeInBytes, self->p);
+	//XprBuffer_update(self->mesh->vertexBuffer, 0, self->mesh->vertexBuffer->sizeInBytes, self->p);
+	memcpy(self->mesh->vertex.buffer, self->p, self->mesh->vertex.sizeInBytes);
 
 	{
 		size_t r, c;
 
-		XprVec3* normals = (XprVec3*)XprBuffer_map(self->mesh->normalBuffer, XprBufferMapAccess_Write);
+		XprVec3* normals = (XprVec3*)self->mesh->normal.buffer;
 
-		for(r = 0; r < self->segmentCount; ++r)
-		{
-			for(c = 0; c < self->segmentCount; ++c)
-			{
+		for(r = 0; r < self->segmentCount; ++r) {
+			for(c = 0; c < self->segmentCount; ++c) {
 				XprVec3 n = *XprVec3_c000();
 				int cnt = 0;
 
@@ -161,8 +160,7 @@ void Cloth_updateMesh(Cloth* self)
 				XprVec3 v1, v2, n2;
 				p1 = &self->p[r * self->segmentCount + c];
 
-				if(r>0 && c>0)
-				{
+				if(r>0 && c>0) {
 					p2 = &self->p[(r) * self->segmentCount + (c-1)];
 					p3 = &self->p[(r-1) * self->segmentCount + c];
 					
@@ -174,8 +172,7 @@ void Cloth_updateMesh(Cloth* self)
 					++cnt;
 				}
 
-				if(r>0 && c<(self->segmentCount-1))
-				{
+				if(r>0 && c<(self->segmentCount-1)) {
 					p2 = &self->p[(r-1) * self->segmentCount + c];
 					p3 = &self->p[(r) * self->segmentCount + (c+1)];
 					
@@ -187,8 +184,7 @@ void Cloth_updateMesh(Cloth* self)
 					++cnt;
 				}
 
-				if(r<(self->segmentCount-1) && c<(self->segmentCount-1))
-				{
+				if(r<(self->segmentCount-1) && c<(self->segmentCount-1)) {
 					p2 = &self->p[(r) * self->segmentCount + (c+1)];
 					p3 = &self->p[(r+1) * self->segmentCount + c];
 					
@@ -200,8 +196,7 @@ void Cloth_updateMesh(Cloth* self)
 					++cnt;
 				}
 
-				if(r<(self->segmentCount-1) && c>0)
-				{
+				if(r<(self->segmentCount-1) && c>0) {
 					p2 = &self->p[(r+1) * self->segmentCount + c];
 					p3 = &self->p[(r) * self->segmentCount + (c-1)];
 					
@@ -221,9 +216,9 @@ void Cloth_updateMesh(Cloth* self)
 				(*normals++) = n;
 			}
 		}
-
-		XprBuffer_unmap(self->mesh->normalBuffer);
 	}
+
+	Mesh_commit(self->mesh);
 }
 
 void Cloth_verletIntegration(Cloth* self)
