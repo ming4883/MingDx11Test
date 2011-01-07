@@ -1,5 +1,5 @@
 #include "Vec3.h"
-
+#include "Vec2.h"
 #include <math.h>
 
 XprVec3 XprVec3_(float x, float y, float z)
@@ -7,6 +7,15 @@ XprVec3 XprVec3_(float x, float y, float z)
 	XprVec3 _out;
 	_out.x = x;
 	_out.y = y;
+	_out.z = z;
+	return _out;
+}
+
+XprVec3 XprVec3_fromVec2(const struct XprVec2* xy, float z)
+{
+	XprVec3 _out;
+	_out.x = xy->x;
+	_out.y = xy->y;
 	_out.z = z;
 	return _out;
 }

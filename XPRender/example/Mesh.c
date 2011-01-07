@@ -2,6 +2,7 @@
 
 #include "../lib/xprender/Buffer.GL3.h"
 #include "../lib/xprender/Shader.GL3.h"
+#include "../lib/xprender/Vec2.h"
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Vec4.h"
 
@@ -12,7 +13,7 @@ typedef struct MeshImpl {
 	struct XprBuffer* vertexBuffer;
 	struct XprBuffer* normalBuffer;
 	struct XprBuffer* colorBuffer;
-	struct XprBuffer* texcoordBuffer[MeshTrait_MaxTexcoord];
+	struct XprBuffer* tcBuffer[MeshTrait_MaxTexcoord];
 	int ia;
 } MeshImpl;
 
@@ -44,7 +45,7 @@ void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount)
 	self->color.buffer = malloc(self->color.sizeInBytes);
 
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
-		self->texcoord[i].sizeInBytes = sizeof(float) * 2 * self->vertexCount;
+		self->texcoord[i].sizeInBytes = sizeof(XprVec2) * self->vertexCount;
 		self->texcoord[i].buffer = malloc(self->texcoord[i].sizeInBytes);
 	}
 
@@ -62,8 +63,8 @@ void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount)
 	XprBuffer_init(self->impl->colorBuffer, XprBufferType_Vertex, self->color.sizeInBytes, nullptr);
 
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
-		self->impl->texcoordBuffer[i] = XprBuffer_alloc();
-		XprBuffer_init(self->impl->texcoordBuffer[i], XprBufferType_Vertex, self->texcoord[i].sizeInBytes, nullptr);
+		self->impl->tcBuffer[i] = XprBuffer_alloc();
+		XprBuffer_init(self->impl->tcBuffer[i], XprBufferType_Vertex, self->texcoord[i].sizeInBytes, nullptr);
 	}	
 	
 	glGenVertexArrays(1, &self->impl->ia);
@@ -83,7 +84,7 @@ void Mesh_free(Mesh* self)
 		XprBuffer_free(self->impl->colorBuffer);
 
 		for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
-			XprBuffer_free(self->impl->texcoordBuffer[i]);
+			XprBuffer_free(self->impl->tcBuffer[i]);
 		}
 
 		free(self->index.buffer);
@@ -117,7 +118,7 @@ void Mesh_commit(Mesh* self)
 	commit(normal);
 	commit(color);
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
-		XprBuffer_update(self->impl->texcoordBuffer[i], 0, self->texcoord[i].sizeInBytes, self->texcoord[i].buffer);
+		XprBuffer_update(self->impl->tcBuffer[i], 0, self->texcoord[i].sizeInBytes, self->texcoord[i].buffer);
 	}	
 
 #undef commit
@@ -127,16 +128,27 @@ void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* program)
 {
 	int vertLoc = glGetAttribLocation(program->impl->glName, "i_vertex");
 	int normLoc = glGetAttribLocation(program->impl->glName, "i_normal");
+	int uv0Loc = glGetAttribLocation(program->impl->glName, "i_texcoord0");
 
 	glBindVertexArray(self->impl->ia);
 
-	glBindBuffer(GL_ARRAY_BUFFER, self->impl->vertexBuffer->impl->glName);
-	glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
-	glEnableVertexAttribArray(vertLoc);
+	if(vertLoc >= 0) {
+		glBindBuffer(GL_ARRAY_BUFFER, self->impl->vertexBuffer->impl->glName);
+		glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
+		glEnableVertexAttribArray(vertLoc);
+	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, self->impl->normalBuffer->impl->glName);
-	glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
-	glEnableVertexAttribArray(normLoc);
+	if(normLoc >= 0) {
+		glBindBuffer(GL_ARRAY_BUFFER, self->impl->normalBuffer->impl->glName);
+		glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
+		glEnableVertexAttribArray(normLoc);
+	}
+
+	if(uv0Loc >= 0) {
+		glBindBuffer(GL_ARRAY_BUFFER, self->impl->tcBuffer[0]->impl->glName);
+		glVertexAttribPointer(uv0Loc, 2, GL_FLOAT, GL_FALSE, sizeof(XprVec2), 0);
+		glEnableVertexAttribArray(uv0Loc);
+	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
 }
@@ -157,6 +169,8 @@ void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount)
 
 	XprVec3* pos;
 	XprVec3* nor;
+	XprVec2* uv0;
+	
 	unsigned short* idx;
 
 	float theta, phi;
@@ -167,16 +181,20 @@ void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount)
 
 	Mesh_init(self, (height-2)* width+2, (height-2)*(width-1)*2 * 3);
 
+	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
 	pos = XprBuffer_map(self->impl->vertexBuffer, XprBufferMapAccess_Write);
 	nor = XprBuffer_map(self->impl->normalBuffer, XprBufferMapAccess_Write);
-	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
-
+	uv0 = XprBuffer_map(self->impl->tcBuffer[0], XprBufferMapAccess_Write);
+	
 	for(t=0, j=1; j<height-1; ++j)
 	{
 		for(i=0; i<width; ++i)
 		{
-			theta = (float)j/(height-1) * PI;
-			phi   = (float)i/(width-1 ) * PI*2;
+			uv0[t].x = (float)i/(width-1);
+			uv0[t].y = (float)j/(height-1);
+
+			theta = uv0[t].y * PI;
+			phi   = uv0[t].x * PI*2;
 			pos[t].x =  sinf(theta) * cosf(phi);
 			pos[t].y =  cosf(theta);
 			pos[t].z = -sinf(theta) * sinf(phi);
@@ -213,10 +231,11 @@ void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount)
 		
 	}
 
+	XprBuffer_unmap(self->impl->indexBuffer);
 	XprBuffer_unmap(self->impl->vertexBuffer);
 	XprBuffer_unmap(self->impl->normalBuffer);
-	XprBuffer_unmap(self->impl->indexBuffer);
-
+	XprBuffer_unmap(self->impl->tcBuffer[0]);
+	
 #undef PI
 }
 
@@ -224,6 +243,7 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 {
 	XprVec3* pos;
 	XprVec3* nor;
+	XprVec2* uv0;
 	unsigned short* idx;
 
 	size_t r, c;
@@ -231,9 +251,10 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 	
 	Mesh_init(self, stride * stride, (stride-1) * (stride-1) * 6);
 
+	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
 	pos = XprBuffer_map(self->impl->vertexBuffer, XprBufferMapAccess_Write);
 	nor = XprBuffer_map(self->impl->normalBuffer, XprBufferMapAccess_Write);
-	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
+	uv0 = XprBuffer_map(self->impl->tcBuffer[0], XprBufferMapAccess_Write);
 
 	for(r=0; r<(stride-1); ++r)
 	{
@@ -266,10 +287,13 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 			size_t i = r * stride + c;
 			pos[i] = XprVec3_(x, y, offset->v[2]);
 			nor[i] = XprVec3_(0, 0, 1);
+			uv0[i].x = height * (float)r / segmentCount;
+			uv0[i].y = width * (float)c / segmentCount;
 		}
 	}
 	
+	XprBuffer_unmap(self->impl->indexBuffer);
 	XprBuffer_unmap(self->impl->vertexBuffer);
 	XprBuffer_unmap(self->impl->normalBuffer);
-	XprBuffer_unmap(self->impl->indexBuffer);
+	XprBuffer_unmap(self->impl->tcBuffer[0]);
 }

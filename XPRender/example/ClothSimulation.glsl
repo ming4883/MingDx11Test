@@ -1,6 +1,7 @@
 -- Scene.Vertex
 in vec4 i_vertex;
 in vec3 i_normal;
+in vec2 i_texcoord0;
 
 out vec3 v_normal;
 out vec3 v_pos;
@@ -13,7 +14,7 @@ void main() {
 	gl_Position = u_worldViewProjMtx * i_vertex;
 	v_normal = (u_worldViewMtx * vec4(i_normal, 0)).xyz;
 	v_pos = (u_worldViewMtx * i_vertex).xyz;
-	v_texcoord = i_vertex.xy;
+	v_texcoord = i_texcoord0;
 }
 
 -- Scene.Fragment
@@ -50,9 +51,11 @@ void main() {
 
 -- UI.Vertex
 in vec4 i_vertex;
-in vec4 i_texcoord0;
+in vec3 i_normal;
+in vec2 i_texcoord0;
 
-out vec4 v_texcoord;
+out vec3 v_normal;
+out vec2 v_texcoord;
 
 uniform mat4 u_worldViewProjMtx;
 
@@ -62,12 +65,12 @@ void main() {
 }
 
 -- UI.Fragment
-int vec4 v_texcoord;
+in vec2 v_texcoord;
 
 out vec4 o_fragColor;
 
 uniform sampler2D u_tex;
 
 void main() {
-	o_fragColor = texture(u_tex, v_texcoord.xy);
+	o_fragColor = texture(u_tex, v_texcoord);
 }
