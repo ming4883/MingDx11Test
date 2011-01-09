@@ -23,8 +23,9 @@ Cloth* _cloth = nullptr;
 Sphere _ball[BallCount];
 Mesh* _ballMesh = nullptr;
 Mesh* _floorMesh = nullptr;
+Mesh* _bgMesh = nullptr;
 Material* _sceneMaterial = nullptr;
-Material* _uiMaterial = nullptr;
+Material* _bgMaterial = nullptr;
 XprTexture* _texture = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
@@ -79,45 +80,25 @@ RenderContext _renderContext;
 
 void drawBackground()
 {
-	/*
-	static const XprVec3 v[] = {
-		{-1,  1, 0},
-		{-1, -1, 0},
-		{ 1,  1, 0},
-		{ 1, -1, 0},
+	static const XprVec4 c[] = {
+		{0.57f, 0.85f, 1.0f, 1.0f},
+		{0.145f, 0.31f, 0.405f, 1.0f},
+		{0.57f, 0.85f, 1.0f, 1.0f},
+		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
-
-	static const XprVec3 c[] = {
-		{0.57f, 0.85f, 1.0f},
-		{0.29f, 0.62f, 0.81f},
-		{0.57f, 0.85f, 1.0f},
-		{0.57f, 0.85f, 1.0f},
-	};
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	glDisable(GL_LIGHTING);
+	
 	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
-	glBegin(GL_TRIANGLES);
+	glUseProgram(_bgMaterial->program->impl->glName);
 
-	glColor3fv(c[0].v); glVertex3fv(v[0].v);
-	glColor3fv(c[1].v);	glVertex3fv(v[1].v);
-	glColor3fv(c[2].v); glVertex3fv(v[2].v);
+	{	// bind colors
+		int locColors = glGetUniformLocation(_bgMaterial->program->impl->glName, "u_colors");
+		glUniform4fv(locColors, 4, (const float*)c);
+	}
 
-	glColor3fv(c[3].v); glVertex3fv(v[3].v);
-	glColor3fv(c[2].v); glVertex3fv(v[2].v);
-	glColor3fv(c[1].v); glVertex3fv(v[1].v);
-
-	glEnd();
-	*/
-
-	glClearColor(0.57f, 0.85f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	Mesh_bindInputs(_bgMesh, _bgMaterial->program);
+	Mesh_draw(_bgMesh);
 }
 
 void drawScene()
@@ -226,8 +207,9 @@ void quit(void)
 	Cloth_free(_cloth);
 	Mesh_free(_ballMesh);
 	Mesh_free(_floorMesh);
+	Mesh_free(_bgMesh);
 	Material_free(_sceneMaterial);
-	Material_free(_uiMaterial);
+	Material_free(_bgMaterial);
 	XprTexture_free(_texture);
 }
 
@@ -330,9 +312,9 @@ const char* PezInitialize(int width, int height)
 		"ClothSimulation.Scene.Vertex",
 		"ClothSimulation.Scene.Fragment");
 	
-	_uiMaterial = loadMaterial(
-		"ClothSimulation.UI.Vertex",
-		"ClothSimulation.UI.Fragment");
+	_bgMaterial = loadMaterial(
+		"ClothSimulation.Bg.Vertex",
+		"ClothSimulation.Bg.Fragment");
 
 	_texture = Pvr_createTexture(red_tile_texture);
 	
@@ -355,6 +337,9 @@ const char* PezInitialize(int width, int height)
 	_floorMesh = Mesh_alloc();
 	Mesh_initWithQuad(_floorMesh, 5, 5, &offset, 1);
 	}
+
+	_bgMesh = Mesh_alloc();
+	Mesh_initWithScreenQuad(_bgMesh);
 	
 	atexit(quit);
 

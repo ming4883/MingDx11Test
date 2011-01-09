@@ -22,6 +22,7 @@ typedef struct MeshData
 {
 	unsigned char* buffer;
 	size_t sizeInBytes;
+	char shaderName[16];
 };
 
 enum MeshFlag
@@ -53,6 +54,8 @@ void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount);
 void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount);
 
 void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* offset, size_t segmentCount);
+
+void Mesh_initWithScreenQuad(Mesh* self);
 
 void Mesh_commit(Mesh* self);
 

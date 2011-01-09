@@ -7,6 +7,7 @@
 #include "../lib/xprender/Vec4.h"
 
 #include <math.h>
+#include <stdio.h>
 
 typedef struct MeshImpl {
 	struct XprBuffer* indexBuffer;
@@ -34,19 +35,24 @@ void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount)
 
 	self->index.sizeInBytes = sizeof(unsigned short) * self->indexCount;
 	self->index.buffer = malloc(self->index.sizeInBytes);
+	strcpy(self->index.shaderName, "");
 
 	self->vertex.sizeInBytes = sizeof(XprVec3) * self->vertexCount;
 	self->vertex.buffer = malloc(self->vertex.sizeInBytes);
+	strcpy(self->vertex.shaderName, "i_vertex");
 
 	self->normal.sizeInBytes = sizeof(XprVec3) * self->vertexCount;
 	self->normal.buffer = malloc(self->normal.sizeInBytes);
+	strcpy(self->normal.shaderName, "i_normal");
 
 	self->color.sizeInBytes = sizeof(XprVec4) * self->vertexCount;
 	self->color.buffer = malloc(self->color.sizeInBytes);
+	strcpy(self->color.shaderName, "i_color");
 
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
 		self->texcoord[i].sizeInBytes = sizeof(XprVec2) * self->vertexCount;
 		self->texcoord[i].buffer = malloc(self->texcoord[i].sizeInBytes);
+		sprintf(self->texcoord[i].shaderName, "i_texcoord%d", i);
 	}
 
 	// hardware buffer
@@ -126,9 +132,14 @@ void Mesh_commit(Mesh* self)
 
 void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* program)
 {
-	int vertLoc = glGetAttribLocation(program->impl->glName, "i_vertex");
-	int normLoc = glGetAttribLocation(program->impl->glName, "i_normal");
-	int uv0Loc = glGetAttribLocation(program->impl->glName, "i_texcoord0");
+	int vertLoc = glGetAttribLocation(program->impl->glName, self->vertex.shaderName);
+	int normLoc = glGetAttribLocation(program->impl->glName, self->normal.shaderName);
+	int colorLoc = glGetAttribLocation(program->impl->glName, self->color.shaderName);
+	int uvLoc[MeshTrait_MaxTexcoord];
+	int i;
+	
+	for(i=0; i<MeshTrait_MaxTexcoord; ++i)
+		uvLoc[i] = glGetAttribLocation(program->impl->glName, self->texcoord[i].shaderName);
 
 	glBindVertexArray(self->impl->ia);
 
@@ -143,11 +154,19 @@ void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* program)
 		glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
 		glEnableVertexAttribArray(normLoc);
 	}
+	
+	if(colorLoc >= 0) {
+		glBindBuffer(GL_ARRAY_BUFFER, self->impl->colorBuffer->impl->glName);
+		glVertexAttribPointer(colorLoc, 4, GL_FLOAT, GL_FALSE, sizeof(XprVec4), 0);
+		glEnableVertexAttribArray(colorLoc);
+	}
 
-	if(uv0Loc >= 0) {
-		glBindBuffer(GL_ARRAY_BUFFER, self->impl->tcBuffer[0]->impl->glName);
-		glVertexAttribPointer(uv0Loc, 2, GL_FLOAT, GL_FALSE, sizeof(XprVec2), 0);
-		glEnableVertexAttribArray(uv0Loc);
+	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
+		if(uvLoc[i] >= 0) {
+			glBindBuffer(GL_ARRAY_BUFFER, self->impl->tcBuffer[i]->impl->glName);
+			glVertexAttribPointer(uvLoc[i], 2, GL_FLOAT, GL_FALSE, sizeof(XprVec2), 0);
+			glEnableVertexAttribArray(uvLoc[i]);
+		}
 	}
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
@@ -295,5 +314,30 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 	XprBuffer_unmap(self->impl->indexBuffer);
 	XprBuffer_unmap(self->impl->vertexBuffer);
 	XprBuffer_unmap(self->impl->normalBuffer);
+	XprBuffer_unmap(self->impl->tcBuffer[0]);
+}
+
+void Mesh_initWithScreenQuad(Mesh* self)
+{
+	XprVec3* pos;
+	XprVec2* uv0;
+	unsigned short* idx;
+
+	Mesh_init(self, 4, 6);
+
+	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
+	pos = XprBuffer_map(self->impl->vertexBuffer, XprBufferMapAccess_Write);
+	uv0 = XprBuffer_map(self->impl->tcBuffer[0], XprBufferMapAccess_Write);
+
+	(*idx++) = 0; (*idx++) = 1; (*idx++) = 2;
+	(*idx++) = 3; (*idx++) = 2; (*idx++) = 1;
+
+	pos[0] = XprVec3_(-1, 1, 0); uv0[0] = XprVec2_(0, 1);
+	pos[1] = XprVec3_(-1,-1, 0); uv0[1] = XprVec2_(0, 0);
+	pos[2] = XprVec3_( 1, 1, 0); uv0[2] = XprVec2_(1, 1);
+	pos[3] = XprVec3_( 1,-1, 0); uv0[3] = XprVec2_(1, 0);
+	
+	XprBuffer_unmap(self->impl->indexBuffer);
+	XprBuffer_unmap(self->impl->vertexBuffer);
 	XprBuffer_unmap(self->impl->tcBuffer[0]);
 }
