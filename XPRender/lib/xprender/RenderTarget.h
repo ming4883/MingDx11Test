@@ -9,13 +9,27 @@ extern "C" {
 
 typedef struct XprTexture;
 
+typedef enum XprRenderTargetFlag
+{
+	XprRenderTargetFlag_Inited = 1 << 0,
+} XprRenderTargetFlag;
+
+typedef struct XprRenderTargetImpl;
+
 typedef struct XprRenderTarget
 {
-	int name;
 	size_t flags;
+	size_t width;
+	size_t height;
+	struct XprRenderTargetImpl* impl;
+
 } XprRenderTarget;
 
-XprRenderTarget* XprRenderTarget_request(size_t width, size_t height);
+XprRenderTarget* XprRenderTarget_alloc();
+
+void XprRenderTarget_free(XprRenderTarget* self);
+
+void XprRenderTarget_init(XprRenderTarget* self, size_t width, size_t height);
 
 XprHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format);
 
