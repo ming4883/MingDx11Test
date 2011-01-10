@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 typedef struct XprTexture;
+typedef struct XprRenderBuffer;
 
 typedef enum XprRenderTargetFlag
 {
@@ -31,11 +32,14 @@ void XprRenderTarget_free(XprRenderTarget* self);
 
 void XprRenderTarget_init(XprRenderTarget* self, size_t width, size_t height);
 
-XprHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format);
+struct XprRenderBuffer* XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format);
 
-void XprRenderTarget_releaseBuffer(XprRenderTarget* self, XprHandle handle);
+void XprRenderTarget_releaseBuffer(XprRenderTarget* self, struct XprRenderBuffer* buffer);
 
-struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprHandle handle);
+struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, struct XprRenderBuffer* buffer);
+
+void XprRenderTarget_preRender(XprRenderTarget* self, struct XprRenderBuffer** colors, struct XprRenderBuffer* depth);
+
 
 #ifdef __cplusplus
 }

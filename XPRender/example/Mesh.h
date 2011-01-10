@@ -59,11 +59,11 @@ void Mesh_initWithScreenQuad(Mesh* self);
 
 void Mesh_commit(Mesh* self);
 
-void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* program);
+void Mesh_preRender(Mesh* self, struct XprGpuProgram* program);
 
-void Mesh_draw(Mesh* self);
+void Mesh_render(Mesh* self);
 
-void Mesh_drawPoints(Mesh* self);
+void Mesh_renderPoints(Mesh* self);
 
 #ifdef __cplusplus
 }

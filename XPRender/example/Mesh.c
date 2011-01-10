@@ -130,7 +130,7 @@ void Mesh_commit(Mesh* self)
 #undef commit
 }
 
-void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* program)
+void Mesh_preRender(Mesh* self, struct XprGpuProgram* program)
 {
 	int vertLoc = glGetAttribLocation(program->impl->glName, self->vertex.shaderName);
 	int normLoc = glGetAttribLocation(program->impl->glName, self->normal.shaderName);
@@ -172,12 +172,12 @@ void Mesh_bindInputs(Mesh* self, struct XprGpuProgram* program)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
 }
 
-void Mesh_draw(Mesh* self)
+void Mesh_render(Mesh* self)
 {
 	glDrawElements(GL_TRIANGLES, self->indexCount, GL_UNSIGNED_SHORT, 0);
 }
 
-void Mesh_drawPoints(Mesh* self)
+void Mesh_renderPoints(Mesh* self)
 {
 	glDrawArrays(GL_POINTS, 0, self->vertexCount);
 }

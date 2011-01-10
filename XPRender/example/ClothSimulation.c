@@ -97,8 +97,8 @@ void drawBackground()
 		glUniform4fv(locColors, 4, (const float*)c);
 	}
 
-	Mesh_bindInputs(_bgMesh, _bgMaterial->program);
-	Mesh_draw(_bgMesh);
+	Mesh_preRender(_bgMesh, _bgMaterial->program);
+	Mesh_render(_bgMesh);
 }
 
 void drawScene()
@@ -133,8 +133,8 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		Mesh_bindInputs(_floorMesh, _sceneMaterial->program);
-		Mesh_draw(_floorMesh);
+		Mesh_preRender(_floorMesh, _sceneMaterial->program);
+		Mesh_render(_floorMesh);
 	}
 
 	{	// draw cloth
@@ -152,8 +152,8 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		Mesh_bindInputs(_cloth->mesh, _sceneMaterial->program);
-		Mesh_draw(_cloth->mesh);
+		Mesh_preRender(_cloth->mesh, _sceneMaterial->program);
+		Mesh_render(_cloth->mesh);
 		
 		glEnable(GL_CULL_FACE);
 	}
@@ -176,8 +176,8 @@ void drawScene()
 
 			RenderContext_apply(&_renderContext, _sceneMaterial);
 
-			Mesh_bindInputs(_ballMesh, _sceneMaterial->program);
-			Mesh_draw(_ballMesh);
+			Mesh_preRender(_ballMesh, _sceneMaterial->program);
+			Mesh_render(_ballMesh);
 		}
 	}
 
@@ -198,7 +198,7 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		Mesh_drawPoints(_cloth->mesh);
+		Mesh_renderPoints(_cloth->mesh);
 	}
 }
 

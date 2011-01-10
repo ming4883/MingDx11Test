@@ -7,6 +7,8 @@ XprTextureFormatMapping XprTextureFormatMappings[] = {
 	{"floatR32", 4, GL_R32F, GL_RED, GL_FLOAT},
 	{"floatR16G16B16A16", 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
 	{"floatR32G32B32A32", 16, GL_RGBA32F, GL_RGBA, GL_FLOAT},
+	{"depth16", 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
+	{"depth32", 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
 };
 
 XprTextureFormatMapping* XprTextureFormatMapping_Get(const char* name)
@@ -88,6 +90,47 @@ void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipCo
 	XprTexture_commit(self);
 }
 
+void XprTexture_initRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
+{
+	if(self->flags & XprTextureFlag_Inited) {
+		XprDbgStr("texture already inited!\n");
+		return;
+	}
+
+	if(surfCount > 1) {
+		XprDbgStr("Current not support surfCount > 1!\n");
+		return;
+	}
+
+	self->impl->glFormatMapping = XprTextureFormatMapping_Get(format);
+	
+	if(nullptr == self->impl->glFormatMapping) {
+		XprDbgStr("Non supported texture format: %s\n", format);
+		return;
+	}
+
+	strcpy(self->format, format);
+	self->width = width;
+	self->height = height;
+	self->mipCount = mipCount;
+	self->surfCount = surfCount;
+
+	{
+		size_t tmpw, tmph;
+		self->surfSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
+		self->data = nullptr;
+	}
+
+	glGenTextures(1, &self->impl->glName);
+	
+	if(self->surfCount == 1) {
+		self->impl->glTarget = GL_TEXTURE_2D;
+	}
+
+	XprTexture_commit(self);
+}
+
+
 unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t surfIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
 {
 	if(nullptr == self)
@@ -97,6 +140,9 @@ unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t surfIndex, size_t
 		return nullptr;
 
 	if(mipIndex > self->mipCount)
+		return nullptr;
+
+	if(nullptr == self->data)
 		return nullptr;
 
 	return self->data + (surfIndex * self->surfSizeInByte) + XprTexture_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
