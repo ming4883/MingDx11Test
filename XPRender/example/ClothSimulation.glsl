@@ -72,20 +72,18 @@ void main() {
 	o_fragColor = mix(c0, c1, v_texcoord.y);
 }
 
--- UI.Vertex
+-- Ui.Vertex
 in vec4 i_vertex;
 in vec2 i_texcoord0;
 
 out vec2 v_texcoord;
 
-uniform mat4 u_worldViewProjMtx;
-
 void main() {
-	gl_Position = u_worldViewProjMtx * i_vertex;
+	gl_Position = i_vertex;
 	v_texcoord = i_texcoord0;
 }
 
--- UI.Fragment
+-- Ui.Fragment
 in vec2 v_texcoord;
 
 out vec4 o_fragColor;

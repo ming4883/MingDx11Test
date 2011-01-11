@@ -58,6 +58,14 @@ void XprGpuProgram_free(XprGpuProgram* self);
 
 void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt);
 
+void XprGpuProgram_preRender(XprGpuProgram* self);
+
+void XprGpuProgram_uniform1fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
+void XprGpuProgram_uniform2fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
+void XprGpuProgram_uniform3fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
+void XprGpuProgram_uniform4fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
+void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, const char* name, size_t count, XprBool transpose, const float* value);
+
 #ifdef __cplusplus
 }
 #endif

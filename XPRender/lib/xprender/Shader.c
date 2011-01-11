@@ -112,3 +112,101 @@ void XprGpuProgram_free(XprGpuProgram* self)
 	glDeleteProgram(self->impl->glName);
 	free(self);
 }
+
+void XprGpuProgram_preRender(XprGpuProgram* self)
+{
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+		XprDbgStr("XprGpuProgram is not inited!\n");
+		return;
+	}
+
+	glUseProgram(self->impl->glName);
+}
+
+void XprGpuProgram_uniform1fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+{
+	int loc;
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+		XprDbgStr("XprGpuProgram is not inited!\n");
+		return;
+	}
+
+	loc = glGetUniformLocation(self->impl->glName, name);
+	if(loc >= 0) {
+		glUniform1fv(loc, count, value);
+	}
+}
+
+void XprGpuProgram_uniform2fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+{
+	int loc;
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+		XprDbgStr("XprGpuProgram is not inited!\n");
+		return;
+	}
+
+	loc = glGetUniformLocation(self->impl->glName, name);
+	if(loc >= 0) {
+		glUniform2fv(loc, count, value);
+	}
+}
+
+void XprGpuProgram_uniform3fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+{
+	int loc;
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+		XprDbgStr("XprGpuProgram is not inited!\n");
+		return;
+	}
+
+	loc = glGetUniformLocation(self->impl->glName, name);
+	if(loc >= 0) {
+		glUniform3fv(loc, count, value);
+	}
+}
+
+void XprGpuProgram_uniform4fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+{
+	int loc;
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+		XprDbgStr("XprGpuProgram is not inited!\n");
+		return;
+	}
+
+	loc = glGetUniformLocation(self->impl->glName, name);
+	if(loc >= 0) {
+		glUniform4fv(loc, count, value);
+	}
+}
+
+void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, const char* name, size_t count, XprBool transpose, const float* value)
+{
+	int loc;
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+		XprDbgStr("XprGpuProgram is not inited!\n");
+		return;
+	}
+
+	loc = glGetUniformLocation(self->impl->glName, name);
+	if(loc >= 0) {
+		glUniformMatrix4fv(loc, count, transpose, value);
+	}
+}

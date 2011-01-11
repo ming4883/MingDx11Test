@@ -8,6 +8,7 @@
 #include "../lib/xprender/Mat44.h"
 #include "../lib/xprender/Shader.GL3.h"
 #include "../lib/xprender/Texture.GL3.h"
+#include "../lib/xprender/RenderTarget.GL3.h"
 #include "../lib/glsw/glsw.h"
 #include "../lib/pez/pez.h"
 
@@ -26,7 +27,9 @@ Mesh* _floorMesh = nullptr;
 Mesh* _bgMesh = nullptr;
 Material* _sceneMaterial = nullptr;
 Material* _bgMaterial = nullptr;
+Material* _uiMaterial = nullptr;
 XprTexture* _texture = nullptr;
+XprRenderTarget* _rt = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
 float _gravity = 50;
@@ -63,17 +66,11 @@ typedef struct RenderContext
 
 void RenderContext_apply(RenderContext* self, Material* material)
 {
-	int locWorldView = glGetUniformLocation(material->program->impl->glName, "u_worldViewMtx");
-	int locWorldViewProj = glGetUniformLocation(material->program->impl->glName, "u_worldViewProjMtx");
-	int locMatDiffuse = glGetUniformLocation(material->program->impl->glName, "u_matDiffuse");
-	int locMatSpecular = glGetUniformLocation(material->program->impl->glName, "u_matSpecular");
-	int locMatShininess = glGetUniformLocation(material->program->impl->glName, "u_matShininess");
-
-	glUniformMatrix4fv(locWorldView, 1, XprTrue, self->worldViewMtx.v);
-	glUniformMatrix4fv(locWorldViewProj, 1, XprTrue, self->worldViewProjMtx.v);
-	glUniform4fv(locMatDiffuse, 1, self->matDiffuse.v);
-	glUniform4fv(locMatSpecular, 1, self->matSpecular.v);
-	glUniform1fv(locMatShininess, 1, &self->matShininess);
+	XprGpuProgram_uniformMtx4fv(material->program, "u_worldViewMtx", 1, XprTrue, self->worldViewMtx.v);
+	XprGpuProgram_uniformMtx4fv(material->program, "u_worldViewProjMtx", 1, XprTrue, self->worldViewProjMtx.v);
+	XprGpuProgram_uniform4fv(material->program, "u_matDiffuse", 1, self->matDiffuse.v);
+	XprGpuProgram_uniform4fv(material->program, "u_matSpecular", 1, self->matSpecular.v);
+	XprGpuProgram_uniform1fv(material->program, "u_matShininess", 1, &self->matShininess);
 }
 
 RenderContext _renderContext;
@@ -90,12 +87,8 @@ void drawBackground()
 	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	glUseProgram(_bgMaterial->program->impl->glName);
-
-	{	// bind colors
-		int locColors = glGetUniformLocation(_bgMaterial->program->impl->glName, "u_colors");
-		glUniform4fv(locColors, 4, (const float*)c);
-	}
+	XprGpuProgram_preRender(_bgMaterial->program);
+	XprGpuProgram_uniform4fv(_bgMaterial->program, "u_colors", 4, (const float*)c);
 
 	Mesh_preRender(_bgMesh, _bgMaterial->program);
 	Mesh_render(_bgMesh);
@@ -117,7 +110,9 @@ void drawScene()
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	glUseProgram(_sceneMaterial->program->impl->glName);
+	XprGpuProgram_preRender(_sceneMaterial->program);
+
+	glBindTexture(_texture->impl->glTarget, _texture->impl->glName);
 
 	{	// draw floor
 		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
@@ -164,8 +159,7 @@ void drawScene()
 		_renderContext.matSpecular = XprVec4_(1, 1, 1, 1);
 		_renderContext.matShininess = 32;
 
-		for(i=0; i<BallCount; ++i)
-		{
+		for(i=0; i<BallCount; ++i) {
 			XprMat44 m;
 			XprVec3 scale = {_ball[i].radius, _ball[i].radius, _ball[i].radius};
 			XprMat44_makeScale(&m, &scale);
@@ -181,36 +175,22 @@ void drawScene()
 		}
 	}
 
-	glUseProgram(0);
+	if(XprTrue == _showDebug) {
+		XprMat44 m;
 
-	if(XprTrue == _showDebug)
-	{
 		glDisable(GL_LIGHTING);
 		glDisable(GL_DEPTH_TEST);
 		
 		glColor3f(1, 1, 1);
 
-		{
-			XprMat44 m;
-			XprMat44_setIdentity(&m);
-			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
-		}
+		XprMat44_setIdentity(&m);
+		XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+		XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
+
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
 		Mesh_renderPoints(_cloth->mesh);
 	}
-}
-
-void quit(void)
-{
-	Cloth_free(_cloth);
-	Mesh_free(_ballMesh);
-	Mesh_free(_floorMesh);
-	Mesh_free(_bgMesh);
-	Material_free(_sceneMaterial);
-	Material_free(_bgMaterial);
-	XprTexture_free(_texture);
 }
 
 Material* loadMaterial(const char* vsKey, const char* fsKey)
@@ -274,11 +254,34 @@ void PezHandleMouse(int x, int y, int action)
 
 void PezRender()
 {
+	// render to texture
+	XprRenderBuffer* color = XprRenderTarget_acquireBuffer(_rt, "unormR8G8B8A8");
+	XprRenderBuffer* depth = XprRenderTarget_acquireBuffer(_rt, "depth16");
+	XprTexture* tex = XprRenderTarget_getTexture(_rt, color);
+
+	XprRenderBuffer* bufs[] = {color, nullptr};
+	XprRenderTarget_preRender(_rt, bufs, depth);
+
 	glClearDepth(1);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	
+
 	drawBackground();
 	drawScene();
+
+	// display the rendered image in color buffer
+	XprRenderTarget_preRender(nullptr, nullptr, nullptr);
+
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	XprGpuProgram_preRender(_uiMaterial->program);
+	glBindTexture(tex->impl->glTarget, tex->impl->glName);
+
+	Mesh_preRender(_bgMesh, _uiMaterial->program);
+	Mesh_render(_bgMesh);
+	
+	XprRenderTarget_releaseBuffer(_rt, color);
+	XprRenderTarget_releaseBuffer(_rt, depth);
 
 	{ // check for any OpenGL errors
 	GLenum glerr = glGetError();
@@ -297,11 +300,27 @@ void PezConfig()
 	PEZ_FORWARD_COMPATIBLE_GL = 1;
 }
 
+void PezExit(void)
+{
+	Cloth_free(_cloth);
+	Mesh_free(_ballMesh);
+	Mesh_free(_floorMesh);
+	Mesh_free(_bgMesh);
+	Material_free(_sceneMaterial);
+	Material_free(_bgMaterial);
+	Material_free(_uiMaterial);
+	XprTexture_free(_texture);
+	XprRenderTarget_free(_rt);
+}
+
 const char* PezInitialize(int width, int height)
 {
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
+
+	_rt = XprRenderTarget_alloc();
+	XprRenderTarget_init(_rt, (size_t)width, (size_t)height);
 
 	// materials
 	glswInit();
@@ -315,6 +334,10 @@ const char* PezInitialize(int width, int height)
 	_bgMaterial = loadMaterial(
 		"ClothSimulation.Bg.Vertex",
 		"ClothSimulation.Bg.Fragment");
+	
+	_uiMaterial = loadMaterial(
+		"ClothSimulation.Ui.Vertex",
+		"ClothSimulation.Ui.Fragment");
 
 	_texture = Pvr_createTexture(red_tile_texture);
 	
@@ -341,7 +364,7 @@ const char* PezInitialize(int width, int height)
 	_bgMesh = Mesh_alloc();
 	Mesh_initWithScreenQuad(_bgMesh);
 	
-	atexit(quit);
+	atexit(PezExit);
 
 	return "Cloth Simulation";
 }

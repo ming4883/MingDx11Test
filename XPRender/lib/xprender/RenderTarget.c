@@ -122,7 +122,7 @@ void XprRenderTarget_preRender(XprRenderTarget* self, struct XprRenderBuffer** c
 
 	// attach depth buffers
 	if(depth != nullptr) {
-		XprTexture* tex = (*curr)->texture;
+		XprTexture* tex = depth->texture;
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
 	}
 
