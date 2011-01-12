@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include "pstdint.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,11 +19,9 @@ extern "C" {
 
 #define nullptr 0
 
-typedef char XprBool;
+typedef uint8_t XprBool;
 #define XprFalse 0
 #define XprTrue 1
-
-typedef int XprHandle;
 
 void XprDbgStr(const char* str, ...);
 

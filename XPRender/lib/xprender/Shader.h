@@ -2,10 +2,12 @@
 #define __XPRENDER_SHADER_H__
 
 #include "Platform.h"
+#include "StrHash.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+typedef struct XprTexture;
 
 // XprGpuShader
 typedef enum XprGpuShaderType
@@ -60,11 +62,12 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 
 void XprGpuProgram_preRender(XprGpuProgram* self);
 
-void XprGpuProgram_uniform1fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
-void XprGpuProgram_uniform2fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
-void XprGpuProgram_uniform3fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
-void XprGpuProgram_uniform4fv(XprGpuProgram* self, const char* name, size_t count, const float* value);
-void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, const char* name, size_t count, XprBool transpose, const float* value);
+void XprGpuProgram_uniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void XprGpuProgram_uniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void XprGpuProgram_uniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void XprGpuProgram_uniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value);
+void XprGpuProgram_uniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture);
 
 #ifdef __cplusplus
 }

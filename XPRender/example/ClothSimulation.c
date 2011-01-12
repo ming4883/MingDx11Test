@@ -6,9 +6,9 @@
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Vec4.h"
 #include "../lib/xprender/Mat44.h"
-#include "../lib/xprender/Shader.GL3.h"
-#include "../lib/xprender/Texture.GL3.h"
-#include "../lib/xprender/RenderTarget.GL3.h"
+#include "../lib/xprender/Shader.h"
+#include "../lib/xprender/Texture.h"
+#include "../lib/xprender/RenderTarget.h"
 #include "../lib/glsw/glsw.h"
 #include "../lib/pez/pez.h"
 
@@ -66,11 +66,11 @@ typedef struct RenderContext
 
 void RenderContext_apply(RenderContext* self, Material* material)
 {
-	XprGpuProgram_uniformMtx4fv(material->program, "u_worldViewMtx", 1, XprTrue, self->worldViewMtx.v);
-	XprGpuProgram_uniformMtx4fv(material->program, "u_worldViewProjMtx", 1, XprTrue, self->worldViewProjMtx.v);
-	XprGpuProgram_uniform4fv(material->program, "u_matDiffuse", 1, self->matDiffuse.v);
-	XprGpuProgram_uniform4fv(material->program, "u_matSpecular", 1, self->matSpecular.v);
-	XprGpuProgram_uniform1fv(material->program, "u_matShininess", 1, &self->matShininess);
+	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewMtx"), 1, XprTrue, self->worldViewMtx.v);
+	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewProjMtx"), 1, XprTrue, self->worldViewProjMtx.v);
+	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matDiffuse"), 1, self->matDiffuse.v);
+	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matSpecular"), 1, self->matSpecular.v);
+	XprGpuProgram_uniform1fv(material->program, XPR_HASH("u_matShininess"), 1, &self->matShininess);
 }
 
 RenderContext _renderContext;
@@ -88,7 +88,7 @@ void drawBackground()
 	glEnable(GL_CULL_FACE);
 
 	XprGpuProgram_preRender(_bgMaterial->program);
-	XprGpuProgram_uniform4fv(_bgMaterial->program, "u_colors", 4, (const float*)c);
+	XprGpuProgram_uniform4fv(_bgMaterial->program, XPR_HASH("u_colors"), 4, (const float*)c);
 
 	Mesh_preRender(_bgMesh, _bgMaterial->program);
 	Mesh_render(_bgMesh);
@@ -111,8 +111,7 @@ void drawScene()
 	glEnable(GL_CULL_FACE);
 
 	XprGpuProgram_preRender(_sceneMaterial->program);
-
-	glBindTexture(_texture->impl->glTarget, _texture->impl->glName);
+	XprGpuProgram_uniformTexture(_sceneMaterial->program, XPR_HASH("u_tex"), _texture);
 
 	{	// draw floor
 		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
@@ -255,11 +254,11 @@ void PezHandleMouse(int x, int y, int action)
 void PezRender()
 {
 	// render to texture
-	XprRenderBuffer* color = XprRenderTarget_acquireBuffer(_rt, "unormR8G8B8A8");
-	XprRenderBuffer* depth = XprRenderTarget_acquireBuffer(_rt, "depth16");
+	XprRenderBufferHandle color = XprRenderTarget_acquireBuffer(_rt, "unormR8G8B8A8");
+	XprRenderBufferHandle depth = XprRenderTarget_acquireBuffer(_rt, "depth16");
 	XprTexture* tex = XprRenderTarget_getTexture(_rt, color);
 
-	XprRenderBuffer* bufs[] = {color, nullptr};
+	XprRenderBufferHandle bufs[] = {color, nullptr};
 	XprRenderTarget_preRender(_rt, bufs, depth);
 
 	glClearDepth(1);
@@ -275,8 +274,8 @@ void PezRender()
 	glEnable(GL_CULL_FACE);
 
 	XprGpuProgram_preRender(_uiMaterial->program);
-	glBindTexture(tex->impl->glTarget, tex->impl->glName);
-
+	XprGpuProgram_uniformTexture(_uiMaterial->program, XPR_HASH("u_tex"), tex);
+	
 	Mesh_preRender(_bgMesh, _uiMaterial->program);
 	Mesh_render(_bgMesh);
 	

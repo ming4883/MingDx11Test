@@ -43,7 +43,7 @@ void XprRenderTarget_init(XprRenderTarget* self, size_t width, size_t height)
 	self->flags |= XprRenderTargetFlag_Inited;
 }
 
-struct XprRenderBuffer* XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format)
+XprRenderBufferHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format)
 {
 	XprRenderBuffer* buffer;
 	XprRenderBuffer* it;
@@ -64,7 +64,7 @@ struct XprRenderBuffer* XprRenderTarget_acquireBuffer(XprRenderTarget* self, con
 	return buffer;
 }
 
-void XprRenderTarget_releaseBuffer(XprRenderTarget* self, struct XprRenderBuffer* buffer)
+void XprRenderTarget_releaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer)
 {
 	if(nullptr == self)
 		return;
@@ -72,10 +72,10 @@ void XprRenderTarget_releaseBuffer(XprRenderTarget* self, struct XprRenderBuffer
 	if(nullptr == buffer)
 		return;
 
-	buffer->acquired = XprFalse;
+	((XprRenderBuffer*)buffer)->acquired = XprFalse;
 }
 
-struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, struct XprRenderBuffer* buffer)
+struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBufferHandle buffer)
 {
 	if(nullptr == self)
 		return nullptr;
@@ -83,7 +83,7 @@ struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, struct XprR
 	if(nullptr == buffer)
 		return nullptr;
 
-	return buffer->texture;
+	return ((XprRenderBuffer*)buffer)->texture;
 }
 
 GLenum glAttachmentPoints[] =
@@ -97,7 +97,7 @@ GLenum glAttachmentPoints[] =
 	GL_COLOR_ATTACHMENT7,
 };
 
-void XprRenderTarget_preRender(XprRenderTarget* self, struct XprRenderBuffer** colors, struct XprRenderBuffer* depth)
+void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth)
 {
 	size_t bufCnt;
 	XprRenderBuffer** curr;
@@ -111,7 +111,7 @@ void XprRenderTarget_preRender(XprRenderTarget* self, struct XprRenderBuffer** c
 	// attach color buffers
 	bufCnt = 0;
 	if(nullptr != colors) {
-		curr = colors;
+		curr = (XprRenderBuffer**)colors;
 		while(*curr != nullptr) {
 			XprTexture* tex = (*curr)->texture;
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, glAttachmentPoints[bufCnt], tex->impl->glTarget, tex->impl->glName, 0);
@@ -122,7 +122,7 @@ void XprRenderTarget_preRender(XprRenderTarget* self, struct XprRenderBuffer** c
 
 	// attach depth buffers
 	if(depth != nullptr) {
-		XprTexture* tex = depth->texture;
+		XprTexture* tex = ((XprRenderBuffer*)depth)->texture;
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
 	}
 

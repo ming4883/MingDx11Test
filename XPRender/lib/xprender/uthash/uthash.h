@@ -57,7 +57,9 @@ do {                                                                            
 
 /* a number of the hash function use uint32_t which isn't defined on win32 */
 #ifdef _MSC_VER
+#ifndef UINT32_MAX
 typedef unsigned int uint32_t;
+#endif
 #else
 #include <inttypes.h>   /* uint32_t */
 #endif

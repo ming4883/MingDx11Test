@@ -60,7 +60,7 @@ uint32_t SuperFastHash (const char * data, int len)
 	return hash;
 }
 
-XprHashCode XprStrHash(const char * data, int len)
+XprHashCode HSIEH(const char * data, int len)
 {
 	return (XprHashCode)SuperFastHash(data, len);
 }

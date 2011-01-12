@@ -1,4 +1,5 @@
 #include "Shader.GL3.h"
+#include "Texture.GL3.h"
 #include <stdio.h>
 
 GLenum xprGL_SHADER_TYPE[] = {
@@ -102,6 +103,8 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 	}
 	
 	self->flags |= XprGpuProgramFlag_Linked;
+
+	glUseProgram(self->impl->glName);
 	{
 		GLuint i;
 		GLuint uniformCnt;
@@ -109,11 +112,40 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 		GLint uniformSize;
 		GLenum uniformType;
 		GLchar uniformName[64];
+		GLuint texunit = 0;	
+		
 		glGetProgramiv(self->impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
 
 		for(i=0; i<uniformCnt; ++i) {
+			XprGpuProgramUniform* uniform;
 			glGetActiveUniform(self->impl->glName, i, 64, &uniformLength, &uniformSize, &uniformType, uniformName);
-			XprDbgStr("%s %d %d\n", uniformName, uniformSize, uniformType);
+			
+			uniform = malloc(sizeof(XprGpuProgramUniform));
+			uniform->hash = XPR_HASH(uniformName);
+			uniform->loc = i;
+			uniform->size = uniformSize;
+			uniform->texunit = texunit;
+
+			HASH_ADD_INT(self->impl->uniforms, hash, uniform);
+			
+			switch(uniformType) {
+				case GL_SAMPLER_1D:
+				case GL_SAMPLER_2D:
+				case GL_SAMPLER_3D:
+				case GL_SAMPLER_CUBE:
+				case GL_SAMPLER_1D_SHADOW:
+				case GL_SAMPLER_2D_SHADOW: 
+					{	// bind sampler to the specific texture unit
+						glUniform1i(i, texunit++);
+					}
+					break;
+				default:
+					uniform->texunit = -1;
+					break;
+			}
+
+			//XprDbgStr("%s %d %d %d\n", uniformName, uniformSize, uniformType, uniform->texunit);
+
 		}
 	}
 	
@@ -123,6 +155,14 @@ void XprGpuProgram_free(XprGpuProgram* self)
 {
 	if(nullptr == self)
 		return;
+
+	{
+		XprGpuProgramUniform* curr, *temp;
+		HASH_ITER(hh, self->impl->uniforms, curr, temp) {
+			HASH_DEL(self->impl->uniforms, curr);
+			free(curr);
+		}
+	}
 
 	glDeleteProgram(self->impl->glName);
 	free(self);
@@ -141,9 +181,9 @@ void XprGpuProgram_preRender(XprGpuProgram* self)
 	glUseProgram(self->impl->glName);
 }
 
-void XprGpuProgram_uniform1fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+void XprGpuProgram_uniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
-	int loc;
+	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
 		return;
 
@@ -152,15 +192,15 @@ void XprGpuProgram_uniform1fv(XprGpuProgram* self, const char* name, size_t coun
 		return;
 	}
 
-	loc = glGetUniformLocation(self->impl->glName, name);
-	if(loc >= 0) {
-		glUniform1fv(loc, count, value);
+	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	if(nullptr != uniform) {
+		glUniform1fv(uniform->loc, count, value);
 	}
 }
 
-void XprGpuProgram_uniform2fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+void XprGpuProgram_uniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
-	int loc;
+	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
 		return;
 
@@ -169,15 +209,15 @@ void XprGpuProgram_uniform2fv(XprGpuProgram* self, const char* name, size_t coun
 		return;
 	}
 
-	loc = glGetUniformLocation(self->impl->glName, name);
-	if(loc >= 0) {
-		glUniform2fv(loc, count, value);
+	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	if(nullptr != uniform) {
+		glUniform2fv(uniform->loc, count, value);
 	}
 }
 
-void XprGpuProgram_uniform3fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+void XprGpuProgram_uniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
-	int loc;
+	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
 		return;
 
@@ -186,15 +226,15 @@ void XprGpuProgram_uniform3fv(XprGpuProgram* self, const char* name, size_t coun
 		return;
 	}
 
-	loc = glGetUniformLocation(self->impl->glName, name);
-	if(loc >= 0) {
-		glUniform3fv(loc, count, value);
+	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	if(nullptr != uniform) {
+		glUniform3fv(uniform->loc, count, value);
 	}
 }
 
-void XprGpuProgram_uniform4fv(XprGpuProgram* self, const char* name, size_t count, const float* value)
+void XprGpuProgram_uniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
-	int loc;
+	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
 		return;
 
@@ -203,15 +243,15 @@ void XprGpuProgram_uniform4fv(XprGpuProgram* self, const char* name, size_t coun
 		return;
 	}
 
-	loc = glGetUniformLocation(self->impl->glName, name);
-	if(loc >= 0) {
-		glUniform4fv(loc, count, value);
+	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	if(nullptr != uniform) {
+		glUniform4fv(uniform->loc, count, value);
 	}
 }
 
-void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, const char* name, size_t count, XprBool transpose, const float* value)
+void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value)
 {
-	int loc;
+	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
 		return;
 
@@ -220,8 +260,33 @@ void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, const char* name, size_t c
 		return;
 	}
 
-	loc = glGetUniformLocation(self->impl->glName, name);
-	if(loc >= 0) {
-		glUniformMatrix4fv(loc, count, transpose, value);
+	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	if(nullptr != uniform) {
+		glUniformMatrix4fv(uniform->loc, count, transpose, value);
+	}
+}
+
+void XprGpuProgram_uniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
+{
+	XprGpuProgramUniform* uniform;
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+		XprDbgStr("XprGpuProgram is not inited!\n");
+		return;
+	}
+
+	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	if(nullptr != uniform) {
+		if(uniform->texunit < 0) {
+			XprDbgStr("Not a texture!\n");
+			return;
+		}
+		glActiveTexture(GL_TEXTURE0 + uniform->texunit);
+		if(nullptr == texture)
+			glBindTexture(GL_TEXTURE_2D, 0);
+		else
+			glBindTexture(texture->impl->glTarget, texture->impl->glName);
 	}
 }

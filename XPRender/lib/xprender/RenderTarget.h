@@ -26,19 +26,21 @@ typedef struct XprRenderTarget
 
 } XprRenderTarget;
 
+typedef void* XprRenderBufferHandle;
+
 XprRenderTarget* XprRenderTarget_alloc();
 
 void XprRenderTarget_free(XprRenderTarget* self);
 
 void XprRenderTarget_init(XprRenderTarget* self, size_t width, size_t height);
 
-struct XprRenderBuffer* XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format);
+XprRenderBufferHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format);
 
-void XprRenderTarget_releaseBuffer(XprRenderTarget* self, struct XprRenderBuffer* buffer);
+void XprRenderTarget_releaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer);
 
-struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, struct XprRenderBuffer* buffer);
+struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBufferHandle buffer);
 
-void XprRenderTarget_preRender(XprRenderTarget* self, struct XprRenderBuffer** colors, struct XprRenderBuffer* depth);
+void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth);
 
 
 #ifdef __cplusplus

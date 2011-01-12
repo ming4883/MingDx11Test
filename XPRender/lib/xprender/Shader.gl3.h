@@ -16,17 +16,20 @@ typedef struct XprGpuShaderImpl
 
 } XprGpuShaderImpl;
 
-typedef struct XprGpuProgramUniformBinding
+typedef struct XprGpuProgramUniform
 {
-	GLuint hash;
+	XprHashCode hash;
 	GLuint loc;
-	GLuint texunit;
+	GLuint size;
+	int texunit;
 	UT_hash_handle hh;
-} XprGpuProgramSamplerBinding;
+
+} XprGpuProgramUniform;
 
 typedef struct XprGpuProgramImpl
 {
 	int glName;
+	struct XprGpuProgramUniform* uniforms;
 
 } XprGpuProgramImpl;
 
