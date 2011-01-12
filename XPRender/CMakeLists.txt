@@ -67,7 +67,7 @@ ADD_LIBRARY( xprender
 	)
 
 # UNIT test_xprender
-ADD_EXECUTABLE( test_xprender ${CONSOLE_SYSTEM}
+ADD_EXECUTABLE( test_xprender
 	test/TestXPRender.c
 	lib/cutest/CuTest.c
 	lib/cutest/CuTest.h

@@ -1,5 +1,9 @@
 #include "Platform.h"
 
+#ifndef _MSC_VER
+#define _TRUNCATE ((size_t)-1)
+#endif
+
 #if defined(XPR_WIN32)
 
 #include <windows.h>

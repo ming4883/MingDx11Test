@@ -2,6 +2,7 @@
 #define __XPRENDER_SHADER_GL3_H__
 
 #include "Shader.h"
+#include "uthash/uthash.h"
 
 #include<GL/glew.h>
 
@@ -14,6 +15,14 @@ typedef struct XprGpuShaderImpl
 	int glName;
 
 } XprGpuShaderImpl;
+
+typedef struct XprGpuProgramUniformBinding
+{
+	GLuint hash;
+	GLuint loc;
+	GLuint texunit;
+	UT_hash_handle hh;
+} XprGpuProgramSamplerBinding;
 
 typedef struct XprGpuProgramImpl
 {

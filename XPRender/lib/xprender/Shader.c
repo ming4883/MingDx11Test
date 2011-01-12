@@ -98,10 +98,25 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 			XprDbgStr(buf);
 			free(buf);
 		}
+		return;
 	}
-	else {
-		self->flags |= XprGpuProgramFlag_Linked;
+	
+	self->flags |= XprGpuProgramFlag_Linked;
+	{
+		GLuint i;
+		GLuint uniformCnt;
+		GLsizei uniformLength;
+		GLint uniformSize;
+		GLenum uniformType;
+		GLchar uniformName[64];
+		glGetProgramiv(self->impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
+
+		for(i=0; i<uniformCnt; ++i) {
+			glGetActiveUniform(self->impl->glName, i, 64, &uniformLength, &uniformSize, &uniformType, uniformName);
+			XprDbgStr("%s %d %d\n", uniformName, uniformSize, uniformType);
+		}
 	}
+	
 }
 
 void XprGpuProgram_free(XprGpuProgram* self)
