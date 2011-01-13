@@ -65,6 +65,8 @@ void TestStrHash(CuTest *tc)
 	CuAssertTrue(tc, XPR_HASH("u_worldViewProjMtx") == XPR_HASH(s2));
 }
 
+int gResult;	// this avoid compile optimization
+
 void TestStrHashPerformance(CuTest *tc)
 {
 	uint64_t startTime;
@@ -82,6 +84,7 @@ void TestStrHashPerformance(CuTest *tc)
 			XprHashCode c1 = XPR_HASH("u_worldViewMtx");
 			XprHashCode c2 = XPR_HASH("u_worldViewProjMtx");
 			int result = c1 > c2 ? 1 : -1;
+			gResult += result;
 		}
 		t1 += rdtsc() - startTime;
 	}
@@ -90,6 +93,7 @@ void TestStrHashPerformance(CuTest *tc)
 		startTime = rdtsc();
 		for(i=0; i<cnt; ++i) {
 			int result = strcmp("u_worldViewMtx", "u_worldViewProjMtx");
+			gResult += result;
 		}
 
 		t2 += rdtsc() - startTime;

@@ -173,23 +173,6 @@ void drawScene()
 			Mesh_render(_ballMesh);
 		}
 	}
-
-	if(XprTrue == _showDebug) {
-		XprMat44 m;
-
-		glDisable(GL_LIGHTING);
-		glDisable(GL_DEPTH_TEST);
-		
-		glColor3f(1, 1, 1);
-
-		XprMat44_setIdentity(&m);
-		XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
-		XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
-
-		RenderContext_apply(&_renderContext, _sceneMaterial);
-
-		Mesh_renderPoints(_cloth->mesh);
-	}
 }
 
 Material* loadMaterial(const char* vsKey, const char* fsKey)
