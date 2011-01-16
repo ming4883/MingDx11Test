@@ -32,7 +32,7 @@ XprTexture* _texture = nullptr;
 XprRenderTarget* _rt = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
-float _gravity = 50;
+float _gravity = 10;
 float _airResistance = 5;
 float _impact = 3;
 XprBool _showDebug = XprFalse;
@@ -50,6 +50,7 @@ typedef struct Mouse
 	int x;
 	int y;
 	XprVec3 clothOffsets[2];
+	XprBool isDown;
 } Mouse;
 
 Mouse _mouse;
@@ -227,11 +228,29 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 
 void PezHandleMouse(int x, int y, int action)
 {
-	_mouse.x = x;
-	_mouse.y = y;
+	if(PEZ_DOWN == action) {
+		_mouse.x = x;
+		_mouse.y = y;
 
-	_mouse.clothOffsets[0] = _cloth->fixPos[0];
-	_mouse.clothOffsets[1] = _cloth->fixPos[_cloth->segmentCount-1];
+		_mouse.clothOffsets[0] = _cloth->fixPos[0];
+		_mouse.clothOffsets[1] = _cloth->fixPos[_cloth->segmentCount-1];
+
+		_mouse.isDown = XprTrue;
+	}
+	else if(PEZ_UP == action) {
+		_mouse.isDown = XprFalse;
+	}
+	else if((PEZ_MOVE == action) && (XprTrue == _mouse.isDown)) {
+		int dx = x - _mouse.x;
+		int dy = y - _mouse.y;
+		
+		float mouseSensitivity = 0.0025f;
+		_cloth->fixPos[0].x = _mouse.clothOffsets[0].x + dx * mouseSensitivity;
+		_cloth->fixPos[_cloth->segmentCount-1].x = _mouse.clothOffsets[1].x + dx * mouseSensitivity;
+
+		_cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
+		_cloth->fixPos[_cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
+	}
 }
 
 void PezRender()
@@ -300,6 +319,8 @@ const char* PezInitialize(int width, int height)
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
+
+	_mouse.isDown = XprFalse;
 
 	_rt = XprRenderTarget_alloc();
 	XprRenderTarget_init(_rt, (size_t)width, (size_t)height);
