@@ -2,6 +2,7 @@
 #define __XPRENDER_DEVICECONTEXT_H__
 
 #include "Platform.h"
+#include "StrHash.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,11 @@ XprDeviceContext* XprDeviceContext_alloc();
 void XprDeviceContext_free(XprDeviceContext* self);
 
 void XprDeviceContext_init(XprDeviceContext* self);
+
+void XprDeviceContext_preRender(XprDeviceContext* self);
+
+void XprDeviceContext_setBool(XprDeviceContext* self, XprHashCode state, XprBool value);
+
 
 #ifdef __cplusplus
 }

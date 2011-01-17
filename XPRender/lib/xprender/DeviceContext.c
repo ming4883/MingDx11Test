@@ -20,3 +20,17 @@ void XprDeviceContext_init(XprDeviceContext* self)
 {
 	self->flags = XprDeviceContextFlag_Inited;
 }
+
+void XprDeviceContext_preRender(XprDeviceContext* self)
+{
+}
+
+void XprDeviceContext_setBool(XprDeviceContext* self, XprHashCode state, XprBool value)
+{
+	if(nullptr == self)
+		return;
+
+	if(0 == (self->flags & XprDeviceContextFlag_Inited)) {
+		XprDbgStr("XprDeviceContext not inited!\n");
+	}
+}
