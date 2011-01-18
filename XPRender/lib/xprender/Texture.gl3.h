@@ -2,6 +2,7 @@
 #define __XPRENDER_TEXTURE_GL3_H__
 
 #include "Texture.h"
+#include "Texture.common.h"
 #include <GL/glew.h>
 
 #ifdef __cplusplus

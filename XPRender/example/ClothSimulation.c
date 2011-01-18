@@ -16,6 +16,7 @@
 #include "Sphere.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "Label.h"
 #include "Pvr.h"
 #include "red_tile_texture.h"
 
@@ -36,6 +37,7 @@ float _gravity = 10;
 float _airResistance = 5;
 float _impact = 3;
 XprBool _showDebug = XprFalse;
+Label* _label = nullptr;
 
 typedef struct Aspect
 {
@@ -312,6 +314,7 @@ void PezExit(void)
 	Material_free(_uiMaterial);
 	XprTexture_free(_texture);
 	XprRenderTarget_free(_rt);
+	Label_free(_label);
 }
 
 const char* PezInitialize(int width, int height)
@@ -324,6 +327,9 @@ const char* PezInitialize(int width, int height)
 
 	_rt = XprRenderTarget_alloc();
 	XprRenderTarget_init(_rt, (size_t)width, (size_t)height);
+
+	_label = Label_alloc();
+	Label_init(_label, width, height);
 
 	// materials
 	glswInit();

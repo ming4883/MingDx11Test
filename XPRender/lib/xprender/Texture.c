@@ -2,13 +2,13 @@
 #include "StrUtil.h"
 
 XprTextureFormatMapping XprTextureFormatMappings[] = {
-	{"unormR8G8B8A8", 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
-	{"floatR16", 2, GL_R16F, GL_RED, GL_HALF_FLOAT},
-	{"floatR32", 4, GL_R32F, GL_RED, GL_FLOAT},
-	{"floatR16G16B16A16", 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
-	{"floatR32G32B32A32", 16, GL_RGBA32F, GL_RGBA, GL_FLOAT},
-	{"depth16", 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
-	{"depth32", 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
+	{XprTexture_unormR8G8B8A8, 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
+	{XprTexture_floatR16, 2, GL_R16F, GL_RED, GL_HALF_FLOAT},
+	{XprTexture_floatR32, 4, GL_R32F, GL_RED, GL_FLOAT},
+	{XprTexture_floatR16G16B16A16, 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
+	{XprTexture_floatR32G32B32A32, 16, GL_RGBA32F, GL_RGBA, GL_FLOAT},
+	{XprTexture_depth16, 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
+	{XprTexture_depth32, 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
 };
 
 XprTextureFormatMapping* XprTextureFormatMapping_Get(const char* name)

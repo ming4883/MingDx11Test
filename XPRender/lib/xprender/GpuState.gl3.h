@@ -2,6 +2,7 @@
 #define __XPRENDER_GPUSTATE_GL3_H__
 
 #include "GpuState.h"
+#include "GpuState.common.h"
 
 #include <GL/glew.h>
 
