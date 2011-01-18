@@ -3,6 +3,7 @@
 
 XprTextureFormatMapping XprTextureFormatMappings[] = {
 	{XprTexture_unormR8G8B8A8, 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
+	{XprTexture_unormR8, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
 	{XprTexture_floatR16, 2, GL_R16F, GL_RED, GL_HALF_FLOAT},
 	{XprTexture_floatR32, 4, GL_R32F, GL_RED, GL_FLOAT},
 	{XprTexture_floatR16G16B16A16, 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},

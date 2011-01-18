@@ -330,6 +330,8 @@ const char* PezInitialize(int width, int height)
 
 	_label = Label_alloc();
 	Label_init(_label, width, height);
+	Label_setText(_label, "testing");
+	Label_commit(_label);
 
 	// materials
 	glswInit();

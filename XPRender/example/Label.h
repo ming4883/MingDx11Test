@@ -28,7 +28,7 @@ void Label_setText(Label* self, const char* text);
 
 void Label_setFont(Label* self, const char* font);
 
-void Label_commit(Label* self, const char* font);
+void Label_commit(Label* self);
 
 
 #ifdef __cplusplus

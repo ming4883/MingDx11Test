@@ -5,6 +5,7 @@
 #include "StrHash.h"
 
 #define XprTexture_unormR8G8B8A8		"unormR8G8B8A8"
+#define XprTexture_unormR8				"unormR8"
 #define XprTexture_floatR16				"floatR16"
 #define XprTexture_floatR32				"floatR32"
 #define XprTexture_floatR16G16B16A16	"floatR16G16B16A16"
