@@ -29,6 +29,7 @@ Mesh* _bgMesh = nullptr;
 Material* _sceneMaterial = nullptr;
 Material* _bgMaterial = nullptr;
 Material* _uiMaterial = nullptr;
+Material* _textMaterial = nullptr;
 XprTexture* _texture = nullptr;
 XprRenderTarget* _rt = nullptr;
 XprVec3 _floorN = {0, 1, 0};
@@ -38,6 +39,7 @@ float _airResistance = 5;
 float _impact = 3;
 XprBool _showDebug = XprFalse;
 Label* _label = nullptr;
+XprVec4 _textColor = {1, 0, 0, 0.5f};
 
 typedef struct Aspect
 {
@@ -286,6 +288,19 @@ void PezRender()
 	XprRenderTarget_releaseBuffer(_rt, color);
 	XprRenderTarget_releaseBuffer(_rt, depth);
 
+	// display the label
+	glEnable(GL_BLEND);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	XprGpuProgram_preRender(_textMaterial->program);
+	XprGpuProgram_uniformTexture(_textMaterial->program, XPR_HASH("u_tex"), _label->texture);
+	XprGpuProgram_uniform4fv(_textMaterial->program, XPR_HASH("u_textColor"), 1, _textColor.v);
+	
+	Mesh_preRender(_bgMesh, _textMaterial->program);
+	Mesh_render(_bgMesh);
+
+	glDisable(GL_BLEND);
+
 	{ // check for any OpenGL errors
 	GLenum glerr = glGetError();
 
@@ -312,6 +327,7 @@ void PezExit(void)
 	Material_free(_sceneMaterial);
 	Material_free(_bgMaterial);
 	Material_free(_uiMaterial);
+	Material_free(_textMaterial);
 	XprTexture_free(_texture);
 	XprRenderTarget_free(_rt);
 	Label_free(_label);
@@ -330,7 +346,7 @@ const char* PezInitialize(int width, int height)
 
 	_label = Label_alloc();
 	Label_init(_label, width, height);
-	Label_setText(_label, "testing");
+	Label_setText(_label, "Hello Unicode Label");
 	Label_commit(_label);
 
 	// materials
@@ -349,6 +365,10 @@ const char* PezInitialize(int width, int height)
 	_uiMaterial = loadMaterial(
 		"ClothSimulation.Ui.Vertex",
 		"ClothSimulation.Ui.Fragment");
+	
+	_textMaterial = loadMaterial(
+		"ClothSimulation.Ui.Vertex",
+		"ClothSimulation.Text.Fragment");
 
 	_texture = Pvr_createTexture(red_tile_texture);
 	
@@ -379,31 +399,3 @@ const char* PezInitialize(int width, int height)
 
 	return "Cloth Simulation";
 }
-/*
-void mouse(int button, int state, int x, int y)
-{
-	_mouse.button = button;
-	_mouse.state = state;
-	_mouse.x = x;
-	_mouse.y = y;
-
-	_mouse.clothOffsets[0] = _cloth->fixPos[0];
-	_mouse.clothOffsets[1] = _cloth->fixPos[_cloth->segmentCount-1];
-}
-
-void motion(int x, int y)
-{
-	int dx = x - _mouse.x;
-	int dy = y - _mouse.y;
-
-	if(_mouse.state == GLUT_DOWN && _mouse.button == GLUT_LEFT_BUTTON)
-	{
-		float mouseSensitivity = 0.0025f;
-		_cloth->fixPos[0].x = _mouse.clothOffsets[0].x + dx * mouseSensitivity;
-		_cloth->fixPos[_cloth->segmentCount-1].x = _mouse.clothOffsets[1].x + dx * mouseSensitivity;
-
-		_cloth->fixPos[0].y = _mouse.clothOffsets[0].y + dy * -mouseSensitivity;
-		_cloth->fixPos[_cloth->segmentCount-1].y = _mouse.clothOffsets[1].y + dy * -mouseSensitivity;
-	}
-}
-*/

@@ -81,7 +81,7 @@ void Label_commit(Label* self)
 	SetRect(&rect, 0, 0, self->impl->width, self->impl->height);
 	FillRect(hdc, &rect, GetStockObject(BLACK_BRUSH));
 	SetTextColor(hdc, RGB(255,255,255));
-	SetBkMode(hdc, OPAQUE);
+	SetBkMode(hdc, TRANSPARENT);
     DrawTextA(hdc, self->impl->text, -1, &rect, DT_NOCLIP);
 
 	{
@@ -97,7 +97,18 @@ void Label_commit(Label* self)
 		bits = malloc(GetBitmapBytesS(&bi->bmiHeader));
 
 		if(GetDIBits(hdc, self->impl->hbmp, 0, self->impl->height, bits, bi, DIB_RGB_COLORS) == self->impl->height) {
-			self->texture->data[0] = bits[0];
+			
+			unsigned char* srcPixel = bits;
+			unsigned char* dstPixel = self->texture->data;
+			size_t i;
+			size_t pixelCnt = (size_t)(bi->bmiHeader.biWidth * bi->bmiHeader.biHeight);
+
+			for(i = 0; i < pixelCnt; ++i) {
+				*dstPixel = *srcPixel;
+				dstPixel += 1;
+				srcPixel += 4;
+			}
+			
 			XprTexture_commit(self->texture);
 		}
 		free(bits);

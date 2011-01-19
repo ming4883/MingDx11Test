@@ -93,3 +93,15 @@ uniform sampler2D u_tex;
 void main() {
 	o_fragColor = texture(u_tex, v_texcoord);
 }
+
+-- Text.Fragment
+in vec2 v_texcoord;
+
+out vec4 o_fragColor;
+
+uniform sampler2D u_tex;
+uniform vec4 u_textColor;
+
+void main() {
+	o_fragColor = vec4(u_textColor.xyz, u_textColor.w * texture(u_tex, v_texcoord).x);
+}
