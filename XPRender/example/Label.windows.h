@@ -14,7 +14,7 @@ typedef struct LabelImpl
 	HBITMAP hbmp;
 	size_t width;
 	size_t height;
-	char* text;
+	wchar_t* text;
 } LabelImpl;
 
 #endif	// __EXAMPLE_LABEL_WINDOWS_H__

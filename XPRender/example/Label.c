@@ -34,11 +34,14 @@ void Label_init(Label* self, size_t width, size_t height)
 
 void Label_setText(Label* self, const char* text)
 {
+	size_t len;
 	if(nullptr != self->impl->text) {
 		free(self->impl->text);
 	}
 
-	self->impl->text = strdup(text);
+	len = (size_t)MultiByteToWideChar(CP_UTF8, 0, text, -1, nullptr, 0);
+	self->impl->text = malloc(len * sizeof(wchar_t));
+	MultiByteToWideChar(CP_UTF8, 0, text, -1, self->impl->text, len);
 }
 
 void Label_setFont(Label* self, const char* font)
@@ -82,7 +85,7 @@ void Label_commit(Label* self)
 	FillRect(hdc, &rect, GetStockObject(BLACK_BRUSH));
 	SetTextColor(hdc, RGB(255,255,255));
 	SetBkMode(hdc, TRANSPARENT);
-    DrawTextA(hdc, self->impl->text, -1, &rect, DT_NOCLIP);
+    DrawTextW(hdc, self->impl->text, -1, &rect, DT_NOCLIP);
 
 	{
 		unsigned char* bits;

@@ -39,7 +39,7 @@ float _airResistance = 5;
 float _impact = 3;
 XprBool _showDebug = XprFalse;
 Label* _label = nullptr;
-XprVec4 _textColor = {1, 0, 0, 0.5f};
+XprVec4 _textColor = {1, 0, 0, 1};
 
 typedef struct Aspect
 {
@@ -346,7 +346,10 @@ const char* PezInitialize(int width, int height)
 
 	_label = Label_alloc();
 	Label_init(_label, width, height);
-	Label_setText(_label, "Hello Unicode Label");
+	{
+		char utf8[] = {0xEF, 0xBB, 0xBF, 0xE9, 0x80, 0x99, 0xE6, 0x98, 0xAF, 0x55, 0x54, 0x46, 0x38, 0x00};
+		Label_setText(_label, utf8);
+	}
 	Label_commit(_label);
 
 	// materials
