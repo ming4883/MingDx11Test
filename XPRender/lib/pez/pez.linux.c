@@ -26,7 +26,8 @@ int PEZ_VIEWPORT_WIDTH = 853;
 int PEZ_VIEWPORT_HEIGHT = 480;
 int PEZ_ENABLE_MULTISAMPLING = 1;
 int PEZ_VERTICAL_SYNC = 1;
-int PEZ_FORWARD_COMPATIBLE_GL = 1;
+int PEZ_GL_VERSION_MAJOR = 3;
+int PEZ_GL_VERSION_MINOR = 3;
 
 int main(int argc, char** argv)
 {
@@ -84,7 +85,7 @@ int main(int argc, char** argv)
     XMapWindow(context.MainDisplay, context.MainWindow);
 
     GLXContext glcontext;
-    if (PEZ_FORWARD_COMPATIBLE_GL) {
+    if (PEZ_GL_VERSION_MAJOR > 2) {
         GLXContext tempContext = glXCreateContext(context.MainDisplay, visinfo, NULL, True);
         PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribs = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddress((GLubyte*)"glXCreateContextAttribsARB");
         if (!glXCreateContextAttribs) {
@@ -97,8 +98,8 @@ int main(int argc, char** argv)
             PezFatalError("Can't create a framebuffer for OpenGL 3.0.\n");
         } else {
             int attribs[] = {
-                GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-                GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+                GLX_CONTEXT_MAJOR_VERSION_ARB, PEZ_GL_VERSION_MAJOR,
+                GLX_CONTEXT_MINOR_VERSION_ARB, PEZ_GL_VERSION_MINOR,
                 GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
                 0
             }; 

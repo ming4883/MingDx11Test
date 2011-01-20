@@ -22,7 +22,8 @@ extern int PEZ_VIEWPORT_WIDTH;
 extern int PEZ_VIEWPORT_HEIGHT;
 extern int PEZ_ENABLE_MULTISAMPLING;
 extern int PEZ_VERTICAL_SYNC;
-extern int PEZ_FORWARD_COMPATIBLE_GL;
+extern int PEZ_GL_VERSION_MAJOR;
+extern int PEZ_GL_VERSION_MINOR;
 
 // Pez also defines a small handful of fixed constants and macros:
 //

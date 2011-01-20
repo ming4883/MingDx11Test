@@ -14,7 +14,8 @@ int PEZ_VIEWPORT_WIDTH = 853;
 int PEZ_VIEWPORT_HEIGHT = 480;
 int PEZ_ENABLE_MULTISAMPLING = 1;
 int PEZ_VERTICAL_SYNC = 1;
-int PEZ_FORWARD_COMPATIBLE_GL = 1;
+int PEZ_GL_VERSION_MAJOR = 3;
+int PEZ_GL_VERSION_MINOR = 3;
 
 LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -34,6 +35,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
     GLenum err;
     DWORD previousTime = GetTickCount();
     MSG msg = {0};
+	char glVersionStr[64];
 
     PezConfig();
 
@@ -143,12 +145,13 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
         wglSwapIntervalEXT(0);
     }
 
-    if (PEZ_FORWARD_COMPATIBLE_GL && glewIsSupported("GL_VERSION_3_3"))
+	sprintf(glVersionStr, "GL_VERSION_%d_%d", PEZ_GL_VERSION_MAJOR, PEZ_GL_VERSION_MINOR);
+    if ((PEZ_GL_VERSION_MAJOR > 2) && glewIsSupported(glVersionStr))
     {
         const int contextAttribs[] =
         {
-            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MAJOR_VERSION_ARB, PEZ_GL_VERSION_MAJOR,
+            WGL_CONTEXT_MINOR_VERSION_ARB, PEZ_GL_VERSION_MINOR,
             WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
             0
         };
