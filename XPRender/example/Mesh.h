@@ -63,6 +63,8 @@ void Mesh_preRender(Mesh* self, struct XprGpuProgram* program);
 
 void Mesh_render(Mesh* self);
 
+void Mesh_renderPatches(Mesh* self, size_t vertexPrePatch);
+
 void Mesh_renderPoints(Mesh* self);
 
 #ifdef __cplusplus

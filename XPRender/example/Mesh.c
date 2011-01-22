@@ -177,6 +177,15 @@ void Mesh_render(Mesh* self)
 	glDrawElements(GL_TRIANGLES, self->indexCount, GL_UNSIGNED_SHORT, 0);
 }
 
+void Mesh_renderPatches(Mesh* self, size_t vertexPrePatch)
+{
+	if((self->indexCount % vertexPrePatch) != 0)
+		return;
+
+	glPatchParameteri(GL_PATCH_VERTICES, vertexPrePatch);
+	glDrawElements(GL_PATCHES, self->indexCount, GL_UNSIGNED_SHORT, 0);
+}
+
 void Mesh_renderPoints(Mesh* self)
 {
 	glDrawArrays(GL_POINTS, 0, self->vertexCount);

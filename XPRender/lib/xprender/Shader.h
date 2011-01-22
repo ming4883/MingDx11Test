@@ -13,6 +13,8 @@ typedef struct XprTexture;
 typedef enum XprGpuShaderType
 {
 	XprGpuShaderType_Vertex,
+	XprGpuShaderType_TessControl,
+	XprGpuShaderType_TessEvaluation,
 	XprGpuShaderType_Geometry,
 	XprGpuShaderType_Fragment,
 } XprGpuShaderType;

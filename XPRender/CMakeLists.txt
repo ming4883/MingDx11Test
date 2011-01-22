@@ -80,6 +80,9 @@ TARGET_LINK_LIBRARIES( test_xprender xprender ${PLATFORM_LIBS} )
 ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/ClothSimulation.c
 	example/ClothSimulation.glsl
+	example/Common.c
+	example/Common.h
+	example/Common.glsl
 	example/Mesh.c
 	example/Mesh.h
 	example/Material.c
@@ -88,14 +91,26 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Cloth.h
 	example/Sphere.c
 	example/Sphere.h
-	example/Menu.c
-	example/Menu.h
 	example/Label.c
 	example/Label.h
 	example/Pvr.c
 	example/Pvr.h
 	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
+
+# example_triangle_tessellation
+ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
+	example/TriangleTessellation.c
+	example/TriangleTessellation.glsl
+	example/Common.c
+	example/Common.h
+	example/Common.glsl
+	example/Mesh.c
+	example/Mesh.h
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_triangle_tessellation xprender ${PLATFORM_LIBS} )
 
 # MosegaardsClothTutorial
 #ADD_EXECUTABLE( MosegaardsClothTutorial ${CONSOLE_SYSTEM}

@@ -1,17 +1,4 @@
-#include <GL/glew.h>
-
-#include <stdio.h>
-#include <math.h>
-
-#include "../lib/xprender/Vec3.h"
-#include "../lib/xprender/Vec4.h"
-#include "../lib/xprender/Mat44.h"
-#include "../lib/xprender/Shader.h"
-#include "../lib/xprender/Texture.h"
-#include "../lib/xprender/RenderTarget.h"
-#include "../lib/glsw/glsw.h"
-#include "../lib/pez/pez.h"
-
+#include "Common.h"
 #include "Cloth.h"
 #include "Sphere.h"
 #include "Mesh.h"
@@ -19,6 +6,9 @@
 #include "Label.h"
 #include "Pvr.h"
 #include "red_tile_texture.h"
+
+#include "../lib/xprender/Texture.h"
+#include "../lib/xprender/RenderTarget.h"
 
 Cloth* _cloth = nullptr;
 #define BallCount 2
@@ -41,6 +31,8 @@ XprBool _showDebug = XprFalse;
 Label* _label = nullptr;
 XprVec4 _textColor = {1, 0, 0, 1};
 
+RenderContext _renderContext;
+
 typedef struct Aspect
 {
 	float width;
@@ -58,27 +50,6 @@ typedef struct Mouse
 } Mouse;
 
 Mouse _mouse;
-
-typedef struct RenderContext
-{
-	XprMat44 worldViewProjMtx;
-	XprMat44 worldViewMtx;
-	XprVec4 matDiffuse;
-	XprVec4 matSpecular;
-	float matShininess;
-
-} RenderContext;
-
-void RenderContext_apply(RenderContext* self, Material* material)
-{
-	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewMtx"), 1, XprTrue, self->worldViewMtx.v);
-	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewProjMtx"), 1, XprTrue, self->worldViewProjMtx.v);
-	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matDiffuse"), 1, self->matDiffuse.v);
-	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matSpecular"), 1, self->matSpecular.v);
-	XprGpuProgram_uniform1fv(material->program, XPR_HASH("u_matShininess"), 1, &self->matShininess);
-}
-
-RenderContext _renderContext;
 
 void drawBackground()
 {
@@ -178,23 +149,6 @@ void drawScene()
 			Mesh_render(_ballMesh);
 		}
 	}
-}
-
-Material* loadMaterial(const char* vsKey, const char* fsKey)
-{
-	const char* args[] = {
-		"vs", glswGetShader(vsKey),
-		"fs", glswGetShader(fsKey),
-		nullptr,
-	};
-	
-	Material* material = Material_alloc();
-	Material_initWithShaders(material, args);
-
-	if(0 == (material->flags & MaterialFlag_Inited))
-		PezDebugString("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
-
-	return material;
 }
 
 void PezUpdate(unsigned int elapsedMilliseconds)
@@ -360,19 +314,23 @@ const char* PezInitialize(int width, int height)
 
 	_sceneMaterial = loadMaterial(
 		"ClothSimulation.Scene.Vertex",
-		"ClothSimulation.Scene.Fragment");
+		"ClothSimulation.Scene.Fragment",
+		nullptr, nullptr, nullptr);
 	
 	_bgMaterial = loadMaterial(
-		"ClothSimulation.Bg.Vertex",
-		"ClothSimulation.Bg.Fragment");
+		"Common.Bg.Vertex",
+		"Common.Bg.Fragment",
+		nullptr, nullptr, nullptr);
 	
 	_uiMaterial = loadMaterial(
-		"ClothSimulation.Ui.Vertex",
-		"ClothSimulation.Ui.Fragment");
+		"Common.Ui.Vertex",
+		"Common.Ui.Fragment",
+		nullptr, nullptr, nullptr);
 	
 	_textMaterial = loadMaterial(
-		"ClothSimulation.Ui.Vertex",
-		"ClothSimulation.Text.Fragment");
+		"Common.Ui.Vertex",
+		"Common.Text.Fragment",
+		nullptr, nullptr, nullptr);
 
 	_texture = Pvr_createTexture(red_tile_texture);
 	

@@ -9,6 +9,9 @@
 enum
 {
 	VS,
+	TC,
+	TE,
+	GS,
 	FS,
 	ShaderCount
 };
@@ -41,12 +44,28 @@ void Material_initWithShaders(Material* self, const char** args)
 			XprGpuShader_init(self->shaders[VS], &val, 1, XprGpuShaderType_Vertex);
 		}
 
+		if(0 == strcasecmp(key, "tc")) {
+			self->shaders[TC] = XprGpuShader_alloc();
+			XprGpuShader_init(self->shaders[TC], &val, 1, XprGpuShaderType_TessControl);
+		}
+
+		if(0 == strcasecmp(key, "te")) {
+			self->shaders[TE] = XprGpuShader_alloc();
+			XprGpuShader_init(self->shaders[TE], &val, 1, XprGpuShaderType_TessEvaluation);
+		}
+
+		if(0 == strcasecmp(key, "gs")) {
+			self->shaders[GS] = XprGpuShader_alloc();
+			XprGpuShader_init(self->shaders[GS], &val, 1, XprGpuShaderType_Geometry);
+		}
+
 		if(0 == strcasecmp(key, "fs")) {
 			self->shaders[FS] = XprGpuShader_alloc();
 			XprGpuShader_init(self->shaders[FS], &val, 1, XprGpuShaderType_Fragment);
 		}
 	}
 
+	// at least we need 1 vertex shader and 1 fragment shader
 	if(nullptr == self->shaders[VS] || nullptr == self->shaders[FS])
 		return;
 
