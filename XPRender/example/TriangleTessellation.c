@@ -2,7 +2,7 @@
 #include "Mesh.h"
 #include "Material.h"
 
-Mesh* _quadMesh = nullptr;
+Mesh* _tessMesh = nullptr;
 Mesh* _bgMesh = nullptr;
 Material* _sceneMaterial = nullptr;
 Material* _bgMaterial = nullptr;
@@ -66,7 +66,7 @@ void drawScene()
 	
 	{	// draw floor
 		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
-		_renderContext.matSpecular = XprVec4_(0, 0, 0, 1);
+		_renderContext.matSpecular = XprVec4_(2, 2, 2, 1);
 		_renderContext.matShininess = 32;
 		{
 			XprMat44 m;
@@ -78,11 +78,11 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		Mesh_preRender(_quadMesh, _sceneMaterial->program);
+		Mesh_preRender(_tessMesh, _sceneMaterial->program);
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		Mesh_renderPatches(_quadMesh, 3);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		Mesh_renderPatches(_tessMesh, 3);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 }
 
@@ -137,7 +137,7 @@ void PezConfig()
 
 void PezExit(void)
 {
-	Mesh_free(_quadMesh);
+	Mesh_free(_tessMesh);
 	Mesh_free(_bgMesh);
 	Material_free(_sceneMaterial);
 	Material_free(_bgMaterial);
@@ -170,11 +170,8 @@ const char* PezInitialize(int width, int height)
 	
 	glswShutdown();
 
-	{
-	XprVec3 offset = XprVec3_(-2.5f, -2.5f, 0);
-	_quadMesh = Mesh_alloc();
-	Mesh_initWithQuad(_quadMesh, 5, 5, &offset, 1);
-	}
+	_tessMesh = Mesh_alloc();
+	Mesh_initWithUnitSphere(_tessMesh, 6);
 
 	_bgMesh = Mesh_alloc();
 	Mesh_initWithScreenQuad(_bgMesh);

@@ -25,6 +25,7 @@ out vec3 tc_normal[];
 out vec2 tc_texcoord0[];
 
 #define ID gl_InvocationID
+#define tessLevel 3
 
 void main()
 {
@@ -33,10 +34,10 @@ void main()
     tc_texcoord0[ID] = v_texcoord0[ID];
     
     if (ID == 0) {
-        gl_TessLevelInner[0] = 2;
-        gl_TessLevelOuter[0] = 1;
-        gl_TessLevelOuter[1] = 1;
-        gl_TessLevelOuter[2] = 1;
+        gl_TessLevelInner[0] = tessLevel;
+        gl_TessLevelOuter[0] = tessLevel;
+        gl_TessLevelOuter[1] = tessLevel;
+        gl_TessLevelOuter[2] = tessLevel;
     }
 }
 
@@ -54,12 +55,31 @@ out vec2 f_texcoord;
 uniform mat4 u_worldViewMtx;
 uniform mat4 u_worldViewProjMtx;
 
+vec3 phongTessellation(vec3 q)
+{
+	// projection to tangent planes
+	vec3 proj[3];
+	
+	for(int i=0; i<3; ++i) {
+		proj[i] = q - dot(q-tc_vertex[i].xyz, tc_normal[i]) * tc_normal[i];
+	}
+	
+	// interpolate the projections
+	return	gl_TessCoord.x * proj[0] +
+			gl_TessCoord.y * proj[1] +
+			gl_TessCoord.z * proj[2];
+}
+
 void main()
 {
-	vec4 te_vertex =
+	vec4 linear_vertex =
 		gl_TessCoord.x * tc_vertex[0] +
 		gl_TessCoord.y * tc_vertex[1] +
 		gl_TessCoord.z * tc_vertex[2] ;
+	
+	vec4 phong_vertex = vec4(phongTessellation(linear_vertex.xyz), 1);
+	
+	vec4 te_vertex = mix(phong_vertex, linear_vertex,  0.25); 
 	
 	vec3 te_normal = 
 		gl_TessCoord.x * tc_normal[0] +
