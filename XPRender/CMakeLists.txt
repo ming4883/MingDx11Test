@@ -5,6 +5,7 @@ PROJECT( xprender )
 #FILE( GLOB FREEGLUT lib/freeglut/*.c lib/freeglut/*.h )
 FILE( GLOB GLEW lib/glew/*.c lib/glew/*.h )
 FILE( GLOB GLSW lib/glsw/*.c lib/glsw/*.h )
+FILE( GLOB HTTPD lib/httpd/*.c lib/httpd/*.h )
 
 ADD_DEFINITIONS( -DFREEGLUT_STATIC )
 ADD_DEFINITIONS( -DFREEGLUT_LIB_PRAGMAS=0 )
@@ -34,6 +35,7 @@ IF( WIN32 )
 		#SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
 		SOURCE_GROUP( "glew" FILES ${GLEW} )
 		SOURCE_GROUP( "glsw" FILES ${GLSW} )
+		SOURCE_GROUP( "httpd" FILES ${HTTPD} )
 		SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
 		SOURCE_GROUP( "pez" FILES ${PEZ} )
 		SET( PLATFORM_LIBS opengl32 glu32 winmm )
@@ -55,6 +57,7 @@ INCLUDE_DIRECTORIES(
 	lib/freeglut
 	lib/glew
 	lib/glsw
+	lib/httpd
 	lib/pez
 )
 
@@ -62,6 +65,7 @@ ADD_LIBRARY( xprender
     ${FREEGLUT}
 	${GLEW}
 	${GLSW}
+	${HTTPD}
 	${XPRENDER}
 	${PEZ}
 	)
