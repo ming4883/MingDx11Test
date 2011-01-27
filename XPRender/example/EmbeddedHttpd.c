@@ -1,7 +1,26 @@
 #include "Common.h"
+#include "../lib/httpd/httpd.h"
+#include <winsock2.h>
+
+httpd* _httpd = nullptr;
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
+	struct timeval to;
+	to.tv_sec = 0;
+	to.tv_usec = 1000;
+	
+	if (httpdGetConnection(_httpd, &to) <= 0)
+		return;
+
+	if(httpdReadRequest(_httpd) < 0) {
+		httpdEndRequest(_httpd);
+		return;
+	}
+
+	httpdProcessRequest(_httpd);
+
+	httpdEndRequest(_httpd);
 }
 
 void PezHandleMouse(int x, int y, int action)
@@ -32,11 +51,20 @@ void PezConfig()
 
 void PezExit(void)
 {
+	httpdDestroy(_httpd);
+}
+
+void index_html(httpd* server)
+{
+	httpdPrintf(server, "hello HTTPD");
 }
 
 const char* PezInitialize(int width, int height)
 {
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
+
+	_httpd = httpdCreate(nullptr, HTTP_PORT);
+	httpdAddCContent(_httpd, "/", "index.html", HTTP_TRUE, nullptr, index_html);
 	
 	atexit(PezExit);
 

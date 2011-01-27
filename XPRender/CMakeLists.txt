@@ -27,7 +27,7 @@ IF( WIN32 )
 		ADD_DEFINITIONS( -D_WIN32 )
 		#ADD_DEFINITIONS( -std=c99 )
 		#SET( PLATFORM_LIBS GL GLU X11 )
-		SET( PLATFORM_LIBS opengl32 glu32 winmm gdi32 )
+		SET( PLATFORM_LIBS opengl32 glu32 winmm ws2_32 gdi32 )
 	
 	ELSE()
 		# assume MSVC
@@ -38,7 +38,7 @@ IF( WIN32 )
 		SOURCE_GROUP( "httpd" FILES ${HTTPD} )
 		SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
 		SOURCE_GROUP( "pez" FILES ${PEZ} )
-		SET( PLATFORM_LIBS opengl32 glu32 winmm )
+		SET( PLATFORM_LIBS opengl32 glu32 winmm ws2_32 )
 		
 	ENDIF()
 	

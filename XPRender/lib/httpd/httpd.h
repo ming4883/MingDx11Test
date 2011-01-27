@@ -209,6 +209,7 @@ void httpdEndRequest __ANSI_PROTO((httpd*));
 void httpdForceAuthenticate __ANSI_PROTO((httpd*, char*));
 
 httpd *httpdCreate __ANSI_PROTO((char *, int));
+void httpdDestroy __ANSI_PROTO((httpd*));
 void httpdFreeVariables __ANSI_PROTO((httpd*));
 void httpdDumpVariables __ANSI_PROTO((httpd*));
 void httpdOutput __ANSI_PROTO((httpd*, char*));
