@@ -116,6 +116,16 @@ ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
 	)
 TARGET_LINK_LIBRARIES( example_triangle_tessellation xprender ${PLATFORM_LIBS} )
 
+# example_embedded_httpd
+ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
+	example/EmbeddedHttpd.c
+	example/Common.c
+	example/Common.h
+	example/Common.glsl
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_embedded_httpd xprender ${PLATFORM_LIBS} )
 # MosegaardsClothTutorial
 #ADD_EXECUTABLE( MosegaardsClothTutorial ${CONSOLE_SYSTEM}
 #	example/MosegaardsClothTutorial.cpp
