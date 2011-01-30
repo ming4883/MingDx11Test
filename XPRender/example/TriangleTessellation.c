@@ -78,6 +78,10 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
+		{	float tessLevel = 8;
+			XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_tessLevel"), 1, (const float*)&tessLevel);
+		}
+
 		Mesh_preRender(_tessMesh, _sceneMaterial->program);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -171,7 +175,7 @@ const char* PezInitialize(int width, int height)
 	glswShutdown();
 
 	_tessMesh = Mesh_alloc();
-	Mesh_initWithUnitSphere(_tessMesh, 6);
+	Mesh_initWithUnitSphere(_tessMesh, 8);
 
 	_bgMesh = Mesh_alloc();
 	Mesh_initWithScreenQuad(_bgMesh);

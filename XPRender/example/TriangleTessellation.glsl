@@ -24,8 +24,9 @@ out vec4 tc_vertex[];
 out vec3 tc_normal[];
 out vec2 tc_texcoord0[];
 
+uniform float u_tessLevel;
+
 #define ID gl_InvocationID
-#define tessLevel 3
 
 void main()
 {
@@ -34,10 +35,10 @@ void main()
     tc_texcoord0[ID] = v_texcoord0[ID];
     
     if (ID == 0) {
-        gl_TessLevelInner[0] = tessLevel;
-        gl_TessLevelOuter[0] = tessLevel;
-        gl_TessLevelOuter[1] = tessLevel;
-        gl_TessLevelOuter[2] = tessLevel;
+        gl_TessLevelInner[0] = u_tessLevel;
+        gl_TessLevelOuter[0] = u_tessLevel;
+        gl_TessLevelOuter[1] = u_tessLevel;
+        gl_TessLevelOuter[2] = u_tessLevel;
     }
 }
 
