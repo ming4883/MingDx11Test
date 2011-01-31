@@ -174,46 +174,43 @@ void htmlIndex(httpd* server)
 	//httpdPrintf(server, _remoteObj->report);
 
 	httpdOutput(server, "\
-<!DOCTYPE html>\
-<html>\
-<head>\
-  <link href='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css' rel='stylesheet' type='text/css'/>\
-  <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>\
-  <script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js'></script>\
-    <style type='text/css'>\
-    #slider { margin: 10px; }\
-  </style>\n");
+<!DOCTYPE html>\n\
+<html>\n\
+<head>\n\
+  <link href='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css' rel='stylesheet' type='text/css'/>\n\
+  <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>\n\
+  <script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js'></script>\n\
+  <style type='text/css'>#slider { margin: 10px; }</style>\n");
 
-	HASH_ITER(hh, _remoteObj->vars, curr, tmp) {		
-		httpdPrintf(server, "\
-<script>\
-  $(document).ready(function() {\
-	var name = '%s';\
-	var elem = $('#'+name);\
-	elem.slider({\
-      min:%f, max:%f, value:%f, stop:function(event, ui) {\
-	    var data = {}; data[name] = elem.slider('value');\
-	    jQuery.get('setter', data);\
-	  }\
-	});\
-  });\
-</script>\n",
-curr->name, curr->lowerBound, curr->upperBound, *curr->value);
+	HASH_ITER(hh, _remoteObj->vars, curr, tmp) {	
+		const char* content = "\
+  <script>\n\
+  $(document).ready(function() {\n\
+	var name = '%s';\n\
+	var elem = $('#'+name);\n\
+	elem.slider({ min:%f, max:%f, value:%f,\n\
+	  stop:function(event, ui) {\n\
+	    var data = {}; data[name] = elem.slider('value');\n\
+	    jQuery.get('setter', data);\n\
+	  }\n\
+	});\n\
+  });\n\
+  </script>\n";
+		httpdPrintf(server, content, curr->name, curr->lowerBound, curr->upperBound, *curr->value);
 	}
 	
-	httpdOutput(server, "\
-</head>\
-<body style='font-size:62.5%;'><table>\n");
+	httpdOutput(server, "</head>\n\
+<body style='font-size:75%;'><table style='background-color:LightBlue'>\n\
+  <tr><th>name&nbsp;</th><th style='width:200px'>value</th></tr>\n");
 
 	HASH_ITER(hh, _remoteObj->vars, curr, tmp) {		
 		httpdPrintf(server, "\
-<tr><td>%s&nbsp</td><td width='200px'><div id='%s'></div></td></tr>\n",
+  <tr><td>%s&nbsp;</td><td><div id='%s'></div></td></tr>\n",
 		curr->name, curr->name);
 	}
 
 	httpdOutput(server, "\
-</table>\
-</body>\
+</table></body>\n\
 </html>\
 ");
 }
