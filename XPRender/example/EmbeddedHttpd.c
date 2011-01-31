@@ -1,138 +1,14 @@
 #include "Common.h"
-#include "../lib/httpd/httpd.h"
-#include "../lib/xprender/uthash/uthash.h"
-#include "../lib/xprender/StrHash.h"
-#include <winsock2.h>
+#include "Remote.h"
 
-typedef struct RemoteVar
-{
-	XprHashCode id;
-	char* name;
-	float* value;
-	float lowerBound, upperBound;
-	UT_hash_handle hh;
-} RemoteVar;
-
-RemoteVar* RemoteVar_alloc()
-{
-	RemoteVar* self;
-	self = malloc(sizeof(RemoteVar));
-	memset(self, 0, sizeof(RemoteVar));
-	return self;
-}
-
-void RemoteVar_free(RemoteVar* self)
-{
-	free(self->name);
-	free(self);
-}
-
-void RemoteVar_init(RemoteVar* self, const char* name, float* value, float lower, float upper)
-{
-	self->id = XPR_HASH(name);
-	self->name = strdup(name);
-	self->value = value;
-	self->upperBound = upper;
-	self->lowerBound = lower;
-}
-
-typedef struct RemoteObj
-{
-	struct RemoteVar* vars;
-	char* report;
-} RemoteObj;
-
-RemoteObj* RemoteObj_alloc()
-{
-	RemoteObj* self;
-	self = malloc(sizeof(RemoteObj));
-	memset(self, 0, sizeof(RemoteObj));
-	return self;
-}
-
-void RemoteObj_free(RemoteObj* self)
-{
-	struct RemoteVar *curr, *tmp;
-
-	HASH_ITER(hh, self->vars, curr, tmp) {
-		HASH_DEL(self->vars, curr);
-		RemoteVar_free(curr);
-	}
-
-	realloc(self->report, 0);
-
-	free(self);
-}
-
-void RemoteObj_addVar(RemoteObj* self, RemoteVar* var)
-{
-	if(nullptr == self)
-		return;
-
-	HASH_ADD_INT(self->vars, id, var);
-}
-
-RemoteVar* RemoteObj_findVar(RemoteObj* self, const char* name)
-{
-	RemoteVar* var = nullptr;
-	XprHashCode id;
-	if(nullptr == self)
-		return nullptr;
-
-	id = XPR_HASH(name);
-	HASH_FIND_INT(self->vars, &id, var);
-
-	return var;
-}
-
-void RemoteObj_getJson(RemoteObj* self)
-{
-	struct RemoteVar *curr, *tmp;
-	char buf[64];
-
-	if(nullptr == self)
-		return;
-
-	if(nullptr == self->report) {
-		self->report = realloc(self->report, 1024);
-	}
-	sprintf(self->report, "\"object\":{");
-
-	HASH_ITER(hh, self->vars, curr, tmp) {		
-		sprintf(buf,
-			"\"%s\":{\"v\":%f, \"u\":%f, \"l\":%f},",
-			curr->name, *curr->value, curr->upperBound, curr->lowerBound
-			);
-		strcat(self->report, buf);
-	}
-
-	strcat(self->report, "}");
-}
-
-
-httpd* _httpd = nullptr;
-RemoteObj* _remoteObj = nullptr;
+RemoteConfig* _config = nullptr;
 float bgR = 255;
 float bgG = 127;
 float bgB = 0;
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
-	struct timeval to;
-	to.tv_sec = 0;
-	to.tv_usec = 100;
-	
-	if (httpdGetConnection(_httpd, &to) <= 0)
-		return;
-
-	if(httpdReadRequest(_httpd) < 0) {
-		httpdEndRequest(_httpd);
-		return;
-	}
-
-	httpdProcessRequest(_httpd);
-
-	httpdEndRequest(_httpd);
+	RemoteConfig_processRequest(_config);
 }
 
 void PezHandleMouse(int x, int y, int action)
@@ -163,104 +39,24 @@ void PezConfig()
 
 void PezExit(void)
 {
-	RemoteObj_free(_remoteObj);
-	httpdDestroy(_httpd);
-}
-
-void htmlIndex(httpd* server)
-{
-	struct RemoteVar *curr, *tmp;
-	//RemoteObj_getJson(_remoteObj);
-	//httpdPrintf(server, _remoteObj->report);
-
-	httpdOutput(server, "\
-<!DOCTYPE html>\n\
-<html>\n\
-<head>\n\
-  <link href='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css' rel='stylesheet' type='text/css'/>\n\
-  <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>\n\
-  <script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js'></script>\n\
-  <style type='text/css'>#slider { margin: 10px; }</style>\n");
-
-	HASH_ITER(hh, _remoteObj->vars, curr, tmp) {	
-		const char* content = "\
-  <script>\n\
-  $(document).ready(function() {\n\
-	var name = '%s';\n\
-	var elem = $('#'+name);\n\
-	elem.slider({ min:%f, max:%f, value:%f,\n\
-	  stop:function(event, ui) {\n\
-	    var data = {}; data[name] = elem.slider('value');\n\
-	    jQuery.get('setter', data);\n\
-	  }\n\
-	});\n\
-  });\n\
-  </script>\n";
-		httpdPrintf(server, content, curr->name, curr->lowerBound, curr->upperBound, *curr->value);
-	}
-	
-	httpdOutput(server, "</head>\n\
-<body style='font-size:75%;'><table style='background-color:LightBlue'>\n\
-  <tr><th>name&nbsp;</th><th style='width:200px'>value</th></tr>\n");
-
-	HASH_ITER(hh, _remoteObj->vars, curr, tmp) {		
-		httpdPrintf(server, "\
-  <tr><td>%s&nbsp;</td><td><div id='%s'></div></td></tr>\n",
-		curr->name, curr->name);
-	}
-
-	httpdOutput(server, "\
-</table></body>\n\
-</html>\
-");
-}
-
-void htmlSetter(httpd* server)
-{
-	RemoteVar* rvar;
-	httpVar* hvar;
-
-	if(nullptr == (hvar = httpdGetVariableByPrefix(server, ""))) {
-		httpdPrintf(server, "false");
-		return;
-	}
-
-	if(nullptr == (rvar = RemoteObj_findVar(_remoteObj, hvar->name))) {
-		httpdPrintf(server, "false");
-		return;
-	}
-
-	if(0 == sscanf(hvar->value, "%f", rvar->value)) {
-		httpdPrintf(server, "false");
-		return;
-	}
-	httpdPrintf(server, "true");
+	RemoteConfig_free(_config);
 }
 
 const char* PezInitialize(int width, int height)
 {
+	RemoteVarDesc descs[] = {
+		{"bgR", &bgR, 0, 255},
+		{"bgG", &bgG, 0, 255},
+		{"bgB", &bgB, 0, 255},
+		{nullptr, nullptr, 0, 0}
+	};
+
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 
-	_httpd = httpdCreate(nullptr, HTTP_PORT);
-	httpdAddCContent(_httpd, "/", "index.html", HTTP_TRUE, nullptr, htmlIndex);
-	httpdAddCContent(_httpd, "/", "setter", HTTP_FALSE, nullptr, htmlSetter);
+	_config = RemoteConfig_alloc();
+	RemoteConfig_init(_config, 80);
+	RemoteConfig_addVars(_config, descs);
 
-	_remoteObj = RemoteObj_alloc();
-	{	RemoteVar* var = RemoteVar_alloc();
-		RemoteVar_init(var, "bgR", &bgR, 0, 255);
-		RemoteObj_addVar(_remoteObj, var);
-	}
-
-	{	RemoteVar* var = RemoteVar_alloc();
-		RemoteVar_init(var, "bgG", &bgG, 0, 255);
-		RemoteObj_addVar(_remoteObj, var);
-	}
-
-	{	RemoteVar* var = RemoteVar_alloc();
-		RemoteVar_init(var, "bgB", &bgB, 0, 255);
-		RemoteObj_addVar(_remoteObj, var);
-	}
-	
 	atexit(PezExit);
 
 	return "Embedded Httpd";

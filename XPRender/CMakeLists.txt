@@ -122,6 +122,8 @@ ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/Remote.c
+	example/Remote.h
 	example/Material.c
 	example/Material.h
 	)

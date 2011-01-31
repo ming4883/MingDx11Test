@@ -177,6 +177,7 @@ typedef struct {
 	void	(*errorFunction304)(),
 		(*errorFunction403)(),
 		(*errorFunction404)();
+	void *userData;
 } httpd;
 
 
