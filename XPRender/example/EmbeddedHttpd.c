@@ -27,7 +27,7 @@ void RemoteVar_free(RemoteVar* self)
 	free(self);
 }
 
-void RemoteVar_init(RemoteVar* self, const char* name, float* value, float upper, float lower)
+void RemoteVar_init(RemoteVar* self, const char* name, float* value, float lower, float upper)
 {
 	self->id = XPR_HASH(name);
 	self->name = strdup(name);
@@ -112,15 +112,15 @@ void RemoteObj_getJson(RemoteObj* self)
 
 httpd* _httpd = nullptr;
 RemoteObj* _remoteObj = nullptr;
-float bgR = 1;
-float bgG = 0.5;
+float bgR = 255;
+float bgG = 127;
 float bgB = 0;
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
 	struct timeval to;
 	to.tv_sec = 0;
-	to.tv_usec = 1000;
+	to.tv_usec = 100;
 	
 	if (httpdGetConnection(_httpd, &to) <= 0)
 		return;
@@ -142,7 +142,7 @@ void PezHandleMouse(int x, int y, int action)
 void PezRender()
 {
 	glClearDepth(1);
-	glClearColor(bgR, bgG, bgB, 1);
+	glClearColor(bgR / 255, bgG / 255, bgB / 255, 1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 	{ // check for any OpenGL errors
@@ -188,24 +188,31 @@ void htmlIndex(httpd* server)
 		httpdPrintf(server, "\
 <script>\
   $(document).ready(function() {\
-    $('#%s').slider();\
+	var name = '%s';\
+	var elem = $('#'+name);\
+	elem.slider({\
+      min:%f, max:%f, value:%f, stop:function(event, ui) {\
+	    var data = {}; data[name] = elem.slider('value');\
+	    jQuery.get('setter', data);\
+	  }\
+	});\
   });\
 </script>\n",
-		curr->name);
+curr->name, curr->lowerBound, curr->upperBound, *curr->value);
 	}
 	
 	httpdOutput(server, "\
 </head>\
-<body style='font-size:62.5%;'><ul>\n");
+<body style='font-size:62.5%;'><table>\n");
 
 	HASH_ITER(hh, _remoteObj->vars, curr, tmp) {		
 		httpdPrintf(server, "\
-<li><div width='120' height='30'>%s</div><div id='%s'></div></li>\n",
+<tr><td>%s&nbsp</td><td width='200px'><div id='%s'></div></td></tr>\n",
 		curr->name, curr->name);
 	}
 
 	httpdOutput(server, "\
-</ul>\
+</table>\
 </body>\
 </html>\
 ");
@@ -243,17 +250,17 @@ const char* PezInitialize(int width, int height)
 
 	_remoteObj = RemoteObj_alloc();
 	{	RemoteVar* var = RemoteVar_alloc();
-		RemoteVar_init(var, "bgR", &bgR, 0, 0);
+		RemoteVar_init(var, "bgR", &bgR, 0, 255);
 		RemoteObj_addVar(_remoteObj, var);
 	}
 
 	{	RemoteVar* var = RemoteVar_alloc();
-		RemoteVar_init(var, "bgG", &bgG, 0, 0);
+		RemoteVar_init(var, "bgG", &bgG, 0, 255);
 		RemoteObj_addVar(_remoteObj, var);
 	}
 
 	{	RemoteVar* var = RemoteVar_alloc();
-		RemoteVar_init(var, "bgB", &bgB, 0, 0);
+		RemoteVar_init(var, "bgB", &bgB, 0, 255);
 		RemoteObj_addVar(_remoteObj, var);
 	}
 	
