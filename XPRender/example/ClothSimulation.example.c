@@ -1,4 +1,5 @@
 #include "Common.h"
+#include "Remote.h"
 #include "Cloth.h"
 #include "Sphere.h"
 #include "Mesh.h"
@@ -9,6 +10,7 @@
 #include "../lib/xprender/Texture.h"
 #include "../lib/xprender/RenderTarget.h"
 
+RemoteConfig* _config = nullptr;
 Cloth* _cloth = nullptr;
 #define BallCount 2
 Sphere _ball[BallCount];
@@ -155,6 +157,8 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 
 	static float t = 0;
 	t += 0.0005f * _impact;
+
+	//RemoteConfig_processRequest(_config);
 	
 	_ball[0].center.z = cosf(t) * 5.f;
 	_ball[1].center.z = sinf(t) * 5.f;
@@ -259,6 +263,7 @@ void PezConfig()
 
 void PezExit(void)
 {
+	RemoteConfig_free(_config);
 	Cloth_free(_cloth);
 	Mesh_free(_ballMesh);
 	Mesh_free(_floorMesh);
@@ -273,6 +278,18 @@ void PezExit(void)
 
 const char* PezInitialize(int width, int height)
 {
+	// remote config
+	RemoteVarDesc descs[] = {
+		{"gravity", &_gravity, 1, 100},
+		{"airResistance", &_airResistance, 1, 20},
+		{"impact", &_impact, 1, 10},
+		{nullptr, nullptr, 0, 0}
+	};
+
+	_config = RemoteConfig_alloc();
+	RemoteConfig_init(_config, 80);
+	RemoteConfig_addVars(_config, descs);
+
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
