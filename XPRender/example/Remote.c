@@ -76,51 +76,97 @@ RemoteVar* RemoteConfig_findVar(RemoteConfig* self, const char* name)
 	return var;
 }
 
+void RemoteConfig_addVar(RemoteConfig* self, RemoteVarDesc desc)
+{
+	RemoteVar* var;
+	if(nullptr == self)
+		return;
+
+	var = RemoteVar_alloc();
+	RemoteVar_init(var, desc);
+	HASH_ADD_INT(self->impl->vars, id, var);
+}
+
 void RemoteConfig_indexhtml(httpd* server)
 {
 	struct RemoteVar *curr, *tmp;
 	RemoteConfig* config = (RemoteConfig*)server->userData;
 
-	httpdOutput(server, "\
+	// html head
+	{
+		char* html = "\
 <!DOCTYPE html>\n\
 <html>\n\
 <head>\n\
   <link href='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/base/jquery-ui.css' rel='stylesheet' type='text/css'/>\n\
   <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js'></script>\n\
   <script src='http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js'></script>\n\
-  <style type='text/css'>#slider { margin: 10px; }</style>\n");
+  <style type='text/css'>\n\
+  #slider { margin: 10px; }\n\
+  body {\n\
+    font-size:75%;\n\
+    font:.75em/1.5 sans-serif;\n\
+    background-color:LightBlue;\n\
+  }\n\
+  table.var {\n\
+    background-color: white;\n\
+  }\n\
+  table.var th {\n\
+    padding: 5px;\n\
+    text-align:left;\n\
+  }\n\
+  table.var td {\n\
+    padding: 8px;\n\
+  }\n\
+  </style>\n\
+";
+		httpdOutput(server, html);
+	}
 
-	HASH_ITER(hh, config->impl->vars, curr, tmp) {	
-		char* content = "\
+	// javascripts
+	HASH_ITER(hh, config->impl->vars, curr, tmp) {
+
+		char* html = "\
   <script>\n\
   $(document).ready(function() {\n\
-	var name = '%s';\n\
-	var elem = $('#'+name);\n\
-	elem.slider({ min:%f, max:%f, value:%f,\n\
-	  stop:function(event, ui) {\n\
-	    var data = {}; data[name] = elem.slider('value');\n\
-	    jQuery.get('setter', data);\n\
-	  }\n\
-	});\n\
+    var name = '%s';\n\
+    var elem = $('#'+name);\n\
+    var elemVal = $('#'+name+'_val');\n\
+    elem.slider({ min:%f, max:%f, value:%f,\n\
+      stop:function(event, ui) {\n\
+        var data = {}; data[name] = elem.slider('value');\n\
+        jQuery.get('setter', data);\n\
+        elemVal.html(data[name]);\n\
+      }\n\
+    });\n\
+    elemVal.html(elem.slider('value'));\n\
   });\n\
-  </script>\n";
-		httpdPrintf(server, content, curr->desc.name, curr->desc.lowerBound, curr->desc.upperBound, *(curr->desc.value));
+  </script>\n\
+";
+		httpdPrintf(server, html, curr->desc.name, curr->desc.lowerBound, curr->desc.upperBound, *(curr->desc.value));
 	}
 	
-	httpdOutput(server, "</head>\n\
-<body style='font-size:75%;'><table style='background-color:LightBlue'>\n\
-  <tr><th>name&nbsp;</th><th style='width:200px'>value</th></tr>\n");
-
-	HASH_ITER(hh, config->impl->vars, curr, tmp) {		
-		httpdPrintf(server, "\
-  <tr><td>%s&nbsp;</td><td><div id='%s'></div></td></tr>\n",
-		curr->desc.name, curr->desc.name);
+	// html body
+	{
+		char* html = "\
+</head>\n\
+<body><table class='var'>\n\
+<tr><th>Name</th><th style='width:200px;'>Value</th><th></th></tr>\n\
+";
+		httpdOutput(server, html);
 	}
 
-	httpdOutput(server, "\
-</table></body>\n\
-</html>\
-");
+	// <div> tags
+	HASH_ITER(hh, config->impl->vars, curr, tmp) {
+		char* html = "<tr><td>%s</td><td><div id='%s'></div></td><td><div id='%s_val'></div></td></tr>\n";
+		httpdPrintf(server, html,curr->desc.name, curr->desc.name, curr->desc.name);
+	}
+
+	// footer
+	{
+		char* html = "</table></body>\n</html>";
+		httpdOutput(server, html);
+	}
 }
 
 void RemoteConfig_setterhtml(httpd* server)
@@ -153,17 +199,6 @@ void RemoteConfig_init(RemoteConfig* self, int port)
 	self->impl->http->userData = self;
 	httpdAddCContent(self->impl->http, "/", "index.html", HTTP_TRUE, nullptr, RemoteConfig_indexhtml);
 	httpdAddCContent(self->impl->http, "/", "setter", HTTP_FALSE, nullptr, RemoteConfig_setterhtml);
-}
-
-void RemoteConfig_addVar(RemoteConfig* self, RemoteVarDesc desc)
-{
-	RemoteVar* var;
-	if(nullptr == self)
-		return;
-
-	var = RemoteVar_alloc();
-	RemoteVar_init(var, desc);
-	HASH_ADD_INT(self->impl->vars, id, var);
 }
 
 void RemoteConfig_addVars(RemoteConfig* self, RemoteVarDesc* descs)

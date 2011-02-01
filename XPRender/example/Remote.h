@@ -25,8 +25,6 @@ void RemoteConfig_free(RemoteConfig* self);
 
 void RemoteConfig_init(RemoteConfig* self, int port);
 
-void RemoteConfig_addVar(RemoteConfig* self, RemoteVarDesc desc);
-
 void RemoteConfig_addVars(RemoteConfig* self, RemoteVarDesc* descs);
 
 void RemoteConfig_processRequest(RemoteConfig* self);

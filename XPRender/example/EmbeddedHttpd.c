@@ -20,19 +20,12 @@ void PezRender()
 	glClearDepth(1);
 	glClearColor(bgR / 255, bgG / 255, bgB / 255, 1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
-	{ // check for any OpenGL errors
-	GLenum glerr = glGetError();
-
-	if(glerr != GL_NO_ERROR)
-		PezDebugString("GL has error %4x!", glerr);
-	}
 }
 
 void PezConfig()
 {
-	PEZ_VIEWPORT_WIDTH = 640;
-	PEZ_VIEWPORT_HEIGHT = 480;
+	PEZ_VIEWPORT_WIDTH = 480;
+	PEZ_VIEWPORT_HEIGHT = 320;
 	PEZ_ENABLE_MULTISAMPLING = 0;
 	PEZ_VERTICAL_SYNC = 0;
 }
