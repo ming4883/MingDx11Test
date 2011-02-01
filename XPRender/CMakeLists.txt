@@ -82,7 +82,7 @@ TARGET_LINK_LIBRARIES( test_xprender xprender ${PLATFORM_LIBS} )
 
 # example_cloth_simulation
 ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
-	example/ClothSimulation.c
+	example/ClothSimulation.example.c
 	example/ClothSimulation.glsl
 	example/Common.c
 	example/Common.h
@@ -95,16 +95,29 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Cloth.h
 	example/Sphere.c
 	example/Sphere.h
-	example/Label.c
-	example/Label.h
 	example/Pvr.c
 	example/Pvr.h
 	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
 
+# example_label
+ADD_EXECUTABLE( example_label ${CONSOLE_SYSTEM}
+	example/Label.example.c
+	example/Common.c
+	example/Common.h
+	example/Common.glsl
+	example/Label.c
+	example/Label.h
+	example/Mesh.c
+	example/Mesh.h
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_label xprender ${PLATFORM_LIBS} )
+
 # example_triangle_tessellation
 ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
-	example/TriangleTessellation.c
+	example/TriangleTessellation.example.c
 	example/TriangleTessellation.glsl
 	example/Common.c
 	example/Common.h
@@ -118,7 +131,7 @@ TARGET_LINK_LIBRARIES( example_triangle_tessellation xprender ${PLATFORM_LIBS} )
 
 # example_embedded_httpd
 ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
-	example/EmbeddedHttpd.c
+	example/EmbeddedHttpd.example.c
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
