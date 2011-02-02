@@ -1,6 +1,7 @@
 #include "Common.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "Remote.h"
 
 Mesh* _tessMesh = nullptr;
 Mesh* _bgMesh = nullptr;
@@ -26,6 +27,15 @@ typedef struct Mouse
 
 Mouse _mouse;
 
+typedef struct AppContext
+{
+	float tessLevel;
+	float linearity;
+} AppContext;
+
+AppContext _app;
+
+RemoteConfig* _config = nullptr;
 
 void drawBackground()
 {
@@ -46,7 +56,7 @@ void drawBackground()
 	Mesh_render(_bgMesh);
 }
 
-void drawScene()
+void drawScene(float tessLevel, float linearity)
 {
 	XprVec3 eyeAt = XprVec3_(-2.5f, 1.5f, 5);
 	XprVec3 lookAt = XprVec3_(0, 0, 0);
@@ -78,9 +88,8 @@ void drawScene()
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		{	float tessLevel = 8;
-			XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_tessLevel"), 1, (const float*)&tessLevel);
-		}
+		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_tessLevel"), 1, (const float*)&tessLevel);
+		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_linearity"), 1, (const float*)&linearity);
 
 		Mesh_preRender(_tessMesh, _sceneMaterial->program);
 
@@ -115,11 +124,17 @@ void PezHandleMouse(int x, int y, int action)
 
 void PezRender()
 {
+	float tessLevel, linearity;
+
+	RemoteConfig_lock(_config);
+	tessLevel = _app.tessLevel; linearity = _app.linearity / 10.0f;
+	RemoteConfig_unlock(_config);
+
 	glClearDepth(1);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	drawBackground();
-	drawScene();
+	drawScene(tessLevel, linearity);
 	
 	{ // check for any OpenGL errors
 	GLenum glerr = glGetError();
@@ -145,10 +160,24 @@ void PezExit(void)
 	Mesh_free(_bgMesh);
 	Material_free(_sceneMaterial);
 	Material_free(_bgMaterial);
+	RemoteConfig_free(_config);
 }
 
 const char* PezInitialize(int width, int height)
 {
+	RemoteVarDesc descs[] = {
+		{"tessLevel", &_app.tessLevel, 0, 16},
+		{"linearity", &_app.linearity, 0, 10},
+		{nullptr, nullptr, 0, 0},
+	};
+
+	_app.tessLevel = 8;
+	_app.linearity = 5;
+
+	_config = RemoteConfig_alloc();
+	RemoteConfig_init(_config, 80, XprTrue);
+	RemoteConfig_addVars(_config, descs);
+
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
@@ -175,7 +204,7 @@ const char* PezInitialize(int width, int height)
 	glswShutdown();
 
 	_tessMesh = Mesh_alloc();
-	Mesh_initWithUnitSphere(_tessMesh, 8);
+	Mesh_initWithUnitSphere(_tessMesh, 4);
 
 	_bgMesh = Mesh_alloc();
 	Mesh_initWithScreenQuad(_bgMesh);

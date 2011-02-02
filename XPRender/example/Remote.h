@@ -1,6 +1,8 @@
 #ifndef __EXAMPLE_REMOTE_H__
 #define __EXAMPLE_REMOTE_H__
 
+#include "../lib/xprender/Platform.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,11 +25,15 @@ RemoteConfig* RemoteConfig_alloc();
 
 void RemoteConfig_free(RemoteConfig* self);
 
-void RemoteConfig_init(RemoteConfig* self, int port);
+void RemoteConfig_init(RemoteConfig* self, int port, XprBool useThread);
 
 void RemoteConfig_addVars(RemoteConfig* self, RemoteVarDesc* descs);
 
 void RemoteConfig_processRequest(RemoteConfig* self);
+
+void RemoteConfig_lock(RemoteConfig* self);
+
+void RemoteConfig_unlock(RemoteConfig* self);
 
 #ifdef __cplusplus
 }

@@ -5,7 +5,9 @@
 #include "../lib/httpd/httpd.h"
 
 #include <stdio.h>
+#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
+#include <windows.h>
 
 typedef struct RemoteVar
 {
@@ -41,6 +43,13 @@ typedef struct RemoteConfigImpl
 {
 	RemoteVar* vars;
 	httpd* http;
+
+	// thread
+	DWORD threadId;
+	HANDLE threadHandle;
+	XprBool requestExit;
+	CRITICAL_SECTION criticalSection;
+
 } RemoteConfigImpl;
 
 RemoteConfig* RemoteConfig_alloc()
@@ -53,6 +62,19 @@ RemoteConfig* RemoteConfig_alloc()
 void RemoteConfig_free(RemoteConfig* self)
 {
 	struct RemoteVar *curr, *tmp;
+
+	if(nullptr == self)
+		return;
+
+	if(nullptr != self->impl->threadHandle) {
+		// notify the thread to exit
+		self->impl->requestExit = XprTrue;
+
+		// cleanup thread related resources
+		WaitForMultipleObjects(1, &self->impl->threadHandle, TRUE, INFINITE);
+		CloseHandle(self->impl->threadHandle);
+		DeleteCriticalSection(&self->impl->criticalSection);
+	}
 
 	HASH_ITER(hh, self->impl->vars, curr, tmp) {
 		HASH_DEL(self->impl->vars, curr);
@@ -193,12 +215,66 @@ void RemoteConfig_setterhtml(httpd* server)
 	/**/
 }
 
-void RemoteConfig_init(RemoteConfig* self, int port)
+void RemoteConfig_lock(RemoteConfig* self)
+{
+	if(nullptr == self)
+		return;
+
+	if(nullptr == self->impl->threadHandle)
+		return;
+
+	EnterCriticalSection(&self->impl->criticalSection);
+}
+
+void RemoteConfig_unlock(RemoteConfig* self)
+{
+	if(nullptr == self)
+		return;
+
+	if(nullptr == self->impl->threadHandle)
+		return;
+
+	LeaveCriticalSection(&self->impl->criticalSection);
+}
+
+DWORD WINAPI RemoteConfig_thread(void* param)
+{
+	RemoteConfig* self = (RemoteConfig*)param;
+
+	while(!self->impl->requestExit) {
+		struct timeval to = {0, 1000};
+
+		if (httpdGetConnection(self->impl->http, &to) <= 0)
+			continue;
+
+		if(httpdReadRequest(self->impl->http) < 0) {
+			httpdEndRequest(self->impl->http);
+			continue;
+		}
+
+		RemoteConfig_lock(self);
+
+		httpdProcessRequest(self->impl->http);
+
+		RemoteConfig_unlock(self);
+
+		httpdEndRequest(self->impl->http);
+	}
+
+	return 0;
+}
+
+void RemoteConfig_init(RemoteConfig* self, int port, XprBool useThread)
 {
 	self->impl->http = httpdCreate(nullptr, port);
 	self->impl->http->userData = self;
 	httpdAddCContent(self->impl->http, "/", "index.html", HTTP_TRUE, nullptr, RemoteConfig_indexhtml);
 	httpdAddCContent(self->impl->http, "/", "setter", HTTP_FALSE, nullptr, RemoteConfig_setterhtml);
+
+	if(useThread) {
+		InitializeCriticalSection(&self->impl->criticalSection);
+		self->impl->threadHandle = CreateThread(nullptr, 0, RemoteConfig_thread, self, 0, &self->impl->threadId);
+	}
 }
 
 void RemoteConfig_addVars(RemoteConfig* self, RemoteVarDesc* descs)

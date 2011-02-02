@@ -124,6 +124,8 @@ ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/Remote.c
+	example/Remote.h
 	example/Mesh.c
 	example/Mesh.h
 	example/Material.c

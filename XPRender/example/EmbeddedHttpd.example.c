@@ -8,7 +8,6 @@ float bgB = 0;
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
-	RemoteConfig_processRequest(_config);
 }
 
 void PezHandleMouse(int x, int y, int action)
@@ -17,8 +16,14 @@ void PezHandleMouse(int x, int y, int action)
 
 void PezRender()
 {
+	float r, g, b;
+	
+	RemoteConfig_lock(_config);
+	r = bgR / 255; g = bgG / 255; b = bgB / 255;
+	RemoteConfig_unlock(_config);
+
 	glClearDepth(1);
-	glClearColor(bgR / 255, bgG / 255, bgB / 255, 1);
+	glClearColor(r, g, b, 1);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 }
 
@@ -47,7 +52,7 @@ const char* PezInitialize(int width, int height)
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 
 	_config = RemoteConfig_alloc();
-	RemoteConfig_init(_config, 80);
+	RemoteConfig_init(_config, 80, XprTrue);
 	RemoteConfig_addVars(_config, descs);
 
 	atexit(PezExit);

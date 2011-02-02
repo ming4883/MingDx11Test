@@ -152,19 +152,26 @@ void drawScene()
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
+	static float t = 0;
+
 	int iter;
 	XprVec3 f;
 
-	static float t = 0;
-	t += 0.0005f * _impact;
+	float impact;
+	float airResistance;
+	float gravity;
 
-	//RemoteConfig_processRequest(_config);
-	
+	RemoteConfig_lock(_config);
+	impact = _impact; airResistance = _airResistance; gravity = _gravity;
+	RemoteConfig_unlock(_config);
+
+	t += 0.0005f * impact;
+
 	_ball[0].center.z = cosf(t) * 5.f;
 	_ball[1].center.z = sinf(t) * 5.f;
 
 	_cloth->timeStep = 0.01f;	// fixed time step
-	_cloth->damping = _airResistance * 1e-3f;
+	_cloth->damping = airResistance * 1e-3f;
 
 	// perform relaxation
 	for(iter = 0; iter < 5; ++iter)
@@ -177,7 +184,7 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 		Cloth_satisfyConstraints(_cloth);
 	}
 	
-	f = XprVec3_(0, -_gravity * _cloth->timeStep, 0);
+	f = XprVec3_(0, -gravity * _cloth->timeStep, 0);
 	Cloth_addForceToAll(_cloth, &f);
 
 	Cloth_verletIntegration(_cloth);
@@ -287,7 +294,7 @@ const char* PezInitialize(int width, int height)
 	};
 
 	_config = RemoteConfig_alloc();
-	RemoteConfig_init(_config, 80);
+	RemoteConfig_init(_config, 80, XprTrue);
 	RemoteConfig_addVars(_config, descs);
 
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);

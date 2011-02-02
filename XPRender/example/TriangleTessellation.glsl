@@ -55,6 +55,7 @@ out vec2 f_texcoord;
 
 uniform mat4 u_worldViewMtx;
 uniform mat4 u_worldViewProjMtx;
+uniform float u_linearity;
 
 vec3 phongTessellation(vec3 q)
 {
@@ -80,7 +81,7 @@ void main()
 	
 	vec4 phong_vertex = vec4(phongTessellation(linear_vertex.xyz), 1);
 	
-	vec4 te_vertex = mix(phong_vertex, linear_vertex,  0.25); 
+	vec4 te_vertex = mix(phong_vertex, linear_vertex, u_linearity); 
 	
 	vec3 te_normal = 
 		gl_TessCoord.x * tc_normal[0] +
