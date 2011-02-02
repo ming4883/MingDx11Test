@@ -27,13 +27,13 @@ typedef struct Mouse
 
 Mouse _mouse;
 
-typedef struct AppContext
+typedef struct Settings
 {
 	float tessLevel;
 	float linearity;
-} AppContext;
+} Settings;
 
-AppContext _app;
+Settings _settings;
 
 RemoteConfig* _config = nullptr;
 
@@ -56,7 +56,7 @@ void drawBackground()
 	Mesh_render(_bgMesh);
 }
 
-void drawScene(float tessLevel, float linearity)
+void drawScene(Settings* settings)
 {
 	XprVec3 eyeAt = XprVec3_(-2.5f, 1.5f, 5);
 	XprVec3 lookAt = XprVec3_(0, 0, 0);
@@ -88,8 +88,8 @@ void drawScene(float tessLevel, float linearity)
 		}
 		RenderContext_apply(&_renderContext, _sceneMaterial);
 
-		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_tessLevel"), 1, (const float*)&tessLevel);
-		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_linearity"), 1, (const float*)&linearity);
+		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
+		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_linearity"), 1, (const float*)&(settings->linearity));
 
 		Mesh_preRender(_tessMesh, _sceneMaterial->program);
 
@@ -124,17 +124,18 @@ void PezHandleMouse(int x, int y, int action)
 
 void PezRender()
 {
-	float tessLevel, linearity;
+	Settings settings;
 
 	RemoteConfig_lock(_config);
-	tessLevel = _app.tessLevel; linearity = _app.linearity / 10.0f;
+	settings = _settings;
+	settings.linearity /= 10.0f;
 	RemoteConfig_unlock(_config);
 
 	glClearDepth(1);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	drawBackground();
-	drawScene(tessLevel, linearity);
+	drawScene(&settings);
 	
 	{ // check for any OpenGL errors
 	GLenum glerr = glGetError();
@@ -166,13 +167,13 @@ void PezExit(void)
 const char* PezInitialize(int width, int height)
 {
 	RemoteVarDesc descs[] = {
-		{"tessLevel", &_app.tessLevel, 0, 16},
-		{"linearity", &_app.linearity, 0, 10},
+		{"tessLevel", &_settings.tessLevel, 0, 16},
+		{"linearity", &_settings.linearity, 0, 10},
 		{nullptr, nullptr, 0, 0},
 	};
 
-	_app.tessLevel = 8;
-	_app.linearity = 5;
+	_settings.tessLevel = 8;
+	_settings.linearity = 5;
 
 	_config = RemoteConfig_alloc();
 	RemoteConfig_init(_config, 80, XprTrue);

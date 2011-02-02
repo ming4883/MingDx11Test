@@ -25,12 +25,17 @@ XprTexture* _texture = nullptr;
 XprRenderTarget* _rt = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
-float _gravity = 10;
-float _airResistance = 5;
-float _impact = 3;
-XprBool _showDebug = XprFalse;
 
 RenderContext _renderContext;
+
+typedef struct Settings
+{
+	float gravity;
+	float airResistance;
+	float impact;
+} Settings;
+
+Settings _settings;
 
 typedef struct Aspect
 {
@@ -153,25 +158,22 @@ void drawScene()
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
 	static float t = 0;
+	Settings settings;
 
 	int iter;
 	XprVec3 f;
 
-	float impact;
-	float airResistance;
-	float gravity;
-
 	RemoteConfig_lock(_config);
-	impact = _impact; airResistance = _airResistance; gravity = _gravity;
+	settings = _settings;
 	RemoteConfig_unlock(_config);
 
-	t += 0.0005f * impact;
+	t += 0.0005f * _settings.impact;
 
 	_ball[0].center.z = cosf(t) * 5.f;
 	_ball[1].center.z = sinf(t) * 5.f;
 
 	_cloth->timeStep = 0.01f;	// fixed time step
-	_cloth->damping = airResistance * 1e-3f;
+	_cloth->damping = _settings.airResistance * 1e-3f;
 
 	// perform relaxation
 	for(iter = 0; iter < 5; ++iter)
@@ -184,7 +186,7 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 		Cloth_satisfyConstraints(_cloth);
 	}
 	
-	f = XprVec3_(0, -gravity * _cloth->timeStep, 0);
+	f = XprVec3_(0, -_settings.gravity * _cloth->timeStep, 0);
 	Cloth_addForceToAll(_cloth, &f);
 
 	Cloth_verletIntegration(_cloth);
@@ -287,11 +289,15 @@ const char* PezInitialize(int width, int height)
 {
 	// remote config
 	RemoteVarDesc descs[] = {
-		{"gravity", &_gravity, 1, 100},
-		{"airResistance", &_airResistance, 1, 20},
-		{"impact", &_impact, 1, 10},
+		{"gravity", &_settings.gravity, 1, 100},
+		{"airResistance", &_settings.airResistance, 1, 20},
+		{"impact", &_settings.impact, 1, 10},
 		{nullptr, nullptr, 0, 0}
 	};
+
+	_settings.gravity = 10;
+	_settings.airResistance = 5;
+	_settings.impact = 3;
 
 	_config = RemoteConfig_alloc();
 	RemoteConfig_init(_config, 80, XprTrue);
