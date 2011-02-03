@@ -363,10 +363,26 @@ void ObjBuffer_resize(ObjBuffer* buf)
 	buf->buf = realloc(buf->buf, buf->cap * sizeof(XprVec3));
 }
 
+void ObjBuffer_append(ObjBuffer* buf, float x, float y, float z)
+{
+	if(buf->cap == buf->cnt) {
+		buf->cap *= 2;
+		ObjBuffer_resize(buf);
+	}
+
+	buf->buf[buf->cnt].x = x;
+	buf->buf[buf->cnt].y = y;
+	buf->buf[buf->cnt].z = z;
+
+	++buf->cnt;
+}
+
 void Mesh_initWithObjFile(Mesh* self, const char* path)
 {
 	FILE* fp;
 	char readbuf[512];
+	char* token;
+	const char* whitespace = " \t\n\r";
 	ObjBuffer vbuf = {nullptr, 128, 0};
 	ObjBuffer vtbuf = {nullptr, 128, 0};
 	ObjBuffer vnbuf = {nullptr, 128, 0};
@@ -382,6 +398,39 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 	while( fgets(readbuf, 512, fp) ) {
 		if('#' == readbuf[0])
 			continue;
+
+		token = strtok(readbuf, whitespace);
+
+		if(nullptr == token) {
+			continue;
+		}
+		else if(0 == strcmp(token, "v")) {
+			float x = (float)atof(strtok(nullptr, whitespace));
+			float y = (float)atof(strtok(nullptr, whitespace));
+			float z = (float)atof(strtok(nullptr, whitespace));
+			ObjBuffer_append(&vbuf, x, y, z);
+		}
+		else if(0 == strcmp(token, "vt")) {
+			float x = (float)atof(strtok(nullptr, whitespace));
+			float y = (float)atof(strtok(nullptr, whitespace));
+			float z = (float)atof(strtok(nullptr, whitespace));
+			ObjBuffer_append(&vtbuf, x, y, z);
+		}
+		else if(0 == strcmp(token, "vn")) {
+			float x = (float)atof(strtok(nullptr, whitespace));
+			float y = (float)atof(strtok(nullptr, whitespace));
+			float z = (float)atof(strtok(nullptr, whitespace));
+			ObjBuffer_append(&vnbuf, x, y, z);
+		}
+		else if(0 == strcmp(token, "f")) {
+			char vi[16];
+			char vti[16];
+			char vni[16];
+
+			if(nullptr != (token = strtok(nullptr, whitespace))) {
+				sscanf(token, "%[^/]%[^/]%[^/]", vi, vti, vni);
+			}
+		}
 	}
 
 	// clean up
