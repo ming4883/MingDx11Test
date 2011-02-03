@@ -57,6 +57,8 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 
 void Mesh_initWithScreenQuad(Mesh* self);
 
+void Mesh_initWithObjFile(Mesh* self, const char* path);
+
 void Mesh_commit(Mesh* self);
 
 void Mesh_preRender(Mesh* self, struct XprGpuProgram* program);

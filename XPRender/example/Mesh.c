@@ -350,3 +350,48 @@ void Mesh_initWithScreenQuad(Mesh* self)
 	XprBuffer_unmap(self->impl->vertexBuffer);
 	XprBuffer_unmap(self->impl->tcBuffer[0]);
 }
+
+typedef struct ObjBuffer
+{
+	XprVec3* buf;
+	size_t cap;
+	size_t cnt;
+} ObjBuffer;
+
+void ObjBuffer_resize(ObjBuffer* buf)
+{
+	buf->buf = realloc(buf->buf, buf->cap * sizeof(XprVec3));
+}
+
+void Mesh_initWithObjFile(Mesh* self, const char* path)
+{
+	FILE* fp;
+	char readbuf[512];
+	ObjBuffer vbuf = {nullptr, 128, 0};
+	ObjBuffer vtbuf = {nullptr, 128, 0};
+	ObjBuffer vnbuf = {nullptr, 128, 0};
+
+	if(nullptr == (fp = fopen(path, "r"))) {
+		return;
+	}
+
+	ObjBuffer_resize(&vbuf);
+	ObjBuffer_resize(&vtbuf);
+	ObjBuffer_resize(&vnbuf);
+
+	while( fgets(readbuf, 512, fp) ) {
+		if('#' == readbuf[0])
+			continue;
+	}
+
+	// clean up
+	vbuf.cap = 0;
+	vtbuf.cap = 0;
+	vnbuf.cap = 0;
+
+	ObjBuffer_resize(&vbuf);
+	ObjBuffer_resize(&vtbuf);
+	ObjBuffer_resize(&vnbuf);
+
+	fclose(fp);
+}
