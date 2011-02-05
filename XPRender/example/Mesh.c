@@ -208,6 +208,7 @@ void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount)
 	int height = segmentCount;
 
 	Mesh_init(self, (height-2)* width+2, (height-2)*(width-1)*2 * 3);
+	self->vertexPerPatch = 3;
 
 	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
 	pos = XprBuffer_map(self->impl->vertexBuffer, XprBufferMapAccess_Write);
@@ -278,6 +279,7 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 	size_t stride = segmentCount+1;
 	
 	Mesh_init(self, stride * stride, (stride-1) * (stride-1) * 6);
+	self->vertexPerPatch = 3;
 
 	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
 	pos = XprBuffer_map(self->impl->vertexBuffer, XprBufferMapAccess_Write);
@@ -333,6 +335,7 @@ void Mesh_initWithScreenQuad(Mesh* self)
 	unsigned short* idx;
 
 	Mesh_init(self, 4, 6);
+	self->vertexPerPatch = 3;
 
 	idx = XprBuffer_map(self->impl->indexBuffer, XprBufferMapAccess_Write);
 	pos = XprBuffer_map(self->impl->vertexBuffer, XprBufferMapAccess_Write);
@@ -473,9 +476,12 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 
 		}
 	}
+	
+	fclose(fp);
 
 	// flatten vertices
 	Mesh_init(self, fbuf.cnt * vpf, fbuf.cnt * vpf);
+	self->vertexPerPatch = vpf;
 
 	{
 		size_t i=0, j=0, vcnt = 0;

@@ -36,6 +36,7 @@ typedef struct Mesh
 	size_t flags;
 	size_t vertexCount;
 	size_t indexCount;
+	size_t vertexPerPatch;
 	struct MeshData index;
 	struct MeshData vertex;
 	struct MeshData normal;
