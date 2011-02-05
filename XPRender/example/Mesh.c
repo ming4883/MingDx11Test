@@ -353,26 +353,51 @@ void Mesh_initWithScreenQuad(Mesh* self)
 
 typedef struct ObjBuffer
 {
-	XprVec3* buf;
+	void* data;
+	size_t elemSz;
 	size_t cap;
 	size_t cnt;
 } ObjBuffer;
 
+typedef struct ObjFace
+{
+	size_t v[4];
+	size_t vt[4];
+	size_t vn[4];
+} ObjFace;
+
 void ObjBuffer_resize(ObjBuffer* buf)
 {
-	buf->buf = realloc(buf->buf, buf->cap * sizeof(XprVec3));
+	buf->data = realloc(buf->data, buf->cap * buf->elemSz);
 }
 
-void ObjBuffer_append(ObjBuffer* buf, float x, float y, float z)
+void ObjBuffer_appendVec3(ObjBuffer* buf, float x, float y, float z)
 {
+	XprVec3* ptr;
 	if(buf->cap == buf->cnt) {
 		buf->cap *= 2;
 		ObjBuffer_resize(buf);
 	}
 
-	buf->buf[buf->cnt].x = x;
-	buf->buf[buf->cnt].y = y;
-	buf->buf[buf->cnt].z = z;
+	ptr = (XprVec3*)buf->data;
+
+	ptr[buf->cnt].x = x;
+	ptr[buf->cnt].y = y;
+	ptr[buf->cnt].z = z;
+
+	++buf->cnt;
+}
+
+void ObjBuffer_appendFace(ObjBuffer* buf, ObjFace face)
+{
+	ObjFace* ptr;
+	if(buf->cap == buf->cnt) {
+		buf->cap *= 2;
+		ObjBuffer_resize(buf);
+	}
+
+	ptr = (ObjFace*)buf->data;
+	ptr[buf->cnt] = face;
 
 	++buf->cnt;
 }
@@ -383,9 +408,11 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 	char readbuf[512];
 	char* token;
 	const char* whitespace = " \t\n\r";
-	ObjBuffer vbuf = {nullptr, 128, 0};
-	ObjBuffer vtbuf = {nullptr, 128, 0};
-	ObjBuffer vnbuf = {nullptr, 128, 0};
+	ObjBuffer vbuf  = {nullptr, sizeof(XprVec3), 128, 0};
+	ObjBuffer vtbuf = {nullptr, sizeof(XprVec3), 128, 0};
+	ObjBuffer vnbuf = {nullptr, sizeof(XprVec3), 128, 0};
+	ObjBuffer fbuf = {nullptr, sizeof(ObjFace), 128, 0};
+	size_t vpf = 0;
 
 	if(nullptr == (fp = fopen(path, "r"))) {
 		return;
@@ -394,6 +421,7 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 	ObjBuffer_resize(&vbuf);
 	ObjBuffer_resize(&vtbuf);
 	ObjBuffer_resize(&vnbuf);
+	ObjBuffer_resize(&fbuf);
 
 	while( fgets(readbuf, 512, fp) ) {
 		if('#' == readbuf[0])
@@ -408,39 +436,91 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 			float x = (float)atof(strtok(nullptr, whitespace));
 			float y = (float)atof(strtok(nullptr, whitespace));
 			float z = (float)atof(strtok(nullptr, whitespace));
-			ObjBuffer_append(&vbuf, x, y, z);
+			ObjBuffer_appendVec3(&vbuf, x, y, z);
 		}
 		else if(0 == strcmp(token, "vt")) {
 			float x = (float)atof(strtok(nullptr, whitespace));
 			float y = (float)atof(strtok(nullptr, whitespace));
-			float z = (float)atof(strtok(nullptr, whitespace));
-			ObjBuffer_append(&vtbuf, x, y, z);
+			float z = 0;
+			token = strtok(nullptr, whitespace);
+			if(nullptr != token)
+				z = (float)atof(token);
+			ObjBuffer_appendVec3(&vtbuf, x, y, z);
 		}
 		else if(0 == strcmp(token, "vn")) {
 			float x = (float)atof(strtok(nullptr, whitespace));
 			float y = (float)atof(strtok(nullptr, whitespace));
 			float z = (float)atof(strtok(nullptr, whitespace));
-			ObjBuffer_append(&vnbuf, x, y, z);
+			ObjBuffer_appendVec3(&vnbuf, x, y, z);
 		}
 		else if(0 == strcmp(token, "f")) {
 			char vi[16];
 			char vti[16];
 			char vni[16];
+			ObjFace f;
+			size_t vcnt = 0;
+			memset(&f, 0, sizeof(f));			
 
-			if(nullptr != (token = strtok(nullptr, whitespace))) {
-				sscanf(token, "%[^/]%[^/]%[^/]", vi, vti, vni);
+			while(nullptr != (token = strtok(nullptr, whitespace)) && vcnt <= 4) {
+				sscanf(token, "%[^/]/%[^/]/%[^/]", vi, vti, vni);
+				f.v[vcnt] = atoi(vi)-1;
+				f.vt[vcnt] = atoi(vti)-1;
+				f.vn[vcnt] = atoi(vni)-1;
+				++vcnt;
+			}
+			ObjBuffer_appendFace(&fbuf, f);
+			vpf = vcnt > vpf ? vcnt : vpf;
+
+		}
+	}
+
+	// flatten vertices
+	Mesh_init(self, fbuf.cnt * vpf, fbuf.cnt * vpf);
+
+	{
+		size_t i=0, j=0, vcnt = 0;
+		XprVec3* v = (XprVec3*)self->vertex.buffer;
+		XprVec3* n = (XprVec3*)self->normal.buffer;
+		XprVec2* t = (XprVec2*)self->texcoord[0].buffer;
+		unsigned short* id = (unsigned short*)self->index.buffer;
+
+		for(i = 0; i < fbuf.cnt; ++i) {
+			ObjFace* f = &((ObjFace*)fbuf.data)[i];
+			for(j = 0; j < vpf; ++j) {
+				*v = ((XprVec3*)vbuf.data)[f->v[j]];
+
+				if(vnbuf.cnt) {
+					*n = ((XprVec3*)vnbuf.data)[f->vn[j]];
+				}
+
+				if(vtbuf.cnt) {
+					t->x = ((XprVec3*)vtbuf.data)[f->vt[j]].x;
+					t->y = ((XprVec3*)vtbuf.data)[f->vt[j]].y;
+				}
+
+				*id = (unsigned short)vcnt;
+
+				++v;
+				++n;
+				++t;
+				++id;
+				++vcnt;
 			}
 		}
 	}
+
+	Mesh_commit(self);
 
 	// clean up
 	vbuf.cap = 0;
 	vtbuf.cap = 0;
 	vnbuf.cap = 0;
+	fbuf.cap = 0;
 
 	ObjBuffer_resize(&vbuf);
 	ObjBuffer_resize(&vtbuf);
 	ObjBuffer_resize(&vnbuf);
+	ObjBuffer_resize(&fbuf);
 
 	fclose(fp);
 }
