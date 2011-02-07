@@ -94,7 +94,7 @@ void drawScene(Settings* settings)
 		Mesh_preRender(_tessMesh, _sceneMaterial->program);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		Mesh_renderPatches(_tessMesh, 3);
+		Mesh_renderPatches(_tessMesh, _tessMesh->vertexPerPatch);
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
 }
@@ -205,7 +205,9 @@ const char* PezInitialize(int width, int height)
 	glswShutdown();
 
 	_tessMesh = Mesh_alloc();
-	Mesh_initWithUnitSphere(_tessMesh, 4);
+	//Mesh_initWithUnitSphere(_tessMesh, 4);
+
+	Mesh_initWithObjFile(_tessMesh, "../media/monkey.obj");
 
 	_bgMesh = Mesh_alloc();
 	Mesh_initWithScreenQuad(_bgMesh);

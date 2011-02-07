@@ -127,6 +127,7 @@ ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
 	example/Remote.c
 	example/Remote.h
 	example/Mesh.c
+	example/Mesh.obj.c
 	example/Mesh.h
 	example/Material.c
 	example/Material.h
