@@ -173,7 +173,7 @@ const char* PezInitialize(int width, int height)
 	};
 
 	_settings.tessLevel = 8;
-	_settings.linearity = 5;
+	_settings.linearity = 3;
 
 	_config = RemoteConfig_alloc();
 	RemoteConfig_init(_config, 80, XprTrue);

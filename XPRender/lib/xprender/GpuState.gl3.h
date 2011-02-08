@@ -2,7 +2,6 @@
 #define __XPRENDER_GPUSTATE_GL3_H__
 
 #include "GpuState.h"
-#include "GpuState.common.h"
 
 #include <GL/glew.h>
 
@@ -15,6 +14,11 @@ typedef struct XprGpuStateImpl
 	XprBool depthTest;
 	XprBool depthWrite;
 	XprBool culling;
+	XprBool blending;
+	XprGpuStateType blendFactorSrc;
+	XprGpuStateType blendFactorDest;
+	XprGpuStateType blendFactorSrcAlpha;
+	XprGpuStateType blendFactorDestAlpha;
 	
 } XprGpuStateImpl;
 

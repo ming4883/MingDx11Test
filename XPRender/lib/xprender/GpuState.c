@@ -24,6 +24,19 @@ void XprGpuState_init(XprGpuState* self)
 	self->impl->culling = XprTrue;
 }
 
+static GLenum XprGpuState_blendFactorMapping[] = {
+	GL_ONE,
+	GL_ZERO,
+	GL_SRC_COLOR,
+	GL_ONE_MINUS_SRC_COLOR,
+	GL_DST_COLOR,
+	GL_ONE_MINUS_DST_COLOR,
+	GL_SRC_ALPHA,
+	GL_ONE_MINUS_SRC_ALPHA,
+	GL_DST_ALPHA,
+	GL_ONE_MINUS_DST_ALPHA,
+};
+
 void XprGpuState_preRender(XprGpuState* self)
 {
 	if(self->impl->depthTest)
@@ -40,24 +53,67 @@ void XprGpuState_preRender(XprGpuState* self)
 		glEnable(GL_CULL_FACE);
 	else
 		glDisable(GL_CULL_FACE);
+
+	if(self->impl->blending) {
+		glEnable(GL_BLEND);
+		
+		glBlendFuncSeparate(
+			XprGpuState_blendFactorMapping[self->impl->blendFactorSrc - XprGpuState_BlendFactor_One],
+			XprGpuState_blendFactorMapping[self->impl->blendFactorDest - XprGpuState_BlendFactor_One],
+			XprGpuState_blendFactorMapping[self->impl->blendFactorSrcAlpha - XprGpuState_BlendFactor_One],
+			XprGpuState_blendFactorMapping[self->impl->blendFactorDestAlpha - XprGpuState_BlendFactor_One]);
+	}
+	else {
+		glDisable(GL_BLEND);
+	}
 }
 
-void XprGpuState_setBool(XprGpuState* self, XprHashCode state, XprBool value)
+void XprGpuState_setDepthTestEnabled(XprGpuState* self, XprBool value)
 {
 	if(nullptr == self)
 		return;
 
-	if(0 == (self->flags & XprGpuStateFlag_Inited)) {
-		XprDbgStr("XprGpuState not inited!\n");
-	}
+	self->impl->depthTest = value;
+}
 
-	if(state == XprGpuState_DepthTestEnable) {
-		self->impl->depthTest = value;
-	}
-	else if(state == XprGpuState_DepthWriteEnable) {
-		self->impl->depthWrite = value;
-	}
-	else if(state == XprGpuState_CullingEnable) {
-		self->impl->culling = value;
-	}
+void XprGpuState_setDepthWriteEnabled(XprGpuState* self, XprBool value)
+{
+	if(nullptr == self)
+		return;
+
+	self->impl->depthWrite = value;
+}
+
+void XprGpuState_setCullingEnabled(XprGpuState* self, XprBool value)
+{
+	if(nullptr == self)
+		return;
+
+	self->impl->culling = value;
+}
+
+void XprGpuState_setBlendingEnabled(XprGpuState* self, XprBool value)
+{
+	if(nullptr == self)
+		return;
+
+	self->impl->blending = value;
+}
+
+void XprGpuState_setBlendFactors(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
+{
+	if(nullptr == self)
+		return;
+
+	self->impl->blendFactorSrc = blendFactorSrc;
+	self->impl->blendFactorDest = blendFactorDest;
+}
+
+void XprGpuState_setBlendAlphaFactors(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
+{
+	if(nullptr == self)
+		return;
+
+	self->impl->blendFactorSrcAlpha = blendFactorSrc;
+	self->impl->blendFactorDestAlpha = blendFactorDest;
 }
