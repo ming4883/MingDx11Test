@@ -23,6 +23,7 @@ Material* _uiMaterial = nullptr;
 Material* _textMaterial = nullptr;
 XprTexture* _texture = nullptr;
 XprRenderTarget* _rt = nullptr;
+XprGpuState* _gpuState = nullptr;
 XprVec3 _floorN = {0, 1, 0};
 XprVec3 _floorP = {0, 0, 0};
 
@@ -64,8 +65,9 @@ void drawBackground()
 		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
 	
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	XprGpuState_setDepthTestEnabled(_gpuState, XprFalse);
+	XprGpuState_setCullEnabled(_gpuState, XprTrue);
+	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_bgMaterial->program);
 	XprGpuProgram_uniform4fv(_bgMaterial->program, XPR_HASH("u_colors"), 4, (const float*)c);
@@ -87,8 +89,9 @@ void drawScene()
 	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
 	XprMat44_mult(&viewProjMtx, &projMtx, &viewMtx);
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	XprGpuState_setCullEnabled(_gpuState, XprTrue);
+	XprGpuState_setDepthTestEnabled(_gpuState, XprTrue);
+	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_sceneMaterial->program);
 	XprGpuProgram_uniformTexture(_sceneMaterial->program, XPR_HASH("u_tex"), _texture);
@@ -105,7 +108,7 @@ void drawScene()
 			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
 			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
-		RenderContext_apply(&_renderContext, _sceneMaterial);
+		RenderContext_preRender(&_renderContext, _sceneMaterial);
 
 		Mesh_preRender(_floorMesh, _sceneMaterial->program);
 		Mesh_render(_floorMesh);
@@ -116,7 +119,8 @@ void drawScene()
 		_renderContext.matSpecular = XprVec4_(0.125f, 0.125f, 0.125f, 1);
 		_renderContext.matShininess = 32;
 
-		glDisable(GL_CULL_FACE);
+		XprGpuState_setCullEnabled(_gpuState, XprFalse);
+		XprGpuState_preRender(_gpuState);
 		{
 			XprMat44 m;
 			XprMat44_setIdentity(&m);
@@ -124,12 +128,13 @@ void drawScene()
 			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
 			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
-		RenderContext_apply(&_renderContext, _sceneMaterial);
+		RenderContext_preRender(&_renderContext, _sceneMaterial);
 
 		Mesh_preRender(_cloth->mesh, _sceneMaterial->program);
 		Mesh_render(_cloth->mesh);
 		
-		glEnable(GL_CULL_FACE);
+		XprGpuState_setCullEnabled(_gpuState, XprTrue);
+		XprGpuState_preRender(_gpuState);
 	}
 
 	{	// draw ball
@@ -147,8 +152,8 @@ void drawScene()
 			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
 			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 
-			RenderContext_apply(&_renderContext, _sceneMaterial);
-
+			RenderContext_preRender(&_renderContext, _sceneMaterial);
+			
 			Mesh_preRender(_ballMesh, _sceneMaterial->program);
 			Mesh_render(_ballMesh);
 		}
@@ -240,8 +245,9 @@ void PezRender()
 	// display the rendered image in color buffer
 	XprRenderTarget_preRender(nullptr, nullptr, nullptr);
 
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	XprGpuState_setDepthTestEnabled(_gpuState, XprFalse);
+	XprGpuState_setCullEnabled(_gpuState, XprTrue);
+	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_uiMaterial->program);
 	XprGpuProgram_uniformTexture(_uiMaterial->program, XPR_HASH("u_tex"), tex);
@@ -251,13 +257,6 @@ void PezRender()
 	
 	XprRenderTarget_releaseBuffer(_rt, color);
 	XprRenderTarget_releaseBuffer(_rt, depth);
-
-	{ // check for any OpenGL errors
-	GLenum glerr = glGetError();
-
-	if(glerr != GL_NO_ERROR)
-		PezDebugString("GL has error %4x!", glerr);
-	}
 }
 
 void PezConfig()
@@ -283,6 +282,7 @@ void PezExit(void)
 	Material_free(_textMaterial);
 	XprTexture_free(_texture);
 	XprRenderTarget_free(_rt);
+	XprGpuState_free(_gpuState);
 }
 
 const char* PezInitialize(int width, int height)
@@ -308,6 +308,9 @@ const char* PezInitialize(int width, int height)
 	_aspect.height = (float)height;
 
 	_mouse.isDown = XprFalse;
+
+	_gpuState = XprGpuState_alloc();
+	XprGpuState_init(_gpuState);
 
 	_rt = XprRenderTarget_alloc();
 	XprRenderTarget_init(_rt, (size_t)width, (size_t)height);

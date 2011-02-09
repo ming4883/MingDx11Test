@@ -3,6 +3,7 @@
 #include "Material.h"
 #include "Remote.h"
 
+XprGpuState* _gpuState = nullptr;
 Mesh* _tessMesh = nullptr;
 Mesh* _bgMesh = nullptr;
 Material* _sceneMaterial = nullptr;
@@ -46,8 +47,9 @@ void drawBackground()
 		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
 	
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	XprGpuState_setDepthTestEnabled(_gpuState, XprFalse);
+	XprGpuState_setCullEnabled(_gpuState, XprTrue);
+	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_bgMaterial->program);
 	XprGpuProgram_uniform4fv(_bgMaterial->program, XPR_HASH("u_colors"), 4, (const float*)c);
@@ -69,8 +71,10 @@ void drawScene(Settings* settings)
 	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
 	XprMat44_mult(&viewProjMtx, &projMtx, &viewMtx);
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	XprGpuState_setDepthTestEnabled(_gpuState, XprTrue);
+	XprGpuState_setCullEnabled(_gpuState, XprTrue);
+	//XprGpuState_setPolygonMode(_gpuState, XprGpuState_PolygonMode_Line);
+	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_sceneMaterial->program);
 	
@@ -86,17 +90,18 @@ void drawScene(Settings* settings)
 			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
 			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
-		RenderContext_apply(&_renderContext, _sceneMaterial);
+		RenderContext_preRender(&_renderContext, _sceneMaterial);
 
 		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
 		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_linearity"), 1, (const float*)&(settings->linearity));
 
 		Mesh_preRender(_tessMesh, _sceneMaterial->program);
 
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		
 		Mesh_renderPatches(_tessMesh, _tessMesh->vertexPerPatch);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
+
+	XprGpuState_setPolygonMode(_gpuState, XprGpuState_PolygonMode_Fill);
 }
 
 void PezUpdate(unsigned int elapsedMilliseconds)
@@ -161,6 +166,7 @@ void PezExit(void)
 	Mesh_free(_bgMesh);
 	Material_free(_sceneMaterial);
 	Material_free(_bgMaterial);
+	XprGpuState_free(_gpuState);
 	RemoteConfig_free(_config);
 }
 
@@ -178,6 +184,9 @@ const char* PezInitialize(int width, int height)
 	_config = RemoteConfig_alloc();
 	RemoteConfig_init(_config, 80, XprTrue);
 	RemoteConfig_addVars(_config, descs);
+
+	_gpuState = XprGpuState_alloc();
+	XprGpuState_init(_gpuState);
 
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 	_aspect.width = (float)width;

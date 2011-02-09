@@ -1,9 +1,10 @@
 #include "Common.h"
 
-void RenderContext_apply(RenderContext* self, Material* material)
+void RenderContext_preRender(RenderContext* self, Material* material)
 {
 	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewMtx"), 1, XprTrue, self->worldViewMtx.v);
 	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewProjMtx"), 1, XprTrue, self->worldViewProjMtx.v);
+	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldMtx"), 1, XprTrue, self->worldMtx.v);
 	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matDiffuse"), 1, self->matDiffuse.v);
 	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matSpecular"), 1, self->matSpecular.v);
 	XprGpuProgram_uniform1fv(material->program, XPR_HASH("u_matShininess"), 1, &self->matShininess);

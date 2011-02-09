@@ -19,6 +19,8 @@ typedef struct XprGpuStateImpl
 	XprGpuStateType blendFactorDest;
 	XprGpuStateType blendFactorSrcAlpha;
 	XprGpuStateType blendFactorDestAlpha;
+
+	XprGpuStateType polygonMode;
 	
 } XprGpuStateImpl;
 

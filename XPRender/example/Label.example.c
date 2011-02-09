@@ -3,6 +3,7 @@
 #include "Material.h"
 #include "Label.h"
 
+XprGpuState* _gpuState = nullptr;
 Material* _textMaterial = nullptr;
 Mesh* _bgMesh = nullptr;
 Label* _label = nullptr;
@@ -24,8 +25,10 @@ void PezRender()
 	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
 
 	// display the label
-	glEnable(GL_BLEND);
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	XprGpuState_setBlendEnabled(_gpuState, XprTrue);
+	XprGpuState_setBlendFactorRGB(_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
+	XprGpuState_setBlendFactorA  (_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
+	XprGpuState_preRender(_gpuState);
 	
 	XprGpuProgram_preRender(_textMaterial->program);
 	XprGpuProgram_uniformTexture(_textMaterial->program, XPR_HASH("u_tex"), _label->texture);
@@ -34,14 +37,7 @@ void PezRender()
 	Mesh_preRender(_bgMesh, _textMaterial->program);
 	Mesh_render(_bgMesh);
 
-	glDisable(GL_BLEND);
-
-	{ // check for any OpenGL errors
-	GLenum glerr = glGetError();
-
-	if(glerr != GL_NO_ERROR)
-		PezDebugString("GL has error %4x!", glerr);
-	}
+	XprGpuState_setBlendEnabled(_gpuState, XprFalse);
 }
 
 void PezConfig()
@@ -54,6 +50,7 @@ void PezConfig()
 
 void PezExit(void)
 {
+	XprGpuState_free(_gpuState);
 	Material_free(_textMaterial);
 	Label_free(_label);
 }
@@ -64,6 +61,9 @@ const char* PezInitialize(int width, int height)
 
 	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
 
+	_gpuState = XprGpuState_alloc();
+	XprGpuState_init(_gpuState);
+	
 	// label
 	_label = Label_alloc();
 	Label_init(_label, width, height);

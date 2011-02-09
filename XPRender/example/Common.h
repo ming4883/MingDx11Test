@@ -7,6 +7,7 @@
 #include "../lib/xprender/Vec4.h"
 #include "../lib/xprender/Mat44.h"
 #include "../lib/xprender/Shader.h"
+#include "../lib/xprender/GpuState.h"
 #include "../lib/glsw/glsw.h"
 #include "../lib/pez/pez.h"
 
@@ -25,13 +26,14 @@ typedef struct RenderContext
 {
 	XprMat44 worldViewProjMtx;
 	XprMat44 worldViewMtx;
+	XprMat44 worldMtx;
 	XprVec4 matDiffuse;
 	XprVec4 matSpecular;
 	float matShininess;
 
 } RenderContext;
 
-void RenderContext_apply(RenderContext* self, Material* material);
+void RenderContext_preRender(RenderContext* self, Material* material);
 
 Material* loadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey);
 
