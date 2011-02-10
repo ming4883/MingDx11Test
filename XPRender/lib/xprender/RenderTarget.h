@@ -42,6 +42,11 @@ struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBu
 
 void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth);
 
+void XprRenderTarget_setViewport(float x, float y, float w, float h, float zmin, float zmax);
+
+void XprRenderTarget_clearColor(float r, float g, float b, float a);
+
+void XprRenderTarget_clearDepth(float z);
 
 #ifdef __cplusplus
 }

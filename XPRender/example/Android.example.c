@@ -1,6 +1,5 @@
 #include <pez.h>
-
-#include <GLES/gl.h>
+#include "../lib/xprender/RenderTarget.h"
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
@@ -14,8 +13,7 @@ void PezHandleMouse(int x, int y, int action)
 void PezRender()
 {
 	PezDebugString("PezRender");
-	glClearColor(1, 0.5f, 0.5f, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
+	XprRenderTarget_clearColor(1, 0.25f, 0.25f, 1);
 }
 
 void PezConfig()

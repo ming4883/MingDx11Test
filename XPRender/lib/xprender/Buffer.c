@@ -1,4 +1,4 @@
-#include "Buffer.gl3.h"
+#include "Buffer.gl.h"
 
 static GLenum xprGL_BUFFER_TARGETS[] = {
 	GL_ARRAY_BUFFER,

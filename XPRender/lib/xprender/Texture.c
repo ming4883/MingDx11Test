@@ -1,4 +1,4 @@
-#include "Texture.gl3.h"
+#include "Texture.gl.h"
 #include "StrUtil.h"
 
 XprTextureFormatMapping XprTextureFormatMappings[] = {

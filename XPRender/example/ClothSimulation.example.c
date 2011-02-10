@@ -70,7 +70,7 @@ void drawBackground()
 	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_bgMaterial->program);
-	XprGpuProgram_uniform4fv(_bgMaterial->program, XPR_HASH("u_colors"), 4, (const float*)c);
+	XprGpuProgram_uniform4fv(_bgMaterial->program, XprHash("u_colors"), 4, (const float*)c);
 
 	Mesh_preRender(_bgMesh, _bgMaterial->program);
 	Mesh_render(_bgMesh);
@@ -94,7 +94,7 @@ void drawScene()
 	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_sceneMaterial->program);
-	XprGpuProgram_uniformTexture(_sceneMaterial->program, XPR_HASH("u_tex"), _texture);
+	XprGpuProgram_uniformTexture(_sceneMaterial->program, XprHash("u_tex"), _texture);
 
 	{	// draw floor
 		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
@@ -236,8 +236,7 @@ void PezRender()
 	XprRenderBufferHandle bufs[] = {color, nullptr};
 	XprRenderTarget_preRender(_rt, bufs, depth);
 
-	glClearDepth(1);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	XprRenderTarget_clearDepth(1);
 
 	drawBackground();
 	drawScene();
@@ -250,7 +249,7 @@ void PezRender()
 	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_uiMaterial->program);
-	XprGpuProgram_uniformTexture(_uiMaterial->program, XPR_HASH("u_tex"), tex);
+	XprGpuProgram_uniformTexture(_uiMaterial->program, XprHash("u_tex"), tex);
 	
 	Mesh_preRender(_bgMesh, _uiMaterial->program);
 	Mesh_render(_bgMesh);
@@ -303,7 +302,7 @@ const char* PezInitialize(int width, int height)
 	RemoteConfig_init(_config, 80, XprTrue);
 	RemoteConfig_addVars(_config, descs);
 
-	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
+	XprRenderTarget_setViewport(0, 0, (float)width, (float)height, -1, 1);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
 

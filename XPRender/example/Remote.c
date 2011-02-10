@@ -32,7 +32,7 @@ void RemoteVar_free(RemoteVar* self)
 
 void RemoteVar_init(RemoteVar* self, RemoteVarDesc desc)
 {
-	self->id = XPR_HASH(desc.name);
+	self->id = XprHash(desc.name);
 	self->desc.name = strdup(desc.name);
 	self->desc.value = desc.value;
 	self->desc.upperBound = desc.upperBound;
@@ -92,7 +92,7 @@ RemoteVar* RemoteConfig_findVar(RemoteConfig* self, const char* name)
 	if(nullptr == self)
 		return nullptr;
 
-	id = XPR_HASH(name);
+	id = XprHash(name);
 	HASH_FIND_INT(self->impl->vars, &id, var);
 
 	return var;

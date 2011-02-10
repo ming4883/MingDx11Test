@@ -1,4 +1,4 @@
-#include "GpuState.gl3.h"
+#include "GpuState.gl.h"
 
 XprGpuState* XprGpuState_alloc()
 {

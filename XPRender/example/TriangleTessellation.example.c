@@ -52,7 +52,7 @@ void drawBackground()
 	XprGpuState_preRender(_gpuState);
 
 	XprGpuProgram_preRender(_bgMaterial->program);
-	XprGpuProgram_uniform4fv(_bgMaterial->program, XPR_HASH("u_colors"), 4, (const float*)c);
+	XprGpuProgram_uniform4fv(_bgMaterial->program, XprHash("u_colors"), 4, (const float*)c);
 
 	Mesh_preRender(_bgMesh, _bgMaterial->program);
 	Mesh_render(_bgMesh);
@@ -92,8 +92,8 @@ void drawScene(Settings* settings)
 		}
 		RenderContext_preRender(&_renderContext, _sceneMaterial);
 
-		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
-		XprGpuProgram_uniform1fv(_sceneMaterial->program, XPR_HASH("u_linearity"), 1, (const float*)&(settings->linearity));
+		XprGpuProgram_uniform1fv(_sceneMaterial->program, XprHash("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
+		XprGpuProgram_uniform1fv(_sceneMaterial->program, XprHash("u_linearity"), 1, (const float*)&(settings->linearity));
 
 		Mesh_preRender(_tessMesh, _sceneMaterial->program);
 
@@ -136,18 +136,10 @@ void PezRender()
 	settings.linearity /= 10.0f;
 	RemoteConfig_unlock(_config);
 
-	glClearDepth(1);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	XprRenderTarget_clearDepth(1);
 
 	drawBackground();
 	drawScene(&settings);
-	
-	{ // check for any OpenGL errors
-	GLenum glerr = glGetError();
-
-	if(glerr != GL_NO_ERROR)
-		PezDebugString("GL has error %4x!", glerr);
-	}
 }
 
 void PezConfig()
@@ -188,7 +180,7 @@ const char* PezInitialize(int width, int height)
 	_gpuState = XprGpuState_alloc();
 	XprGpuState_init(_gpuState);
 
-	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
+	XprRenderTarget_setViewport(0, 0, (float)width, (float)height, -1, 1);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
 

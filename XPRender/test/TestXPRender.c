@@ -31,24 +31,26 @@ void TestNvpParser(CuTest *tc)
 	const char* name;
 	const char* value;
 	XprBool hasNext;
-	XprNvpParser nvp;
-	XprNvpParser_init(&nvp, str);
+	XprNvpParser* nvp = XprNvpParser_alloc();
+	XprNvpParser_init(nvp, str);
 
-	hasNext = XprNvpParser_next(&nvp, &name, &value);
+	hasNext = XprNvpParser_next(nvp, &name, &value);
 
 	CuAssertIntEquals(tc, XprTrue, hasNext);
 	CuAssertStrEquals(tc, "name1", name);
 	CuAssertStrEquals(tc, "value1", value);
 
-	hasNext = XprNvpParser_next(&nvp, &name, &value);
+	hasNext = XprNvpParser_next(nvp, &name, &value);
 
 	CuAssertIntEquals(tc, XprTrue, hasNext);
 	CuAssertStrEquals(tc, "name2", name);
 	CuAssertStrEquals(tc, "value 2", value);
 
-	hasNext = XprNvpParser_next(&nvp, &name, &value);
+	hasNext = XprNvpParser_next(nvp, &name, &value);
 
 	CuAssertIntEquals(tc, XprFalse, hasNext);
+
+	XprNvpParser_free(nvp);
 }
 
 #include "../lib/xprender/StrHash.h"
@@ -58,11 +60,11 @@ void TestStrHash(CuTest *tc)
 	const char* s1 = "u_worldViewMtx";
 	const char* s2 = "u_worldViewProjMtx";
 
-	CuAssertTrue(tc, XPR_HASH("u_worldViewMtx") != XPR_HASH("u_worldViewProjMtx"));
-	CuAssertTrue(tc, XPR_HASH(s1) != XPR_HASH(s2));
+	CuAssertTrue(tc, XprHash("u_worldViewMtx") != XprHash("u_worldViewProjMtx"));
+	CuAssertTrue(tc, XprHash(s1) != XprHash(s2));
 
-	CuAssertTrue(tc, XPR_HASH("u_worldViewMtx") == XPR_HASH(s1));
-	CuAssertTrue(tc, XPR_HASH("u_worldViewProjMtx") == XPR_HASH(s2));
+	CuAssertTrue(tc, XprHash("u_worldViewMtx") == XprHash(s1));
+	CuAssertTrue(tc, XprHash("u_worldViewProjMtx") == XprHash(s2));
 }
 
 int gResult;	// this avoid compile optimization
@@ -81,8 +83,8 @@ void TestStrHashPerformance(CuTest *tc)
 	for(it = 0 ;it < itCnt; ++it) {
 		startTime = rdtsc();
 		for(i=0; i<cnt; ++i) {
-			XprHashCode c1 = XPR_HASH("u_worldViewMtx");
-			XprHashCode c2 = XPR_HASH("u_worldViewProjMtx");
+			XprHashCode c1 = XprHash("u_worldViewMtx");
+			XprHashCode c2 = XprHash("u_worldViewProjMtx");
 			int result = c1 > c2 ? 1 : -1;
 			gResult += result;
 		}
@@ -106,7 +108,7 @@ void TestStrHashPerformance(CuTest *tc)
 CuSuite* XprGetSuite()
 {
 	CuSuite* suite = CuSuiteNew();
-	//SUITE_ADD_TEST(suite, TestNvpParser);
+	SUITE_ADD_TEST(suite, TestNvpParser);
 	SUITE_ADD_TEST(suite, TestStrHash);
 	SUITE_ADD_TEST(suite, TestStrHashPerformance);
 	return suite;

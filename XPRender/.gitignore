@@ -1,3 +1,5 @@
 cmake/*
 gcc/*
 msvc/*
+*/android/obj
+*/android/lib

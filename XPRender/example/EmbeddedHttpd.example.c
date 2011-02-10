@@ -22,9 +22,8 @@ void PezRender()
 	r = bgR / 255; g = bgG / 255; b = bgB / 255;
 	RemoteConfig_unlock(_config);
 
-	glClearDepth(1);
-	glClearColor(r, g, b, 1);
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	XprRenderTarget_clearDepth(1);
+	XprRenderTarget_clearColor(r, g, b, 1.0f);
 }
 
 void PezConfig()
@@ -49,7 +48,7 @@ const char* PezInitialize(int width, int height)
 		{nullptr, nullptr, 0, 0}
 	};
 
-	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
+	XprRenderTarget_setViewport(0, 0, (float)width, (float)height, -1, 1);
 
 	_config = RemoteConfig_alloc();
 	RemoteConfig_init(_config, 80, XprTrue);

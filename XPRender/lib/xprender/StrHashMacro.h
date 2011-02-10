@@ -108,6 +108,6 @@ static const size_t XPR_HASH_MULTS[XPR_HASH_DEPTH+1] =
 #define XPR_HASH_FUNCTION(next, value) (value + 33) + ((11 * value * (value << 3)) ^ (next))
 
 // finally the macro used to generate the hash
-#define XPR_HASH(string) XPR_HASH_RECURSE_00(string, *string)
+#define XprHash(string) XPR_HASH_RECURSE_00(string, *string)
 
 #endif // STRHASHMACRO_H

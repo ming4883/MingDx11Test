@@ -20,9 +20,8 @@ void PezHandleMouse(int x, int y, int action)
 void PezRender()
 {
 	// render to texture
-	glClearDepth(1);
-	glClearColor(0.25f, 0.75f, 1.0f, 1.0f);
-	glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+	XprRenderTarget_clearDepth(1);
+	XprRenderTarget_clearColor(0.25f, 0.75f, 1.0f, 1.0f);
 
 	// display the label
 	XprGpuState_setBlendEnabled(_gpuState, XprTrue);
@@ -31,8 +30,8 @@ void PezRender()
 	XprGpuState_preRender(_gpuState);
 	
 	XprGpuProgram_preRender(_textMaterial->program);
-	XprGpuProgram_uniformTexture(_textMaterial->program, XPR_HASH("u_tex"), _label->texture);
-	XprGpuProgram_uniform4fv(_textMaterial->program, XPR_HASH("u_textColor"), 1, _textColor.v);
+	XprGpuProgram_uniformTexture(_textMaterial->program, XprHash("u_tex"), _label->texture);
+	XprGpuProgram_uniform4fv(_textMaterial->program, XprHash("u_textColor"), 1, _textColor.v);
 	
 	Mesh_preRender(_bgMesh, _textMaterial->program);
 	Mesh_render(_bgMesh);
@@ -59,7 +58,7 @@ const char* PezInitialize(int width, int height)
 {
 	char utf8[] = {0xEF, 0xBB, 0xBF, 0xE9, 0x80, 0x99, 0xE6, 0x98, 0xAF, 0x55, 0x54, 0x46, 0x38, 0x00};
 
-	glViewport (0, 0, (GLsizei) width, (GLsizei) height);
+	XprRenderTarget_setViewport(0, 0, (float)width, (float)height, -1, 1);
 
 	_gpuState = XprGpuState_alloc();
 	XprGpuState_init(_gpuState);

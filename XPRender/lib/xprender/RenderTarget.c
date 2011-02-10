@@ -1,4 +1,4 @@
-#include "RenderTarget.gl3.h"
+#include "RenderTarget.gl.h"
 
 XprRenderTarget* XprRenderTarget_alloc()
 {
@@ -88,6 +88,7 @@ struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBu
 
 GLenum glAttachmentPoints[] =
 {	GL_COLOR_ATTACHMENT0,
+#if !defined(XPR_GLES2)
 	GL_COLOR_ATTACHMENT1,
 	GL_COLOR_ATTACHMENT2,
 	GL_COLOR_ATTACHMENT3,
@@ -95,6 +96,7 @@ GLenum glAttachmentPoints[] =
 	GL_COLOR_ATTACHMENT5,
 	GL_COLOR_ATTACHMENT6,
 	GL_COLOR_ATTACHMENT7,
+#endif
 };
 
 void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth)
@@ -102,11 +104,11 @@ void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* col
 	size_t bufCnt;
 	XprRenderBuffer** curr;
 	if(nullptr == self) {
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		return;
 	}
 
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self->impl->glName);
+	glBindFramebuffer(GL_FRAMEBUFFER, self->impl->glName);
 	
 	// attach color buffers
 	bufCnt = 0;
@@ -114,7 +116,7 @@ void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* col
 		curr = (XprRenderBuffer**)colors;
 		while(*curr != nullptr) {
 			XprTexture* tex = (*curr)->texture;
-			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, glAttachmentPoints[bufCnt], tex->impl->glTarget, tex->impl->glName, 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, glAttachmentPoints[bufCnt], tex->impl->glTarget, tex->impl->glName, 0);
 			++curr;
 			++bufCnt;
 		}
@@ -123,16 +125,34 @@ void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* col
 	// attach depth buffers
 	if(depth != nullptr) {
 		XprTexture* tex = ((XprRenderBuffer*)depth)->texture;
-		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
 	}
 
 	// assign buffer bindings
 	glDrawBuffers(bufCnt, glAttachmentPoints);
 
 	{	// check for framebuffer's complete status
-		GLenum status = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(GL_FRAMEBUFFER_COMPLETE != status) {
 			XprDbgStr("imcomplete framebuffer status:%x", status);
 		}
 	}
+}
+
+void XprRenderTarget_setViewport(float x, float y, float w, float h, float zmin, float zmax)
+{
+	glViewport((GLint)x, (GLint)y, (GLsizei)w, (GLsizei)h);
+	glDepthRange(zmin, zmax);
+}
+
+void XprRenderTarget_clearColor(float r, float g, float b, float a)
+{
+	glClearColor(r, g, b, a);
+	glClear(GL_COLOR_BUFFER_BIT);
+}
+
+void XprRenderTarget_clearDepth(float z)
+{
+	glClearDepth(z);
+	glClear(GL_DEPTH_BUFFER_BIT);
 }

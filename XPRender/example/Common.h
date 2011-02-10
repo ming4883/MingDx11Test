@@ -8,12 +8,11 @@
 #include "../lib/xprender/Mat44.h"
 #include "../lib/xprender/Shader.h"
 #include "../lib/xprender/GpuState.h"
+#include "../lib/xprender/RenderTarget.h"
 #include "../lib/glsw/glsw.h"
 #include "../lib/pez/pez.h"
 
 #include "Material.h"
-
-#include <GL/glew.h>
 
 #include <stdio.h>
 #include <math.h>

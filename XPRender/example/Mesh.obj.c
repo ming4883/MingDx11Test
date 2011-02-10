@@ -1,7 +1,5 @@
 #include "Mesh.h"
 
-#include "../lib/xprender/Buffer.GL3.h"
-#include "../lib/xprender/Shader.GL3.h"
 #include "../lib/xprender/Vec2.h"
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Vec4.h"

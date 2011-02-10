@@ -320,7 +320,7 @@ void PezDebugString(const char* pStr, ...)
 	char msg[1024] = {0};
 	vsnprintf(msg, countof(msg), pStr, a);
 	//fputs(msg, stderr);
-	__android_log_print(ANDROID_LOG_INFO, "pez", msg);
+	__android_log_print(ANDROID_LOG_WARN, "pez", msg);
 }
 
 void PezFatalErrorW(const wchar_t* pStr, ...)

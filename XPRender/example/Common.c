@@ -2,12 +2,12 @@
 
 void RenderContext_preRender(RenderContext* self, Material* material)
 {
-	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewMtx"), 1, XprTrue, self->worldViewMtx.v);
-	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldViewProjMtx"), 1, XprTrue, self->worldViewProjMtx.v);
-	XprGpuProgram_uniformMtx4fv(material->program, XPR_HASH("u_worldMtx"), 1, XprTrue, self->worldMtx.v);
-	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matDiffuse"), 1, self->matDiffuse.v);
-	XprGpuProgram_uniform4fv(material->program, XPR_HASH("u_matSpecular"), 1, self->matSpecular.v);
-	XprGpuProgram_uniform1fv(material->program, XPR_HASH("u_matShininess"), 1, &self->matShininess);
+	XprGpuProgram_uniformMtx4fv(material->program, XprHash("u_worldViewMtx"), 1, XprTrue, self->worldViewMtx.v);
+	XprGpuProgram_uniformMtx4fv(material->program, XprHash("u_worldViewProjMtx"), 1, XprTrue, self->worldViewProjMtx.v);
+	XprGpuProgram_uniformMtx4fv(material->program, XprHash("u_worldMtx"), 1, XprTrue, self->worldMtx.v);
+	XprGpuProgram_uniform4fv(material->program, XprHash("u_matDiffuse"), 1, self->matDiffuse.v);
+	XprGpuProgram_uniform4fv(material->program, XprHash("u_matSpecular"), 1, self->matSpecular.v);
+	XprGpuProgram_uniform1fv(material->program, XprHash("u_matShininess"), 1, &self->matShininess);
 }
 
 Material* loadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey)

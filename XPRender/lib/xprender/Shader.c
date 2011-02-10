@@ -1,5 +1,5 @@
-#include "Shader.GL3.h"
-#include "Texture.GL3.h"
+#include "Shader.GL.h"
+#include "Texture.GL.h"
 #include <stdio.h>
 
 GLenum xprGL_SHADER_TYPE[] = {
@@ -123,7 +123,7 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 			glGetActiveUniform(self->impl->glName, i, 64, &uniformLength, &uniformSize, &uniformType, uniformName);
 			
 			uniform = malloc(sizeof(XprGpuProgramUniform));
-			uniform->hash = XPR_HASH(uniformName);
+			uniform->hash = XprHash(uniformName);
 			uniform->loc = i;
 			uniform->size = uniformSize;
 			uniform->texunit = texunit;
