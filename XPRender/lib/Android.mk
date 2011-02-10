@@ -4,7 +4,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE	:= xprender
 
-#LOCAL_SRC_FILES	+= xprender/Buffer.c
+LOCAL_SRC_FILES	+= xprender/Buffer.c
 #LOCAL_SRC_FILES	+= xprender/GpuState.c
 LOCAL_SRC_FILES	+= xprender/Mat44.c
 LOCAL_SRC_FILES	+= xprender/NvpParser.c
@@ -21,12 +21,11 @@ LOCAL_SRC_FILES	+= pez/pez.android.c
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/xprender $(LOCAL_PATH)/pez
 LOCAL_CFLAGS := -DXPR_ANDROID
-#LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv2
 
 LOCAL_STATIC_LIBRARIES := android_native_app_glue
 
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_C_INCLUDES)
 LOCAL_EXPORT_CFLAGS := $(LOCAL_CFLAGS)
-LOCAL_EXPORT_LDLIBS := -llog -lEGL -lGLESv2 -landroid
+LOCAL_EXPORT_LDLIBS := -llog -landroid -lEGL -lGLESv2
 
 include $(BUILD_STATIC_LIBRARY)

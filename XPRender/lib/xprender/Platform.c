@@ -28,13 +28,14 @@ void XprDbgStr(const char* str, ...)
 
 void XprDbgStr(const char* str, ...)
 {
-	char msg[1024] = {0};
-
+	/*
 	va_list a;
 	va_start(a, str);
 
-	_vsnprintf_s(msg, _countof(msg), _TRUNCATE, str, a);
+	char msg[1024] = {0};
+	vsnprintf(msg, countof(msg), str, a);
 	__android_log_print(ANDROID_LOG_WARN, "pez", msg);
+	*/
 }
 
 #else

@@ -1,6 +1,12 @@
 #include "Texture.gl.h"
 #include "StrUtil.h"
 
+#if defined(XPR_GLES_2)
+XprTextureFormatMapping XprTextureFormatMappings[] = {
+	{XprTexture_unormR8G8B8A8, 4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
+	{XprTexture_unormR8, 1, GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE},
+};
+#else
 XprTextureFormatMapping XprTextureFormatMappings[] = {
 	{XprTexture_unormR8G8B8A8, 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
 	{XprTexture_unormR8, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
@@ -11,6 +17,7 @@ XprTextureFormatMapping XprTextureFormatMappings[] = {
 	{XprTexture_depth16, 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
 	{XprTexture_depth32, 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
 };
+#endif
 
 XprTextureFormatMapping* XprTextureFormatMapping_Get(const char* name)
 {

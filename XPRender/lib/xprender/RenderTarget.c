@@ -88,7 +88,7 @@ struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBu
 
 GLenum glAttachmentPoints[] =
 {	GL_COLOR_ATTACHMENT0,
-#if !defined(XPR_GLES2)
+#if !defined(XPR_GLES_2)
 	GL_COLOR_ATTACHMENT1,
 	GL_COLOR_ATTACHMENT2,
 	GL_COLOR_ATTACHMENT3,
@@ -128,9 +128,10 @@ void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* col
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
 	}
 
+#if !defined(XPR_GLES_2)
 	// assign buffer bindings
 	glDrawBuffers(bufCnt, glAttachmentPoints);
-
+#endif
 	{	// check for framebuffer's complete status
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(GL_FRAMEBUFFER_COMPLETE != status) {

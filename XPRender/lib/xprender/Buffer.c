@@ -3,14 +3,18 @@
 static GLenum xprGL_BUFFER_TARGETS[] = {
 	GL_ARRAY_BUFFER,
 	GL_ELEMENT_ARRAY_BUFFER,
+#if !defined(XPR_GLES_2)
 	GL_UNIFORM_BUFFER,
+#endif
 };
 
+#if !defined(XPR_GLES_2)
 static GLenum xprGL_BUFFER_MAP_ACCESS[] = {
 	GL_READ_ONLY,
 	GL_WRITE_ONLY,
 	GL_READ_WRITE,
 };
+#endif
 
 XprBuffer* XprBuffer_alloc()
 {
@@ -64,11 +68,12 @@ void* XprBuffer_map(XprBuffer* self, XprBufferMapAccess access)
 	if(0 != (self->flags & XprBufferFlag_Mapped))
 		return nullptr;
 
+#if !defined(XPR_GLES_2)
 	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->impl->glName);
-
 	ret = glMapBuffer(xprGL_BUFFER_TARGETS[self->type], xprGL_BUFFER_MAP_ACCESS[access]);
-
 	self->flags |= XprBufferFlag_Mapped;
+
+#endif
 
 	return ret;
 }
@@ -81,8 +86,10 @@ void XprBuffer_unmap(XprBuffer* self)
 	if(0 == (self->flags & XprBufferFlag_Mapped))
 		return;
 
+#if !defined(XPR_GLES_2)
 	glBindBuffer(xprGL_BUFFER_TARGETS[self->type], self->impl->glName);
 	glUnmapBuffer(xprGL_BUFFER_TARGETS[self->type]);
 
 	self->flags &= ~XprBufferFlag_Mapped;
+#endif
 }
