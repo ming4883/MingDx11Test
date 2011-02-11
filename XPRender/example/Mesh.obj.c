@@ -92,9 +92,9 @@ size_t Obj_ReadFace(ObjFace* face)
 	return vcnt;
 }
 
-void Mesh_initWithObjFile(Mesh* self, const char* path)
+void Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 {
-	FILE* fp;
+	void* fp;
 	char readbuf[512];
 	char* token;
 	
@@ -104,7 +104,7 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 	ObjBuffer fbuf  = {nullptr, sizeof(ObjFace), 128, 0};
 	size_t vpf = 0;
 
-	if(nullptr == (fp = fopen(path, "r"))) {
+	if(nullptr == (fp = stream->open(path))) {
 		XprDbgStr("obj file %s not found", path);
 		return;
 	}
@@ -114,7 +114,8 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 	ObjBuffer_resize(&vnbuf);
 	ObjBuffer_resize(&fbuf);
 
-	while( fgets(readbuf, 512, fp) ) {
+	//while( fgets(readbuf, 512, fp) ) {
+	while( Stream_gets(stream, readbuf, 512, fp) ) {
 		if('#' == readbuf[0])
 			continue;
 
@@ -138,7 +139,7 @@ void Mesh_initWithObjFile(Mesh* self, const char* path)
 		}
 	}
 	
-	fclose(fp);
+	stream->close(fp);
 
 	// flatten vertices
 	Mesh_init(self, fbuf.cnt * vpf, fbuf.cnt * vpf);

@@ -1,6 +1,7 @@
 #ifndef __EXAMPLE_MESH_H__
 #define __EXAMPLE_MESH_H__
 
+#include "Stream.h"
 #include "../lib/xprender/Platform.h"
 #include "../lib/xprender/Vec3.h"
 
@@ -58,7 +59,7 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 
 void Mesh_initWithScreenQuad(Mesh* self);
 
-void Mesh_initWithObjFile(Mesh* self, const char* path);
+void Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream);
 
 void Mesh_commit(Mesh* self);
 

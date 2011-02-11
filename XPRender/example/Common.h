@@ -13,6 +13,7 @@
 #include "../lib/pez/pez.h"
 
 #include "Material.h"
+#include "Stream.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -33,6 +34,9 @@ typedef struct RenderContext
 } RenderContext;
 
 void RenderContext_preRender(RenderContext* self, Material* material);
+
+extern glswFileSystem myFileSystem;
+extern InputStream myInputStream;
 
 Material* loadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey);
 

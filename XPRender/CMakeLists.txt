@@ -87,6 +87,8 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/Stream.h
+	example/Stream.c
 	example/Remote.c
 	example/Remote.h
 	example/Mesh.c
@@ -108,6 +110,8 @@ ADD_EXECUTABLE( example_label ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/Stream.h
+	example/Stream.c
 	example/Label.c
 	example/Label.h
 	example/Mesh.c
@@ -124,6 +128,8 @@ ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/Stream.h
+	example/Stream.c
 	example/Remote.c
 	example/Remote.h
 	example/Mesh.c
@@ -140,6 +146,8 @@ ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/Stream.h
+	example/Stream.c
 	example/Remote.c
 	example/Remote.h
 	example/Material.c

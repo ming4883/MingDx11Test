@@ -29,6 +29,7 @@ typedef struct glswContextRec
     glswList* TokenMap;
     glswList* ShaderMap;
     glswList* LoadedEffects;
+	glswFileSystem* FileSystem;
 } glswContext;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -63,7 +64,7 @@ static void __glsw__FreeList(glswList* pNode)
 ///////////////////////////////////////////////////////////////////////////////
 // PUBLIC FUNCTIONS
 
-int glswInit()
+int glswInit(glswFileSystem* fsys)
 {
     if (__glsw__Context)
     {
@@ -73,6 +74,7 @@ int glswInit()
     }
 
     __glsw__Context = (glswContext*) calloc(sizeof(glswContext), 1);
+	__glsw__Context->FileSystem = fsys;
 
     return 1;
 }
@@ -162,6 +164,7 @@ const char* glswGetShader(const char* pEffectKey)
         struct bstrList* lines;
         int lineNo;
 
+		if(0 == gc->FileSystem)
         {
             FILE* fp;
             bstring effectFile;
@@ -196,6 +199,45 @@ const char* glswGetShader(const char* pEffectKey)
             fclose(fp);
             bdestroy(effectFile);
         }
+		else
+		{
+			void* fp;
+            bstring effectFile;
+			glswFileSystem* fsys = gc->FileSystem;
+
+            // Decorate the effect name to form the fullpath
+            effectFile = bstrcpy(effectName);
+            binsert(effectFile, 0, gc->PathPrefix, '?');
+            bconcat(effectFile, gc->PathSuffix);
+
+            // Attempt to open the file
+            //fp = fopen((const char*) effectFile->data, "rb");
+			fp = fsys->open((const char*) effectFile->data);
+            if (!fp)
+            {
+                bdestroy(gc->ErrorMessage);
+                gc->ErrorMessage = bformat("Unable to open effect file '%s'.", effectFile->data);
+                bdestroy(effectFile);
+                bdestroy(effectKey);
+                bstrListDestroy(tokens);
+                return 0;
+            }
+
+            // Add a new entry to the front of gc->LoadedEffects
+            {
+                glswList* temp = gc->LoadedEffects;
+                gc->LoadedEffects = (glswList*) calloc(sizeof(glswList), 1);
+                gc->LoadedEffects->Key = bstrcpy(effectName);
+                gc->LoadedEffects->Next = temp;
+            }
+
+            // Read in the effect file
+            //effectContents = bread((bNread) fread, fp);
+			effectContents = bread((bNread)fsys->read, fp);
+            //fclose(fp);
+			fsys->close(fp);
+            bdestroy(effectFile);
+		}
 
         lines = bsplit(effectContents, '\n');
         bdestroy(effectContents);

@@ -10,6 +10,38 @@ void RenderContext_preRender(RenderContext* self, Material* material)
 	XprGpuProgram_uniform1fv(material->program, XprHash("u_matShininess"), 1, &self->matShininess);
 }
 
+void* myOpen(const char* filename)
+{
+	static char buf[512];
+
+	FILE* fp;
+
+	if(nullptr != (fp = fopen(filename, "rb")))
+		return fp;
+
+	strcpy(buf, "../example/");
+	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
+		return fp;
+
+	strcpy(buf, "../media/");
+	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
+		return fp;
+
+	strcpy(buf, "media/");
+	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
+		return fp;
+
+	return nullptr;
+}
+
+void myClose(void* handle)
+{
+	fclose((FILE*)handle);
+}
+
+glswFileSystem myFileSystem = {fread, myOpen, myClose};
+InputStream myInputStream = {fread, myOpen, myClose};
+
 Material* loadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey)
 {
 	const char* args[11] = {nullptr};

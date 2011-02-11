@@ -315,8 +315,8 @@ const char* PezInitialize(int width, int height)
 	XprRenderTarget_init(_rt, (size_t)width, (size_t)height);
 
 	// materials
-	glswInit();
-	glswSetPath("../example/", ".glsl");
+	glswInit(&myFileSystem);
+	glswSetPath("", ".glsl");
 	glswAddDirectiveToken("","#version 150");
 
 	_sceneMaterial = loadMaterial(

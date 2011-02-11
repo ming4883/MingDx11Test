@@ -39,10 +39,12 @@ static GLenum XprGpuState_blendFactorMapping[] = {
 	GL_ONE_MINUS_DST_ALPHA,
 };
 
+#if !defined(XPR_GLES_2)
 static GLenum XprGpuState_polygonModeMapping[] = {
 	GL_LINE,
 	GL_FILL,
 };
+#endif
 
 void XprGpuState_preRender(XprGpuState* self)
 {
@@ -74,7 +76,9 @@ void XprGpuState_preRender(XprGpuState* self)
 		glDisable(GL_BLEND);
 	}
 
+#if !defined(XPR_GLES_2)
 	glPolygonMode(GL_FRONT_AND_BACK, XprGpuState_polygonModeMapping[self->impl->polygonMode - XprGpuState_PolygonMode_Line]);
+#endif
 }
 
 void XprGpuState_setDepthTestEnabled(XprGpuState* self, XprBool value)

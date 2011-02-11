@@ -5,7 +5,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE	:= xprender
 
 LOCAL_SRC_FILES	+= xprender/Buffer.c
-#LOCAL_SRC_FILES	+= xprender/GpuState.c
+LOCAL_SRC_FILES	+= xprender/GpuState.c
 LOCAL_SRC_FILES	+= xprender/Mat44.c
 LOCAL_SRC_FILES	+= xprender/NvpParser.c
 LOCAL_SRC_FILES	+= xprender/Platform.c

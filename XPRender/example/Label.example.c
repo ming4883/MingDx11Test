@@ -70,8 +70,8 @@ const char* PezInitialize(int width, int height)
 	Label_commit(_label);
 
 	// materials
-	glswInit();
-	glswSetPath("../example/", ".glsl");
+	glswInit(&myFileSystem);
+	glswSetPath("", ".glsl");
 	glswAddDirectiveToken("","#version 150");
 
 	_textMaterial = loadMaterial(

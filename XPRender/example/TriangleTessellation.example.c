@@ -187,8 +187,8 @@ const char* PezInitialize(int width, int height)
 	_mouse.isDown = XprFalse;
 
 	// materials
-	glswInit();
-	glswSetPath("../example/", ".glsl");
+	glswInit(&myFileSystem);
+	glswSetPath("", ".glsl");
 	glswAddDirectiveToken("","#version 400");
 
 	_sceneMaterial = loadMaterial(
@@ -206,9 +206,8 @@ const char* PezInitialize(int width, int height)
 	glswShutdown();
 
 	_tessMesh = Mesh_alloc();
-	//Mesh_initWithUnitSphere(_tessMesh, 4);
 
-	Mesh_initWithObjFile(_tessMesh, "../media/monkey.obj");
+	Mesh_initWithObjFile(_tessMesh, "monkey.obj", &myInputStream);
 
 	_bgMesh = Mesh_alloc();
 	Mesh_initWithScreenQuad(_bgMesh);
