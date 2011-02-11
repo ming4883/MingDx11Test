@@ -2,12 +2,14 @@
 #include "Texture.GL.h"
 #include <stdio.h>
 
-GLenum xprGL_SHADER_TYPE[] = {
+GLenum XprGLShaderMapping[] = {
 	GL_VERTEX_SHADER,
+	GL_FRAGMENT_SHADER,
+#if !defined(XPR_GLES_2)
+	GL_GEOMETRY_SHADER,
 	GL_TESS_CONTROL_SHADER,
 	GL_TESS_EVALUATION_SHADER,
-	GL_GEOMETRY_SHADER,
-	GL_FRAGMENT_SHADER,
+#endif
 };
 
 XprGpuShader* XprGpuShader_alloc()
@@ -28,7 +30,7 @@ void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, 
 	}
 
 	self->type = type;
-	self->impl->glName = glCreateShader(xprGL_SHADER_TYPE[self->type]);
+	self->impl->glName = glCreateShader(XprGLShaderMapping[self->type]);
 	self->flags = 0;
 
 	glShaderSource(self->impl->glName, srcCnt, sources, nullptr);
@@ -113,7 +115,7 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 		GLsizei uniformLength;
 		GLint uniformSize;
 		GLenum uniformType;
-		GLchar uniformName[64];
+		char uniformName[64];
 		GLuint texunit = 0;	
 		
 		glGetProgramiv(self->impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
@@ -131,12 +133,14 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 			HASH_ADD_INT(self->impl->uniforms, hash, uniform);
 			
 			switch(uniformType) {
-				case GL_SAMPLER_1D:
 				case GL_SAMPLER_2D:
-				case GL_SAMPLER_3D:
 				case GL_SAMPLER_CUBE:
+#if !defined(XPR_GLES_2)
+				case GL_SAMPLER_1D:
+				case GL_SAMPLER_3D:
 				case GL_SAMPLER_1D_SHADOW:
 				case GL_SAMPLER_2D_SHADOW: 
+#endif
 					{	// bind sampler to the specific texture unit
 						glUniform1i(i, texunit++);
 					}

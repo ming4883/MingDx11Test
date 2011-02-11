@@ -7,15 +7,15 @@
 extern "C" {
 #endif
 
-typedef struct XprTexture;
-typedef struct XprRenderBuffer;
+struct XprTexture;
+struct XprRenderBuffer;
 
 typedef enum XprRenderTargetFlag
 {
 	XprRenderTargetFlag_Inited = 1 << 0,
 } XprRenderTargetFlag;
 
-typedef struct XprRenderTargetImpl;
+struct XprRenderTargetImpl;
 
 typedef struct XprRenderTarget
 {

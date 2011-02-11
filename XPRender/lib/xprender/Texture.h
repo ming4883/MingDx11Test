@@ -13,7 +13,7 @@ typedef enum XprTextureFlag
 	XprTextureFlag_Dirty = 1 << 1,
 } XprTextureFlag;
 
-typedef struct XprTextureImpl;
+struct XprTextureImpl;
 
 typedef struct XprTexture
 {

@@ -27,7 +27,7 @@ typedef enum XprBufferMapAccess
 	XprBufferMapAccess_ReadWrite,
 } XprBufferMapAccess;
 
-typedef struct XprBufferImpl;
+struct XprBufferImpl;
 
 typedef struct XprBuffer
 {

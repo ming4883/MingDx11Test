@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-typedef struct XprVec2;
+struct XprVec2;
 
 typedef struct XprVec3
 {

@@ -3,3 +3,10 @@ gcc/*
 msvc/*
 */android/obj
 */android/libs
+*/android/assets
+*/android/bin
+*/android/gen
+*/android/src
+*/android/.classpath
+*/android/.project
+*/android/default.properties

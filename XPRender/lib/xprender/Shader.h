@@ -7,16 +7,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-typedef struct XprTexture;
+
+struct XprTexture;
 
 // XprGpuShader
 typedef enum XprGpuShaderType
 {
 	XprGpuShaderType_Vertex,
+	XprGpuShaderType_Fragment,
+	XprGpuShaderType_Geometry,
 	XprGpuShaderType_TessControl,
 	XprGpuShaderType_TessEvaluation,
-	XprGpuShaderType_Geometry,
-	XprGpuShaderType_Fragment,
 } XprGpuShaderType;
 
 typedef enum XprGpuShaderFlag
@@ -24,7 +25,7 @@ typedef enum XprGpuShaderFlag
 	XprGpuShaderFlag_Compiled = 1 << 0,
 } XprGpuShaderFlag;
 
-typedef struct XprGpuShaderImpl;
+struct XprGpuShaderImpl;
 
 typedef struct XprGpuShader
 {
@@ -47,7 +48,7 @@ typedef enum XprGpuProgramFlag
 	XprGpuProgramFlag_Linked = 1 << 0,
 } XprGpuProgramFlag;
 
-typedef struct XprGpuProgramImpl;
+struct XprGpuProgramImpl;
 
 typedef struct XprGpuProgram
 {

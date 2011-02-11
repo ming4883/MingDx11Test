@@ -12,8 +12,6 @@ typedef enum XprGpuStateFlag
 	XprGpuStateFlag_Inited = 1 << 0,
 } XprGpuStateFlag;
 
-typedef struct XprGpuStateImpl;
-
 typedef enum XprGpuStateType
 {
 	// BlendFactor
@@ -32,6 +30,8 @@ typedef enum XprGpuStateType
 	XprGpuState_PolygonMode_Line,
 	XprGpuState_PolygonMode_Fill,
 } XprGpuStateType;
+
+struct XprGpuStateImpl;
 
 typedef struct XprGpuState
 {
