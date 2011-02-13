@@ -1,6 +1,6 @@
 #include "GpuState.gl.h"
 
-XprGpuState* XprGpuState_alloc()
+XprGpuState* xprGpuStateAlloc()
 {
 	XprGpuState* self;
 	XprAllocWithImpl(self, XprGpuState, XprGpuStateImpl);
@@ -8,7 +8,7 @@ XprGpuState* XprGpuState_alloc()
 	return self;
 }
 
-void XprGpuState_free(XprGpuState* self)
+void xprGpuStateFree(XprGpuState* self)
 {
 	if(nullptr == self)
 		return;
@@ -16,7 +16,7 @@ void XprGpuState_free(XprGpuState* self)
 	free(self);
 }
 
-void XprGpuState_init(XprGpuState* self)
+void xprGpuStateInit(XprGpuState* self)
 {
 	self->flags = XprGpuStateFlag_Inited;
 	self->impl->depthTest = XprTrue;
@@ -46,7 +46,7 @@ static GLenum XprGpuState_polygonModeMapping[] = {
 };
 #endif
 
-void XprGpuState_preRender(XprGpuState* self)
+void xprGpuStatePreRender(XprGpuState* self)
 {
 	if(self->impl->depthTest)
 		glEnable(GL_DEPTH_TEST);
@@ -81,7 +81,7 @@ void XprGpuState_preRender(XprGpuState* self)
 #endif
 }
 
-void XprGpuState_setDepthTestEnabled(XprGpuState* self, XprBool value)
+void xprGpuStateSetDepthTestEnabled(XprGpuState* self, XprBool value)
 {
 	if(nullptr == self)
 		return;
@@ -89,7 +89,7 @@ void XprGpuState_setDepthTestEnabled(XprGpuState* self, XprBool value)
 	self->impl->depthTest = value;
 }
 
-void XprGpuState_setDepthWriteEnabled(XprGpuState* self, XprBool value)
+void xprGpuStateSetDepthWriteEnabled(XprGpuState* self, XprBool value)
 {
 	if(nullptr == self)
 		return;
@@ -97,7 +97,7 @@ void XprGpuState_setDepthWriteEnabled(XprGpuState* self, XprBool value)
 	self->impl->depthWrite = value;
 }
 
-void XprGpuState_setCullEnabled(XprGpuState* self, XprBool value)
+void xprGpuStateSetCullEnabled(XprGpuState* self, XprBool value)
 {
 	if(nullptr == self)
 		return;
@@ -105,7 +105,7 @@ void XprGpuState_setCullEnabled(XprGpuState* self, XprBool value)
 	self->impl->culling = value;
 }
 
-void XprGpuState_setBlendEnabled(XprGpuState* self, XprBool value)
+void xprGpuStateSetBlendEnabled(XprGpuState* self, XprBool value)
 {
 	if(nullptr == self)
 		return;
@@ -113,7 +113,7 @@ void XprGpuState_setBlendEnabled(XprGpuState* self, XprBool value)
 	self->impl->blending = value;
 }
 
-void XprGpuState_setBlendFactorRGB(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
+void xprGpuStateSetBlendFactorRGB(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
 {
 	if(nullptr == self)
 		return;
@@ -122,7 +122,7 @@ void XprGpuState_setBlendFactorRGB(XprGpuState* self, XprGpuStateType blendFacto
 	self->impl->blendFactorDest = blendFactorDest;
 }
 
-void XprGpuState_setBlendFactorA(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
+void xprGpuStateSetBlendFactorA(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
 {
 	if(nullptr == self)
 		return;
@@ -131,7 +131,7 @@ void XprGpuState_setBlendFactorA(XprGpuState* self, XprGpuStateType blendFactorS
 	self->impl->blendFactorDestAlpha = blendFactorDest;
 }
 
-void XprGpuState_setPolygonMode(XprGpuState* self, XprGpuStateType polygonMode)
+void xprGpuStateSetPolygonMode(XprGpuState* self, XprGpuStateType polygonMode)
 {
 	if(nullptr == self)
 		return;

@@ -15,7 +15,7 @@ void Cloth_makeConstraint(Cloth* self, size_t x0, size_t y0, size_t x1, size_t y
 	ClothConstraint* constraint = &self->constraints[self->constraintCount];
 	constraint->pIdx[0] = idx0;
 	constraint->pIdx[1] = idx1;
-	constraint->restDistance = XprVec3_distance(&self->p[idx0], &self->p[idx1]);
+	constraint->restDistance = xprVec3Distance(&self->p[idx0], &self->p[idx1]);
 
 	++self->constraintCount;
 }
@@ -28,7 +28,7 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 
 	Cloth* self = (Cloth*)malloc(sizeof(Cloth));
 	self->segmentCount = segmentCount;
-	self->g = XprVec3_(0, -1, 0);
+	self->g = xprVec3(0, -1, 0);
 	self->timeStep = 0;
 	self->damping = 0;
 
@@ -66,7 +66,7 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 		for(c=0; c<segmentCount; ++c) {
 			size_t i = r * segmentCount + c;
 			float x = offset->v[0] + width * (float)c / segmentCount;
-			XprVec3 p = XprVec3_(x, offset->v[1], y);
+			XprVec3 p = xprVec3(x, offset->v[1], y);
 
 			self->p[i] = p;
 			self->p2[i] = p;
@@ -136,7 +136,7 @@ void Cloth_addForceToAll(Cloth* self, const XprVec3* force)
 	for(i = 0; i < cnt; ++i)
 	{
 		XprVec3* a = &self->a[i];
-		XprVec3_add(a, a, (XprVec3*)force);
+		xprVec3Add(a, a, (XprVec3*)force);
 	}
 }
 
@@ -159,11 +159,11 @@ void Cloth_updateMesh(Cloth* self)
 				p2 = &self->p[(r) * self->segmentCount + (c-1)];
 				p3 = &self->p[(r-1) * self->segmentCount + c];
 				
-				XprVec3_sub(&v1, p2, p1);
-				XprVec3_sub(&v2, p3, p1);
-				XprVec3_cross(&n2, &v1, &v2);
-				XprVec3_normalize(&n2);
-				XprVec3_add(&n, &n, &n2);
+				xprVec3Sub(&v1, p2, p1);
+				xprVec3Sub(&v2, p3, p1);
+				xprVec3Cross(&n2, &v1, &v2);
+				xprVec3Normalize(&n2);
+				xprVec3Add(&n, &n, &n2);
 				++cnt;
 			}
 
@@ -171,11 +171,11 @@ void Cloth_updateMesh(Cloth* self)
 				p2 = &self->p[(r-1) * self->segmentCount + c];
 				p3 = &self->p[(r) * self->segmentCount + (c+1)];
 				
-				XprVec3_sub(&v1, p2, p1);
-				XprVec3_sub(&v2, p3, p1);
-				XprVec3_cross(&n2, &v1, &v2);
-				XprVec3_normalize(&n2);
-				XprVec3_add(&n, &n, &n2);
+				xprVec3Sub(&v1, p2, p1);
+				xprVec3Sub(&v2, p3, p1);
+				xprVec3Cross(&n2, &v1, &v2);
+				xprVec3Normalize(&n2);
+				xprVec3Add(&n, &n, &n2);
 				++cnt;
 			}
 
@@ -183,11 +183,11 @@ void Cloth_updateMesh(Cloth* self)
 				p2 = &self->p[(r) * self->segmentCount + (c+1)];
 				p3 = &self->p[(r+1) * self->segmentCount + c];
 				
-				XprVec3_sub(&v1, p2, p1);
-				XprVec3_sub(&v2, p3, p1);
-				XprVec3_cross(&n2, &v1, &v2);
-				XprVec3_normalize(&n2);
-				XprVec3_add(&n, &n, &n2);
+				xprVec3Sub(&v1, p2, p1);
+				xprVec3Sub(&v2, p3, p1);
+				xprVec3Cross(&n2, &v1, &v2);
+				xprVec3Normalize(&n2);
+				xprVec3Add(&n, &n, &n2);
 				++cnt;
 			}
 
@@ -195,16 +195,16 @@ void Cloth_updateMesh(Cloth* self)
 				p2 = &self->p[(r+1) * self->segmentCount + c];
 				p3 = &self->p[(r) * self->segmentCount + (c-1)];
 				
-				XprVec3_sub(&v1, p2, p1);
-				XprVec3_sub(&v2, p3, p1);
-				XprVec3_cross(&n2, &v1, &v2);
-				XprVec3_normalize(&n2);
-				XprVec3_add(&n, &n, &n2);
+				xprVec3Sub(&v1, p2, p1);
+				xprVec3Sub(&v2, p3, p1);
+				xprVec3Cross(&n2, &v1, &v2);
+				xprVec3Normalize(&n2);
+				xprVec3Add(&n, &n, &n2);
 				++cnt;
 			}
 		
 			if(cnt > 0)
-				XprVec3_normalize(&n);
+				xprVec3Normalize(&n);
 			n.x *= -1;
 			n.y *= -1;
 			n.z *= -1;
@@ -233,12 +233,12 @@ void Cloth_verletIntegration(Cloth* self)
 		XprVec3 tmp = *x;
 		XprVec3 dx;
 		XprVec3 da;
-		XprVec3_multS(&da, a, t2);
-		XprVec3_sub(&dx, x, oldx);
-		XprVec3_multS(&dx, &dx, 1-self->damping);
-		XprVec3_add(&dx, &dx, &da);
+		xprVec3MultS(&da, a, t2);
+		xprVec3Sub(&dx, x, oldx);
+		xprVec3MultS(&dx, &dx, 1-self->damping);
+		xprVec3Add(&dx, &dx, &da);
 
-		XprVec3_add(x, x, &dx);
+		xprVec3Add(x, x, &dx);
 
 		*a = *XprVec3_c000();
 		*oldx = tmp;
@@ -261,13 +261,13 @@ void Cloth_satisfyConstraints(Cloth* self)
 		XprVec3* x2 = &self->p[c->pIdx[1]];
 		XprVec3 delta;
 		float scale;
-		XprVec3_sub(&delta, x2, x1);
+		xprVec3Sub(&delta, x2, x1);
 		
-		scale = (1 - c->restDistance / XprVec3_length(&delta)) * 0.5f;
-		XprVec3_multS(&delta, &delta, scale);
+		scale = (1 - c->restDistance / xprVec3Length(&delta)) * 0.5f;
+		xprVec3MultS(&delta, &delta, scale);
 
-		XprVec3_add(x1, x1, &delta);
-		XprVec3_sub(x2, x2, &delta);
+		xprVec3Add(x1, x1, &delta);
+		xprVec3Sub(x2, x2, &delta);
 	}
 }
 
@@ -283,12 +283,12 @@ void Cloth_collideWithSphere(Cloth* self, const Sphere* sphere)
 		XprVec3 d;
 		float l;
 
-		XprVec3_sub(&d, x, &sphere->center);
-		l = XprVec3_length(&d);
+		xprVec3Sub(&d, x, &sphere->center);
+		l = xprVec3Length(&d);
 
 		if(l < sphere->radius) {
-			XprVec3_multS(&d, &d, (sphere->radius - (l - collisionEpsilon)) / (l - collisionEpsilon));
-			XprVec3_add(x, x, &d);
+			xprVec3MultS(&d, &d, (sphere->radius - (l - collisionEpsilon)) / (l - collisionEpsilon));
+			xprVec3Add(x, x, &d);
 		}
 	}
 }
@@ -297,15 +297,15 @@ void Cloth_collideWithPlane(Cloth* self, const XprVec3* normal, const XprVec3* p
 {
 	size_t i;
 	size_t cnt = self->segmentCount * self->segmentCount;
-	float d = -XprVec3_dot(normal, point);
+	float d = -xprVec3Dot(normal, point);
 
 	for(i = 0; i < cnt; ++i) {
 		XprVec3* x = &self->p[i];
-		float l = XprVec3_dot((XprVec3*)normal, x) + d;
+		float l = xprVec3Dot((XprVec3*)normal, x) + d;
 		if(l < collisionEpsilon) {
 			XprVec3 dx;
-			XprVec3_multS(&dx, normal, -(l - collisionEpsilon));
-			XprVec3_add(x, x, &dx);
+			xprVec3MultS(&dx, normal, -(l - collisionEpsilon));
+			xprVec3Add(x, x, &dx);
 		}
 	}
 }

@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 struct XprTexture;
+typedef struct XprTexture XprTexture;
 
 // XprGpuShader
 typedef enum XprGpuShaderType
@@ -36,11 +37,11 @@ typedef struct XprGpuShader
 } XprGpuShader;
 
 
-XprGpuShader* XprGpuShader_alloc();
+XprGpuShader* xprGpuShaderAlloc();
 
-void XprGpuShader_free(XprGpuShader* self);
+void xprGpuShaderFree(XprGpuShader* self);
 
-void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type);
+void xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type);
 
 // XprGpuProgram
 typedef enum XprGpuProgramFlag
@@ -57,20 +58,20 @@ typedef struct XprGpuProgram
 
 } XprGpuProgram;
 
-XprGpuProgram* XprGpuProgram_alloc();
+XprGpuProgram* xprGpuProgramAlloc();
 
-void XprGpuProgram_free(XprGpuProgram* self);
+void xprGpuProgramFree(XprGpuProgram* self);
 
-void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt);
+void xprGpuProgramInit(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt);
 
-void XprGpuProgram_preRender(XprGpuProgram* self);
+void xprGpuProgramPreRender(XprGpuProgram* self);
 
-void XprGpuProgram_uniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
-void XprGpuProgram_uniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
-void XprGpuProgram_uniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
-void XprGpuProgram_uniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
-void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value);
-void XprGpuProgram_uniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture);
+void xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
+void xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value);
+void xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, XprTexture* texture);
 
 #ifdef __cplusplus
 }

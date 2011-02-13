@@ -47,12 +47,12 @@ void drawBackground()
 		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
 	
-	XprGpuState_setDepthTestEnabled(_gpuState, XprFalse);
-	XprGpuState_setCullEnabled(_gpuState, XprTrue);
-	XprGpuState_preRender(_gpuState);
+	xprGpuStateSetDepthTestEnabled(_gpuState, XprFalse);
+	xprGpuStateSetCullEnabled(_gpuState, XprTrue);
+	xprGpuStatePreRender(_gpuState);
 
-	XprGpuProgram_preRender(_bgMaterial->program);
-	XprGpuProgram_uniform4fv(_bgMaterial->program, XprHash("u_colors"), 4, (const float*)c);
+	xprGpuProgramPreRender(_bgMaterial->program);
+	xprGpuProgramUniform4fv(_bgMaterial->program, XprHash("u_colors"), 4, (const float*)c);
 
 	Mesh_preRender(_bgMesh, _bgMaterial->program);
 	Mesh_render(_bgMesh);
@@ -60,48 +60,47 @@ void drawBackground()
 
 void drawScene(Settings* settings)
 {
-	XprVec3 eyeAt = XprVec3_(-2.5f, 1.5f, 5);
-	XprVec3 lookAt = XprVec3_(0, 0, 0);
+	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
+	XprVec3 lookAt = xprVec3(0, 0, 0);
 	XprVec3 eyeUp = *XprVec3_c010();
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
 	XprMat44 viewProjMtx;
 	
-	XprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
-	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
-	XprMat44_mult(&viewProjMtx, &projMtx, &viewMtx);
+	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
+	xprMat44Prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
+	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 
-	XprGpuState_setDepthTestEnabled(_gpuState, XprTrue);
-	XprGpuState_setCullEnabled(_gpuState, XprTrue);
-	//XprGpuState_setPolygonMode(_gpuState, XprGpuState_PolygonMode_Line);
-	XprGpuState_preRender(_gpuState);
+	xprGpuStateSetDepthTestEnabled(_gpuState, XprTrue);
+	xprGpuStateSetCullEnabled(_gpuState, XprTrue);
+	//xprGpuStateSetPolygonMode(_gpuState, XprGpuState_PolygonMode_Line);
+	xprGpuStatePreRender(_gpuState);
 
-	XprGpuProgram_preRender(_sceneMaterial->program);
+	xprGpuProgramPreRender(_sceneMaterial->program);
 	
-	{	// draw floor
-		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
-		_renderContext.matSpecular = XprVec4_(2, 2, 2, 1);
-		_renderContext.matShininess = 32;
-		{
-			XprMat44 m;
-			XprVec3 axis = {1, 0, 0};
-			XprMat44_makeRotation(&m, &axis, -90);
-			
-			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
-		}
-		RenderContext_preRender(&_renderContext, _sceneMaterial);
+	// draw floor
+	_renderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
+	_renderContext.matSpecular = xprVec4(2, 2, 2, 1);
+	_renderContext.matShininess = 32;
 
-		XprGpuProgram_uniform1fv(_sceneMaterial->program, XprHash("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
-		XprGpuProgram_uniform1fv(_sceneMaterial->program, XprHash("u_linearity"), 1, (const float*)&(settings->linearity));
-
-		Mesh_preRender(_tessMesh, _sceneMaterial->program);
-
+	{
+		XprMat44 m;
+		XprVec3 axis = {1, 0, 0};
+		xprMat44MakeRotation(&m, &axis, -90);
 		
-		Mesh_renderPatches(_tessMesh, _tessMesh->vertexPerPatch);
+		xprMat44Mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+		xprMat44Mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 	}
 
-	XprGpuState_setPolygonMode(_gpuState, XprGpuState_PolygonMode_Fill);
+	RenderContext_preRender(&_renderContext, _sceneMaterial);
+
+	xprGpuProgramUniform1fv(_sceneMaterial->program, XprHash("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
+	xprGpuProgramUniform1fv(_sceneMaterial->program, XprHash("u_linearity"), 1, (const float*)&(settings->linearity));
+
+	Mesh_preRender(_tessMesh, _sceneMaterial->program);
+	Mesh_renderPatches(_tessMesh, _tessMesh->vertexPerPatch);
+
+	xprGpuStateSetPolygonMode(_gpuState, XprGpuState_PolygonMode_Fill);
 }
 
 void PezUpdate(unsigned int elapsedMilliseconds)
@@ -136,7 +135,7 @@ void PezRender()
 	settings.linearity /= 10.0f;
 	RemoteConfig_unlock(_config);
 
-	XprRenderTarget_clearDepth(1);
+	xprRenderTargetClearDepth(1);
 
 	drawBackground();
 	drawScene(&settings);
@@ -158,7 +157,7 @@ void PezExit(void)
 	Mesh_free(_bgMesh);
 	Material_free(_sceneMaterial);
 	Material_free(_bgMaterial);
-	XprGpuState_free(_gpuState);
+	xprGpuStateFree(_gpuState);
 	RemoteConfig_free(_config);
 }
 
@@ -177,10 +176,10 @@ const char* PezInitialize(int width, int height)
 	RemoteConfig_init(_config, 80, XprTrue);
 	RemoteConfig_addVars(_config, descs);
 
-	_gpuState = XprGpuState_alloc();
-	XprGpuState_init(_gpuState);
+	_gpuState = xprGpuStateAlloc();
+	xprGpuStateInit(_gpuState);
 
-	XprRenderTarget_setViewport(0, 0, (float)width, (float)height, -1, 1);
+	xprRenderTargetSetViewport(0, 0, (float)width, (float)height, -1, 1);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
 

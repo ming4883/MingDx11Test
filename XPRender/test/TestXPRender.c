@@ -31,26 +31,26 @@ void TestNvpParser(CuTest *tc)
 	const char* name;
 	const char* value;
 	XprBool hasNext;
-	XprNvpParser* nvp = XprNvpParser_alloc();
-	XprNvpParser_init(nvp, str);
+	XprNvpParser* nvp = xprNvpParserAlloc();
+	xprNvpParserInit(nvp, str);
 
-	hasNext = XprNvpParser_next(nvp, &name, &value);
+	hasNext = xprNvpParserNext(nvp, &name, &value);
 
 	CuAssertIntEquals(tc, XprTrue, hasNext);
 	CuAssertStrEquals(tc, "name1", name);
 	CuAssertStrEquals(tc, "value1", value);
 
-	hasNext = XprNvpParser_next(nvp, &name, &value);
+	hasNext = xprNvpParserNext(nvp, &name, &value);
 
 	CuAssertIntEquals(tc, XprTrue, hasNext);
 	CuAssertStrEquals(tc, "name2", name);
 	CuAssertStrEquals(tc, "value 2", value);
 
-	hasNext = XprNvpParser_next(nvp, &name, &value);
+	hasNext = xprNvpParserNext(nvp, &name, &value);
 
 	CuAssertIntEquals(tc, XprFalse, hasNext);
 
-	XprNvpParser_free(nvp);
+	xprNvpParserFree(nvp);
 }
 
 #include "../lib/xprender/StrHash.h"

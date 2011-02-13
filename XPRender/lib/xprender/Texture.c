@@ -31,7 +31,7 @@ XprTextureFormatMapping* XprTextureFormatMapping_Get(const char* name)
 	return nullptr;
 }
 
-XprTexture* XprTexture_alloc()
+XprTexture* xprTextureAlloc()
 {
 	XprTexture* self;
 	XprAllocWithImpl(self, XprTexture, XprTextureImpl);
@@ -57,7 +57,7 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 	return offset;
 }
 
-void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
+void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		XprDbgStr("texture already inited!\n");
@@ -98,10 +98,10 @@ void XprTexture_init(XprTexture* self, size_t width, size_t height, size_t mipCo
 		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
-	XprTexture_commit(self);
+	xprTextureCommit(self);
 }
 
-void XprTexture_initRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
+void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		XprDbgStr("texture already inited!\n");
@@ -141,11 +141,11 @@ void XprTexture_initRtt(XprTexture* self, size_t width, size_t height, size_t mi
 		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
-	XprTexture_commit(self);
+	xprTextureCommit(self);
 }
 
 
-unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t surfIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
+unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
 {
 	if(nullptr == self)
 		return nullptr;
@@ -162,7 +162,7 @@ unsigned char* XprTexture_getMipLevel(XprTexture* self, size_t surfIndex, size_t
 	return self->data + (surfIndex * self->surfSizeInByte) + XprTexture_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
 }
 
-void XprTexture_commit(XprTexture* self)
+void xprTextureCommit(XprTexture* self)
 {
 	size_t i;
 	const XprTextureFormatMapping* mapping;
@@ -183,13 +183,13 @@ void XprTexture_commit(XprTexture* self)
 		
 		for(i=1; i<=self->mipCount; ++i) {
 			size_t mipW, mipH;
-			unsigned char* data = XprTexture_getMipLevel(self, 0, i, &mipW, &mipH);
+			unsigned char* data = xprTextureGetMipLevel(self, 0, i, &mipW, &mipH);
 			glTexImage2D(self->impl->glTarget, i, mapping->internalFormat, mipW, mipH, 0, mapping->format, mapping->type, data);
 		}
 	}
 }
 
-void XprTexture_free(XprTexture* self)
+void xprTextureFree(XprTexture* self)
 {
 	if(nullptr == self)
 		return;

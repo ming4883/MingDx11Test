@@ -65,12 +65,12 @@ void drawBackground()
 		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
 	
-	XprGpuState_setDepthTestEnabled(_gpuState, XprFalse);
-	XprGpuState_setCullEnabled(_gpuState, XprTrue);
-	XprGpuState_preRender(_gpuState);
+	xprGpuStateSetDepthTestEnabled(_gpuState, XprFalse);
+	xprGpuStateSetCullEnabled(_gpuState, XprTrue);
+	xprGpuStatePreRender(_gpuState);
 
-	XprGpuProgram_preRender(_bgMaterial->program);
-	XprGpuProgram_uniform4fv(_bgMaterial->program, XprHash("u_colors"), 4, (const float*)c);
+	xprGpuProgramPreRender(_bgMaterial->program);
+	xprGpuProgramUniform4fv(_bgMaterial->program, XprHash("u_colors"), 4, (const float*)c);
 
 	Mesh_preRender(_bgMesh, _bgMaterial->program);
 	Mesh_render(_bgMesh);
@@ -78,35 +78,35 @@ void drawBackground()
 
 void drawScene()
 {
-	XprVec3 eyeAt = XprVec3_(-2.5f, 1.5f, 5);
-	XprVec3 lookAt = XprVec3_(0, 0, 0);
+	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
+	XprVec3 lookAt = xprVec3(0, 0, 0);
 	XprVec3 eyeUp = *XprVec3_c010();
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
 	XprMat44 viewProjMtx;
 	
-	XprMat44_cameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
-	XprMat44_prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
-	XprMat44_mult(&viewProjMtx, &projMtx, &viewMtx);
+	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
+	xprMat44Prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
+	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 
-	XprGpuState_setCullEnabled(_gpuState, XprTrue);
-	XprGpuState_setDepthTestEnabled(_gpuState, XprTrue);
-	XprGpuState_preRender(_gpuState);
+	xprGpuStateSetCullEnabled(_gpuState, XprTrue);
+	xprGpuStateSetDepthTestEnabled(_gpuState, XprTrue);
+	xprGpuStatePreRender(_gpuState);
 
-	XprGpuProgram_preRender(_sceneMaterial->program);
-	XprGpuProgram_uniformTexture(_sceneMaterial->program, XprHash("u_tex"), _texture);
+	xprGpuProgramPreRender(_sceneMaterial->program);
+	xprGpuProgramUniformTexture(_sceneMaterial->program, XprHash("u_tex"), _texture);
 
 	{	// draw floor
-		_renderContext.matDiffuse = XprVec4_(1.0f, 0.88f, 0.33f, 1);
-		_renderContext.matSpecular = XprVec4_(0, 0, 0, 1);
+		_renderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
+		_renderContext.matSpecular = xprVec4(0, 0, 0, 1);
 		_renderContext.matShininess = 32;
 		{
 			XprMat44 m;
 			XprVec3 axis = {1, 0, 0};
-			XprMat44_makeRotation(&m, &axis, -90);
+			xprMat44MakeRotation(&m, &axis, -90);
 			
-			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
+			xprMat44Mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+			xprMat44Mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
 		RenderContext_preRender(&_renderContext, _sceneMaterial);
 
@@ -115,42 +115,42 @@ void drawScene()
 	}
 
 	{	// draw cloth
-		_renderContext.matDiffuse = XprVec4_(1.0f, 0.22f, 0.0f, 1);
-		_renderContext.matSpecular = XprVec4_(0.125f, 0.125f, 0.125f, 1);
+		_renderContext.matDiffuse = xprVec4(1.0f, 0.22f, 0.0f, 1);
+		_renderContext.matSpecular = xprVec4(0.125f, 0.125f, 0.125f, 1);
 		_renderContext.matShininess = 32;
 
-		XprGpuState_setCullEnabled(_gpuState, XprFalse);
-		XprGpuState_preRender(_gpuState);
+		xprGpuStateSetCullEnabled(_gpuState, XprFalse);
+		xprGpuStatePreRender(_gpuState);
 		{
 			XprMat44 m;
-			XprMat44_setIdentity(&m);
+			xprMat44SetIdentity(&m);
 
-			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
+			xprMat44Mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+			xprMat44Mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
 		RenderContext_preRender(&_renderContext, _sceneMaterial);
 
 		Mesh_preRender(_cloth->mesh, _sceneMaterial->program);
 		Mesh_render(_cloth->mesh);
 		
-		XprGpuState_setCullEnabled(_gpuState, XprTrue);
-		XprGpuState_preRender(_gpuState);
+		xprGpuStateSetCullEnabled(_gpuState, XprTrue);
+		xprGpuStatePreRender(_gpuState);
 	}
 
 	{	// draw ball
 		int i;
-		_renderContext.matDiffuse = XprVec4_(0.9f, 0.64f, 0.35f, 1);
-		_renderContext.matSpecular = XprVec4_(1, 1, 1, 1);
+		_renderContext.matDiffuse = xprVec4(0.9f, 0.64f, 0.35f, 1);
+		_renderContext.matSpecular = xprVec4(1, 1, 1, 1);
 		_renderContext.matShininess = 32;
 
 		for(i=0; i<BallCount; ++i) {
 			XprMat44 m;
 			XprVec3 scale = {_ball[i].radius, _ball[i].radius, _ball[i].radius};
-			XprMat44_makeScale(&m, &scale);
-			XprMat44_setTranslation(&m, &_ball[i].center);
+			xprMat44MakeScale(&m, &scale);
+			xprMat44SetTranslation(&m, &_ball[i].center);
 			
-			XprMat44_mult(&_renderContext.worldViewMtx, &viewMtx, &m);
-			XprMat44_mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
+			xprMat44Mult(&_renderContext.worldViewMtx, &viewMtx, &m);
+			xprMat44Mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
 
 			RenderContext_preRender(&_renderContext, _sceneMaterial);
 			
@@ -191,7 +191,7 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 		Cloth_satisfyConstraints(_cloth);
 	}
 	
-	f = XprVec3_(0, -_settings.gravity * _cloth->timeStep, 0);
+	f = xprVec3(0, -_settings.gravity * _cloth->timeStep, 0);
 	Cloth_addForceToAll(_cloth, &f);
 
 	Cloth_verletIntegration(_cloth);
@@ -229,33 +229,33 @@ void PezHandleMouse(int x, int y, int action)
 void PezRender()
 {
 	// render to texture
-	XprRenderBufferHandle color = XprRenderTarget_acquireBuffer(_rt, "unormR8G8B8A8");
-	XprRenderBufferHandle depth = XprRenderTarget_acquireBuffer(_rt, "depth16");
+	XprRenderBufferHandle color = xprRenderTargetAcquireBuffer(_rt, "unormR8G8B8A8");
+	XprRenderBufferHandle depth = xprRenderTargetAcquireBuffer(_rt, "depth16");
 	XprTexture* tex = XprRenderTarget_getTexture(_rt, color);
 
 	XprRenderBufferHandle bufs[] = {color, nullptr};
-	XprRenderTarget_preRender(_rt, bufs, depth);
+	xprRenderTargetPreRender(_rt, bufs, depth);
 
-	XprRenderTarget_clearDepth(1);
+	xprRenderTargetClearDepth(1);
 
 	drawBackground();
 	drawScene();
 
 	// display the rendered image in color buffer
-	XprRenderTarget_preRender(nullptr, nullptr, nullptr);
+	xprRenderTargetPreRender(nullptr, nullptr, nullptr);
 
-	XprGpuState_setDepthTestEnabled(_gpuState, XprFalse);
-	XprGpuState_setCullEnabled(_gpuState, XprTrue);
-	XprGpuState_preRender(_gpuState);
+	xprGpuStateSetDepthTestEnabled(_gpuState, XprFalse);
+	xprGpuStateSetCullEnabled(_gpuState, XprTrue);
+	xprGpuStatePreRender(_gpuState);
 
-	XprGpuProgram_preRender(_uiMaterial->program);
-	XprGpuProgram_uniformTexture(_uiMaterial->program, XprHash("u_tex"), tex);
+	xprGpuProgramPreRender(_uiMaterial->program);
+	xprGpuProgramUniformTexture(_uiMaterial->program, XprHash("u_tex"), tex);
 	
 	Mesh_preRender(_bgMesh, _uiMaterial->program);
 	Mesh_render(_bgMesh);
 	
-	XprRenderTarget_releaseBuffer(_rt, color);
-	XprRenderTarget_releaseBuffer(_rt, depth);
+	xprRenderTargetReleaseBuffer(_rt, color);
+	xprRenderTargetReleaseBuffer(_rt, depth);
 }
 
 void PezConfig()
@@ -279,9 +279,9 @@ void PezExit(void)
 	Material_free(_bgMaterial);
 	Material_free(_uiMaterial);
 	Material_free(_textMaterial);
-	XprTexture_free(_texture);
-	XprRenderTarget_free(_rt);
-	XprGpuState_free(_gpuState);
+	xprTextureFree(_texture);
+	xprRenderTargetFree(_rt);
+	xprGpuStateFree(_gpuState);
 }
 
 const char* PezInitialize(int width, int height)
@@ -302,17 +302,17 @@ const char* PezInitialize(int width, int height)
 	RemoteConfig_init(_config, 80, XprTrue);
 	RemoteConfig_addVars(_config, descs);
 
-	XprRenderTarget_setViewport(0, 0, (float)width, (float)height, -1, 1);
+	xprRenderTargetSetViewport(0, 0, (float)width, (float)height, -1, 1);
 	_aspect.width = (float)width;
 	_aspect.height = (float)height;
 
 	_mouse.isDown = XprFalse;
 
-	_gpuState = XprGpuState_alloc();
-	XprGpuState_init(_gpuState);
+	_gpuState = xprGpuStateAlloc();
+	xprGpuStateInit(_gpuState);
 
-	_rt = XprRenderTarget_alloc();
-	XprRenderTarget_init(_rt, (size_t)width, (size_t)height);
+	_rt = xprRenderTargetAlloc();
+	xprRenderTargetInit(_rt, (size_t)width, (size_t)height);
 
 	// materials
 	glswInit(&myFileSystem);
@@ -344,21 +344,21 @@ const char* PezInitialize(int width, int height)
 	glswShutdown();
 
 	{
-	XprVec3 offset = XprVec3_(-1, 1.5f, 0);
-	_cloth = Cloth_new(2, 2, &offset, 32);
+		XprVec3 offset = xprVec3(-1, 1.5f, 0);
+		_cloth = Cloth_new(2, 2, &offset, 32);
 	}
 
-	_ball[0].center = XprVec3_(-0.5f, 0.5f, 0);
+	_ball[0].center = xprVec3(-0.5f, 0.5f, 0);
 	_ball[0].radius = 0.25f;
-	_ball[1].center = XprVec3_(0.5f, 0.5f, 0);
+	_ball[1].center = xprVec3(0.5f, 0.5f, 0);
 	_ball[1].radius = 0.25f;
 	_ballMesh = Mesh_alloc();
 	Mesh_initWithUnitSphere(_ballMesh, 32);
 
 	{
-	XprVec3 offset = XprVec3_(-2.5f, -2.5f, 0);
-	_floorMesh = Mesh_alloc();
-	Mesh_initWithQuad(_floorMesh, 5, 5, &offset, 1);
+		XprVec3 offset = xprVec3(-2.5f, -2.5f, 0);
+		_floorMesh = Mesh_alloc();
+		Mesh_initWithQuad(_floorMesh, 5, 5, &offset, 1);
 	}
 
 	_bgMesh = Mesh_alloc();

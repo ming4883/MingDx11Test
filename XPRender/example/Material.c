@@ -40,28 +40,28 @@ void Material_initWithShaders(Material* self, const char** args)
 		if(nullptr == val) break;
 
 		if(0 == strcasecmp(key, "vs")) {
-			self->shaders[VS] = XprGpuShader_alloc();
-			XprGpuShader_init(self->shaders[VS], &val, 1, XprGpuShaderType_Vertex);
+			self->shaders[VS] = xprGpuShaderAlloc();
+			xprGpuShaderInit(self->shaders[VS], &val, 1, XprGpuShaderType_Vertex);
 		}
 
 		if(0 == strcasecmp(key, "tc")) {
-			self->shaders[TC] = XprGpuShader_alloc();
-			XprGpuShader_init(self->shaders[TC], &val, 1, XprGpuShaderType_TessControl);
+			self->shaders[TC] = xprGpuShaderAlloc();
+			xprGpuShaderInit(self->shaders[TC], &val, 1, XprGpuShaderType_TessControl);
 		}
 
 		if(0 == strcasecmp(key, "te")) {
-			self->shaders[TE] = XprGpuShader_alloc();
-			XprGpuShader_init(self->shaders[TE], &val, 1, XprGpuShaderType_TessEvaluation);
+			self->shaders[TE] = xprGpuShaderAlloc();
+			xprGpuShaderInit(self->shaders[TE], &val, 1, XprGpuShaderType_TessEvaluation);
 		}
 
 		if(0 == strcasecmp(key, "gs")) {
-			self->shaders[GS] = XprGpuShader_alloc();
-			XprGpuShader_init(self->shaders[GS], &val, 1, XprGpuShaderType_Geometry);
+			self->shaders[GS] = xprGpuShaderAlloc();
+			xprGpuShaderInit(self->shaders[GS], &val, 1, XprGpuShaderType_Geometry);
 		}
 
 		if(0 == strcasecmp(key, "fs")) {
-			self->shaders[FS] = XprGpuShader_alloc();
-			XprGpuShader_init(self->shaders[FS], &val, 1, XprGpuShaderType_Fragment);
+			self->shaders[FS] = xprGpuShaderAlloc();
+			xprGpuShaderInit(self->shaders[FS], &val, 1, XprGpuShaderType_Fragment);
 		}
 	}
 
@@ -69,8 +69,8 @@ void Material_initWithShaders(Material* self, const char** args)
 	if(nullptr == self->shaders[VS] || nullptr == self->shaders[FS])
 		return;
 
-	self->program = XprGpuProgram_alloc();
-	XprGpuProgram_init(self->program, self->shaders, ShaderCount);
+	self->program = xprGpuProgramAlloc();
+	xprGpuProgramInit(self->program, self->shaders, ShaderCount);
 
 	if(!(self->program->flags & XprGpuProgramFlag_Linked))
 		return;
@@ -87,12 +87,12 @@ void Material_free(Material* self)
 		return;
 
 	if(nullptr != self->program)
-		XprGpuProgram_free(self->program);
+		xprGpuProgramFree(self->program);
 
 	for(i=0; i<ShaderCount; ++i)
 	{
 		if(nullptr != self->shaders[i])
-			XprGpuShader_free(self->shaders[i]);
+			xprGpuShaderFree(self->shaders[i]);
 	}
 
 	free(self->shaders);

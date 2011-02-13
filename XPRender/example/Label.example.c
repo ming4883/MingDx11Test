@@ -20,23 +20,23 @@ void PezHandleMouse(int x, int y, int action)
 void PezRender()
 {
 	// render to texture
-	XprRenderTarget_clearDepth(1);
-	XprRenderTarget_clearColor(0.25f, 0.75f, 1.0f, 1.0f);
+	xprRenderTargetClearDepth(1);
+	xprRenderTargetClearColor(0.25f, 0.75f, 1.0f, 1.0f);
 
 	// display the label
-	XprGpuState_setBlendEnabled(_gpuState, XprTrue);
-	XprGpuState_setBlendFactorRGB(_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
-	XprGpuState_setBlendFactorA  (_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
-	XprGpuState_preRender(_gpuState);
+	xprGpuStateSetBlendEnabled(_gpuState, XprTrue);
+	xprGpuStateSetBlendFactorRGB(_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
+	xprGpuStateSetBlendFactorA  (_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
+	xprGpuStatePreRender(_gpuState);
 	
-	XprGpuProgram_preRender(_textMaterial->program);
-	XprGpuProgram_uniformTexture(_textMaterial->program, XprHash("u_tex"), _label->texture);
-	XprGpuProgram_uniform4fv(_textMaterial->program, XprHash("u_textColor"), 1, _textColor.v);
+	xprGpuProgramPreRender(_textMaterial->program);
+	xprGpuProgramUniformTexture(_textMaterial->program, XprHash("u_tex"), _label->texture);
+	xprGpuProgramUniform4fv(_textMaterial->program, XprHash("u_textColor"), 1, _textColor.v);
 	
 	Mesh_preRender(_bgMesh, _textMaterial->program);
 	Mesh_render(_bgMesh);
 
-	XprGpuState_setBlendEnabled(_gpuState, XprFalse);
+	xprGpuStateSetBlendEnabled(_gpuState, XprFalse);
 }
 
 void PezConfig()
@@ -49,7 +49,7 @@ void PezConfig()
 
 void PezExit(void)
 {
-	XprGpuState_free(_gpuState);
+	xprGpuStateFree(_gpuState);
 	Material_free(_textMaterial);
 	Label_free(_label);
 }
@@ -58,10 +58,10 @@ const char* PezInitialize(int width, int height)
 {
 	char utf8[] = {0xEF, 0xBB, 0xBF, 0xE9, 0x80, 0x99, 0xE6, 0x98, 0xAF, 0x55, 0x54, 0x46, 0x38, 0x00};
 
-	XprRenderTarget_setViewport(0, 0, (float)width, (float)height, -1, 1);
+	xprRenderTargetSetViewport(0, 0, (float)width, (float)height, -1, 1);
 
-	_gpuState = XprGpuState_alloc();
-	XprGpuState_init(_gpuState);
+	_gpuState = xprGpuStateAlloc();
+	xprGpuStateInit(_gpuState);
 	
 	// label
 	_label = Label_alloc();

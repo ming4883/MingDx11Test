@@ -13,13 +13,13 @@ typedef struct XprNvpParser
 	char* mPos;
 } XprNvpParser;
 
-XprNvpParser* XprNvpParser_alloc();
+XprNvpParser* xprNvpParserAlloc();
 
-void XprNvpParser_free(XprNvpParser* self);
+void xprNvpParserFree(XprNvpParser* self);
 
-void XprNvpParser_init(XprNvpParser* self, const char* str);
+void xprNvpParserInit(XprNvpParser* self, const char* str);
 
-XprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** value);
+XprBool xprNvpParserNext(XprNvpParser* self, const char** name, const char** value);
 
 #ifdef __cplusplus
 }

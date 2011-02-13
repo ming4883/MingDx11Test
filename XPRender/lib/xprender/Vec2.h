@@ -19,45 +19,45 @@ typedef struct XprVec2
 	};
 } XprVec2;
 
-XprVec2 XprVec2_(float x, float y);
+XprVec2 xprVec2(float x, float y);
 
 const XprVec2* XprVec2_c00();
 const XprVec2* XprVec2_c10();
 const XprVec2* XprVec2_c01();
 
-void XprVec2_set(XprVec2* _out, float x, float y);
+void xprVec2_set(XprVec2* _out, float x, float y);
 
-XprBool XprVec2_isEquals(const XprVec2* a, const XprVec2* b, float epsilon);
+XprBool xprVec2IsEqual(const XprVec2* a, const XprVec2* b, float epsilon);
 
 /* return a + b */
-XprVec2* XprVec2_add(XprVec2* _out, const XprVec2* a, const XprVec2* b);
+XprVec2* xprVec2Add(XprVec2* _out, const XprVec2* a, const XprVec2* b);
 
 /* return a - b */
-XprVec2* XprVec2_sub(XprVec2* _out, const XprVec2* a, const XprVec2* b);
+XprVec2* xprVec2Sub(XprVec2* _out, const XprVec2* a, const XprVec2* b);
 
 /* return a * b */
-XprVec2* XprVec2_mult(XprVec2* _out, const XprVec2* a, const XprVec2* b);
+XprVec2* xprVec2Mult(XprVec2* _out, const XprVec2* a, const XprVec2* b);
 
 /* return a * b */
-XprVec2* XprVec2_multS(XprVec2* _out, const XprVec2* a, float b);
+XprVec2* xprVec2MultS(XprVec2* _out, const XprVec2* a, float b);
 
 /* return a dot b */
-float XprVec2_dot(const XprVec2* a, const XprVec2* b);
+float xprVec2Dot(const XprVec2* a, const XprVec2* b);
 
 /* return |a|^2 */
-float XprVec2_sqLength(const XprVec2* a);
+float xprVec2SqLength(const XprVec2* a);
 
 /* return |a| */
-float XprVec2_length(const XprVec2* a);
+float xprVec2Length(const XprVec2* a);
 
 /* return |a-b| */
-float XprVec2_distance(const XprVec2* a, const XprVec2* b);
+float xprVec2Distance(const XprVec2* a, const XprVec2* b);
 
 /* normalize a and return |a| */
-float XprVec2_normalize(XprVec2* a);
+float xprVec2Normalize(XprVec2* a);
 
 /* return normalized copy of a */
-XprVec2 XprVec2_normalizedCopy(const XprVec2* a);
+XprVec2 xprVec2NormalizedCopy(const XprVec2* a);
 
 #ifdef __cplusplus
 }

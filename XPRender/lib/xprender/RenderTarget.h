@@ -28,25 +28,25 @@ typedef struct XprRenderTarget
 
 typedef void* XprRenderBufferHandle;
 
-XprRenderTarget* XprRenderTarget_alloc();
+XprRenderTarget* xprRenderTargetAlloc();
 
-void XprRenderTarget_free(XprRenderTarget* self);
+void xprRenderTargetFree(XprRenderTarget* self);
 
-void XprRenderTarget_init(XprRenderTarget* self, size_t width, size_t height);
+void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height);
 
-XprRenderBufferHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format);
+XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, const char* format);
 
-void XprRenderTarget_releaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer);
+void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer);
 
 struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBufferHandle buffer);
 
-void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth);
+void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth);
 
-void XprRenderTarget_setViewport(float x, float y, float w, float h, float zmin, float zmax);
+void xprRenderTargetSetViewport(float x, float y, float w, float h, float zmin, float zmax);
 
-void XprRenderTarget_clearColor(float r, float g, float b, float a);
+void xprRenderTargetClearColor(float r, float g, float b, float a);
 
-void XprRenderTarget_clearDepth(float z);
+void xprRenderTargetClearDepth(float z);
 
 #ifdef __cplusplus
 }

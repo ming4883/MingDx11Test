@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-XprVec2 XprVec2_(float x, float y)
+XprVec2 xprVec2(float x, float y)
 {
 	XprVec2 _out;
 	_out.x = x;
@@ -30,7 +30,7 @@ const XprVec2* XprVec2_c01()
 }
 
 
-void XprVec2_set(XprVec2* _out, float x, float y)
+void xprVec2_set(XprVec2* _out, float x, float y)
 {
 	if(nullptr == _out)
 		return;
@@ -39,7 +39,7 @@ void XprVec2_set(XprVec2* _out, float x, float y)
 	_out->y = y;
 }
 
-XprBool XprVec2_isEquals(const XprVec2* a, const XprVec2* b, float epsilon)
+XprBool xprVec2IsEqual(const XprVec2* a, const XprVec2* b, float epsilon)
 {
 	float ex = a->x - b->x;
 	float ey = a->y - b->y;
@@ -50,59 +50,59 @@ XprBool XprVec2_isEquals(const XprVec2* a, const XprVec2* b, float epsilon)
 	return XprFalse;
 }
 
-XprVec2* XprVec2_add(XprVec2* _out, const XprVec2* a, const XprVec2* b)
+XprVec2* xprVec2Add(XprVec2* _out, const XprVec2* a, const XprVec2* b)
 {
 	_out->x = a->x + b->x;
 	_out->y = a->y + b->y;
 	return _out;
 }
 
-XprVec2* XprVec2_sub(XprVec2* _out, const XprVec2* a, const XprVec2* b)
+XprVec2* xprVec2Sub(XprVec2* _out, const XprVec2* a, const XprVec2* b)
 {
 	_out->x = a->x - b->x;
 	_out->y = a->y - b->y;
 	return _out;
 }
 
-XprVec2* XprVec2_mult(XprVec2* _out, const XprVec2* a, const XprVec2* b)
+XprVec2* xprVec2Mult(XprVec2* _out, const XprVec2* a, const XprVec2* b)
 {
 	_out->x = a->x * b->x;
 	_out->y = a->y * b->y;
 	return _out;
 }
 
-XprVec2* XprVec2_multS(XprVec2* _out, const XprVec2* a, float b)
+XprVec2* xprVec2MultS(XprVec2* _out, const XprVec2* a, float b)
 {
 	_out->x = a->x * b;
 	_out->y = a->y * b;
 	return _out;
 }
 
-float XprVec2_dot(const XprVec2* a, const XprVec2* b)
+float xprVec2Dot(const XprVec2* a, const XprVec2* b)
 {
 	return (a->x * b->x) + (a->y * b->y);
 }
 
-float XprVec2_sqLength(const XprVec2* a)
+float xprVec2SqLength(const XprVec2* a)
 {
-	return XprVec2_dot(a, a);
+	return xprVec2Dot(a, a);
 }
 
-float XprVec2_length(const XprVec2* a)
+float xprVec2Length(const XprVec2* a)
 {
-	return sqrtf(XprVec2_sqLength(a));
+	return sqrtf(xprVec2SqLength(a));
 }
 
-float XprVec2_distance(const XprVec2* a, const XprVec2* b)
+float xprVec2Distance(const XprVec2* a, const XprVec2* b)
 {
 	XprVec2 diff;
-	XprVec2_sub(&diff, a, b);
-	return XprVec2_length(&diff);
+	xprVec2Sub(&diff, a, b);
+	return xprVec2Length(&diff);
 }
 
-float XprVec2_normalize(XprVec2* a)
+float xprVec2Normalize(XprVec2* a)
 {
-	float len = XprVec2_length(a);
+	float len = xprVec2Length(a);
 	
 	if(len > 1e-5f || len < -1e-5f)
 	{
@@ -115,9 +115,9 @@ float XprVec2_normalize(XprVec2* a)
 	return len;
 }
 
-XprVec2 XprVec2_normalizedCopy(const XprVec2* a)
+XprVec2 xprVec2NormalizedCopy(const XprVec2* a)
 {
 	XprVec2 _out = *a;
-	XprVec2_normalize(&_out);
+	xprVec2Normalize(&_out);
 	return _out;
 }

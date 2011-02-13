@@ -34,14 +34,14 @@ XprTexture* Pvr_createTexture(const PvrDataType* pvr)
 	if(nullptr == pvr)
 		return nullptr;
 
-	tex = XprTexture_alloc();
+	tex = xprTextureAlloc();
 
-	XprTexture_init(tex, width, height, mipCount, 1, "unormR8G8B8A8");
+	xprTextureInit(tex, width, height, mipCount, 1, "unormR8G8B8A8");
 
 	if(dataSize == tex->surfSizeInByte)
 		memcpy(tex->data, data, dataSize);
 
-	XprTexture_commit(tex);
+	xprTextureCommit(tex);
 
 	return tex;
 }

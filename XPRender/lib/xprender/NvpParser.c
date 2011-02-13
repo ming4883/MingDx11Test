@@ -1,19 +1,19 @@
 #include "NVPParser.h"
 
-XprNvpParser* XprNvpParser_alloc()
+XprNvpParser* xprNvpParserAlloc()
 {
 	XprNvpParser* self = malloc(sizeof(XprNvpParser));
 	memset(self, 0, sizeof(XprNvpParser));
 	return self;
 }
 
-void XprNvpParser_free(XprNvpParser* self)
+void xprNvpParserFree(XprNvpParser* self)
 {
 	free(self->mStr);
 	free(self);
 }
 
-void XprNvpParser_init(XprNvpParser* self, const char* str)
+void xprNvpParserInit(XprNvpParser* self, const char* str)
 {
 	self->mStr = self->mPos = strdup(str);
 }
@@ -56,7 +56,7 @@ void skipNonSeps(char** pos)
 	} while(advancePos(pos));
 }
 
-XprBool XprNvpParser_next(XprNvpParser* self, const char** name, const char** value)
+XprBool xprNvpParserNext(XprNvpParser* self, const char** name, const char** value)
 {
 	static const char cQuots[] = "'\"";
 	char* name_;

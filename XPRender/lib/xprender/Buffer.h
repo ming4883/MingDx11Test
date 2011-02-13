@@ -39,17 +39,17 @@ typedef struct XprBuffer
 
 } XprBuffer;
 
-XprBuffer* XprBuffer_alloc();
+XprBuffer* xprBufferAlloc();
 
-void XprBuffer_free(XprBuffer* self);
+void xprBufferFree(XprBuffer* self);
 
-void XprBuffer_init(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData);
+void xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData);
 
-void XprBuffer_update(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data);
+void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data);
 
-void* XprBuffer_map(XprBuffer* self, XprBufferMapAccess usage);
+void* xprBufferMap(XprBuffer* self, XprBufferMapAccess usage);
 
-void XprBuffer_unmap(XprBuffer* self);
+void xprBufferUnmap(XprBuffer* self);
 
 #ifdef __cplusplus
 }

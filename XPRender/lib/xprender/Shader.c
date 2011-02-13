@@ -2,7 +2,7 @@
 #include "Texture.GL.h"
 #include <stdio.h>
 
-GLenum XprGLShaderMapping[] = {
+GLenum xprGL_SHADER_TYPE[] = {
 	GL_VERTEX_SHADER,
 	GL_FRAGMENT_SHADER,
 #if !defined(XPR_GLES_2)
@@ -12,7 +12,7 @@ GLenum XprGLShaderMapping[] = {
 #endif
 };
 
-XprGpuShader* XprGpuShader_alloc()
+XprGpuShader* xprGpuShaderAlloc()
 {
 	XprGpuShader* self;
 	XprAllocWithImpl(self, XprGpuShader, XprGpuShaderImpl);
@@ -20,7 +20,7 @@ XprGpuShader* XprGpuShader_alloc()
 	return self;
 }
 
-void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type)
+void xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type)
 {
 	int compileStatus;
 
@@ -30,7 +30,7 @@ void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, 
 	}
 
 	self->type = type;
-	self->impl->glName = glCreateShader(XprGLShaderMapping[self->type]);
+	self->impl->glName = glCreateShader(xprGL_SHADER_TYPE[self->type]);
 	self->flags = 0;
 
 	glShaderSource(self->impl->glName, srcCnt, sources, nullptr);
@@ -53,7 +53,7 @@ void XprGpuShader_init(XprGpuShader* self, const char** sources, size_t srcCnt, 
 	}
 }
 
-void XprGpuShader_free(XprGpuShader* self)
+void xprGpuShaderFree(XprGpuShader* self)
 {
 	if(nullptr == self)
 		return;
@@ -62,7 +62,7 @@ void XprGpuShader_free(XprGpuShader* self)
 	free(self);
 }
 
-XprGpuProgram* XprGpuProgram_alloc()
+XprGpuProgram* xprGpuProgramAlloc()
 {
 	XprGpuProgram* self;
 	XprAllocWithImpl(self, XprGpuProgram, XprGpuProgramImpl);
@@ -70,7 +70,7 @@ XprGpuProgram* XprGpuProgram_alloc()
 	return self;
 }
 
-void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt)
+void xprGpuProgramInit(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt)
 {
 	size_t i;
 	int linkStatus;
@@ -157,7 +157,7 @@ void XprGpuProgram_init(XprGpuProgram* self, const XprGpuShader** const shaders,
 	
 }
 
-void XprGpuProgram_free(XprGpuProgram* self)
+void xprGpuProgramFree(XprGpuProgram* self)
 {
 	if(nullptr == self)
 		return;
@@ -174,7 +174,7 @@ void XprGpuProgram_free(XprGpuProgram* self)
 	free(self);
 }
 
-void XprGpuProgram_preRender(XprGpuProgram* self)
+void xprGpuProgramPreRender(XprGpuProgram* self)
 {
 	if(nullptr == self)
 		return;
@@ -187,7 +187,7 @@ void XprGpuProgram_preRender(XprGpuProgram* self)
 	glUseProgram(self->impl->glName);
 }
 
-void XprGpuProgram_uniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
+void xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
@@ -204,7 +204,7 @@ void XprGpuProgram_uniform1fv(XprGpuProgram* self, XprHashCode hash, size_t coun
 	}
 }
 
-void XprGpuProgram_uniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
+void xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
@@ -221,7 +221,7 @@ void XprGpuProgram_uniform2fv(XprGpuProgram* self, XprHashCode hash, size_t coun
 	}
 }
 
-void XprGpuProgram_uniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
+void xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
@@ -238,7 +238,7 @@ void XprGpuProgram_uniform3fv(XprGpuProgram* self, XprHashCode hash, size_t coun
 	}
 }
 
-void XprGpuProgram_uniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
+void xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
@@ -255,7 +255,7 @@ void XprGpuProgram_uniform4fv(XprGpuProgram* self, XprHashCode hash, size_t coun
 	}
 }
 
-void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value)
+void xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value)
 {
 	XprGpuProgramUniform* uniform;
 	if(nullptr == self)
@@ -272,7 +272,7 @@ void XprGpuProgram_uniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t c
 	}
 }
 
-void XprGpuProgram_uniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
+void xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
 {
 	XprGpuProgramUniform* uniform;
 	if(nullptr == self)

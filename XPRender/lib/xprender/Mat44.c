@@ -4,7 +4,7 @@
 
 #include <math.h>
 
-XprMat44 XprMat44_(
+XprMat44 xprMat44(
 	float m00, float m01, float m02, float m03,
 	float m10, float m11, float m12, float m13,
 	float m20, float m21, float m22, float m23,
@@ -19,7 +19,7 @@ XprMat44 XprMat44_(
 	return self;
 }
 
-void XprMat44_mult(XprMat44* _out, const XprMat44* a, const XprMat44* b)
+void xprMat44Mult(XprMat44* _out, const XprMat44* a, const XprMat44* b)
 {
 	XprMat44 ta = *a;
 	XprMat44 tb = *b;
@@ -45,7 +45,7 @@ void XprMat44_mult(XprMat44* _out, const XprMat44* a, const XprMat44* b)
 	_out->m33 = ta.m30 * tb.m03 + ta.m31 * tb.m13 + ta.m32 * tb.m23 + ta.m33 * tb.m33;
 }
 
-void XprMat44_transpose(XprMat44* _out, const XprMat44* m)
+void xprMat44Transpose(XprMat44* _out, const XprMat44* m)
 {
 	XprMat44 t = *m;
 	_out->m00 = t.m00; _out->m01 = t.m10; _out->m02 = t.m20; _out->m03 = t.m30;
@@ -54,7 +54,7 @@ void XprMat44_transpose(XprMat44* _out, const XprMat44* m)
 	_out->m30 = t.m03; _out->m31 = t.m13; _out->m32 = t.m23; _out->m33 = t.m33;
 }
 
-void XprMat44_transform(XprVec4* _out, const XprMat44* m)
+void xprMat44Transform(XprVec4* _out, const XprMat44* m)
 {
 	XprVec4 v = *_out;
 	_out->x = m->m00 * v.x + m->m01 * v.y + m->m02 * v.z + m->m03 * v.w;
@@ -63,7 +63,7 @@ void XprMat44_transform(XprVec4* _out, const XprMat44* m)
 	_out->w = m->m30 * v.x + m->m31 * v.y + m->m32 * v.z + m->m33 * v.w;
 }
 
-void XprMat44_transformAffineDir(XprVec3* _out, const XprMat44* m)
+void xprMat44TransformAffineDir(XprVec3* _out, const XprMat44* m)
 {
 	XprVec3 v = *_out;
 	_out->x = m->m00 * v.x + m->m01 * v.y + m->m02 * v.z;
@@ -71,7 +71,7 @@ void XprMat44_transformAffineDir(XprVec3* _out, const XprMat44* m)
 	_out->z = m->m20 * v.x + m->m21 * v.y + m->m22 * v.z;
 }
 
-void XprMat44_transformAffinePt(XprVec3* _out, const XprMat44* m)
+void xprMat44TransformAffinePt(XprVec3* _out, const XprMat44* m)
 {
 	XprVec3 v = *_out;
 	_out->x = m->m00 * v.x + m->m01 * v.y + m->m02 * v.z + m->m03;
@@ -79,7 +79,7 @@ void XprMat44_transformAffinePt(XprVec3* _out, const XprMat44* m)
 	_out->z = m->m20 * v.x + m->m21 * v.y + m->m22 * v.z + m->m23;
 }
 
-void XprMat44_setIdentity(XprMat44* _out)
+void xprMat44SetIdentity(XprMat44* _out)
 {
 	_out->m00 = 1; _out->m01 = 0; _out->m02 = 0; _out->m03 = 0;
 	_out->m10 = 0; _out->m11 = 1; _out->m12 = 0; _out->m13 = 0;
@@ -87,21 +87,21 @@ void XprMat44_setIdentity(XprMat44* _out)
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void XprMat44_setTranslation(XprMat44* _out, const XprVec3* v)
+void xprMat44SetTranslation(XprMat44* _out, const XprVec3* v)
 {
 	_out->m03 = v->x;
 	_out->m13 = v->y;
 	_out->m23 = v->z;
 }
 
-void XprMat44_getTranslation(struct XprVec3* v, const XprMat44* m)
+void xprMat44GetTranslation(XprVec3* v, const XprMat44* m)
 {
 	v->x = m->m03;
 	v->y = m->m13;
 	v->z = m->m23;
 }
 
-void XprMat44_makeTranslation(XprMat44* _out, const struct XprVec3* v)
+void xprMat44MakeTranslation(XprMat44* _out, const XprVec3* v)
 {
 	_out->m00 = 1; _out->m01 = 0; _out->m02 = 0; _out->m03 = v->x;
 	_out->m10 = 0; _out->m11 = 1; _out->m12 = 0; _out->m13 = v->y;
@@ -109,7 +109,7 @@ void XprMat44_makeTranslation(XprMat44* _out, const struct XprVec3* v)
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void XprMat44_makeScale(XprMat44* _out, const struct XprVec3* v)
+void xprMat44MakeScale(XprMat44* _out, const XprVec3* v)
 {
 	_out->m00 = v->x; _out->m01 = 0; _out->m02 = 0; _out->m03 = 0;
 	_out->m10 = 0; _out->m11 = v->y; _out->m12 = 0; _out->m13 = 0;
@@ -117,7 +117,7 @@ void XprMat44_makeScale(XprMat44* _out, const struct XprVec3* v)
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void XprMat44_makeRotationX(XprMat44* _out, float angleInDeg)
+void xprMat44MakeRotationX(XprMat44* _out, float angleInDeg)
 {
 	float a = angleInDeg * 3.1415926f / 180;
 	float sa = sinf(a);
@@ -129,7 +129,7 @@ void XprMat44_makeRotationX(XprMat44* _out, float angleInDeg)
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void XprMat44_makeRotationY(XprMat44* _out, float angleInDeg)
+void xprMat44MakeRotationY(XprMat44* _out, float angleInDeg)
 {
 	float a = angleInDeg * 3.1415926f / 180;
 	float sa = sinf(a);
@@ -141,7 +141,7 @@ void XprMat44_makeRotationY(XprMat44* _out, float angleInDeg)
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void XprMat44_makeRotationZ(XprMat44* _out, float angleInDeg)
+void xprMat44MakeRotationZ(XprMat44* _out, float angleInDeg)
 {
 	float a = angleInDeg * 3.1415926f / 180;
 	float sa = sinf(a);
@@ -153,7 +153,7 @@ void XprMat44_makeRotationZ(XprMat44* _out, float angleInDeg)
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void XprMat44_makeRotation(XprMat44* _out, const struct XprVec3* axis, float angleInDeg)
+void xprMat44MakeRotation(XprMat44* _out, const XprVec3* axis, float angleInDeg)
 {
 	float a = angleInDeg * 3.1415926f / 180;
 	float sa = sinf(a);
@@ -184,7 +184,7 @@ void XprMat44_makeRotation(XprMat44* _out, const struct XprVec3* axis, float ang
 	_out->m30 = 0; _out->m31 = 0; _out->m32 = 0; _out->m33 = 1;
 }
 
-void XprMat44_getBasis(struct XprVec3* xaxis, struct XprVec3* yaxis, struct XprVec3* zaxis, const XprMat44* m)
+void xprMat44GetBasis(XprVec3* xaxis, XprVec3* yaxis, XprVec3* zaxis, const XprMat44* m)
 {
 	// reference: http://web.archive.org/web/20041029003853/http://www.j3d.org/matrix_faq/matrfaq_latest.html#Q5
 	xaxis->x = m->m00;
@@ -200,15 +200,15 @@ void XprMat44_getBasis(struct XprVec3* xaxis, struct XprVec3* yaxis, struct XprV
 	zaxis->z = m->m22;
 }
 
-void XprMat44_cameraLookAt(XprMat44* _out, const XprVec3* eyeAt, const XprVec3* lookAt, const XprVec3* eyeUp)
+void xprMat44CameraLookAt(XprMat44* _out, const XprVec3* eyeAt, const XprVec3* lookAt, const XprVec3* eyeUp)
 {
 	XprVec3 fwd, side, up;
 
-	XprVec3_normalize(XprVec3_sub(&fwd, eyeAt, lookAt));
-	XprVec3_normalize(XprVec3_cross(&side, eyeUp, &fwd));
-	XprVec3_cross(&up, &fwd, &side);
+	xprVec3Normalize(xprVec3Sub(&fwd, eyeAt, lookAt));
+	xprVec3Normalize(xprVec3Cross(&side, eyeUp, &fwd));
+	xprVec3Cross(&up, &fwd, &side);
 
-	XprMat44_setIdentity(_out);
+	xprMat44SetIdentity(_out);
 	_out->m00 = side.x; 
 	_out->m01 = side.y;
 	_out->m02 = side.z;
@@ -221,17 +221,17 @@ void XprMat44_cameraLookAt(XprMat44* _out, const XprVec3* eyeAt, const XprVec3* 
 	_out->m21 = fwd.y;
 	_out->m22 = fwd.z;
 
-	_out->m03 = -XprVec3_dot(&side, eyeAt);
-	_out->m13 = -XprVec3_dot(&up, eyeAt);
-	_out->m23 = -XprVec3_dot(&fwd, eyeAt);
+	_out->m03 = -xprVec3Dot(&side, eyeAt);
+	_out->m13 = -xprVec3Dot(&up, eyeAt);
+	_out->m23 = -xprVec3Dot(&fwd, eyeAt);
 }
 
-void XprMat44_prespective(XprMat44* _out, float fovyDeg, float aspect, float znear, float zfar)
+void xprMat44Prespective(XprMat44* _out, float fovyDeg, float aspect, float znear, float zfar)
 {
 	float f = 1 / tanf((fovyDeg * 3.1415926f / 180) * 0.5f);
 	float nf = 1 / (znear - zfar);
 
-	XprMat44_setIdentity(_out);
+	xprMat44SetIdentity(_out);
 	_out->m00 = f / aspect;
 	_out->m11 = f;
 	_out->m22 = (zfar + znear) * nf;
@@ -240,7 +240,7 @@ void XprMat44_prespective(XprMat44* _out, float fovyDeg, float aspect, float zne
 	_out->m33 = 0;
 }
 
-void XprMat44_planarReflect(XprMat44* _out, const XprVec3* normal, const XprVec3* point)
+void xprMat44PlanarReflect(XprMat44* _out, const XprVec3* normal, const XprVec3* point)
 {
 	float vxx = -2 * normal->x * normal->x;
 	float vxy = -2 * normal->x * normal->y;
@@ -249,7 +249,7 @@ void XprMat44_planarReflect(XprMat44* _out, const XprVec3* normal, const XprVec3
 	float vyz = -2 * normal->y * normal->z;
 	float vzz = -2 * normal->z * normal->z;
 
-	float pv = 2 * XprVec3_dot(normal, point);
+	float pv = 2 * xprVec3Dot(normal, point);
 
 	_out->m00 = 1 + vxx;
 	_out->m01 = vxy;

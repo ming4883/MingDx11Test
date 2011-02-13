@@ -41,27 +41,27 @@ typedef struct XprGpuState
 
 } XprGpuState;
 
-XprGpuState* XprGpuState_alloc();
+XprGpuState* xprGpuStateAlloc();
 
-void XprGpuState_free(XprGpuState* self);
+void xprGpuStateFree(XprGpuState* self);
 
-void XprGpuState_init(XprGpuState* self);
+void xprGpuStateInit(XprGpuState* self);
 
-void XprGpuState_preRender(XprGpuState* self);
+void xprGpuStatePreRender(XprGpuState* self);
 
-void XprGpuState_setDepthTestEnabled(XprGpuState* self, XprBool value);
+void xprGpuStateSetDepthTestEnabled(XprGpuState* self, XprBool value);
 
-void XprGpuState_setDepthWriteEnabled(XprGpuState* self, XprBool value);
+void xprGpuStateSetDepthWriteEnabled(XprGpuState* self, XprBool value);
 
-void XprGpuState_setCullEnabled(XprGpuState* self, XprBool value);
+void xprGpuStateSetCullEnabled(XprGpuState* self, XprBool value);
 
-void XprGpuState_setBlendEnabled(XprGpuState* self, XprBool value);
+void xprGpuStateSetBlendEnabled(XprGpuState* self, XprBool value);
 
-void XprGpuState_setBlendFactorRGB(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest);
+void xprGpuStateSetBlendFactorRGB(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest);
 
-void XprGpuState_setBlendFactorA(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest);
+void xprGpuStateSetBlendFactorA(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest);
 
-void XprGpuState_setPolygonMode(XprGpuState* self, XprGpuStateType polygonMode);
+void xprGpuStateSetPolygonMode(XprGpuState* self, XprGpuStateType polygonMode);
 
 
 #ifdef __cplusplus

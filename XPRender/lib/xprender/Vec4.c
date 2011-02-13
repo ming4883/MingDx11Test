@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-XprVec4 XprVec4_(float x, float y, float z, float w)
+XprVec4 xprVec4(float x, float y, float z, float w)
 {
 	XprVec4 _out;
 	_out.x = x;
@@ -13,7 +13,7 @@ XprVec4 XprVec4_(float x, float y, float z, float w)
 	return _out;
 }
 
-XprVec4 XprVec4_fromVec3(const XprVec3* xyz, float w)
+XprVec4 xprVec4FromVec3(const XprVec3* xyz, float w)
 {
 	XprVec4 _out;
 	_out.x = xyz->x;
@@ -54,7 +54,7 @@ const XprVec4* XprVec4_c0001()
 	return &_XprVec4_c0001;
 }
 
-void XprVec4_set(XprVec4* _out, float x, float y, float z, float w)
+void xprVec4Set(XprVec4* _out, float x, float y, float z, float w)
 {
 	if(nullptr == _out)
 		return;
@@ -65,7 +65,7 @@ void XprVec4_set(XprVec4* _out, float x, float y, float z, float w)
 	_out->w = w;
 }
 
-XprBool XprVec4_isEquals(const XprVec4* a, const XprVec4* b, float epsilon)
+XprBool xprVec4IsEqual(const XprVec4* a, const XprVec4* b, float epsilon)
 {
 	float ex = a->x - b->x;
 	float ey = a->y - b->y;
@@ -78,7 +78,7 @@ XprBool XprVec4_isEquals(const XprVec4* a, const XprVec4* b, float epsilon)
 	return XprFalse;
 }
 
-XprVec4* XprVec4_add(XprVec4* _out, const XprVec4* a, const XprVec4* b)
+XprVec4* xprVec4Add(XprVec4* _out, const XprVec4* a, const XprVec4* b)
 {
 	_out->x = a->x + b->x;
 	_out->y = a->y + b->y;
@@ -87,7 +87,7 @@ XprVec4* XprVec4_add(XprVec4* _out, const XprVec4* a, const XprVec4* b)
 	return _out;
 }
 
-XprVec4* XprVec4_sub(XprVec4* _out, const XprVec4* a, const XprVec4* b)
+XprVec4* xprVec4Sub(XprVec4* _out, const XprVec4* a, const XprVec4* b)
 {
 	_out->x = a->x - b->x;
 	_out->y = a->y - b->y;
@@ -96,7 +96,7 @@ XprVec4* XprVec4_sub(XprVec4* _out, const XprVec4* a, const XprVec4* b)
 	return _out;
 }
 
-XprVec4* XprVec4_mult(XprVec4* _out, const XprVec4* a, const XprVec4* b)
+XprVec4* xprVec4Mult(XprVec4* _out, const XprVec4* a, const XprVec4* b)
 {
 	_out->x = a->x * b->x;
 	_out->y = a->y * b->y;
@@ -105,7 +105,7 @@ XprVec4* XprVec4_mult(XprVec4* _out, const XprVec4* a, const XprVec4* b)
 	return _out;
 }
 
-XprVec4* XprVec4_multS(XprVec4* _out, const XprVec4* a, float b)
+XprVec4* xprVec4MultS(XprVec4* _out, const XprVec4* a, float b)
 {
 	_out->x = a->x * b;
 	_out->y = a->y * b;
@@ -114,31 +114,31 @@ XprVec4* XprVec4_multS(XprVec4* _out, const XprVec4* a, float b)
 	return _out;
 }
 
-float XprVec4_dot(const XprVec4* a, const XprVec4* b)
+float xprVec4Dot(const XprVec4* a, const XprVec4* b)
 {
 	return (a->x * b->x) + (a->y * b->y) + (a->z * b->z) + (a->w * b->w);
 }
 
-float XprVec4_sqLength(const XprVec4* a)
+float xprVec4SqLength(const XprVec4* a)
 {
-	return XprVec4_dot(a, a);
+	return xprVec4Dot(a, a);
 }
 
-float XprVec4_length(const XprVec4* a)
+float xprVec4Length(const XprVec4* a)
 {
-	return sqrtf(XprVec4_sqLength(a));
+	return sqrtf(xprVec4SqLength(a));
 }
 
-float XprVec4_distance(const XprVec4* a, const XprVec4* b)
+float xprVec4Distance(const XprVec4* a, const XprVec4* b)
 {
 	XprVec4 diff;
-	XprVec4_sub(&diff, a, b);
-	return XprVec4_length(&diff);
+	xprVec4Sub(&diff, a, b);
+	return xprVec4Length(&diff);
 }
 
-float XprVec4_normalize(XprVec4* a)
+float xprVec4Normalize(XprVec4* a)
 {
-	float len = XprVec4_length(a);
+	float len = xprVec4Length(a);
 	
 	if(len > 1e-5f || len < -1e-5f)
 	{
@@ -153,9 +153,9 @@ float XprVec4_normalize(XprVec4* a)
 	return len;
 }
 
-XprVec4 XprVec4_normalizedCopy(const XprVec4* a)
+XprVec4 xprVec4NormalizedCopy(const XprVec4* a)
 {
 	XprVec4 _out = *a;
-	XprVec4_normalize(&_out);
+	xprVec4Normalize(&_out);
 	return _out;
 }

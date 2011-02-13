@@ -1,6 +1,6 @@
 #include "RenderTarget.gl.h"
 
-XprRenderTarget* XprRenderTarget_alloc()
+XprRenderTarget* xprRenderTargetAlloc()
 {
 	XprRenderTarget* self;
 	XprAllocWithImpl(self, XprRenderTarget, XprRenderTargetImpl);
@@ -8,7 +8,7 @@ XprRenderTarget* XprRenderTarget_alloc()
 	return self;
 }
 
-void XprRenderTarget_free(XprRenderTarget* self)
+void xprRenderTargetFree(XprRenderTarget* self)
 {
 	if(self->flags & XprRenderTargetFlag_Inited) {
 		
@@ -16,7 +16,7 @@ void XprRenderTarget_free(XprRenderTarget* self)
 
 		LL_FOREACH_SAFE(self->impl->bufferList, it, tmp) {
 			LL_DELETE(self->impl->bufferList, it);
-			XprTexture_free(it->texture);
+			xprTextureFree(it->texture);
 			free(it);
 		}
 
@@ -25,7 +25,7 @@ void XprRenderTarget_free(XprRenderTarget* self)
 	free(self);
 }
 
-void XprRenderTarget_init(XprRenderTarget* self, size_t width, size_t height)
+void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 {
 	if(nullptr == self)
 		return;
@@ -43,7 +43,7 @@ void XprRenderTarget_init(XprRenderTarget* self, size_t width, size_t height)
 	self->flags |= XprRenderTargetFlag_Inited;
 }
 
-XprRenderBufferHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const char* format)
+XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, const char* format)
 {
 	XprRenderBuffer* buffer;
 	XprRenderBuffer* it;
@@ -55,8 +55,8 @@ XprRenderBufferHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const
 
 	buffer = malloc(sizeof(XprRenderBuffer));
 	buffer->acquired = XprTrue;
-	buffer->texture = XprTexture_alloc();
-	XprTexture_initRtt(buffer->texture, self->width, self->height, 0, 1, format);
+	buffer->texture = xprTextureAlloc();
+	xprTextureInitRtt(buffer->texture, self->width, self->height, 0, 1, format);
 
 	LL_APPEND(self->impl->bufferList, buffer);
 	++self->impl->bufferCount;
@@ -64,7 +64,7 @@ XprRenderBufferHandle XprRenderTarget_acquireBuffer(XprRenderTarget* self, const
 	return buffer;
 }
 
-void XprRenderTarget_releaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer)
+void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer)
 {
 	if(nullptr == self)
 		return;
@@ -99,7 +99,7 @@ GLenum glAttachmentPoints[] =
 #endif
 };
 
-void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth)
+void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth)
 {
 	size_t bufCnt;
 	XprRenderBuffer** curr;
@@ -140,19 +140,19 @@ void XprRenderTarget_preRender(XprRenderTarget* self, XprRenderBufferHandle* col
 	}
 }
 
-void XprRenderTarget_setViewport(float x, float y, float w, float h, float zmin, float zmax)
+void xprRenderTargetSetViewport(float x, float y, float w, float h, float zmin, float zmax)
 {
 	glViewport((GLint)x, (GLint)y, (GLsizei)w, (GLsizei)h);
 	glDepthRange(zmin, zmax);
 }
 
-void XprRenderTarget_clearColor(float r, float g, float b, float a)
+void xprRenderTargetClearColor(float r, float g, float b, float a)
 {
 	glClearColor(r, g, b, a);
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void XprRenderTarget_clearDepth(float z)
+void xprRenderTargetClearDepth(float z)
 {
 	glClearDepth(z);
 	glClear(GL_DEPTH_BUFFER_BIT);

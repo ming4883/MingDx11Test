@@ -15,7 +15,7 @@ void Label_free(Label* self)
 		free(self->impl->text);
 	}
 
-	XprTexture_free(self->texture);
+	xprTextureFree(self->texture);
 	DeleteObject(self->impl->hbmp);
 	DeleteDC(self->impl->hdc);
 	free(self);
@@ -27,8 +27,8 @@ void Label_init(Label* self, size_t width, size_t height)
 	self->impl->height = height;
 	self->impl->hdc = CreateCompatibleDC(nullptr);
 	self->impl->hbmp = CreateBitmap(width, height, 1, 32, nullptr);
-	self->texture = XprTexture_alloc();
-	XprTexture_init(self->texture, width, height, 1, 1, XprTexture_unormR8);
+	self->texture = xprTextureAlloc();
+	xprTextureInit(self->texture, width, height, 1, 1, XprTexture_unormR8);
 	SelectObject(self->impl->hdc, self->impl->hbmp);
 }
 
@@ -112,7 +112,7 @@ void Label_commit(Label* self)
 				srcPixel += 4;
 			}
 			
-			XprTexture_commit(self->texture);
+			xprTextureCommit(self->texture);
 		}
 		free(bits);
 		free(bi);
