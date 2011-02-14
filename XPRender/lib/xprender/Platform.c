@@ -25,6 +25,7 @@ void XprDbgStr(const char* str, ...)
 #elif defined(XPR_ANDROID)
 
 #include <android/log.h>
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "xprender", __VA_ARGS__))
 
 void XprDbgStr(const char* str, ...)
 {
@@ -36,6 +37,7 @@ void XprDbgStr(const char* str, ...)
 	vsnprintf(msg, countof(msg), str, a);
 	__android_log_print(ANDROID_LOG_WARN, "pez", msg);
 	*/
+	LOGI(str);
 }
 
 #else

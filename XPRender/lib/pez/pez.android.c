@@ -60,6 +60,7 @@ static int engine_init_display(struct engine* engine) {
 			EGL_BLUE_SIZE, 8,
 			EGL_GREEN_SIZE, 8,
 			EGL_RED_SIZE, 8,
+			EGL_OPENGL_ES2_BIT,
 			EGL_NONE
 	};
 	EGLint w, h, dummy, format;
@@ -207,6 +208,8 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
 	}
 }
 
+struct android_app* PEZ_ANDROID_APP = 0;
+
 /**
 * This is the main entry point of a native application that is using
 * android_native_app_glue.  It runs in its own thread, with its own
@@ -214,6 +217,8 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
 */
 void android_main(struct android_app* state) {
 	struct engine engine;
+	
+	PEZ_ANDROID_APP = state;
 	
 	PezConfig();
 

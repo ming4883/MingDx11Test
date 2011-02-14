@@ -154,6 +154,24 @@ ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
 	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_embedded_httpd xprender ${PLATFORM_LIBS} )
+
+# example_android
+ADD_EXECUTABLE( example_android ${CONSOLE_SYSTEM}
+	example/Android.example.c
+	example/Android.glsl
+	example/Common.c
+	example/Common.h
+	example/Common.glsl
+	example/Stream.c
+	example/Stream.h
+	example/Mesh.c
+	example/Mesh.obj.c
+	example/Mesh.h
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_android xprender ${PLATFORM_LIBS} )
+
 # MosegaardsClothTutorial
 #ADD_EXECUTABLE( MosegaardsClothTutorial ${CONSOLE_SYSTEM}
 #	example/MosegaardsClothTutorial.cpp

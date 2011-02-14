@@ -18,6 +18,7 @@ void main() {
 }
 
 -- Scene.Fragment
+precision mediump float;
 varying vec3 v_normal;
 varying vec3 v_pos;
 varying vec2 v_texcoord;
@@ -27,8 +28,6 @@ varying vec2 v_texcoord;
 uniform vec4 u_matDiffuse;
 uniform vec4 u_matSpecular;
 uniform float u_matShininess;
-
-uniform sampler2D u_tex;
 
 void main() {
 	vec3 n = normalize(v_normal.xyz);
@@ -42,7 +41,7 @@ void main() {
 	float ndh = max(0, dot(n, h));
 	ndh = pow(ndh, u_matShininess);
 	
-	vec4 color = u_matDiffuse * texture(u_tex, v_texcoord);
+	vec4 color = u_matDiffuse;
 	color.xyz *= ndl;
 	color.xyz += u_matSpecular.xyz * ndh;
 	

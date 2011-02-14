@@ -8,10 +8,8 @@ extern "C" {
 #endif
 
 struct XprVec3;
-typedef struct XprVec3 XprVec3;
 
 struct XprVec4;
-typedef struct XprVec4 XprVec4;
 
 typedef struct XprMat44
 {
@@ -39,21 +37,21 @@ void xprMat44Mult(XprMat44* _out, const XprMat44* a, const XprMat44* b);
 
 void xprMat44Transpose(XprMat44* _out, const XprMat44* m);
 
-void xprMat44Transform(XprVec4* _out, const XprMat44* m);
+void xprMat44Transform(struct XprVec4* _out, const XprMat44* m);
 
-void xprMat44TransformAffineDir(XprVec3* _out, const XprMat44* m);
+void xprMat44TransformAffineDir(struct XprVec3* _out, const XprMat44* m);
 
-void xprMat44TransformAffinePt(XprVec3* _out, const XprMat44* m);
+void xprMat44TransformAffinePt(struct XprVec3* _out, const XprMat44* m);
 
 void xprMat44SetIdentity(XprMat44* _out);
 
-void xprMat44SetTranslation(XprMat44* _out, const XprVec3* v);
+void xprMat44SetTranslation(XprMat44* _out, const struct XprVec3* v);
 
-void xprMat44GetTranslation(XprVec3* v, const XprMat44* m);
+void xprMat44GetTranslation(struct XprVec3* v, const XprMat44* m);
 
-void xprMat44MakeTranslation(XprMat44* _out, const XprVec3* v);
+void xprMat44MakeTranslation(XprMat44* _out, const struct XprVec3* v);
 
-void xprMat44MakeScale(XprMat44* _out, const XprVec3* v);
+void xprMat44MakeScale(XprMat44* _out, const struct XprVec3* v);
 
 void xprMat44MakeRotationX(XprMat44* _out, float angleInDeg);
 
@@ -61,15 +59,15 @@ void xprMat44MakeRotationY(XprMat44* _out, float angleInDeg);
 
 void xprMat44MakeRotationZ(XprMat44* _out, float angleInDeg);
 
-void xprMat44MakeRotation(XprMat44* _out, const XprVec3* axis, float angleInDeg);
+void xprMat44MakeRotation(XprMat44* _out, const struct XprVec3* axis, float angleInDeg);
 
-void xprMat44GetBasis(XprVec3* xaxis, XprVec3* yaxis, XprVec3* zaxis, const XprMat44* m);
+void xprMat44GetBasis(struct XprVec3* xaxis, struct XprVec3* yaxis, struct XprVec3* zaxis, const XprMat44* m);
 
-void xprMat44CameraLookAt(XprMat44* _out, const XprVec3* eyeAt, const XprVec3* lookAt, const XprVec3* eyeUp);
+void xprMat44CameraLookAt(XprMat44* _out, const struct XprVec3* eyeAt, const struct XprVec3* lookAt, const struct XprVec3* eyeUp);
 
 void xprMat44Prespective(XprMat44* _out, float fovyDeg, float aspect, float znear, float zfar);
 
-void xprMat44PlanarReflect(XprMat44* _out, const XprVec3* normal, const XprVec3* point);
+void xprMat44PlanarReflect(XprMat44* _out, const struct XprVec3* normal, const struct XprVec3* point);
 
 #ifdef __cplusplus
 }

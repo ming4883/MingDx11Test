@@ -21,13 +21,10 @@ Material* Material_alloc()
 	Material* self = malloc(sizeof(Material));
 	memset(self, 0, sizeof(Material));
 
-	self->shaders = malloc(sizeof(XprGpuShader)*ShaderCount);
-	memset(self->shaders, 0, sizeof(XprGpuShader)*ShaderCount);
-
 	return self;
 }
 
-void Material_initWithShaders(Material* self, const char** args)
+XprBool Material_initWithShaders(Material* self, const char** args)
 {
 	const char* key; const char* val;
 	int i = 0;
@@ -44,6 +41,11 @@ void Material_initWithShaders(Material* self, const char** args)
 			xprGpuShaderInit(self->shaders[VS], &val, 1, XprGpuShaderType_Vertex);
 		}
 
+		if(0 == strcasecmp(key, "fs")) {
+			self->shaders[FS] = xprGpuShaderAlloc();
+			xprGpuShaderInit(self->shaders[FS], &val, 1, XprGpuShaderType_Fragment);
+		}
+		
 		if(0 == strcasecmp(key, "tc")) {
 			self->shaders[TC] = xprGpuShaderAlloc();
 			xprGpuShaderInit(self->shaders[TC], &val, 1, XprGpuShaderType_TessControl);
@@ -58,24 +60,21 @@ void Material_initWithShaders(Material* self, const char** args)
 			self->shaders[GS] = xprGpuShaderAlloc();
 			xprGpuShaderInit(self->shaders[GS], &val, 1, XprGpuShaderType_Geometry);
 		}
-
-		if(0 == strcasecmp(key, "fs")) {
-			self->shaders[FS] = xprGpuShaderAlloc();
-			xprGpuShaderInit(self->shaders[FS], &val, 1, XprGpuShaderType_Fragment);
-		}
 	}
-
+	
 	// at least we need 1 vertex shader and 1 fragment shader
 	if(nullptr == self->shaders[VS] || nullptr == self->shaders[FS])
-		return;
+		return XprFalse;
 
 	self->program = xprGpuProgramAlloc();
 	xprGpuProgramInit(self->program, self->shaders, ShaderCount);
 
 	if(!(self->program->flags & XprGpuProgramFlag_Linked))
-		return;
+		return XprFalse;
 
 	self->flags |= MaterialFlag_Inited;
+
+	return XprTrue;
 }
 
 
@@ -95,6 +94,5 @@ void Material_free(Material* self)
 			xprGpuShaderFree(self->shaders[i]);
 	}
 
-	free(self->shaders);
 	free(self);
 }

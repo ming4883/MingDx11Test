@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 struct XprVec2;
-typedef struct XprVec2 XprVec2;
 
 typedef struct XprVec3
 {
@@ -25,7 +24,7 @@ typedef struct XprVec3
 
 XprVec3 xprVec3(float x, float y, float z);
 
-XprVec3 xprVec3FromVec2(const XprVec2* xy, float z);
+XprVec3 xprVec3FromVec2(const struct XprVec2* xy, float z);
 
 const XprVec3* XprVec3_c000();
 const XprVec3* XprVec3_c100();

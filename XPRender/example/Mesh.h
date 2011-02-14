@@ -12,8 +12,6 @@ extern "C" {
 struct XprBuffer;
 struct XprGpuProgram;
 
-typedef struct MeshImpl;
-
 enum MeshTrait
 {
 	MeshTrait_MaxTexcoord = 2
@@ -24,13 +22,15 @@ typedef struct MeshData
 	unsigned char* buffer;
 	size_t sizeInBytes;
 	char shaderName[16];
-};
+} MeshData;
 
 enum MeshFlag
 {
 	MeshFlag_Inited = 1 << 0,
 	MeshFlag_Dirty = 1 << 1,
 };
+
+struct MeshImpl;
 
 typedef struct Mesh
 {
@@ -59,7 +59,7 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 
 void Mesh_initWithScreenQuad(Mesh* self);
 
-void Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream);
+XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream);
 
 void Mesh_commit(Mesh* self);
 

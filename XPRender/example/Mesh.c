@@ -73,8 +73,9 @@ void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount)
 		xprBufferInit(self->impl->tcBuffer[i], XprBufferType_Vertex, self->texcoord[i].sizeInBytes, nullptr);
 	}	
 	
+#if !defined(XPR_GLES_2)
 	glGenVertexArrays(1, &self->impl->ia);
-
+#endif
 	self->flags |= MeshFlag_Inited;
 }
 
@@ -83,7 +84,9 @@ void Mesh_free(Mesh* self)
 	size_t i;
 
 	if(self->flags & MeshFlag_Inited) {
+#if !defined(XPR_GLES_2)
 		glDeleteVertexArrays(1, &self->impl->ia);
+#endif
 		xprBufferFree(self->impl->indexBuffer);
 		xprBufferFree(self->impl->vertexBuffer);
 		xprBufferFree(self->impl->normalBuffer);
@@ -141,8 +144,9 @@ void Mesh_preRender(Mesh* self, struct XprGpuProgram* program)
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i)
 		uvLoc[i] = glGetAttribLocation(program->impl->glName, self->texcoord[i].shaderName);
 
+#if !defined(XPR_GLES_2)
 	glBindVertexArray(self->impl->ia);
-
+#endif
 	if(vertLoc >= 0) {
 		glBindBuffer(GL_ARRAY_BUFFER, self->impl->vertexBuffer->impl->glName);
 		glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
@@ -179,11 +183,13 @@ void Mesh_render(Mesh* self)
 
 void Mesh_renderPatches(Mesh* self, size_t vertexPrePatch)
 {
+#if !defined(XPR_GLES_2)
 	if((self->indexCount % vertexPrePatch) != 0)
 		return;
 
 	glPatchParameteri(GL_PATCH_VERTICES, vertexPrePatch);
 	glDrawElements(GL_PATCHES, self->indexCount, GL_UNSIGNED_SHORT, 0);
+#endif
 }
 
 void Mesh_renderPoints(Mesh* self)

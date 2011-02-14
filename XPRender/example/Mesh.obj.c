@@ -92,7 +92,7 @@ size_t Obj_ReadFace(ObjFace* face)
 	return vcnt;
 }
 
-void Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
+XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 {
 	void* fp;
 	char readbuf[512];
@@ -106,7 +106,7 @@ void Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 
 	if(nullptr == (fp = stream->open(path))) {
 		XprDbgStr("obj file %s not found", path);
-		return;
+		return XprFalse;
 	}
 
 	ObjBuffer_resize(&vbuf);
@@ -187,5 +187,5 @@ void Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 	ObjBuffer_resize(&vnbuf);
 	ObjBuffer_resize(&fbuf);
 
-	fclose(fp);
+	return XprTrue;
 }

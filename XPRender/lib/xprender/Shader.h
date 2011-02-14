@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 struct XprTexture;
-typedef struct XprTexture XprTexture;
 
 // XprGpuShader
 typedef enum XprGpuShaderType
@@ -62,7 +61,7 @@ XprGpuProgram* xprGpuProgramAlloc();
 
 void xprGpuProgramFree(XprGpuProgram* self);
 
-void xprGpuProgramInit(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt);
+void xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt);
 
 void xprGpuProgramPreRender(XprGpuProgram* self);
 
@@ -71,7 +70,7 @@ void xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count
 void xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
 void xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
 void xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value);
-void xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, XprTexture* texture);
+void xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture);
 
 #ifdef __cplusplus
 }

@@ -17,7 +17,7 @@ typedef enum MaterialFlag
 
 typedef struct Material
 {
-	struct XprGpuShader** shaders;
+	struct XprGpuShader* shaders[8];
 	struct XprGpuProgram* program;
 	size_t flags;
 } Material;
@@ -26,7 +26,7 @@ Material* Material_alloc();
 
 void Material_free(Material* self);
 
-void Material_initWithShaders(Material* self, const char** args);
+XprBool Material_initWithShaders(Material* self, const char** args);
 
 #ifdef __cplusplus
 }

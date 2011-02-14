@@ -70,7 +70,7 @@ XprGpuProgram* xprGpuProgramAlloc()
 	return self;
 }
 
-void xprGpuProgramInit(XprGpuProgram* self, const XprGpuShader** const shaders, size_t shaderCnt)
+void xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt)
 {
 	size_t i;
 	int linkStatus;
@@ -108,22 +108,24 @@ void xprGpuProgramInit(XprGpuProgram* self, const XprGpuShader** const shaders, 
 	
 	self->flags |= XprGpuProgramFlag_Linked;
 
+#if !defined(XPR_GLES_2)
 	glUseProgram(self->impl->glName);
+	
+	// query all uniforms
 	{
 		GLuint i;
 		GLuint uniformCnt;
 		GLsizei uniformLength;
 		GLint uniformSize;
 		GLenum uniformType;
-		char uniformName[64];
+		char uniformName[32];
 		GLuint texunit = 0;	
 		
 		glGetProgramiv(self->impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
 
 		for(i=0; i<uniformCnt; ++i) {
 			XprGpuProgramUniform* uniform;
-			glGetActiveUniform(self->impl->glName, i, 64, &uniformLength, &uniformSize, &uniformType, uniformName);
-			
+			glGetActiveUniform(self->impl->glName, i, XprCountOf(uniformName), &uniformLength, &uniformSize, &uniformType, uniformName);
 			uniform = malloc(sizeof(XprGpuProgramUniform));
 			uniform->hash = XprHash(uniformName);
 			uniform->loc = i;
@@ -135,12 +137,10 @@ void xprGpuProgramInit(XprGpuProgram* self, const XprGpuShader** const shaders, 
 			switch(uniformType) {
 				case GL_SAMPLER_2D:
 				case GL_SAMPLER_CUBE:
-#if !defined(XPR_GLES_2)
 				case GL_SAMPLER_1D:
 				case GL_SAMPLER_3D:
 				case GL_SAMPLER_1D_SHADOW:
 				case GL_SAMPLER_2D_SHADOW: 
-#endif
 					{	// bind sampler to the specific texture unit
 						glUniform1i(i, texunit++);
 					}
@@ -149,11 +149,11 @@ void xprGpuProgramInit(XprGpuProgram* self, const XprGpuShader** const shaders, 
 					uniform->texunit = -1;
 					break;
 			}
-
 			//XprDbgStr("%s %d %d %d\n", uniformName, uniformSize, uniformType, uniform->texunit);
-
 		}
+		
 	}
+#endif
 	
 }
 
