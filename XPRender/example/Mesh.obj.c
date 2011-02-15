@@ -22,18 +22,18 @@ typedef struct ObjFace
 	size_t vn[4];
 } ObjFace;
 
-void ObjBuffer_resize(ObjBuffer* buf)
+void objBufferResize(ObjBuffer* buf)
 {
 	buf->data = realloc(buf->data, buf->cap * buf->elemSz);
 }
 
-char* ObjBuffer_append(ObjBuffer* buf)
+char* objBufferAppend(ObjBuffer* buf)
 {
 	char* ptr;
 
 	if(buf->cap == buf->cnt) {
 		buf->cap *= 2;
-		ObjBuffer_resize(buf);
+		objBufferResize(buf);
 	}
 
 	ptr = buf->data + (buf->cnt * buf->elemSz);
@@ -43,29 +43,29 @@ char* ObjBuffer_append(ObjBuffer* buf)
 	return ptr;
 }
 
-const char* Obj_Whitespace = " \t\n\r";
+const char* objWhitespace = " \t\n\r";
 
-void Obj_ReadVec3(XprVec3* ret)
+void objReadVec3(XprVec3* ret)
 {
 	char* token;
 	ret->x = 0;
 	ret->y = 0;
 	ret->z = 0;
 
-	token = strtok(nullptr, Obj_Whitespace);
+	token = strtok(nullptr, objWhitespace);
 	if(nullptr != token)
 		ret->x = (float)atof(token);
 
-	token = strtok(nullptr, Obj_Whitespace);
+	token = strtok(nullptr, objWhitespace);
 	if(nullptr != token)
 		ret->y = (float)atof(token);
 
-	token = strtok(nullptr, Obj_Whitespace);
+	token = strtok(nullptr, objWhitespace);
 	if(nullptr != token)
 		ret->z = (float)atof(token);
 }
 
-size_t Obj_ReadFace(ObjFace* face)
+size_t objReadFace(ObjFace* face)
 {
 	char* token;
 	char vi[16] = {0};
@@ -74,7 +74,7 @@ size_t Obj_ReadFace(ObjFace* face)
 	size_t vcnt = 0;
 	memset(face, 0, sizeof(ObjFace));
 
-	while(nullptr != (token = strtok(nullptr, Obj_Whitespace)) && vcnt <= 4) {
+	while(nullptr != (token = strtok(nullptr, objWhitespace)) && vcnt <= 4) {
 		if(strstr(token, "//")) {
 			sscanf(token, "%[^/]//%[^/]", vi, vni);
 			if(strlen(vi) > 0) face->v[vcnt] = atoi(vi)-1;
@@ -92,7 +92,7 @@ size_t Obj_ReadFace(ObjFace* face)
 	return vcnt;
 }
 
-XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
+XprBool meshInitWithObjFile(Mesh* self, const char* path, InputStream* stream)
 {
 	void* fp;
 	char readbuf[512];
@@ -109,32 +109,32 @@ XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 		return XprFalse;
 	}
 
-	ObjBuffer_resize(&vbuf);
-	ObjBuffer_resize(&vtbuf);
-	ObjBuffer_resize(&vnbuf);
-	ObjBuffer_resize(&fbuf);
+	objBufferResize(&vbuf);
+	objBufferResize(&vtbuf);
+	objBufferResize(&vnbuf);
+	objBufferResize(&fbuf);
 
 	//while( fgets(readbuf, 512, fp) ) {
 	while( Stream_gets(stream, readbuf, 512, fp) ) {
 		if('#' == readbuf[0])
 			continue;
 
-		token = strtok(readbuf, Obj_Whitespace);
+		token = strtok(readbuf, objWhitespace);
 
 		if(nullptr == token) {
 			continue;
 		}
 		else if(0 == strcmp(token, "v")) {
-			Obj_ReadVec3((XprVec3*)ObjBuffer_append(&vbuf));
+			objReadVec3((XprVec3*)objBufferAppend(&vbuf));
 		}
 		else if(0 == strcmp(token, "vt")) {
-			Obj_ReadVec3((XprVec3*)ObjBuffer_append(&vtbuf));
+			objReadVec3((XprVec3*)objBufferAppend(&vtbuf));
 		}
 		else if(0 == strcmp(token, "vn")) {
-			Obj_ReadVec3((XprVec3*)ObjBuffer_append(&vnbuf));
+			objReadVec3((XprVec3*)objBufferAppend(&vnbuf));
 		}
 		else if(0 == strcmp(token, "f")) {
-			size_t vcnt = Obj_ReadFace((ObjFace*)ObjBuffer_append(&fbuf));
+			size_t vcnt = objReadFace((ObjFace*)objBufferAppend(&fbuf));
 			vpf = vcnt > vpf ? vcnt : vpf;
 		}
 	}
@@ -142,7 +142,7 @@ XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 	stream->close(fp);
 
 	// flatten vertices
-	Mesh_init(self, fbuf.cnt * vpf, fbuf.cnt * vpf);
+	meshInit(self, fbuf.cnt * vpf, fbuf.cnt * vpf);
 	self->vertexPerPatch = vpf;
 
 	{
@@ -174,7 +174,7 @@ XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 		}
 	}
 
-	Mesh_commit(self);
+	meshCommit(self);
 
 	// clean up
 	vbuf.cap = 0;
@@ -182,10 +182,10 @@ XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream)
 	vnbuf.cap = 0;
 	fbuf.cap = 0;
 
-	ObjBuffer_resize(&vbuf);
-	ObjBuffer_resize(&vtbuf);
-	ObjBuffer_resize(&vnbuf);
-	ObjBuffer_resize(&fbuf);
+	objBufferResize(&vbuf);
+	objBufferResize(&vtbuf);
+	objBufferResize(&vnbuf);
+	objBufferResize(&fbuf);
 
 	return XprTrue;
 }

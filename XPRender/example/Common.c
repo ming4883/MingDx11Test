@@ -1,5 +1,7 @@
 #include "Common.h"
 
+#include "../lib/glsw/glsw.h"
+
 #if defined(XPR_ANDROID)
 
 #include <android_native_app_glue.h>
@@ -62,18 +64,60 @@ InputStream myInputStream = {fread, myOpen, myClose};
 
 #endif	// XPR_ANDROID
 
-void RenderContext_preRender(RenderContext* self, Material* material)
+AppContext* appAlloc()
 {
-	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewMtx"), 1, XprTrue, self->worldViewMtx.v);
-	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewProjMtx"), 1, XprTrue, self->worldViewProjMtx.v);
-	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldMtx"), 1, XprTrue, self->worldMtx.v);
-	xprGpuProgramUniform4fv(material->program, XprHash("u_matDiffuse"), 1, self->matDiffuse.v);
-	xprGpuProgramUniform4fv(material->program, XprHash("u_matSpecular"), 1, self->matSpecular.v);
-	xprGpuProgramUniform1fv(material->program, XprHash("u_matShininess"), 1, &self->matShininess);
+	AppContext* self = malloc(sizeof(AppContext));
+	memset(self, 0, sizeof(AppContext));
+	return self;
 }
 
+void appInit(AppContext* self, float aspectw, float aspecth)
+{
+	self->gpuState = xprGpuStateAlloc();
+	xprGpuStateInit(self->gpuState);
 
-Material* loadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey)
+	self->inputStream = &myInputStream;
+
+	self->aspect.width = aspectw;
+	self->aspect.height = aspecth;
+
+	xprRenderTargetSetViewport(0, 0, aspectw, aspecth, -1, 1);
+}
+
+void appFree(AppContext* self)
+{
+	xprGpuStateFree(self->gpuState);
+	free(self);
+}
+
+void appLoadMaterialBegin(AppContext* self, const char** directives)
+{
+	glswInit(&myFileSystem);
+	glswSetPath("", ".glsl");
+
+	if(nullptr != directives) {
+		int i = 0;
+		const char* key;
+		const char* val;
+
+		while(1) {
+			key = directives[i++];
+			if(nullptr == key) break;
+
+			val = directives[i++];
+			if(nullptr == val) break;
+
+			glswAddDirectiveToken(key, val);
+		}
+	}
+}
+
+void appLoadMaterialEnd(AppContext* self)
+{
+	glswShutdown();
+}
+
+Material* appLoadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey)
 {
 	const char* args[11] = {nullptr};
 	size_t idx = 0;
@@ -104,12 +148,24 @@ Material* loadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, 
 		args[idx++] = glswGetShader(fsKey);
 	}
 	
-	material = Material_alloc();
+	material = materialAlloc();
 	
-	Material_initWithShaders(material, args);
+	materialInitWithShaders(material, args);
 
 	if(0 == (material->flags & MaterialFlag_Inited))
 		PezDebugString("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
 
 	return material;
 }
+
+void appShaderContextPreRender(AppContext* self, Material* material)
+{
+	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewMtx"), 1, XprTrue, self->shaderContext.worldViewMtx.v);
+	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewProjMtx"), 1, XprTrue, self->shaderContext.worldViewProjMtx.v);
+	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldMtx"), 1, XprTrue, self->shaderContext.worldMtx.v);
+	xprGpuProgramUniform4fv(material->program, XprHash("u_matDiffuse"), 1, self->shaderContext.matDiffuse.v);
+	xprGpuProgramUniform4fv(material->program, XprHash("u_matSpecular"), 1, self->shaderContext.matSpecular.v);
+	xprGpuProgramUniform1fv(material->program, XprHash("u_matShininess"), 1, &self->shaderContext.matShininess);
+}
+
+

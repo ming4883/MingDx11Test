@@ -193,6 +193,8 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
         }
     }
 
+	PezFinalize();
+
     UnregisterClassA(szName, wc.hInstance);
 
     return 0;

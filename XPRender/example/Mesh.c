@@ -18,7 +18,7 @@ typedef struct MeshImpl {
 	int ia;
 } MeshImpl;
 
-Mesh* Mesh_alloc()
+Mesh* meshAlloc()
 {
 	Mesh* self;
 	XprAllocWithImpl(self, Mesh, MeshImpl);
@@ -26,7 +26,7 @@ Mesh* Mesh_alloc()
 	return self;
 }
 
-void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount)
+void meshInit(Mesh* self, size_t vertexCount, size_t indexCount)
 {
 	size_t i;
 
@@ -79,7 +79,7 @@ void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount)
 	self->flags |= MeshFlag_Inited;
 }
 
-void Mesh_free(Mesh* self)
+void meshFree(Mesh* self)
 {
 	size_t i;
 
@@ -109,7 +109,7 @@ void Mesh_free(Mesh* self)
 	free(self);
 }
 
-void Mesh_commit(Mesh* self)
+void meshCommit(Mesh* self)
 {
 	size_t i;
 
@@ -133,7 +133,7 @@ void Mesh_commit(Mesh* self)
 #undef commit
 }
 
-void Mesh_preRender(Mesh* self, struct XprGpuProgram* program)
+void meshPreRender(Mesh* self, struct XprGpuProgram* program)
 {
 	int vertLoc = glGetAttribLocation(program->impl->glName, self->vertex.shaderName);
 	int normLoc = glGetAttribLocation(program->impl->glName, self->normal.shaderName);
@@ -176,28 +176,28 @@ void Mesh_preRender(Mesh* self, struct XprGpuProgram* program)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
 }
 
-void Mesh_render(Mesh* self)
+void meshRenderTriangles(Mesh* self)
 {
 	glDrawElements(GL_TRIANGLES, self->indexCount, GL_UNSIGNED_SHORT, 0);
 }
 
-void Mesh_renderPatches(Mesh* self, size_t vertexPrePatch)
+void meshRenderPatches(Mesh* self)
 {
 #if !defined(XPR_GLES_2)
-	if((self->indexCount % vertexPrePatch) != 0)
+	if((self->indexCount % self->vertexPerPatch) != 0)
 		return;
 
-	glPatchParameteri(GL_PATCH_VERTICES, vertexPrePatch);
+	glPatchParameteri(GL_PATCH_VERTICES, self->vertexPerPatch);
 	glDrawElements(GL_PATCHES, self->indexCount, GL_UNSIGNED_SHORT, 0);
 #endif
 }
 
-void Mesh_renderPoints(Mesh* self)
+void meshRenderPoints(Mesh* self)
 {
 	glDrawArrays(GL_POINTS, 0, self->vertexCount);
 }
 
-void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount)
+void meshInitWithUnitSphere(Mesh* self, size_t segmentCount)
 {	
 #define PI 3.14159265358979323846f
 
@@ -213,7 +213,7 @@ void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount)
 	int width = segmentCount * 2;
 	int height = segmentCount;
 
-	Mesh_init(self, (height-2)* width+2, (height-2)*(width-1)*2 * 3);
+	meshInit(self, (height-2)* width+2, (height-2)*(width-1)*2 * 3);
 	self->vertexPerPatch = 3;
 
 	idx = xprBufferMap(self->impl->indexBuffer, XprBufferMapAccess_Write);
@@ -274,7 +274,7 @@ void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount)
 #undef PI
 }
 
-void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* offset, size_t segmentCount)
+void meshInitWithQuad(Mesh* self, float width, float height, const XprVec3* offset, size_t segmentCount)
 {
 	XprVec3* pos;
 	XprVec3* nor;
@@ -284,7 +284,7 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 	size_t r, c;
 	size_t stride = segmentCount+1;
 	
-	Mesh_init(self, stride * stride, (stride-1) * (stride-1) * 6);
+	meshInit(self, stride * stride, (stride-1) * (stride-1) * 6);
 	self->vertexPerPatch = 3;
 
 	idx = xprBufferMap(self->impl->indexBuffer, XprBufferMapAccess_Write);
@@ -334,13 +334,13 @@ void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* off
 	xprBufferUnmap(self->impl->tcBuffer[0]);
 }
 
-void Mesh_initWithScreenQuad(Mesh* self)
+void meshInitWithScreenQuad(Mesh* self)
 {
 	XprVec3* pos;
 	XprVec2* uv0;
 	unsigned short* idx;
 
-	Mesh_init(self, 4, 6);
+	meshInit(self, 4, 6);
 	self->vertexPerPatch = 3;
 
 	idx = xprBufferMap(self->impl->indexBuffer, XprBufferMapAccess_Write);

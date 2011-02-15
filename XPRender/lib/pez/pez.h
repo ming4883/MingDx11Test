@@ -15,6 +15,7 @@ const char* PezInitialize(int width, int height); // receive window size and ret
 void PezRender();                                 // draw scene (Pez swaps the backbuffer for you)
 void PezUpdate(unsigned int milliseconds);        // receive elapsed time (e.g., update physics)
 void PezHandleMouse(int x, int y, int action);    // handle mouse action: PEZ_DOWN, PEZ_UP, or PEZ_MOVE
+void PezFinalize();
 
 // Here's the Pez configuration section.  Modify these constants in PezConfig()!
 //

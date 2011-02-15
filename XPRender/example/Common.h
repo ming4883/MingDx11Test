@@ -9,7 +9,7 @@
 #include "../lib/xprender/Shader.h"
 #include "../lib/xprender/GpuState.h"
 #include "../lib/xprender/RenderTarget.h"
-#include "../lib/glsw/glsw.h"
+
 #include "../lib/pez/pez.h"
 
 #include "Material.h"
@@ -22,23 +22,39 @@
 extern "C" {
 #endif
 
-typedef struct RenderContext
+typedef struct AppContext
 {
-	XprMat44 worldViewProjMtx;
-	XprMat44 worldViewMtx;
-	XprMat44 worldMtx;
-	XprVec4 matDiffuse;
-	XprVec4 matSpecular;
-	float matShininess;
+	struct
+	{
+		float width;
+		float height;
+	} aspect;
 
-} RenderContext;
+	struct
+	{
+		XprMat44 worldViewProjMtx;
+		XprMat44 worldViewMtx;
+		XprMat44 worldMtx;
+		XprVec4 matDiffuse;
+		XprVec4 matSpecular;
+		float matShininess;
+	} shaderContext;
 
-void RenderContext_preRender(RenderContext* self, Material* material);
+	XprGpuState* gpuState;
 
-extern glswFileSystem myFileSystem;
-extern InputStream myInputStream;
+	InputStream* inputStream;
 
-Material* loadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey);
+} AppContext;
+
+AppContext* appAlloc();
+void appInit(AppContext* self, float aspectw, float aspecth);
+void appFree(AppContext* self);
+
+void appLoadMaterialBegin(AppContext* self, const char** directives);
+Material* appLoadMaterial(const char* vsKey, const char* fsKey, const char* tcKey, const char* teKey, const char* gsKey);
+void appLoadMaterialEnd(AppContext* self);
+
+void appShaderContextPreRender(AppContext* self, Material* material);
 
 #ifdef __cplusplus
 }

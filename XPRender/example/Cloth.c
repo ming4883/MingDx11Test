@@ -38,8 +38,8 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 	self->fixPos = (XprVec3*)malloc(sizeof(XprVec3) * segmentCount * segmentCount);
 	self->fixed = (XprBool*)malloc(sizeof(XprBool) * segmentCount * segmentCount);
 
-	self->mesh = Mesh_alloc();
-	Mesh_init(self->mesh, segmentCount * segmentCount, (segmentCount-1) * (segmentCount-1) * 6);
+	self->mesh = meshAlloc();
+	meshInit(self->mesh, segmentCount * segmentCount, (segmentCount-1) * (segmentCount-1) * 6);
 	
 	mapped = (unsigned short*)self->mesh->index.buffer;
 	uv = (XprVec2*)self->mesh->texcoord[0].buffer;
@@ -120,7 +120,7 @@ Cloth* Cloth_new(float width, float height, const XprVec3* offset, size_t segmen
 
 void Cloth_free(Cloth* self)
 {
-	Mesh_free(self->mesh);
+	meshFree(self->mesh);
 	free(self->p);
 	free(self->p2);
 	free(self->a);
@@ -214,7 +214,7 @@ void Cloth_updateMesh(Cloth* self)
 	
 	memcpy(self->mesh->vertex.buffer, self->p, self->mesh->vertex.sizeInBytes);
 
-	Mesh_commit(self->mesh);
+	meshCommit(self->mesh);
 }
 
 void Cloth_verletIntegration(Cloth* self)

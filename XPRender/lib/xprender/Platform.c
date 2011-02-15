@@ -25,19 +25,14 @@ void XprDbgStr(const char* str, ...)
 #elif defined(XPR_ANDROID)
 
 #include <android/log.h>
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "xprender", __VA_ARGS__))
 
 void XprDbgStr(const char* str, ...)
 {
-	/*
-	va_list a;
-	va_start(a, str);
-
-	char msg[1024] = {0};
-	vsnprintf(msg, countof(msg), str, a);
-	__android_log_print(ANDROID_LOG_WARN, "pez", msg);
-	*/
-	LOGI(str);
+	va_list args;
+	
+	va_start(args, str);
+	__android_log_vprint(ANDROID_LOG_INFO, "xprender", str, args);
+	va_end(args);
 }
 
 #else

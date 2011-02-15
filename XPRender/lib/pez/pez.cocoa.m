@@ -191,6 +191,8 @@ int main(int argc, const char *argv[])
     
     [NSApp run];
     
+    PezFinalize();
+    
     [pool release];
     return EXIT_SUCCESS;
 }

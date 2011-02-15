@@ -22,7 +22,6 @@ void PezRender()
 	r = bgR / 255; g = bgG / 255; b = bgB / 255;
 	RemoteConfig_unlock(_config);
 
-	xprRenderTargetClearDepth(1);
 	xprRenderTargetClearColor(r, g, b, 1.0f);
 }
 
@@ -34,7 +33,7 @@ void PezConfig()
 	PEZ_VERTICAL_SYNC = 0;
 }
 
-void PezExit(void)
+void PezFinalize()
 {
 	RemoteConfig_free(_config);
 }
@@ -53,8 +52,6 @@ const char* PezInitialize(int width, int height)
 	_config = RemoteConfig_alloc();
 	RemoteConfig_init(_config, 80, XprTrue);
 	RemoteConfig_addVars(_config, descs);
-
-	atexit(PezExit);
 
 	return "Embedded Httpd";
 }

@@ -190,6 +190,8 @@ int main(int argc, char** argv)
         glXSwapBuffers(context.MainDisplay, context.MainWindow);
     }
 
+	PezFinalize();
+
     return 0;
 }
 

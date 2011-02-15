@@ -16,7 +16,7 @@ enum
 	ShaderCount
 };
 
-Material* Material_alloc()
+Material* materialAlloc()
 {
 	Material* self = malloc(sizeof(Material));
 	memset(self, 0, sizeof(Material));
@@ -24,7 +24,7 @@ Material* Material_alloc()
 	return self;
 }
 
-XprBool Material_initWithShaders(Material* self, const char** args)
+XprBool materialInitWithShaders(Material* self, const char** args)
 {
 	const char* key; const char* val;
 	int i = 0;
@@ -78,7 +78,7 @@ XprBool Material_initWithShaders(Material* self, const char** args)
 }
 
 
-void Material_free(Material* self)
+void materialFree(Material* self)
 {
 	int i;
 

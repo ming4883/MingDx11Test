@@ -22,11 +22,11 @@ typedef struct Material
 	size_t flags;
 } Material;
 
-Material* Material_alloc();
+Material* materialAlloc();
 
-void Material_free(Material* self);
+void materialFree(Material* self);
 
-XprBool Material_initWithShaders(Material* self, const char** args);
+XprBool materialInitWithShaders(Material* self, const char** args);
 
 #ifdef __cplusplus
 }

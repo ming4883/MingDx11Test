@@ -1,21 +1,10 @@
 #include "Common.h"
 #include "Mesh.h"
 
+AppContext* app = nullptr;
 XprVec4 bgClr = {1, 0.25f, 0.25f, 1};
 Mesh* mesh = nullptr;
-Material* mtlScene = nullptr;
-
-XprGpuState* gpuState = nullptr;
-
-typedef struct Aspect
-{
-	float width;
-	float height;
-} Aspect;
-
-Aspect aspect;
-
-RenderContext renderContext;
+Material* mtl = nullptr;
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
@@ -35,7 +24,7 @@ void PezRender()
 	XprMat44 viewProjMtx;
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
-	xprMat44Prespective(&projMtx, 45.0f, aspect.width / aspect.height, 0.1f, 30.0f);
+	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 		
 	// clear
@@ -46,29 +35,27 @@ void PezRender()
 	
 	// draw scene
 	{
-		xprGpuStateSetDepthTestEnabled(gpuState, XprTrue);
-		xprGpuStateSetCullEnabled(gpuState, XprTrue);
-		xprGpuStatePreRender(gpuState);
-
-		xprGpuProgramPreRender(mtlScene->program);
-		
-		renderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
-		renderContext.matSpecular = xprVec4(2, 2, 2, 1);
-		renderContext.matShininess = 32;
+		app->shaderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
+		app->shaderContext.matSpecular = xprVec4(2, 2, 2, 1);
+		app->shaderContext.matShininess = 32;
 
 		{
-			XprMat44 m;
 			XprVec3 axis = {1, 0, 0};
-			xprMat44MakeRotation(&m, &axis, -90);
+			xprMat44MakeRotation(&app->shaderContext.worldMtx, &axis, -90);
 			
-			xprMat44Mult(&renderContext.worldViewMtx, &viewMtx, &m);
-			xprMat44Mult(&renderContext.worldViewProjMtx, &viewProjMtx, &m);
+			xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &app->shaderContext.worldMtx);
+			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &app->shaderContext.worldMtx);
 		}
 
-		RenderContext_preRender(&renderContext, mtlScene);
+		xprGpuStateSetDepthTestEnabled(app->gpuState, XprTrue);
+		xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
+		xprGpuStatePreRender(app->gpuState);
 
-		Mesh_preRender(mesh, mtlScene->program);
-		Mesh_render(mesh);
+		xprGpuProgramPreRender(mtl->program);
+		appShaderContextPreRender(app, mtl);
+
+		meshPreRender(mesh, mtl->program);
+		meshRenderTriangles(mesh);
 	}
 	/**/
 }
@@ -77,46 +64,40 @@ void PezConfig()
 {
 }
 
-void PezExit(void)
+void PezFinalize()
 {
-	Mesh_free(mesh);
-	Material_free(mtlScene);
-	xprGpuStateFree(gpuState);
+	meshFree(mesh);
+	materialFree(mtl);
+	appFree(app);
 }
 
 const char* PezInitialize(int width, int height)
 {
 	const char* appName = "Android Example";
 	
-	aspect.width = (float)width;
-	aspect.height = (float)height;
-	
-	gpuState = xprGpuStateAlloc();
-	xprGpuStateInit(gpuState);
+	app = appAlloc();
+	appInit(app, (float)width, (float)height);
 	
 	// load mesh
 	{
-		mesh = Mesh_alloc();
-		if(!Mesh_initWithObjFile(mesh, "monkey.obj", &myInputStream))
+		mesh = meshAlloc();
+		if(!meshInitWithObjFile(mesh, "monkey.obj", app->inputStream))
 			return appName;
 	}
 	
 	// load materials
 	{
-		glswInit(&myFileSystem);
-		glswSetPath("", ".glsl");
-		//glswAddDirectiveToken("","#version 400");
-		
-		mtlScene = loadMaterial(
+		appLoadMaterialBegin(app, nullptr);
+
+		mtl = appLoadMaterial(
 			"Android.Scene.Vertex",
 			"Android.Scene.Fragment",
 			nullptr, nullptr, nullptr);
-		if(0 == (mtlScene->flags & MaterialFlag_Inited))
+		if(0 == (mtl->flags & MaterialFlag_Inited))
 			return appName;
 		
-		glswShutdown();
+		appLoadMaterialEnd(app);
 	}
-	/**/
 	
 	bgClr = xprVec4(0.25f, 1, 0.25f, 1);
 	

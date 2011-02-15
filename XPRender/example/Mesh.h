@@ -47,29 +47,29 @@ typedef struct Mesh
 	struct MeshImpl* impl;
 } Mesh;
 
-Mesh* Mesh_alloc();
+Mesh* meshAlloc();
 
-void Mesh_free(Mesh* self);
+void meshFree(Mesh* self);
 
-void Mesh_init(Mesh* self, size_t vertexCount, size_t indexCount);
+void meshInit(Mesh* self, size_t vertexCount, size_t indexCount);
 
-void Mesh_initWithUnitSphere(Mesh* self, size_t segmentCount);
+void meshInitWithUnitSphere(Mesh* self, size_t segmentCount);
 
-void Mesh_initWithQuad(Mesh* self, float width, float height, const XprVec3* offset, size_t segmentCount);
+void meshInitWithQuad(Mesh* self, float width, float height, const XprVec3* offset, size_t segmentCount);
 
-void Mesh_initWithScreenQuad(Mesh* self);
+void meshInitWithScreenQuad(Mesh* self);
 
-XprBool Mesh_initWithObjFile(Mesh* self, const char* path, InputStream* stream);
+XprBool meshInitWithObjFile(Mesh* self, const char* path, InputStream* stream);
 
-void Mesh_commit(Mesh* self);
+void meshCommit(Mesh* self);
 
-void Mesh_preRender(Mesh* self, struct XprGpuProgram* program);
+void meshPreRender(Mesh* self, struct XprGpuProgram* program);
 
-void Mesh_render(Mesh* self);
+void meshRenderTriangles(Mesh* self);
 
-void Mesh_renderPatches(Mesh* self, size_t vertexPrePatch);
+void meshRenderPatches(Mesh* self);
 
-void Mesh_renderPoints(Mesh* self);
+void meshRenderPoints(Mesh* self);
 
 #ifdef __cplusplus
 }

@@ -3,30 +3,13 @@
 #include "Material.h"
 #include "Remote.h"
 
-XprGpuState* _gpuState = nullptr;
-Mesh* _tessMesh = nullptr;
-Mesh* _bgMesh = nullptr;
-Material* _sceneMaterial = nullptr;
-Material* _bgMaterial = nullptr;
+AppContext* app = nullptr;
+RemoteConfig* config = nullptr;
 
-RenderContext _renderContext;
-
-typedef struct Aspect
-{
-	float width;
-	float height;
-} Aspect;
-
-Aspect _aspect;
-
-typedef struct Mouse
-{
-	int x;
-	int y;
-	XprBool isDown;
-} Mouse;
-
-Mouse _mouse;
+Mesh* tessMesh = nullptr;
+Mesh* bgMesh = nullptr;
+Material* tessMtl = nullptr;
+Material* bgMtl = nullptr;
 
 typedef struct Settings
 {
@@ -34,9 +17,7 @@ typedef struct Settings
 	float linearity;
 } Settings;
 
-Settings _settings;
-
-RemoteConfig* _config = nullptr;
+Settings settings;
 
 void drawBackground()
 {
@@ -47,15 +28,15 @@ void drawBackground()
 		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
 	
-	xprGpuStateSetDepthTestEnabled(_gpuState, XprFalse);
-	xprGpuStateSetCullEnabled(_gpuState, XprTrue);
-	xprGpuStatePreRender(_gpuState);
+	xprGpuStateSetDepthTestEnabled(app->gpuState, XprFalse);
+	xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
+	xprGpuStatePreRender(app->gpuState);
 
-	xprGpuProgramPreRender(_bgMaterial->program);
-	xprGpuProgramUniform4fv(_bgMaterial->program, XprHash("u_colors"), 4, (const float*)c);
+	xprGpuProgramPreRender(bgMtl->program);
+	xprGpuProgramUniform4fv(bgMtl->program, XprHash("u_colors"), 4, (const float*)c);
 
-	Mesh_preRender(_bgMesh, _bgMaterial->program);
-	Mesh_render(_bgMesh);
+	meshPreRender(bgMesh, bgMtl->program);
+	meshRenderTriangles(bgMesh);
 }
 
 void drawScene(Settings* settings)
@@ -68,39 +49,39 @@ void drawScene(Settings* settings)
 	XprMat44 viewProjMtx;
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
-	xprMat44Prespective(&projMtx, 45.0f, _aspect.width / _aspect.height, 0.1f, 30.0f);
+	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 
-	xprGpuStateSetDepthTestEnabled(_gpuState, XprTrue);
-	xprGpuStateSetCullEnabled(_gpuState, XprTrue);
-	//xprGpuStateSetPolygonMode(_gpuState, XprGpuState_PolygonMode_Line);
-	xprGpuStatePreRender(_gpuState);
+	xprGpuStateSetDepthTestEnabled(app->gpuState, XprTrue);
+	xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
+	//xprGpuStateSetPolygonMode(app->gpuState, XprGpuState_PolygonMode_Line);
+	xprGpuStatePreRender(app->gpuState);
 
-	xprGpuProgramPreRender(_sceneMaterial->program);
+	xprGpuProgramPreRender(tessMtl->program);
 	
 	// draw floor
-	_renderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
-	_renderContext.matSpecular = xprVec4(2, 2, 2, 1);
-	_renderContext.matShininess = 32;
+	app->shaderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
+	app->shaderContext.matSpecular = xprVec4(2, 2, 2, 1);
+	app->shaderContext.matShininess = 32;
 
 	{
 		XprMat44 m;
 		XprVec3 axis = {1, 0, 0};
 		xprMat44MakeRotation(&m, &axis, -90);
 		
-		xprMat44Mult(&_renderContext.worldViewMtx, &viewMtx, &m);
-		xprMat44Mult(&_renderContext.worldViewProjMtx, &viewProjMtx, &m);
+		xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
+		xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &m);
 	}
 
-	RenderContext_preRender(&_renderContext, _sceneMaterial);
+	appShaderContextPreRender(app, tessMtl);
 
-	xprGpuProgramUniform1fv(_sceneMaterial->program, XprHash("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
-	xprGpuProgramUniform1fv(_sceneMaterial->program, XprHash("u_linearity"), 1, (const float*)&(settings->linearity));
+	xprGpuProgramUniform1fv(tessMtl->program, XprHash("u_tessLevel"), 1, (const float*)&(settings->tessLevel));
+	xprGpuProgramUniform1fv(tessMtl->program, XprHash("u_linearity"), 1, (const float*)&(settings->linearity));
 
-	Mesh_preRender(_tessMesh, _sceneMaterial->program);
-	Mesh_renderPatches(_tessMesh, _tessMesh->vertexPerPatch);
+	meshPreRender(tessMesh, tessMtl->program);
+	meshRenderPatches(tessMesh);
 
-	xprGpuStateSetPolygonMode(_gpuState, XprGpuState_PolygonMode_Fill);
+	xprGpuStateSetPolygonMode(app->gpuState, XprGpuState_PolygonMode_Fill);
 }
 
 void PezUpdate(unsigned int elapsedMilliseconds)
@@ -109,36 +90,21 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 
 void PezHandleMouse(int x, int y, int action)
 {
-	if(PEZ_DOWN == action) {
-		_mouse.x = x;
-		_mouse.y = y;
-
-		_mouse.isDown = XprTrue;
-	}
-	else if(PEZ_UP == action) {
-		_mouse.isDown = XprFalse;
-	}
-	else if((PEZ_MOVE == action) && (XprTrue == _mouse.isDown)) {
-		int dx = x - _mouse.x;
-		int dy = y - _mouse.y;
-		
-		float mouseSensitivity = 0.0025f;
-	}
 }
 
 void PezRender()
 {
-	Settings settings;
+	Settings localSettings;
 
-	RemoteConfig_lock(_config);
-	settings = _settings;
-	settings.linearity /= 10.0f;
-	RemoteConfig_unlock(_config);
+	RemoteConfig_lock(config);
+	localSettings = settings;
+	localSettings.linearity /= 10.0f;
+	RemoteConfig_unlock(config);
 
 	xprRenderTargetClearDepth(1);
 
 	drawBackground();
-	drawScene(&settings);
+	drawScene(&localSettings);
 }
 
 void PezConfig()
@@ -151,67 +117,66 @@ void PezConfig()
 	PEZ_GL_VERSION_MINOR = 0;
 }
 
-void PezExit(void)
+void PezFinalize()
 {
-	Mesh_free(_tessMesh);
-	Mesh_free(_bgMesh);
-	Material_free(_sceneMaterial);
-	Material_free(_bgMaterial);
-	xprGpuStateFree(_gpuState);
-	RemoteConfig_free(_config);
+	meshFree(tessMesh);
+	meshFree(bgMesh);
+	materialFree(tessMtl);
+	materialFree(bgMtl);
+	RemoteConfig_free(config);
+	appFree(app);
 }
 
 const char* PezInitialize(int width, int height)
 {
-	RemoteVarDesc descs[] = {
-		{"tessLevel", &_settings.tessLevel, 0, 16},
-		{"linearity", &_settings.linearity, 0, 10},
-		{nullptr, nullptr, 0, 0},
-	};
+	app = appAlloc();
+	appInit(app, (float)width, (float)height);
 
-	_settings.tessLevel = 8;
-	_settings.linearity = 3;
+	settings.tessLevel = 8;
+	settings.linearity = 3;
 
-	_config = RemoteConfig_alloc();
-	RemoteConfig_init(_config, 80, XprTrue);
-	RemoteConfig_addVars(_config, descs);
+	// remote config
+	{
+		RemoteVarDesc descs[] = {
+			{"tessLevel", &settings.tessLevel, 0, 16},
+			{"linearity", &settings.linearity, 0, 10},
+			{nullptr, nullptr, 0, 0},
+		};
 
-	_gpuState = xprGpuStateAlloc();
-	xprGpuStateInit(_gpuState);
-
-	xprRenderTargetSetViewport(0, 0, (float)width, (float)height, -1, 1);
-	_aspect.width = (float)width;
-	_aspect.height = (float)height;
-
-	_mouse.isDown = XprFalse;
+		config = RemoteConfig_alloc();
+		RemoteConfig_init(config, 80, XprTrue);
+		RemoteConfig_addVars(config, descs);
+	}
 
 	// materials
-	glswInit(&myFileSystem);
-	glswSetPath("", ".glsl");
-	glswAddDirectiveToken("","#version 400");
+	{
+		const char* directives[]  = {"", "#version 400", nullptr};
+		
+		appLoadMaterialBegin(app, directives);
 
-	_sceneMaterial = loadMaterial(
-		"TriangleTessellation.Scene.Vertex",
-		"TriangleTessellation.Scene.Fragment",
-		"TriangleTessellation.Scene.TessControl",
-		"TriangleTessellation.Scene.TessEvaluation",
-		nullptr);
-	
-	_bgMaterial = loadMaterial(
-		"Common.Bg.Vertex",
-		"Common.Bg.Fragment",
-		nullptr, nullptr, nullptr);
-	
-	glswShutdown();
+		tessMtl = appLoadMaterial(
+			"TriangleTessellation.Scene.Vertex",
+			"TriangleTessellation.Scene.Fragment",
+			"TriangleTessellation.Scene.TessControl",
+			"TriangleTessellation.Scene.TessEvaluation",
+			nullptr);
+		
+		bgMtl = appLoadMaterial(
+			"Common.Bg.Vertex",
+			"Common.Bg.Fragment",
+			nullptr, nullptr, nullptr);
+		
+		appLoadMaterialEnd(app);
+	}
 
-	_tessMesh = Mesh_alloc();
+	// meshs
+	{
+		tessMesh = meshAlloc();
+		meshInitWithObjFile(tessMesh, "monkey.obj", app->inputStream);
 
-	Mesh_initWithObjFile(_tessMesh, "monkey.obj", &myInputStream);
-
-	_bgMesh = Mesh_alloc();
-	Mesh_initWithScreenQuad(_bgMesh);
-	
-	atexit(PezExit);
+		bgMesh = meshAlloc();
+		meshInitWithScreenQuad(bgMesh);
+	}
 
 	return "Triangle Tessellation";
 }

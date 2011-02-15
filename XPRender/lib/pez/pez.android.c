@@ -131,6 +131,7 @@ static void engine_draw_frame(struct engine* engine) {
 * Tear down the EGL context currently associated with the display.
 */
 static void engine_term_display(struct engine* engine) {
+	PezFinalize();
 	if (engine->display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(engine->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 		if (engine->context != EGL_NO_CONTEXT) {
@@ -298,48 +299,40 @@ void android_main(struct android_app* state) {
 
 void PezDebugStringW(const wchar_t* pStr, ...)
 {
-	va_list a;
-	va_start(a, pStr);
-
-	wchar_t msg[1024] = {0};
-	vswprintf(msg, countof(msg), pStr, a);
-	//fputws(msg, stderr);
-	//__android_log_print(ANDROID_LOG_INFO, "pez", msg);
+	/*
+	va_list args;
+	
+	va_start(args, pStr);
+	__android_log_vprint(ANDROID_LOG_INFO, "PEZ", pStr, args);
+	va_end(args);
+	*/
 }
 
 void PezDebugString(const char* pStr, ...)
 {
-	va_list a;
-	va_start(a, pStr);
-
-	char msg[1024] = {0};
-	vsnprintf(msg, countof(msg), pStr, a);
-	//fputs(msg, stderr);
-	__android_log_print(ANDROID_LOG_WARN, "pez", msg);
+	va_list args;
+	
+	va_start(args, pStr);
+	__android_log_vprint(ANDROID_LOG_INFO, "PEZ", pStr, args);
+	va_end(args);
 }
 
 void PezFatalErrorW(const wchar_t* pStr, ...)
 {
-	//fwide(stderr, 1);
-
-	va_list a;
-	va_start(a, pStr);
-
-	wchar_t msg[1024] = {0};
-	vswprintf(msg, countof(msg), pStr, a);
-	//fputws(msg, stderr);
-	//__android_log_print(ANDROID_LOG_ERROR, "pez", msg);
-	//exit(1);
+	/*
+	va_list args;
+	
+	va_start(args, pStr);
+	__android_log_vprint(ANDROID_LOG_FATAL, "PEZ", pStr, args);
+	va_end(args);
+	*/
 }
 
 void PezFatalError(const char* pStr, ...)
 {
-	va_list a;
-	va_start(a, pStr);
-
-	char msg[1024] = {0};
-	vsnprintf(msg, countof(msg), pStr, a);
-	//fputs(msg, stderr);
-	__android_log_print(ANDROID_LOG_ERROR, "pez", msg);
-	//exit(1);
+	va_list args;
+	
+	va_start(args, pStr);
+	__android_log_vprint(ANDROID_LOG_FATAL, "PEZ", pStr, args);
+	va_end(args);
 }

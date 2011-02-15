@@ -3,11 +3,11 @@
 #include "Material.h"
 #include "Label.h"
 
-XprGpuState* _gpuState = nullptr;
-Material* _textMaterial = nullptr;
-Mesh* _bgMesh = nullptr;
-Label* _label = nullptr;
-XprVec4 _textColor = {1, 0, 0, 1};
+AppContext* app = nullptr;
+Material* mtlText = nullptr;
+Mesh* meshBg = nullptr;
+Label* label = nullptr;
+XprVec4 textColor = {1, 0, 0, 1};
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
@@ -24,19 +24,19 @@ void PezRender()
 	xprRenderTargetClearColor(0.25f, 0.75f, 1.0f, 1.0f);
 
 	// display the label
-	xprGpuStateSetBlendEnabled(_gpuState, XprTrue);
-	xprGpuStateSetBlendFactorRGB(_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
-	xprGpuStateSetBlendFactorA  (_gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
-	xprGpuStatePreRender(_gpuState);
+	xprGpuStateSetBlendEnabled(app->gpuState, XprTrue);
+	xprGpuStateSetBlendFactorRGB(app->gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
+	xprGpuStateSetBlendFactorA  (app->gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
+	xprGpuStatePreRender(app->gpuState);
 	
-	xprGpuProgramPreRender(_textMaterial->program);
-	xprGpuProgramUniformTexture(_textMaterial->program, XprHash("u_tex"), _label->texture);
-	xprGpuProgramUniform4fv(_textMaterial->program, XprHash("u_textColor"), 1, _textColor.v);
+	xprGpuProgramPreRender(mtlText->program);
+	xprGpuProgramUniformTexture(mtlText->program, XprHash("u_tex"), label->texture);
+	xprGpuProgramUniform4fv(mtlText->program, XprHash("u_textColor"), 1, textColor.v);
 	
-	Mesh_preRender(_bgMesh, _textMaterial->program);
-	Mesh_render(_bgMesh);
+	meshPreRender(meshBg, mtlText->program);
+	meshRenderTriangles(meshBg);
 
-	xprGpuStateSetBlendEnabled(_gpuState, XprFalse);
+	xprGpuStateSetBlendEnabled(app->gpuState, XprFalse);
 }
 
 void PezConfig()
@@ -47,44 +47,46 @@ void PezConfig()
 	PEZ_VERTICAL_SYNC = 0;
 }
 
-void PezExit(void)
+void PezFinalize()
 {
-	xprGpuStateFree(_gpuState);
-	Material_free(_textMaterial);
-	Label_free(_label);
+	materialFree(mtlText);
+	Label_free(label);
+	appFree(app);
 }
 
 const char* PezInitialize(int width, int height)
 {
 	char utf8[] = {0xEF, 0xBB, 0xBF, 0xE9, 0x80, 0x99, 0xE6, 0x98, 0xAF, 0x55, 0x54, 0x46, 0x38, 0x00};
 
-	xprRenderTargetSetViewport(0, 0, (float)width, (float)height, -1, 1);
-
-	_gpuState = xprGpuStateAlloc();
-	xprGpuStateInit(_gpuState);
+	app = appAlloc();
+	appInit(app, (float)width, (float)height);
 	
 	// label
-	_label = Label_alloc();
-	Label_init(_label, width, height);
-	Label_setText(_label, utf8);
-	Label_commit(_label);
+	{
+		label = Label_alloc();
+		Label_init(label, width, height);
+		Label_setText(label, utf8);
+		Label_commit(label);
+	}
 
 	// materials
-	glswInit(&myFileSystem);
-	glswSetPath("", ".glsl");
-	glswAddDirectiveToken("","#version 150");
+	{
+		const char* directives[] = {"", "#version 150", nullptr};
+		appLoadMaterialBegin(app, directives);
 
-	_textMaterial = loadMaterial(
-		"Common.Ui.Vertex",
-		"Common.Text.Fragment",
-		nullptr, nullptr, nullptr);
+		mtlText = appLoadMaterial(
+			"Common.Ui.Vertex",
+			"Common.Text.Fragment",
+			nullptr, nullptr, nullptr);
 
-	glswShutdown();
+		appLoadMaterialEnd(app);
+	}
 
-	_bgMesh = Mesh_alloc();
-	Mesh_initWithScreenQuad(_bgMesh);
-	
-	atexit(PezExit);
+	// mesh
+	{
+		meshBg = meshAlloc();
+		meshInitWithScreenQuad(meshBg);
+	}
 
 	return "Label";
 }
