@@ -22,6 +22,8 @@ void PezRender()
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
 	XprMat44 viewProjMtx;
+
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
@@ -47,8 +49,8 @@ void PezRender()
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &app->shaderContext.worldMtx);
 		}
 
-		xprGpuStateSetDepthTestEnabled(app->gpuState, XprTrue);
-		xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
+		gpuState->depthTest = XprTrue;
+		gpuState->cull = XprTrue;
 		xprGpuStatePreRender(app->gpuState);
 
 		xprGpuProgramPreRender(mtl->program);
@@ -62,6 +64,8 @@ void PezRender()
 
 void PezConfig()
 {
+	PEZ_GL_VERSION_MAJOR = 2;
+	PEZ_GL_VERSION_MINOR = 1;
 }
 
 void PezFinalize()

@@ -19,14 +19,18 @@ void PezHandleMouse(int x, int y, int action)
 
 void PezRender()
 {
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
+
 	// render to texture
 	xprRenderTargetClearDepth(1);
 	xprRenderTargetClearColor(0.25f, 0.75f, 1.0f, 1.0f);
 
 	// display the label
-	xprGpuStateSetBlendEnabled(app->gpuState, XprTrue);
-	xprGpuStateSetBlendFactorRGB(app->gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
-	xprGpuStateSetBlendFactorA  (app->gpuState, XprGpuState_BlendFactor_SrcAlpha, XprGpuState_BlendFactor_OneMinusSrcAlpha);
+	gpuState->blend = XprTrue;
+	gpuState->blendFactorSrcRGB = XprGpuState_BlendFactor_SrcAlpha;
+	gpuState->blendFactorDestRGB = XprGpuState_BlendFactor_OneMinusSrcAlpha;
+	gpuState->blendFactorSrcA = XprGpuState_BlendFactor_SrcAlpha;
+	gpuState->blendFactorDestA = XprGpuState_BlendFactor_OneMinusSrcAlpha;
 	xprGpuStatePreRender(app->gpuState);
 	
 	xprGpuProgramPreRender(mtlText->program);
@@ -36,7 +40,7 @@ void PezRender()
 	meshPreRender(meshBg, mtlText->program);
 	meshRenderTriangles(meshBg);
 
-	xprGpuStateSetBlendEnabled(app->gpuState, XprFalse);
+	gpuState->blend = XprFalse;
 }
 
 void PezConfig()

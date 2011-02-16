@@ -27,9 +27,11 @@ void drawBackground()
 		{0.57f, 0.85f, 1.0f, 1.0f},
 		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
+
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
 	
-	xprGpuStateSetDepthTestEnabled(app->gpuState, XprFalse);
-	xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
+	gpuState->depthTest = XprFalse;
+	gpuState->cull = XprTrue;
 	xprGpuStatePreRender(app->gpuState);
 
 	xprGpuProgramPreRender(bgMtl->program);
@@ -47,14 +49,15 @@ void drawScene(Settings* settings)
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
 	XprMat44 viewProjMtx;
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 
-	xprGpuStateSetDepthTestEnabled(app->gpuState, XprTrue);
-	xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
-	//xprGpuStateSetPolygonMode(app->gpuState, XprGpuState_PolygonMode_Line);
+	gpuState->depthTest = XprTrue;
+	gpuState->cull = XprTrue;
+	//gpuState->polygonMode = XprGpuState_PolygonMode_Line;
 	xprGpuStatePreRender(app->gpuState);
 
 	xprGpuProgramPreRender(tessMtl->program);
@@ -81,7 +84,7 @@ void drawScene(Settings* settings)
 	meshPreRender(tessMesh, tessMtl->program);
 	meshRenderPatches(tessMesh);
 
-	xprGpuStateSetPolygonMode(app->gpuState, XprGpuState_PolygonMode_Fill);
+	gpuState->polygonMode = XprGpuState_PolygonMode_Fill;
 }
 
 void PezUpdate(unsigned int elapsedMilliseconds)

@@ -54,9 +54,10 @@ void drawBackground()
 		{0.57f, 0.85f, 1.0f, 1.0f},
 		{0.57f, 0.85f, 1.0f, 1.0f},
 	};
-	
-	xprGpuStateSetDepthTestEnabled(app->gpuState, XprFalse);
-	xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
+
+	gpuState->depthTest = XprFalse;
+	gpuState->cull = XprTrue;
 	xprGpuStatePreRender(app->gpuState);
 
 	xprGpuProgramPreRender(bgMtl->program);
@@ -74,13 +75,15 @@ void drawScene()
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
 	XprMat44 viewProjMtx;
+
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 
-	xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
-	xprGpuStateSetDepthTestEnabled(app->gpuState, XprTrue);
+	gpuState->cull = XprTrue;
+	gpuState->depthTest = XprTrue;
 	xprGpuStatePreRender(app->gpuState);
 
 	xprGpuProgramPreRender(sceneMtl->program);
@@ -111,7 +114,7 @@ void drawScene()
 		app->shaderContext.matSpecular = xprVec4(0.125f, 0.125f, 0.125f, 1);
 		app->shaderContext.matShininess = 32;
 
-		xprGpuStateSetCullEnabled(app->gpuState, XprFalse);
+		gpuState->cull = XprFalse;
 		xprGpuStatePreRender(app->gpuState);
 		{
 			XprMat44 m;
@@ -125,7 +128,7 @@ void drawScene()
 		meshPreRender(cloth->mesh, sceneMtl->program);
 		meshRenderTriangles(cloth->mesh);
 		
-		xprGpuStateSetCullEnabled(app->gpuState, XprTrue);
+		gpuState->cull = XprTrue;
 		xprGpuStatePreRender(app->gpuState);
 	}
 

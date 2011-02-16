@@ -182,13 +182,14 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
         {
             DWORD currentTime = GetTickCount();
             DWORD deltaTime = currentTime - previousTime;
+			GLint err;
             previousTime = currentTime;
             PezUpdate(deltaTime);
             PezRender();
             SwapBuffers(hDC);
-            if (glGetError() != GL_NO_ERROR)
+            if ((err = glGetError()) != GL_NO_ERROR)
             {
-                PezFatalError("OpenGL error.\n");
+                PezFatalError("OpenGL error %d.\n", err);
             }
         }
     }
