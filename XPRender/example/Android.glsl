@@ -23,17 +23,16 @@ varying vec3 v_normal;
 varying vec3 v_pos;
 varying vec2 v_texcoord;
 
-#define o_fragColor gl_FragColor
-
 uniform vec4 u_matDiffuse;
 uniform vec4 u_matSpecular;
 uniform float u_matShininess;
 
 void main() {
+	
 	vec3 n = normalize(v_normal.xyz);
 	vec3 l = normalize(vec3(0,10,10) - v_pos.xyz);
 	vec3 h = normalize(l + vec3(0, 0, 1));
-	
+	/*
 	if(false == gl_FrontFacing)
 		n *= -1;
 		
@@ -45,5 +44,7 @@ void main() {
 	color.xyz *= ndl;
 	color.xyz += u_matSpecular.xyz * ndh;
 	
-	o_fragColor = color;
+	gl_FragColor = color;
+	*/
+	gl_FragColor = vec4(n*0.5 + 0.5, 1);
 }

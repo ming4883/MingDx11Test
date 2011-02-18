@@ -102,6 +102,7 @@ const char* PezInitialize(int width, int height)
 		
 		appLoadMaterialEnd(app);
 	}
+	/**/
 	
 	bgClr = xprVec4(0.25f, 1, 0.25f, 1);
 	

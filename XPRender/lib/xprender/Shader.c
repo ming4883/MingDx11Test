@@ -1,5 +1,5 @@
-#include "Shader.GL.h"
-#include "Texture.GL.h"
+#include "Shader.gl.h"
+#include "Texture.gl.h"
 #include <stdio.h>
 
 GLenum xprGL_SHADER_TYPE[] = {
@@ -44,7 +44,7 @@ void xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, X
 		if(len > 0) {
 			char* buf = (char*)malloc(len);
 			glGetShaderInfoLog(self->impl->glName, len, nullptr, buf);
-			XprDbgStr(buf);
+			XprDbgStr("glCompileShader failed: %s", buf);
 			free(buf);
 		}
 	}
@@ -100,7 +100,7 @@ void xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shade
 		if(len > 0) {
 			char* buf = (char*)malloc(len);
 			glGetProgramInfoLog(self->impl->glName, len, nullptr, buf);
-			XprDbgStr(buf);
+			XprDbgStr("glLinkProgram failed: %s", buf);
 			free(buf);
 		}
 		return;

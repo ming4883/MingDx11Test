@@ -82,6 +82,8 @@ void appInit(AppContext* self, float aspectw, float aspecth)
 	self->aspect.height = aspecth;
 
 	xprRenderTargetSetViewport(0, 0, aspectw, aspecth, -1, 1);
+	
+	XprDbgStr("xprender started with %d x %d", (int)aspectw, (int)aspecth);
 }
 
 void appFree(AppContext* self)

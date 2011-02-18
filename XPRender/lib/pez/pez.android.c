@@ -13,8 +13,8 @@
 #include <android/log.h>
 #include <android_native_app_glue.h>
 
-#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "native-activity", __VA_ARGS__))
-#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "native-activity", __VA_ARGS__))
+#define LOGI(...) ((void)__android_log_print(ANDROID_LOG_INFO, "pez", __VA_ARGS__))
+#define LOGW(...) ((void)__android_log_print(ANDROID_LOG_WARN, "pez", __VA_ARGS__))
 
 /**
 * Our saved state data.
@@ -39,8 +39,6 @@ struct engine {
 	EGLDisplay display;
 	EGLSurface surface;
 	EGLContext context;
-	int32_t width;
-	int32_t height;
 	struct saved_state state;
 };
 
@@ -55,14 +53,17 @@ static int engine_init_display(struct engine* engine) {
 	* Below, we select an EGLConfig with at least 8 bits per color
 	* component compatible with on-screen windows
 	*/
-	const EGLint attribs[] = {
+	const EGLint configAttribs[] = {
 			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
 			EGL_BLUE_SIZE, 8,
 			EGL_GREEN_SIZE, 8,
 			EGL_RED_SIZE, 8,
-			EGL_OPENGL_ES2_BIT,
+			EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
 			EGL_NONE
 	};
+	
+	const EGLint contextAttribs[] = {	EGL_CONTEXT_CLIENT_VERSION, 2,	EGL_NONE};
+	
 	EGLint w, h, dummy, format;
 	EGLint numConfigs;
 	EGLConfig config;
@@ -72,22 +73,18 @@ static int engine_init_display(struct engine* engine) {
 	EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
 	eglInitialize(display, 0, 0);
+	eglChooseConfig(display, configAttribs, &config, 1, &numConfigs);
+	
+	if (0 == numConfigs) {
+		LOGW("eglChooseConfig return %d configs", numConfigs);
+		return -1;
+	}
 
-	/* Here, the application chooses the configuration it desires. In this
-	* sample, we have a very simplified selection process, where we pick
-	* the first EGLConfig that matches our criteria */
-	eglChooseConfig(display, attribs, &config, 1, &numConfigs);
-
-	/* EGL_NATIVE_VISUAL_ID is an attribute of the EGLConfig that is
-	* guaranteed to be accepted by ANativeWindow_setBuffersGeometry().
-	* As soon as we picked a EGLConfig, we can safely reconfigure the
-	* ANativeWindow buffers to match, using EGL_NATIVE_VISUAL_ID. */
 	eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
-
 	ANativeWindow_setBuffersGeometry(engine->app->window, 0, 0, format);
 
 	surface = eglCreateWindowSurface(display, config, engine->app->window, NULL);
-	context = eglCreateContext(display, config, NULL, NULL);
+	context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs);
 
 	if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
 		LOGW("Unable to eglMakeCurrent");
@@ -100,12 +97,13 @@ static int engine_init_display(struct engine* engine) {
 	engine->display = display;
 	engine->context = context;
 	engine->surface = surface;
-	engine->width = w;
-	engine->height = h;
 	engine->state.angle = 0;
+	
+	PEZ_VIEWPORT_WIDTH = w;
+	PEZ_VIEWPORT_HEIGHT = h;
 
 	// Initialize GL state.
-	PezInitialize(engine->width, engine->height);
+	PezInitialize(w, h);
 
 	return 0;
 }
@@ -123,6 +121,13 @@ static void engine_draw_frame(struct engine* engine) {
 	// Just fill the screen with a color.
 	PezUpdate(10);
 	PezRender();
+	
+	{
+		GLint err = glGetError();
+		if(err != GL_NO_ERROR) {
+			PezFatalError("GL has error %x", err);
+		}
+	}
 
 	eglSwapBuffers(engine->display, engine->surface);
 }
@@ -210,6 +215,12 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
 }
 
 struct android_app* PEZ_ANDROID_APP = 0;
+int PEZ_VIEWPORT_WIDTH = 800;
+int PEZ_VIEWPORT_HEIGHT = 480;
+int PEZ_ENABLE_MULTISAMPLING = 0;
+int PEZ_VERTICAL_SYNC = 0;
+int PEZ_GL_VERSION_MAJOR = 2;
+int PEZ_GL_VERSION_MINOR = 0;
 
 /**
 * This is the main entry point of a native application that is using
@@ -269,9 +280,9 @@ void android_main(struct android_app* state) {
 					ASensorEvent event;
 					while (ASensorEventQueue_getEvents(engine.sensorEventQueue,
 							&event, 1) > 0) {
-						LOGI("accelerometer: x=%f y=%f z=%f",
-								event.acceleration.x, event.acceleration.y,
-								event.acceleration.z);
+						//LOGI("accelerometer: x=%f y=%f z=%f",
+						//		event.acceleration.x, event.acceleration.y,
+						//		event.acceleration.z);
 					}
 				}
 			}
