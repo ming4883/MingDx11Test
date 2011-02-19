@@ -22,6 +22,16 @@
 extern "C" {
 #endif
 
+typedef struct ShaderContext
+{
+	XprMat44 worldViewProjMtx;
+	XprMat44 worldViewMtx;
+	XprMat44 worldMtx;
+	XprVec4 matDiffuse;
+	XprVec4 matSpecular;
+	float matShininess;
+} ShaderContext;
+
 typedef struct AppContext
 {
 	struct
@@ -30,15 +40,7 @@ typedef struct AppContext
 		float height;
 	} aspect;
 
-	struct
-	{
-		XprMat44 worldViewProjMtx;
-		XprMat44 worldViewMtx;
-		XprMat44 worldMtx;
-		XprVec4 matDiffuse;
-		XprVec4 matSpecular;
-		float matShininess;
-	} shaderContext;
+	ShaderContext shaderContext;
 
 	XprGpuState* gpuState;
 

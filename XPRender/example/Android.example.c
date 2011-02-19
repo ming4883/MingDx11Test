@@ -16,6 +16,7 @@ void PezHandleMouse(int x, int y, int action)
 
 void PezRender()
 {
+	static float t = 0.0f;
 	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
 	XprVec3 lookAt = xprVec3(0, 0, 0);
 	XprVec3 eyeUp = *XprVec3_c010();
@@ -24,6 +25,11 @@ void PezRender()
 	XprMat44 viewProjMtx;
 
 	XprGpuStateDesc* gpuState = &app->gpuState->desc;
+	
+	t += 0.01f;
+	if(t > 1.0f) {
+		t = 0.0f;
+	}
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
@@ -43,7 +49,7 @@ void PezRender()
 
 		{
 			XprVec3 axis = {1, 0, 0};
-			xprMat44MakeRotation(&app->shaderContext.worldMtx, &axis, -90);
+			xprMat44MakeRotation(&app->shaderContext.worldMtx, &axis, 360 * t);
 			
 			xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &app->shaderContext.worldMtx);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &app->shaderContext.worldMtx);
@@ -59,7 +65,6 @@ void PezRender()
 		meshPreRender(mesh, mtl->program);
 		meshRenderTriangles(mesh);
 	}
-	/**/
 }
 
 void PezConfig()
@@ -102,7 +107,6 @@ const char* PezInitialize(int width, int height)
 		
 		appLoadMaterialEnd(app);
 	}
-	/**/
 	
 	bgClr = xprVec4(0.25f, 1, 0.25f, 1);
 	

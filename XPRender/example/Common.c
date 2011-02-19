@@ -162,12 +162,19 @@ Material* appLoadMaterial(const char* vsKey, const char* fsKey, const char* tcKe
 
 void appShaderContextPreRender(AppContext* self, Material* material)
 {
-	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewMtx"), 1, XprTrue, self->shaderContext.worldViewMtx.v);
-	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewProjMtx"), 1, XprTrue, self->shaderContext.worldViewProjMtx.v);
-	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldMtx"), 1, XprTrue, self->shaderContext.worldMtx.v);
-	xprGpuProgramUniform4fv(material->program, XprHash("u_matDiffuse"), 1, self->shaderContext.matDiffuse.v);
-	xprGpuProgramUniform4fv(material->program, XprHash("u_matSpecular"), 1, self->shaderContext.matSpecular.v);
-	xprGpuProgramUniform1fv(material->program, XprHash("u_matShininess"), 1, &self->shaderContext.matShininess);
+	ShaderContext shdcontext = self->shaderContext;
+	
+	// gles does not support transpose matrix, so we have to DIY
+	xprMat44Transpose(&shdcontext.worldViewMtx, &shdcontext.worldViewMtx);
+	xprMat44Transpose(&shdcontext.worldViewProjMtx, &shdcontext.worldViewProjMtx);
+	xprMat44Transpose(&shdcontext.worldMtx, &shdcontext.worldMtx);
+	
+	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewMtx"), 1, XprFalse, shdcontext.worldViewMtx.v);
+	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldViewProjMtx"), 1, XprFalse, shdcontext.worldViewProjMtx.v);
+	xprGpuProgramUniformMtx4fv(material->program, XprHash("u_worldMtx"), 1, XprFalse, shdcontext.worldMtx.v);
+	xprGpuProgramUniform4fv(material->program, XprHash("u_matDiffuse"), 1, shdcontext.matDiffuse.v);
+	xprGpuProgramUniform4fv(material->program, XprHash("u_matSpecular"), 1, shdcontext.matSpecular.v);
+	xprGpuProgramUniform1fv(material->program, XprHash("u_matShininess"), 1, &shdcontext.matShininess);
 }
 
 
