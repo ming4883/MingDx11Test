@@ -35,7 +35,6 @@ struct engine {
 	const ASensor* accelerometerSensor;
 	ASensorEventQueue* sensorEventQueue;
 
-	int animating;
 	EGLDisplay display;
 	EGLSurface surface;
 	EGLContext context;
@@ -55,9 +54,10 @@ static int engine_init_display(struct engine* engine) {
 	*/
 	const EGLint configAttribs[] = {
 			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-			EGL_BLUE_SIZE, 8,
-			EGL_GREEN_SIZE, 8,
-			EGL_RED_SIZE, 8,
+			EGL_BLUE_SIZE, 5,
+			EGL_GREEN_SIZE, 6,
+			EGL_RED_SIZE, 5,
+			EGL_DEPTH_SIZE, 16,
 			EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
 			EGL_NONE
 	};
@@ -147,7 +147,6 @@ static void engine_term_display(struct engine* engine) {
 		}
 		eglTerminate(engine->display);
 	}
-	engine->animating = 0;
 	engine->display = EGL_NO_DISPLAY;
 	engine->context = EGL_NO_CONTEXT;
 	engine->surface = EGL_NO_SURFACE;
@@ -159,7 +158,6 @@ static void engine_term_display(struct engine* engine) {
 static int32_t engine_handle_input(struct android_app* app, AInputEvent* event) {
 	struct engine* engine = (struct engine*)app->userData;
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-		engine->animating = 1;
 		engine->state.x = AMotionEvent_getX(event, 0);
 		engine->state.y = AMotionEvent_getY(event, 0);
 		return 1;
@@ -208,7 +206,6 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
 						engine->accelerometerSensor);
 			}
 			// Also stop animating.
-			engine->animating = 0;
 			engine_draw_frame(engine);
 			break;
 	}
@@ -266,8 +263,7 @@ void android_main(struct android_app* state) {
 		// If not animating, we will block forever waiting for events.
 		// If animating, we loop until all events are read, then continue
 		// to draw the next frame of animation.
-		while ((ident=ALooper_pollAll(engine.animating ? 0 : -1, NULL, &events,
-				(void**)&source)) >= 0) {
+		while ((ident=ALooper_pollAll(0, NULL, &events, (void**)&source)) >= 0) {
 
 			// Process this event.
 			if (source != NULL) {
@@ -294,17 +290,7 @@ void android_main(struct android_app* state) {
 			}
 		}
 
-		if (engine.animating) {
-			// Done with events; draw next animation frame.
-			engine.state.angle += .01f;
-			if (engine.state.angle > 1) {
-				engine.state.angle = 0;
-			}
-
-			// Drawing is throttled to the screen update rate, so there
-			// is no need to do timing here.
-			engine_draw_frame(&engine);
-		}
+		engine_draw_frame(&engine);
 	}
 }
 
