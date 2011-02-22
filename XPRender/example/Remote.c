@@ -1,13 +1,11 @@
-#include "Remote.h"
-
-#include "../lib/xprender/StrHash.h"
-#include "../lib/xprender/uthash/uthash.h"
-#include "../lib/httpd/httpd.h"
+#if defined(XPR_WIN32)
+#include "Remote.impl.windows.h"
+#endif
 
 #include <stdio.h>
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
-#include <windows.h>
+
+RemoteVar* remoteConfigFindVar(RemoteConfig* self, const char* name);
+void remoteConfigAddVar(RemoteConfig* self, RemoteVarDesc desc);
 
 typedef struct RemoteVar
 {
@@ -39,19 +37,6 @@ void remoteVarInit(RemoteVar* self, RemoteVarDesc desc)
 	self->desc.lowerBound = desc.lowerBound;
 }
 
-typedef struct RemoteConfigImpl
-{
-	RemoteVar* vars;
-	httpd* http;
-
-	// thread
-	DWORD threadId;
-	HANDLE threadHandle;
-	XprBool requestExit;
-	CRITICAL_SECTION criticalSection;
-
-} RemoteConfigImpl;
-
 RemoteConfig* remoteConfigAlloc()
 {
 	RemoteConfig* self;
@@ -59,108 +44,11 @@ RemoteConfig* remoteConfigAlloc()
 	return self;
 }
 
-void remoteConfigFree(RemoteConfig* self)
-{
-	struct RemoteVar *curr, *tmp;
-
-	if(nullptr == self)
-		return;
-
-	if(nullptr != self->impl->threadHandle) {
-		// notify the thread to exit
-		self->impl->requestExit = XprTrue;
-
-		// cleanup thread related resources
-		WaitForMultipleObjects(1, &self->impl->threadHandle, TRUE, INFINITE);
-		CloseHandle(self->impl->threadHandle);
-		DeleteCriticalSection(&self->impl->criticalSection);
-	}
-
-	HASH_ITER(hh, self->impl->vars, curr, tmp) {
-		HASH_DEL(self->impl->vars, curr);
-		remoteVarFree(curr);
-	}
-
-	free(self);
-}
-
-void remoteConfigLock(RemoteConfig* self)
-{
-	if(nullptr == self)
-		return;
-
-	if(nullptr == self->impl->threadHandle)
-		return;
-
-	EnterCriticalSection(&self->impl->criticalSection);
-}
-
-void remoteConfigUnlock(RemoteConfig* self)
-{
-	if(nullptr == self)
-		return;
-
-	if(nullptr == self->impl->threadHandle)
-		return;
-
-	LeaveCriticalSection(&self->impl->criticalSection);
-}
-
-DWORD WINAPI RemoteConfig_thread(void* param)
-{
-	RemoteConfig* self = (RemoteConfig*)param;
-
-	while(!self->impl->requestExit) {
-		struct timeval to = {0, 1000};
-
-		if (httpdGetConnection(self->impl->http, &to) <= 0)
-			continue;
-
-		if(httpdReadRequest(self->impl->http) < 0) {
-			httpdEndRequest(self->impl->http);
-			continue;
-		}
-
-		remoteConfigLock(self);
-
-		httpdProcessRequest(self->impl->http);
-
-		remoteConfigUnlock(self);
-
-		httpdEndRequest(self->impl->http);
-	}
-
-	return 0;
-}
-
-RemoteVar* remoteConfigFindVar(RemoteConfig* self, const char* name)
-{
-	RemoteVar* var = nullptr;
-	XprHashCode id;
-	if(nullptr == self)
-		return nullptr;
-
-	id = XprHash(name);
-	HASH_FIND_INT(self->impl->vars, &id, var);
-
-	return var;
-}
-
-void remoteConfigAddVar(RemoteConfig* self, RemoteVarDesc desc)
-{
-	RemoteVar* var;
-	if(nullptr == self)
-		return;
-
-	var = remoteVarAlloc();
-	remoteVarInit(var, desc);
-	HASH_ADD_INT(self->impl->vars, id, var);
-}
-
 void remoteConfigIndexhtml(httpd* server)
 {
 	struct RemoteVar *curr, *tmp;
-	RemoteConfig* config = (RemoteConfig*)server->userData;
+	RemoteConfig* self = (RemoteConfig*)server->userData;
+	RemoteConfigImplBase* impl = (RemoteConfigImplBase*)self->impl;
 
 	// html head
 	{
@@ -194,7 +82,7 @@ void remoteConfigIndexhtml(httpd* server)
 	}
 
 	// javascripts
-	HASH_ITER(hh, config->impl->vars, curr, tmp) {
+	HASH_ITER(hh, impl->vars, curr, tmp) {
 
 		char* html = "\
   <script>\n\
@@ -227,7 +115,7 @@ void remoteConfigIndexhtml(httpd* server)
 	}
 
 	// <div> tags
-	HASH_ITER(hh, config->impl->vars, curr, tmp) {
+	HASH_ITER(hh, impl->vars, curr, tmp) {
 		char* html = "<tr><td>%s</td><td><div id='%s'></div></td><td><div id='%s_val'></div></td></tr>\n";
 		httpdPrintf(server, html,curr->desc.name, curr->desc.name, curr->desc.name);
 	}
@@ -243,14 +131,14 @@ void remoteConfigSetterhtml(httpd* server)
 {
 	RemoteVar* rvar;
 	httpVar* hvar;
-	RemoteConfig* config = (RemoteConfig*)server->userData;
+	RemoteConfig* self = (RemoteConfig*)server->userData;
 
 	if(nullptr == (hvar = httpdGetVariableByPrefix(server, ""))) {
 		httpdPrintf(server, "false");
 		return;
 	}
 
-	if(nullptr == (rvar = remoteConfigFindVar(config, hvar->name))) {
+	if(nullptr == (rvar = remoteConfigFindVar(self, hvar->name))) {
 		httpdPrintf(server, "false");
 		return;
 	}
@@ -264,15 +152,113 @@ void remoteConfigSetterhtml(httpd* server)
 
 void remoteConfigInit(RemoteConfig* self, int port, XprBool useThread)
 {
-	self->impl->http = httpdCreate(nullptr, port);
-	self->impl->http->userData = self;
-	httpdAddCContent(self->impl->http, "/", "index.html", HTTP_TRUE, nullptr, remoteConfigIndexhtml);
-	httpdAddCContent(self->impl->http, "/", "setter", HTTP_FALSE, nullptr, remoteConfigSetterhtml);
+	RemoteConfigImplBase* impl;
 
-	if(useThread) {
-		InitializeCriticalSection(&self->impl->criticalSection);
-		self->impl->threadHandle = CreateThread(nullptr, 0, RemoteConfig_thread, self, 0, &self->impl->threadId);
+	if(nullptr == self)
+		return;
+	
+	impl = (RemoteConfigImplBase*)self->impl;
+	impl->http = httpdCreate(nullptr, port);
+	impl->http->userData = self;
+	httpdAddCContent(impl->http, "/", "index.html", HTTP_TRUE, nullptr, remoteConfigIndexhtml);
+	httpdAddCContent(impl->http, "/", "setter", HTTP_FALSE, nullptr, remoteConfigSetterhtml);
+
+	remoteConfigInitImpl(self->impl, port, useThread);
+}
+
+void remoteConfigFree(RemoteConfig* self)
+{
+	struct RemoteVar *curr, *tmp;
+	RemoteConfigImplBase* impl;
+
+	if(nullptr == self)
+		return;
+
+	impl = (RemoteConfigImplBase*)self->impl;
+
+	remoteConfigFreeImpl(self->impl);
+
+	HASH_ITER(hh, impl->vars, curr, tmp) {
+		HASH_DEL(impl->vars, curr);
+		remoteVarFree(curr);
 	}
+
+	free(self);
+}
+
+void remoteConfigProcessRequest(RemoteConfig* self)
+{
+	struct timeval to;
+	RemoteConfigImplBase* impl;
+
+	if(nullptr == self)
+		return;
+
+	impl = (RemoteConfigImplBase*)self->impl;
+
+	to.tv_sec = 0;
+	to.tv_usec = 100;
+	
+	if (httpdGetConnection(impl->http, &to) <= 0)
+		return;
+
+	if(httpdReadRequest(impl->http) < 0) {
+		httpdEndRequest(impl->http);
+		return;
+	}
+
+	httpdProcessRequest(impl->http);
+
+	httpdEndRequest(impl->http);
+}
+
+
+void remoteConfigLock(RemoteConfig* self)
+{
+	if(nullptr == self)
+		return;
+
+	remoteConfigLockImpl(self->impl);
+}
+
+void remoteConfigUnlock(RemoteConfig* self)
+{
+	if(nullptr == self)
+		return;
+
+	remoteConfigUnlockImpl(self->impl);
+}
+
+RemoteVar* remoteConfigFindVar(RemoteConfig* self, const char* name)
+{
+	RemoteVar* var = nullptr;
+	XprHashCode id;
+	RemoteConfigImplBase* impl;
+
+	if(nullptr == self)
+		return nullptr;
+
+	impl = (RemoteConfigImplBase*)self->impl;
+
+	id = XprHash(name);
+	HASH_FIND_INT(impl->vars, &id, var);
+
+	return var;
+}
+
+void remoteConfigAddVar(RemoteConfig* self, RemoteVarDesc desc)
+{
+	RemoteVar* var;
+	RemoteConfigImplBase* impl;
+
+	if(nullptr == self)
+		return;
+
+	impl = (RemoteConfigImplBase*)self->impl;
+
+	var = remoteVarAlloc();
+	remoteVarInit(var, desc);
+	HASH_ADD_INT(impl->vars, id, var);
 }
 
 void remoteConfigAddVars(RemoteConfig* self, RemoteVarDesc* descs)
@@ -283,23 +269,4 @@ void remoteConfigAddVars(RemoteConfig* self, RemoteVarDesc* descs)
 		remoteConfigAddVar(self, *curr);
 		++curr;
 	}
-}
-
-void remoteConfigProcessRequest(RemoteConfig* self)
-{
-	struct timeval to;
-	to.tv_sec = 0;
-	to.tv_usec = 100;
-	
-	if (httpdGetConnection(self->impl->http, &to) <= 0)
-		return;
-
-	if(httpdReadRequest(self->impl->http) < 0) {
-		httpdEndRequest(self->impl->http);
-		return;
-	}
-
-	httpdProcessRequest(self->impl->http);
-
-	httpdEndRequest(self->impl->http);
 }

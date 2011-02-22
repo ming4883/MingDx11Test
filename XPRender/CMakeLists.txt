@@ -91,6 +91,9 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Stream.c
 	example/Remote.c
 	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
 	example/Mesh.c
 	example/Mesh.h
 	example/Material.c
@@ -132,6 +135,9 @@ ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
 	example/Stream.c
 	example/Remote.c
 	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
 	example/Mesh.c
 	example/Mesh.obj.c
 	example/Mesh.h
@@ -150,6 +156,9 @@ ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
 	example/Stream.c
 	example/Remote.c
 	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
 	example/Material.c
 	example/Material.h
 	)
