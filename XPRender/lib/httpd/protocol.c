@@ -18,7 +18,6 @@
 **
 */
 #include <fcntl.h>
-#include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +25,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
+
+#if !defined(ANDROID)
+#include <io.h>
+#endif
 
 #if defined(_WIN32) 
 #include <Winsock2.h>
@@ -690,6 +693,7 @@ void _httpd_catFile(server, path, mode)
 	char	*path;
 	int	mode;
 {
+#if !defined(ANDROID)
 	int	fd,
 		readLen,
 		writeLen;
@@ -715,6 +719,7 @@ void _httpd_catFile(server, path, mode)
 		readLen = _read(fd, buf, HTTP_MAX_LEN - 1);
 	}
 	_close(fd);
+#endif
 }
 
 

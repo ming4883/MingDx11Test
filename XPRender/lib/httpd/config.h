@@ -19,4 +19,6 @@
 /* Define if you have the socket library (-lsocket).  */
 #undef HAVE_EMBER
 
+#if defined(_WIN32)
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+#endif

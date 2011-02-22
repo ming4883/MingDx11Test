@@ -21,19 +21,19 @@ typedef struct RemoteConfig
 	struct RemoteConfigImpl* impl;
 } RemoteConfig;
 
-RemoteConfig* RemoteConfig_alloc();
+RemoteConfig* remoteConfigAlloc();
 
-void RemoteConfig_free(RemoteConfig* self);
+void remoteConfigFree(RemoteConfig* self);
 
-void RemoteConfig_init(RemoteConfig* self, int port, XprBool useThread);
+void remoteConfigInit(RemoteConfig* self, int port, XprBool useThread);
 
-void RemoteConfig_addVars(RemoteConfig* self, RemoteVarDesc* descs);
+void remoteConfigAddVars(RemoteConfig* self, RemoteVarDesc* descs);
 
-void RemoteConfig_processRequest(RemoteConfig* self);
+void remoteConfigProcessRequest(RemoteConfig* self);
 
-void RemoteConfig_lock(RemoteConfig* self);
+void remoteConfigLock(RemoteConfig* self);
 
-void RemoteConfig_unlock(RemoteConfig* self);
+void remoteConfigUnlock(RemoteConfig* self);
 
 #ifdef __cplusplus
 }

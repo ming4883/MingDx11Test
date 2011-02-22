@@ -99,10 +99,10 @@ void PezRender()
 {
 	Settings localSettings;
 
-	RemoteConfig_lock(config);
+	remoteConfigLock(config);
 	localSettings = settings;
 	localSettings.linearity /= 10.0f;
-	RemoteConfig_unlock(config);
+	remoteConfigUnlock(config);
 
 	xprRenderTargetClearDepth(1);
 
@@ -126,7 +126,7 @@ void PezFinalize()
 	meshFree(bgMesh);
 	materialFree(tessMtl);
 	materialFree(bgMtl);
-	RemoteConfig_free(config);
+	remoteConfigFree(config);
 	appFree(app);
 }
 
@@ -146,9 +146,9 @@ const char* PezInitialize(int width, int height)
 			{nullptr, nullptr, 0, 0},
 		};
 
-		config = RemoteConfig_alloc();
-		RemoteConfig_init(config, 80, XprTrue);
-		RemoteConfig_addVars(config, descs);
+		config = remoteConfigAlloc();
+		remoteConfigInit(config, 80, XprTrue);
+		remoteConfigAddVars(config, descs);
 	}
 
 	// materials

@@ -164,9 +164,9 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 	int iter;
 	XprVec3 f;
 
-	RemoteConfig_lock(config);
+	remoteConfigLock(config);
 	lsettings = settings;
-	RemoteConfig_unlock(config);
+	remoteConfigUnlock(config);
 
 	t += 0.0005f * lsettings.impact;
 
@@ -245,7 +245,7 @@ void PezConfig()
 
 void PezFinalize()
 {
-	RemoteConfig_free(config);
+	remoteConfigFree(config);
 	Cloth_free(cloth);
 	meshFree(ballMesh);
 	meshFree(floorMesh);
@@ -270,9 +270,9 @@ const char* PezInitialize(int width, int height)
 			{nullptr, nullptr, 0, 0}
 		};
 		
-		config = RemoteConfig_alloc();
-		RemoteConfig_init(config, 80, XprTrue);
-		RemoteConfig_addVars(config, descs);
+		config = remoteConfigAlloc();
+		remoteConfigInit(config, 80, XprTrue);
+		remoteConfigAddVars(config, descs);
 	}
 
 	// materials

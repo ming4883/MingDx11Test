@@ -22,6 +22,12 @@ LOCAL_SRC_FILES	+= pez/pez.android.c
 LOCAL_SRC_FILES	+= glsw/glsw.c
 LOCAL_SRC_FILES	+= glsw/bstrlib.c
 
+LOCAL_SRC_FILES	+= httpd/api.c
+LOCAL_SRC_FILES	+= httpd/ember.c
+LOCAL_SRC_FILES	+= httpd/ip_acl.c
+LOCAL_SRC_FILES	+= httpd/protocol.c
+LOCAL_SRC_FILES	+= httpd/version.c
+
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/xprender $(LOCAL_PATH)/pez
 LOCAL_CFLAGS := -DXPR_ANDROID
 
