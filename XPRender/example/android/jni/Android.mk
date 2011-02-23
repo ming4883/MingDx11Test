@@ -10,6 +10,7 @@ LOCAL_SRC_FILES += ../../Stream.c
 LOCAL_SRC_FILES += ../../Mesh.c
 LOCAL_SRC_FILES += ../../Mesh.obj.c
 LOCAL_SRC_FILES += ../../Material.c
+LOCAL_SRC_FILES += ../../Remote.impl.android.c
 
 LOCAL_STATIC_LIBRARIES := xprender android_native_app_glue
 

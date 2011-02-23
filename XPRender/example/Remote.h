@@ -14,7 +14,7 @@ typedef struct RemoteVarDesc
 	float lowerBound, upperBound;
 } RemoteVarDesc;
 
-typedef struct RemoteConfigImpl;
+struct RemoteConfigImpl;
 
 typedef struct RemoteConfig
 {

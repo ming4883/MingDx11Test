@@ -3,6 +3,7 @@
 
 #include "Remote.h"
 
+#include <stdio.h>
 #include "../lib/xprender/StrHash.h"
 #include "../lib/xprender/uthash/uthash.h"
 #include "../lib/httpd/httpd.h"

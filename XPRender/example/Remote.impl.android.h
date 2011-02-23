@@ -1,11 +1,9 @@
-#ifndef __EXAMPLE_REMOTE_IMPL_WINDOWS_H__
-#define __EXAMPLE_REMOTE_IMPL_WINDOWS_H__
+#ifndef __EXAMPLE_REMOTE_IMPL_ANDROID_H__
+#define __EXAMPLE_REMOTE_IMPL_ANDROID_H__
 
 #include "Remote.impl.h"
 
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
-#include <windows.h>
+#include <pthread.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,9 +13,7 @@ typedef struct RemoteConfigImpl
 {
 	RemoteConfigImplBase base;
 	// thread
-	DWORD threadId;
-	HANDLE threadHandle;
-	CRITICAL_SECTION criticalSection;
+	pthread_t threadId;
 
 } RemoteConfigImpl;
 
@@ -33,4 +29,4 @@ void remoteConfigUnlockImpl(RemoteConfigImpl* self);
 }
 #endif
 
-#endif	// __EXAMPLE_REMOTE_IMPL_WINDOWS_H__
+#endif	// __EXAMPLE_REMOTE_IMPL_ANDROID_H__
