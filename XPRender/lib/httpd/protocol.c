@@ -221,7 +221,8 @@ int _httpd_sendExpandedText(server, buf, bufLen)
 		** Is this a known variable?
 		*/
 		bzero(varName, HTTP_MAX_VAR_NAME_LEN);
-		strncpy_s(varName, HTTP_MAX_VAR_NAME_LEN, varStart, varEnd - varStart + 1);
+		//strncpy_s(varName, HTTP_MAX_VAR_NAME_LEN, varStart, varEnd - varStart + 1);
+		strncpy(varName, varStart, varEnd - varStart + 1);
 		offset += strlen(varName) + 3;
 		var = httpdGetVariableByName(server, varName);
 		if (!var)
@@ -480,7 +481,8 @@ void _httpd_storeData(server, query)
                 	*cp2 = *cp++;
 			if (*cp2 == '.')
 			{
-				strcpy_s(cp2, 50,"_dot_");
+				//strcpy_s(cp2, 50,"_dot_");
+				strcpy(cp2, "_dot_");
 				cp2 += 5;
 			}
 			else
@@ -521,7 +523,7 @@ void _httpd_sendHeaders(server, contentLength, modTime)
 {
 	char	tmpBuf[80],
 		timeBuf[HTTP_TIME_STRING_LEN];
-	ZeroMemory(timeBuf, HTTP_TIME_STRING_LEN);
+	bzero(timeBuf, HTTP_TIME_STRING_LEN);
 
 	if(server->response.headersSent)
 		return;
@@ -547,7 +549,7 @@ void _httpd_sendHeaders(server, contentLength, modTime)
 	if (contentLength > 0)
 	{
 		_httpd_net_write(server->clientSock, "Content-Length: ", 16);
-		sprintf_s(tmpBuf, sizeof(tmpBuf), "%d", contentLength);
+		snprintf(tmpBuf, sizeof(tmpBuf), "%d", contentLength);
 		_httpd_net_write(server->clientSock, tmpBuf, strlen(tmpBuf));
 		_httpd_net_write(server->clientSock, "\n", 1);
 
@@ -569,7 +571,8 @@ httpDir *_httpd_findContentDir(server, dir, createFlag)
 	httpDir	*curItem,
 		*curChild;
 
-	strncpy_s(buffer, HTTP_MAX_URL, dir, HTTP_MAX_URL);
+	//strncpy_s(buffer, HTTP_MAX_URL, dir, HTTP_MAX_URL);
+	strncpy(buffer, dir, HTTP_MAX_URL);
 	curItem = server->content;
 	curDir = strtok(buffer,"/");
 	while(curDir)
@@ -587,7 +590,7 @@ httpDir *_httpd_findContentDir(server, dir, createFlag)
 			{
 				curChild = malloc(sizeof(httpDir));
 				bzero(curChild, sizeof(httpDir));
-				curChild->name = _strdup(curDir);
+				curChild->name = strdup(curDir);
 				curChild->next = curItem->children;
 				curItem->children = curChild;
 			}
@@ -668,7 +671,7 @@ void _httpd_send404(server)
 	char	msg[HTTP_MAX_URL];
 
 
-	sprintf_s(msg, HTTP_MAX_URL,
+	snprintf(msg, HTTP_MAX_URL,
 		"File does not exist: %s", server->request.path);
 	_httpd_writeErrorLog(server,LEVEL_ERROR, msg);
 	httpdSetResponse(server, "404 Not Found\n");
@@ -747,49 +750,49 @@ void _httpd_sendFile(server, path)
 	suffix = strrchr(path, '.');
 	if (suffix != NULL)
 	{
-		if (_stricmp(suffix,".gif") == 0) 
+		if (strcasecmp(suffix,".gif") == 0) 
 			strcpy(server->response.contentType,"image/gif");
-		if (_stricmp(suffix,".bmp") == 0) 
+		if (strcasecmp(suffix,".bmp") == 0) 
 			strcpy(server->response.contentType,"image/x-windows-bmp");
-		if (_stricmp(suffix,".jpg") == 0) 
+		if (strcasecmp(suffix,".jpg") == 0) 
 			strcpy(server->response.contentType,"image/jpeg");
-		if (_stricmp(suffix,".xbm") == 0) 
+		if (strcasecmp(suffix,".xbm") == 0) 
 			strcpy(server->response.contentType,"image/xbm");
-		if (_stricmp(suffix,".png") == 0) 
+		if (strcasecmp(suffix,".png") == 0) 
 			strcpy(server->response.contentType,"image/png");
-		if (_stricmp(suffix,".css") == 0) 
+		if (strcasecmp(suffix,".css") == 0) 
 			strcpy(server->response.contentType,"text/css");
-		if (_stricmp(suffix,".rtf") == 0) 
+		if (strcasecmp(suffix,".rtf") == 0) 
 			strcpy(server->response.contentType,"text/rtf");
-		if (_stricmp(suffix,".tif") == 0) 
+		if (strcasecmp(suffix,".tif") == 0) 
 			strcpy(server->response.contentType,"image/tiff");
-		if (_stricmp(suffix,".ico") == 0) 
+		if (strcasecmp(suffix,".ico") == 0) 
 			strcpy(server->response.contentType,"image/x-icon");
-		if (_stricmp(suffix,".wbmp") == 0) 
+		if (strcasecmp(suffix,".wbmp") == 0) 
 			strcpy(server->response.contentType,"image/vnd.wap.wbmp");
-		if (_stricmp(suffix,".pdf") == 0) 
+		if (strcasecmp(suffix,".pdf") == 0) 
 			strcpy(server->response.contentType,"application/pdf");
-		if (_stricmp(suffix,".csv") == 0) 
+		if (strcasecmp(suffix,".csv") == 0) 
 			strcpy(server->response.contentType,"application/csv");
-		if (_stricmp(suffix,".swf") == 0) 
+		if (strcasecmp(suffix,".swf") == 0) 
 			strcpy(server->response.contentType,"application/x-shockwave-flash");
-		if (_stricmp(suffix,".js") == 0) 
+		if (strcasecmp(suffix,".js") == 0) 
 			strcpy(server->response.contentType,"application/x-javascript");
-		if (_stricmp(suffix,".xml") == 0) 
+		if (strcasecmp(suffix,".xml") == 0) 
 			strcpy(server->response.contentType,"application/xml");
-		if (_stricmp(suffix,".wml") == 0) 
+		if (strcasecmp(suffix,".wml") == 0) 
 			strcpy(server->response.contentType,"application/vnd.wap.wml");
-		if (_stricmp(suffix,".xhtml") == 0) 
+		if (strcasecmp(suffix,".xhtml") == 0) 
 			strcpy(server->response.contentType,"application/xhtml+xml");
-		if (_stricmp(suffix,".doc") == 0) 
+		if (strcasecmp(suffix,".doc") == 0) 
 			strcpy(server->response.contentType,"application/msword");
-		if (_stricmp(suffix,".xls") == 0) 
+		if (strcasecmp(suffix,".xls") == 0) 
 			strcpy(server->response.contentType,"application/vnd.ms-excel");
-		if (_stricmp(suffix,".ppt") == 0) 
+		if (strcasecmp(suffix,".ppt") == 0) 
 			strcpy(server->response.contentType,"application/vnd.ms-powerpoint");
-		if (_stricmp(suffix,".zip") == 0) 
+		if (strcasecmp(suffix,".zip") == 0) 
 			strcpy(server->response.contentType,"application/zip");
-		if (_stricmp(suffix,".exe") == 0) 
+		if (strcasecmp(suffix,".exe") == 0) 
 			strcpy(server->response.contentType,"application/octet-stream");
 	}
 	if (stat(path, &sbuf) < 0)
@@ -797,13 +800,13 @@ void _httpd_sendFile(server, path)
 		_httpd_send404(server);
 		return;
 	}
-	if (_httpd_checkLastModified(server,sbuf.st_mtime) == 0)
+	if (_httpd_checkLastModified(server,(int)sbuf.st_mtime) == 0)
 	{
 		_httpd_send304(server);
 	}
 	else
 	{
-		_httpd_sendHeaders(server, sbuf.st_size, sbuf.st_mtime);
+		_httpd_sendHeaders(server, sbuf.st_size, (int)sbuf.st_mtime);
 
 		if (strncmp(server->response.contentType,"text/",5) == 0)
 			_httpd_catFile(server, path, HTTP_EXPAND_TEXT);
@@ -820,7 +823,7 @@ int _httpd_sendDirectoryEntry(server, entry, entryName)
 {
 	char		path[HTTP_MAX_URL];
 
-	sprintf_s(path, HTTP_MAX_URL, "%s\\%s", entry->path, entryName);
+	snprintf(path, HTTP_MAX_URL, "%s\\%s", entry->path, entryName);
 	_httpd_sendFile(server,path);
 	return(0);
 }

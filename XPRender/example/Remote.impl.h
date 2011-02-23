@@ -13,11 +13,10 @@ extern "C" {
 #endif
 
 struct RemoteVar;
-typedef struct RemoteVar RemoteVar;
 
 typedef struct RemoteConfigImplBase
 {
-	RemoteVar* vars;
+	struct RemoteVar* vars;
 	httpd* http;
 	XprBool requestExit;
 	

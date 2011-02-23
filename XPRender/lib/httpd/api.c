@@ -28,6 +28,8 @@
 
 #if defined(_WIN32)
 #include <winsock2.h>
+#include <direct.h>
+#include <io.h>
 #else
 #include <unistd.h> 
 #include <sys/file.h>
@@ -82,7 +84,7 @@ char *httpdRequestMethodName(server)
 		case HTTP_GET: return("GET");
 		case HTTP_POST: return("POST");
 		default: 
-			sprintf_s(tmpBuf,255,"Invalid method '%d'", 
+			snprintf(tmpBuf,255,"Invalid method '%d'", 
 				server->request.method);
 			return(tmpBuf);
 	}
@@ -178,8 +180,8 @@ int httpdAddVariable(server, name, value)
 		name++;
 	newVar = malloc(sizeof(httpVar));
 	bzero(newVar, sizeof(httpVar));
-	newVar->name = _strdup(name);
-	newVar->value = _strdup(value);
+	newVar->name = strdup(name);
+	newVar->value = strdup(value);
 	lastVar = NULL;
 	curVar = server->variables;
 	while(curVar)
@@ -218,7 +220,7 @@ int httpdSetVariableValue(server, name, value)
 	{
 		if (var->value)
 			free(var->value);
-		var->value = _strdup(value);
+		var->value = strdup(value);
 		return(0);
 	}
 	else
@@ -249,12 +251,12 @@ httpd *httpdCreate(host, port)
 	if (host == HTTP_ANY_ADDR)
 		new->host = HTTP_ANY_ADDR;
 	else
-		new->host = _strdup(host);
+		new->host = strdup(host);
 	new->content = (httpDir*)malloc(sizeof(httpDir));
 	bzero(new->content,sizeof(httpDir));
-	new->content->name = _strdup("");
+	new->content->name = strdup("");
 
-	_getcwd(tmp, HTTP_MAX_LEN);
+	getcwd(tmp, HTTP_MAX_LEN);
 	strncpy(new->fileBasePath, tmp, HTTP_MAX_LEN);
 	strcpy(new->serverName, "Server: LibHTTPD-VS Embedded Server\n");
 	/*
@@ -326,7 +328,7 @@ httpd *httpdCreate(host, port)
 		return(NULL);
 	}
 	listen(sock, 128);
-	new->startTime = time(NULL);
+	new->startTime = (int)time(NULL);
 	return(new);
 }
 
@@ -440,9 +442,9 @@ int httpdReadRequest(server)
 			while(isalpha(*cp2))
 				cp2++;
 			*cp2 = 0;
-			if (_stricmp(cp,"GET") == 0)
+			if (strcasecmp(cp,"GET") == 0)
 				server->request.method = HTTP_GET;
-			if (_stricmp(cp,"POST") == 0)
+			if (strcasecmp(cp,"POST") == 0)
 				server->request.method = HTTP_POST;
 			if (server->request.method == 0)
 			{
@@ -483,7 +485,7 @@ int httpdReadRequest(server)
 				inHeaders = 0;
 				break;
 			}
-			if (_strnicmp(buf,"Cookie: ",7) == 0)
+			if (strncasecmp(buf,"Cookie: ",7) == 0)
 			{
 				char	*var,
 					*val,
@@ -503,7 +505,7 @@ int httpdReadRequest(server)
 					var = end;
 				}
 			}
-			if (_strnicmp(buf,"Authorization: ",15) == 0)
+			if (strncasecmp(buf,"Authorization: ",15) == 0)
 			{
 				cp = strchr(buf,':') + 2;
 				if (strncmp(cp,"Basic ", 6) != 0)
@@ -530,7 +532,7 @@ int httpdReadRequest(server)
 						authBuf, HTTP_MAX_AUTH);
 				}
 			}
-			if (_strnicmp(buf,"Host: ",6) == 0)
+			if (strncasecmp(buf,"Host: ",6) == 0)
 			{
 				cp = strchr(buf,':') + 2;
 				if(cp)
@@ -539,7 +541,7 @@ int httpdReadRequest(server)
 						HTTP_MAX_URL);
 				}
 			}
-			if (_strnicmp(buf,"Referer: ",9) == 0)
+			if (strncasecmp(buf,"Referer: ",9) == 0)
 			{
 				cp = strchr(buf,':') + 2;
 				if(cp)
@@ -548,7 +550,7 @@ int httpdReadRequest(server)
 						HTTP_MAX_URL);
 				}
 			}
-			if (_strnicmp(buf,"If-Modified-Since: ",19) == 0)
+			if (strncasecmp(buf,"If-Modified-Since: ",19) == 0)
 			{
 				cp = strchr(buf,':') + 2;
 				if(cp)
@@ -561,7 +563,7 @@ int httpdReadRequest(server)
 						*cp = 0;
 				}
 			}
-			if (_strnicmp(buf,"Content-Type: ",14) == 0)
+			if (strncasecmp(buf,"Content-Type: ",14) == 0)
 			{
 				cp = strchr(buf,':') + 2;
 				if(cp)
@@ -570,7 +572,7 @@ int httpdReadRequest(server)
 						HTTP_MAX_URL);
 				}
 			}
-			if (_strnicmp(buf,"Content-Length: ",16) == 0)
+			if (strncasecmp(buf,"Content-Length: ",16) == 0)
 			{
 				cp = strchr(buf,':') + 2;
 				if(cp)
@@ -611,7 +613,11 @@ void httpdEndRequest(server)
 	_httpd_freeVariables(server->variables);
 	server->variables = NULL;
 	shutdown(server->clientSock,2);
+#if defined(_WIN32)
 	closesocket(server->clientSock);
+#else
+	close(server->clientSock);
+#endif
 	bzero(&server->request, sizeof(server->request));
 }
 
@@ -668,7 +674,7 @@ int httpdAddFileContent(server, dir, name, strchrFlag, preload, path)
 	if (newEntry == NULL)
 		return(-1);
 	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = _strdup(name);
+	newEntry->name = strdup(name);
 	newEntry->type = HTTP_FILE;
 	newEntry->strchrFlag = strchrFlag;
 	newEntry->preload = preload;
@@ -677,7 +683,7 @@ int httpdAddFileContent(server, dir, name, strchrFlag, preload, path)
 	if (path[1] == ':' || ((path[0] == '\\')&&(path[1]=='\\')))
 	{
 		/* Absolute path */
-		newEntry->path = _strdup(path);
+		newEntry->path = strdup(path);
 	}
 	else
 	{
@@ -685,9 +691,9 @@ int httpdAddFileContent(server, dir, name, strchrFlag, preload, path)
 		newEntry->path = malloc(strlen(server->fileBasePath) +
 			strlen(path) + 2);
 		if(strlen(server->fileBasePath)==0)
-			sprintf_s(newEntry->path, HTTP_MAX_URL, "%s", path);
+			snprintf(newEntry->path, HTTP_MAX_URL, "%s", path);
 		else
-			sprintf_s(newEntry->path, HTTP_MAX_URL, "%s\\%s",
+			snprintf(newEntry->path, HTTP_MAX_URL, "%s\\%s",
 				server->fileBasePath, path);
 	}
 	return(0);
@@ -718,7 +724,7 @@ int httpdAddWildcardContent(server, dir, preload, path)
 	if (path[1] == ':' || ((path[0] == '\\')&&(path[1]=='\\')))
 	{
 		/* Absolute path */
-		newEntry->path = _strdup(path);
+		newEntry->path = strdup(path);
 	}
 	else
 	{
@@ -726,9 +732,9 @@ int httpdAddWildcardContent(server, dir, preload, path)
 		newEntry->path = malloc(strlen(server->fileBasePath) +
 			strlen(path) + 2);
 		if(strlen(server->fileBasePath)==0)
-			sprintf_s(newEntry->path, HTTP_MAX_URL, "%s", path);
+			snprintf(newEntry->path, HTTP_MAX_URL, "%s", path);
 		else
-			sprintf_s(newEntry->path, HTTP_MAX_URL, "%s\\%s",
+			snprintf(newEntry->path, HTTP_MAX_URL, "%s\\%s",
 				server->fileBasePath, path);
 	}
 	return(0);
@@ -752,7 +758,7 @@ int httpdAddCContent(server, dir, name, strchrFlag, preload, function)
 	if (newEntry == NULL)
 		return(-1);
 	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = _strdup(name);
+	newEntry->name = strdup(name);
 	newEntry->type = HTTP_C_FUNCT;
 	newEntry->strchrFlag = strchrFlag;
 	newEntry->function = function;
@@ -802,7 +808,7 @@ int httpdAddStaticContent(server, dir, name, strchrFlag, preload, data)
 	if (newEntry == NULL)
 		return(-1);
 	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = _strdup(name);
+	newEntry->name = strdup(name);
 	newEntry->type = HTTP_STATIC;
 	newEntry->strchrFlag = strchrFlag;
 	newEntry->data = data;
@@ -827,7 +833,7 @@ int httpdAddEmberContect(server, dir, name, strchrFlag, preload, script)
 	if (newEntry == NULL)
 		return(-1);
 	bzero(newEntry,sizeof(httpContent));
-	newEntry->name = _strdup(name);
+	newEntry->name = strdup(name);
 	newEntry->type = HTTP_EMBER_FUNCT;
 	newEntry->strchrFlag = strchrFlag;
 	newEntry->data = script;
@@ -874,7 +880,7 @@ void httpdSetCookie(server, name, value)
 {
 	char	buf[HTTP_MAX_URL];
 
-	sprintf_s(buf,HTTP_MAX_URL, "Set-Cookie: %s=%s; path=/;", name, value);
+	snprintf(buf,HTTP_MAX_URL, "Set-Cookie: %s=%s; path=/;", name, value);
 	httpdAddHeader(server,buf);
 }
 
@@ -960,7 +966,8 @@ void httpdPrintf(va_alist)
 #endif
 	if (server->response.headersSent == 0)
 		httpdSendHeaders(server);
-	vsprintf_s(buf, HTTP_MAX_LEN, fmt, args);
+	//vsprintf_s(buf, HTTP_MAX_LEN, fmt, args);
+	vsprintf(buf, fmt, args);
 	server->response.responseLength += strlen(buf);
 	_httpd_net_write( server->clientSock, buf, strlen(buf));
 }
@@ -1067,7 +1074,7 @@ int httpdAuthenticate(server, realm)
 	if (server->request.authLength == 0)
 	{
 		httpdSetResponse(server, "401 Please Authenticate");
-		sprintf_s(buffer,sizeof(buffer), 
+		snprintf(buffer,sizeof(buffer), 
 			"WWW-Authenticate: Basic realm=\"%s\"\n", realm);
 		httpdAddHeader(server, buffer);
 		httpdOutput(server,"\n");
@@ -1084,7 +1091,7 @@ void httpdForceAuthenticate(server, realm)
 	char	buffer[255];
 
 	httpdSetResponse(server, "401 Please Authenticate");
-	sprintf_s(buffer,sizeof(buffer), 
+	snprintf(buffer,sizeof(buffer), 
 		"WWW-Authenticate: Basic realm=\"%s\"\n", realm);
 	httpdAddHeader(server, buffer);
 	httpdOutput(server,"\n");
@@ -1111,7 +1118,7 @@ int httpdSetErrorFunction(server, error, function)
 			server->errorFunction404 = function;
 			break;
 		default:
-			sprintf_s(errBuf, 80,
+			snprintf(errBuf, 80,
 				"Invalid error code (%d) for custom callback",
 				error);
 			_httpd_writeErrorLog(server,LEVEL_ERROR, errBuf);
@@ -1133,15 +1140,15 @@ void httpdSendFile(server, path)
 	suffix = strrchr(path, '.');
 	if (suffix != NULL)
 	{
-		if (_stricmp(suffix,".gif") == 0) 
+		if (strcasecmp(suffix,".gif") == 0) 
 			strcpy(server->response.contentType,"image/gif");
-		if (_stricmp(suffix,".jpg") == 0) 
+		if (strcasecmp(suffix,".jpg") == 0) 
 			strcpy(server->response.contentType,"image/jpeg");
-		if (_stricmp(suffix,".xbm") == 0) 
+		if (strcasecmp(suffix,".xbm") == 0) 
 			strcpy(server->response.contentType,"image/xbm");
-		if (_stricmp(suffix,".png") == 0) 
+		if (strcasecmp(suffix,".png") == 0) 
 			strcpy(server->response.contentType,"image/png");
-		if (_stricmp(suffix,".css") == 0) 
+		if (strcasecmp(suffix,".css") == 0) 
 			strcpy(server->response.contentType,"text/css");
 	}
 	if (stat(path, &sbuf) < 0)
@@ -1149,13 +1156,13 @@ void httpdSendFile(server, path)
 		_httpd_send404(server);
 		return;
 	}
-	if (_httpd_checkLastModified(server,sbuf.st_mtime) == 0)
+	if (_httpd_checkLastModified(server,(int)sbuf.st_mtime) == 0)
 	{
 		_httpd_send304(server);
 	}
 	else
 	{
-		_httpd_sendHeaders(server, sbuf.st_size, sbuf.st_mtime);
+		_httpd_sendHeaders(server, sbuf.st_size, (int)sbuf.st_mtime);
 
 		if (strncmp(server->response.contentType,"text/",5) == 0)
 			_httpd_catFile(server, path, HTTP_EXPAND_TEXT);
@@ -1166,5 +1173,5 @@ void httpdSendFile(server, path)
 
 
 void changeServerName(httpd* server, const char* name){
-	sprintf_s(server->serverName, HTTP_MAX_URL, "Server: %s\n", name);
+	snprintf(server->serverName, HTTP_MAX_URL, "Server: %s\n", name);
 }

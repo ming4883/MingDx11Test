@@ -21,4 +21,7 @@
 
 #if defined(_WIN32)
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
+#define snprintf sprintf_s
 #endif

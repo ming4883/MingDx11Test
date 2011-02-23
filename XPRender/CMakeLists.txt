@@ -171,6 +171,11 @@ ADD_EXECUTABLE( example_android ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/Remote.c
+	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
 	example/Stream.c
 	example/Stream.h
 	example/Mesh.c

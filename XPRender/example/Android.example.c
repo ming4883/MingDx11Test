@@ -1,10 +1,19 @@
 #include "Common.h"
+#include "Remote.h"
 #include "Mesh.h"
 
 AppContext* app = nullptr;
+RemoteConfig* config = nullptr;
 XprVec4 bgClr = {1, 0.25f, 0.25f, 1};
 Mesh* mesh = nullptr;
 Material* mtl = nullptr;
+
+typedef struct Settings
+{
+	float size;
+} Settings;
+
+Settings settings = {100};
 
 void PezUpdate(unsigned int elapsedMilliseconds)
 {
@@ -25,6 +34,12 @@ void PezRender()
 	XprMat44 viewProjMtx;
 
 	XprGpuStateDesc* gpuState = &app->gpuState->desc;
+
+	Settings lsettings;
+
+	remoteConfigLock(config);
+	lsettings = settings;
+	remoteConfigUnlock(config);
 	
 	t += 0.01f;
 	if(t > 1.0f) {
@@ -49,8 +64,12 @@ void PezRender()
 
 		{
 			XprVec3 axis = {1, 0, 0};
-			xprMat44MakeRotation(&app->shaderContext.worldMtx, &axis, 360 * t);
-			
+			XprVec3 scale = {lsettings.size / 100.f, lsettings.size / 100.f, lsettings.size / 100.f};
+			XprMat44 r, s;
+			xprMat44MakeScale(&s, &scale);
+			xprMat44MakeRotation(&r, &axis, 360 * t);
+
+			xprMat44Mult(&app->shaderContext.worldMtx, &r, &s);
 			xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &app->shaderContext.worldMtx);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &app->shaderContext.worldMtx);
 		}
@@ -77,6 +96,7 @@ void PezFinalize()
 {
 	meshFree(mesh);
 	materialFree(mtl);
+	//remoteConfigFree(config);
 	appFree(app);
 }
 
@@ -86,6 +106,18 @@ const char* PezInitialize(int width, int height)
 	
 	app = appAlloc();
 	appInit(app, (float)width, (float)height);
+
+	// remote config
+	{
+		RemoteVarDesc descs[] = {
+			{"size", &settings.size, 1, 100},
+			{nullptr, nullptr, 0, 0}
+		};
+		
+		config = remoteConfigAlloc();
+		//remoteConfigInit(config, 80, XprTrue);
+		//remoteConfigAddVars(config, descs);
+	}
 	
 	// load mesh
 	{

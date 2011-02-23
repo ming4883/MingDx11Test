@@ -1,11 +1,11 @@
 #if defined(XPR_WIN32)
 #include "Remote.impl.windows.h"
+#elif defined(XPR_ANDROID)
+#include "Remote.impl.android.h"
 #endif
 
 #include <stdio.h>
 
-RemoteVar* remoteConfigFindVar(RemoteConfig* self, const char* name);
-void remoteConfigAddVar(RemoteConfig* self, RemoteVarDesc desc);
 
 typedef struct RemoteVar
 {
@@ -36,6 +36,9 @@ void remoteVarInit(RemoteVar* self, RemoteVarDesc desc)
 	self->desc.upperBound = desc.upperBound;
 	self->desc.lowerBound = desc.lowerBound;
 }
+
+RemoteVar* remoteConfigFindVar(RemoteConfig* self, const char* name);
+void remoteConfigAddVar(RemoteConfig* self, RemoteVarDesc desc);
 
 RemoteConfig* remoteConfigAlloc()
 {
