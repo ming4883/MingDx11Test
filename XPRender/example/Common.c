@@ -71,19 +71,19 @@ AppContext* appAlloc()
 	return self;
 }
 
-void appInit(AppContext* self, float aspectw, float aspecth)
+void appInit(AppContext* self)
 {
 	self->gpuState = xprGpuStateAlloc();
 	xprGpuStateInit(self->gpuState);
 
 	self->inputStream = &myInputStream;
 
-	self->aspect.width = aspectw;
-	self->aspect.height = aspecth;
+	self->aspect.width = (float)xprAppContext.xres;
+	self->aspect.height = (float)xprAppContext.yres;
 
-	xprRenderTargetSetViewport(0, 0, aspectw, aspecth, -1, 1);
+	xprRenderTargetSetViewport(0, 0, self->aspect.width, self->aspect.height, -1, 1);
 	
-	XprDbgStr("xprender started with %d x %d", (int)aspectw, (int)aspecth);
+	XprDbgStr("xprender started with %d x %d", xprAppContext.xres, xprAppContext.yres);
 }
 
 void appFree(AppContext* self)
@@ -155,7 +155,7 @@ Material* appLoadMaterial(const char* vsKey, const char* fsKey, const char* tcKe
 	materialInitWithShaders(material, args);
 
 	if(0 == (material->flags & MaterialFlag_Inited))
-		PezDebugString("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
+		XprDbgStr("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
 
 	return material;
 }

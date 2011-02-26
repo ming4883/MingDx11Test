@@ -6,15 +6,15 @@ float bgR = 255;
 float bgG = 127;
 float bgB = 0;
 
-void PezUpdate(unsigned int elapsedMilliseconds)
+void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
 }
 
-void PezHandleMouse(int x, int y, int action)
+void xprAppHandleMouse(int x, int y, int action)
 {
 }
 
-void PezRender()
+void xprAppRender()
 {
 	float r, g, b;
 	
@@ -25,20 +25,23 @@ void PezRender()
 	xprRenderTargetClearColor(r, g, b, 1.0f);
 }
 
-void PezConfig()
+void xprAppConfig()
 {
-	PEZ_VIEWPORT_WIDTH = 480;
-	PEZ_VIEWPORT_HEIGHT = 320;
-	PEZ_ENABLE_MULTISAMPLING = 0;
-	PEZ_VERTICAL_SYNC = 0;
+	xprAppContext.appName = "Embedded Httpd";
+	xprAppContext.xres = 480;
+	xprAppContext.yres = 320;
+	xprAppContext.multiSampling = XprFalse;
+	xprAppContext.vsync = XprFalse;
+	xprAppContext.apiMajorVer = 2;
+	xprAppContext.apiMinorVer = 1;
 }
 
-void PezFinalize()
+void xprAppFinalize()
 {
 	remoteConfigFree(_config);
 }
 
-const char* PezInitialize(int width, int height)
+XprBool xprAppInitialize()
 {
 	RemoteVarDesc descs[] = {
 		{"bgR", &bgR, 0, 255},
@@ -47,11 +50,11 @@ const char* PezInitialize(int width, int height)
 		{nullptr, nullptr, 0, 0}
 	};
 
-	xprRenderTargetSetViewport(0, 0, (float)width, (float)height, -1, 1);
+	xprRenderTargetSetViewport(0, 0, (float)xprAppContext.xres, (float)xprAppContext.yres, -1, 1);
 
 	_config = remoteConfigAlloc();
 	remoteConfigInit(_config, 80, XprTrue);
 	remoteConfigAddVars(_config, descs);
 
-	return "Embedded Httpd";
+	return XprTrue;
 }

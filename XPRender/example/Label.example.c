@@ -9,15 +9,15 @@ Mesh* meshBg = nullptr;
 Label* label = nullptr;
 XprVec4 textColor = {1, 0, 0, 1};
 
-void PezUpdate(unsigned int elapsedMilliseconds)
+void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
 }
 
-void PezHandleMouse(int x, int y, int action)
+void xprAppHandleMouse(int x, int y, int action)
 {
 }
 
-void PezRender()
+void xprAppRender()
 {
 	XprGpuStateDesc* gpuState = &app->gpuState->desc;
 
@@ -43,32 +43,35 @@ void PezRender()
 	gpuState->blend = XprFalse;
 }
 
-void PezConfig()
+void xprAppConfig()
 {
-	PEZ_VIEWPORT_WIDTH = 800;
-	PEZ_VIEWPORT_HEIGHT = 600;
-	PEZ_ENABLE_MULTISAMPLING = 0;
-	PEZ_VERTICAL_SYNC = 0;
+	xprAppContext.appName = "Label";
+	xprAppContext.xres = 800;
+	xprAppContext.yres = 600;
+	xprAppContext.multiSampling = XprFalse;
+	xprAppContext.vsync = XprFalse;
+	xprAppContext.apiMajorVer = 3;
+	xprAppContext.apiMinorVer = 3;
 }
 
-void PezFinalize()
+void xprAppFinalize()
 {
 	materialFree(mtlText);
 	Label_free(label);
 	appFree(app);
 }
 
-const char* PezInitialize(int width, int height)
+XprBool xprAppInitialize()
 {
 	char utf8[] = {0xEF, 0xBB, 0xBF, 0xE9, 0x80, 0x99, 0xE6, 0x98, 0xAF, 0x55, 0x54, 0x46, 0x38, 0x00};
 
 	app = appAlloc();
-	appInit(app, (float)width, (float)height);
+	appInit(app);
 	
 	// label
 	{
 		label = Label_alloc();
-		Label_init(label, width, height);
+		Label_init(label, xprAppContext.xres, xprAppContext.yres);
 		Label_setText(label, utf8);
 		Label_commit(label);
 	}
@@ -92,5 +95,5 @@ const char* PezInitialize(int width, int height)
 		meshInitWithScreenQuad(meshBg);
 	}
 
-	return "Label";
+	return XprTrue;
 }

@@ -87,15 +87,15 @@ void drawScene(Settings* settings)
 	gpuState->polygonMode = XprGpuState_PolygonMode_Fill;
 }
 
-void PezUpdate(unsigned int elapsedMilliseconds)
+void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
 }
 
-void PezHandleMouse(int x, int y, int action)
+void xprAppHandleMouse(int x, int y, int action)
 {
 }
 
-void PezRender()
+void xprAppRender()
 {
 	Settings localSettings;
 
@@ -110,17 +110,18 @@ void PezRender()
 	drawScene(&localSettings);
 }
 
-void PezConfig()
+void xprAppConfig()
 {
-	PEZ_VIEWPORT_WIDTH = 800;
-	PEZ_VIEWPORT_HEIGHT = 600;
-	PEZ_ENABLE_MULTISAMPLING = 0;
-	PEZ_VERTICAL_SYNC = 0;
-	PEZ_GL_VERSION_MAJOR = 4;
-	PEZ_GL_VERSION_MINOR = 0;
+	xprAppContext.appName = "Triangle Tessellation";
+	xprAppContext.xres = 800;
+	xprAppContext.yres = 600;
+	xprAppContext.multiSampling = XprTrue;
+	xprAppContext.vsync = XprFalse;
+	xprAppContext.apiMajorVer = 4;
+	xprAppContext.apiMinorVer = 0;
 }
 
-void PezFinalize()
+void xprAppFinalize()
 {
 	meshFree(tessMesh);
 	meshFree(bgMesh);
@@ -130,10 +131,10 @@ void PezFinalize()
 	appFree(app);
 }
 
-const char* PezInitialize(int width, int height)
+XprBool xprAppInitialize()
 {
 	app = appAlloc();
-	appInit(app, (float)width, (float)height);
+	appInit(app);
 
 	settings.tessLevel = 8;
 	settings.linearity = 3;
@@ -181,5 +182,5 @@ const char* PezInitialize(int width, int height)
 		meshInitWithScreenQuad(bgMesh);
 	}
 
-	return "Triangle Tessellation";
+	return XprTrue;
 }

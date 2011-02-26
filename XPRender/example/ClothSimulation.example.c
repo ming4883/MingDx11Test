@@ -156,7 +156,7 @@ void drawScene()
 	}
 }
 
-void PezUpdate(unsigned int elapsedMilliseconds)
+void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
 	static float t = 0;
 	Settings lsettings;
@@ -198,9 +198,9 @@ void PezUpdate(unsigned int elapsedMilliseconds)
 	Cloth_updateMesh(cloth);
 }
 
-void PezHandleMouse(int x, int y, int action)
+void xprAppHandleMouse(int x, int y, int action)
 {
-	if(PEZ_DOWN == action) {
+	if(XprApp_MouseDown == action) {
 		mouse.x = x;
 		mouse.y = y;
 
@@ -209,10 +209,10 @@ void PezHandleMouse(int x, int y, int action)
 
 		mouse.isDown = XprTrue;
 	}
-	else if(PEZ_UP == action) {
+	else if(XprApp_MouseUp == action) {
 		mouse.isDown = XprFalse;
 	}
-	else if((PEZ_MOVE == action) && (XprTrue == mouse.isDown)) {
+	else if((XprApp_MouseMove == action) && (XprTrue == mouse.isDown)) {
 		int dx = x - mouse.x;
 		int dy = y - mouse.y;
 		
@@ -225,7 +225,7 @@ void PezHandleMouse(int x, int y, int action)
 	}
 }
 
-void PezRender()
+void xprAppRender()
 {
 	xprRenderTargetClearDepth(1);
 
@@ -233,17 +233,18 @@ void PezRender()
 	drawScene();
 }
 
-void PezConfig()
+void xprAppConfig()
 {
-	PEZ_VIEWPORT_WIDTH = 800;
-	PEZ_VIEWPORT_HEIGHT = 600;
-	PEZ_ENABLE_MULTISAMPLING = 1;
-	PEZ_VERTICAL_SYNC = 0;
-	PEZ_GL_VERSION_MAJOR = 3;
-	PEZ_GL_VERSION_MINOR = 3;
+	xprAppContext.appName = "Cloth Simulation";
+	xprAppContext.xres = 800;
+	xprAppContext.yres = 600;
+	xprAppContext.multiSampling = XprTrue;
+	xprAppContext.vsync = XprFalse;
+	xprAppContext.apiMajorVer = 3;
+	xprAppContext.apiMinorVer = 3;
 }
 
-void PezFinalize()
+void xprAppFinalize()
 {
 	remoteConfigFree(config);
 	Cloth_free(cloth);
@@ -256,10 +257,10 @@ void PezFinalize()
 	appFree(app);
 }
 
-const char* PezInitialize(int width, int height)
+XprBool xprAppInitialize()
 {
 	app = appAlloc();
-	appInit(app, (float)width, (float)height);
+	appInit(app);
 	
 	// remote config
 	{
@@ -328,5 +329,5 @@ const char* PezInitialize(int width, int height)
 		meshInitWithScreenQuad(bgMesh);
 	}
 
-	return "Cloth Simulation";
+	return XprTrue;
 }

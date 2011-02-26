@@ -2,7 +2,7 @@
 #define __EXAMPLE_COMMON_H__
 
 #include "../lib/xprender/Platform.h"
-
+#include "../lib/xprender/Framework.h"
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Vec4.h"
 #include "../lib/xprender/Mat44.h"
@@ -10,7 +10,7 @@
 #include "../lib/xprender/GpuState.h"
 #include "../lib/xprender/RenderTarget.h"
 
-#include "../lib/pez/pez.h"
+//#include "../lib/pez/pez.h"
 
 #include "Material.h"
 #include "Stream.h"
@@ -49,7 +49,7 @@ typedef struct AppContext
 } AppContext;
 
 AppContext* appAlloc();
-void appInit(AppContext* self, float aspectw, float aspecth);
+void appInit(AppContext* sel);
 void appFree(AppContext* self);
 
 void appLoadMaterialBegin(AppContext* self, const char** directives);

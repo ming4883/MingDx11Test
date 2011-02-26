@@ -15,15 +15,15 @@ typedef struct Settings
 
 Settings settings = {100};
 
-void PezUpdate(unsigned int elapsedMilliseconds)
+void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
 }
 
-void PezHandleMouse(int x, int y, int action)
+void xprAppHandleMouse(int x, int y, int action)
 {
 }
 
-void PezRender()
+void xprAppRender()
 {
 	static float t = 0.0f;
 	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
@@ -41,7 +41,7 @@ void PezRender()
 	lsettings = settings;
 	remoteConfigUnlock(config);
 	
-	t += 0.01f;
+	t += 0.001f;
 	if(t > 1.0f) {
 		t = 0.0f;
 	}
@@ -86,13 +86,19 @@ void PezRender()
 	}
 }
 
-void PezConfig()
+void xprAppConfig()
 {
-	PEZ_GL_VERSION_MAJOR = 2;
-	PEZ_GL_VERSION_MINOR = 1;
+	xprAppContext.appName = "Android";
+	xprAppContext.xres = 480;
+	xprAppContext.yres = 800;
+	xprAppContext.multiSampling = XprFalse;
+	xprAppContext.vsync = XprFalse;
+	xprAppContext.apiMajorVer = 2;
+	xprAppContext.apiMinorVer = 1;
+	
 }
 
-void PezFinalize()
+void xprAppFinalize()
 {
 	meshFree(mesh);
 	materialFree(mtl);
@@ -100,12 +106,10 @@ void PezFinalize()
 	appFree(app);
 }
 
-const char* PezInitialize(int width, int height)
+XprBool xprAppInitialize()
 {
-	const char* appName = "Android Example";
-	
 	app = appAlloc();
-	appInit(app, (float)width, (float)height);
+	appInit(app);
 
 	// remote config
 	{
@@ -123,7 +127,7 @@ const char* PezInitialize(int width, int height)
 	{
 		mesh = meshAlloc();
 		if(!meshInitWithObjFile(mesh, "monkey.obj", app->inputStream))
-			return appName;
+			return XprFalse;
 	}
 	
 	// load materials
@@ -135,7 +139,7 @@ const char* PezInitialize(int width, int height)
 			"Android.Scene.Fragment",
 			nullptr, nullptr, nullptr);
 		if(0 == (mtl->flags & MaterialFlag_Inited))
-			return appName;
+			return XprFalse;
 		
 		appLoadMaterialEnd(app);
 	}
@@ -144,5 +148,5 @@ const char* PezInitialize(int width, int height)
 	
 	XprDbgStr("XpRender Android example started");
 
-	return appName;
+	return XprTrue;
 }

@@ -7,15 +7,53 @@ FILE( GLOB GLEW lib/glew/*.c lib/glew/*.h )
 FILE( GLOB GLSW lib/glsw/*.c lib/glsw/*.h )
 FILE( GLOB HTTPD lib/httpd/*.c lib/httpd/*.h )
 
-ADD_DEFINITIONS( -DFREEGLUT_STATIC )
-ADD_DEFINITIONS( -DFREEGLUT_LIB_PRAGMAS=0 )
+#ADD_DEFINITIONS( -DFREEGLUT_STATIC )
+#ADD_DEFINITIONS( -DFREEGLUT_LIB_PRAGMAS=0 )
 ADD_DEFINITIONS( -DGLEW_STATIC )
 
 IF( WIN32 )
 
-	FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
+	#FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
+	SET( XPRENDER
+		lib/xprender/Buffer.c
+		lib/xprender/Buffer.h
+		lib/xprender/Buffer.gl.h
+		lib/xprender/Framework.h
+		lib/xprender/Framework.windows.gl.c
+		lib/xprender/GpuState.c
+		lib/xprender/GpuState.h
+		lib/xprender/GpuState.gl.h
+		lib/xprender/Mat44.c
+		lib/xprender/Mat44.h
+		lib/xprender/NvpParser.c
+		lib/xprender/NvpParser.h
+		lib/xprender/Opengl.h
+		lib/xprender/Platform.c
+		lib/xprender/Platform.h
+		lib/xprender/pstdint.h
+		lib/xprender/RenderTarget.c
+		lib/xprender/RenderTarget.h
+		lib/xprender/RenderTarget.gl.h
+		lib/xprender/Shader.c
+		lib/xprender/Shader.h
+		lib/xprender/Shader.gl.h
+		lib/xprender/StrHash.c
+		lib/xprender/StrHash.h
+		lib/xprender/StrHashMacro.h
+		lib/xprender/StrUtil.h
+		lib/xprender/Texture.c
+		lib/xprender/Texture.h
+		lib/xprender/Texture.common.h
+		lib/xprender/Texture.gl.h
+		lib/xprender/Vec2.c
+		lib/xprender/Vec2.h
+		lib/xprender/Vec3.c
+		lib/xprender/Vec3.h
+		lib/xprender/Vec4.c
+		lib/xprender/Vec4.h
+		)
 	
-	SET( PEZ lib/pez/pez.windows.c lib/pez/pez.h )
+	#SET( PEZ lib/pez/pez.windows.c lib/pez/pez.h )
 	
 	SET( CONSOLE_SYSTEM WIN32 )
 	
@@ -45,7 +83,7 @@ IF( WIN32 )
 ELSEIF( UNIX )
 
 	FILE( GLOB XPRENDER xprender/*.c xprender/*.h )
-	SET( PEZ lib/pez/pez.linux.c lib/pez/pez.h )
+	#SET( PEZ lib/pez/pez.linux.c lib/pez/pez.h )
 	
 	SET( PLATFORM_LIBS GL GLU X11 )
 	
@@ -58,7 +96,7 @@ INCLUDE_DIRECTORIES(
 	lib/glew
 	lib/glsw
 	lib/httpd
-	lib/pez
+	#lib/pez
 )
 
 ADD_LIBRARY( xprender
@@ -67,7 +105,7 @@ ADD_LIBRARY( xprender
 	${GLSW}
 	${HTTPD}
 	${XPRENDER}
-	${PEZ}
+	#${PEZ}
 	)
 
 # UNIT test_xprender
