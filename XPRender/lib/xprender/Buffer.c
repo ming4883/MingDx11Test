@@ -43,7 +43,7 @@ void xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void
 	glBindBuffer(xprGL_BUFFER_TARGET[self->type], self->impl->glName);
 	glBufferData(xprGL_BUFFER_TARGET[self->type], self->sizeInBytes, initialData, GL_STREAM_DRAW);
 
-	self->flags = XprBufferFlag_Inited;
+	self->flags = XprBuffer_Inited;
 }
 
 void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data)
@@ -65,13 +65,13 @@ void* xprBufferMap(XprBuffer* self, XprBufferMapAccess access)
 	if(nullptr == self)
 		return nullptr;
 
-	if(0 != (self->flags & XprBufferFlag_Mapped))
+	if(0 != (self->flags & XprBuffer_Mapped))
 		return nullptr;
 
 #if !defined(XPR_GLES_2)
 	glBindBuffer(xprGL_BUFFER_TARGET[self->type], self->impl->glName);
 	ret = glMapBuffer(xprGL_BUFFER_TARGET[self->type], xprGL_BUFFER_MAP_ACCESS[access]);
-	self->flags |= XprBufferFlag_Mapped;
+	self->flags |= XprBuffer_Mapped;
 
 #endif
 
@@ -83,13 +83,13 @@ void xprBufferUnmap(XprBuffer* self)
 	if(nullptr == self)
 		return;
 
-	if(0 == (self->flags & XprBufferFlag_Mapped))
+	if(0 == (self->flags & XprBuffer_Mapped))
 		return;
 
 #if !defined(XPR_GLES_2)
 	glBindBuffer(xprGL_BUFFER_TARGET[self->type], self->impl->glName);
 	glUnmapBuffer(xprGL_BUFFER_TARGET[self->type]);
 
-	self->flags &= ~XprBufferFlag_Mapped;
+	self->flags &= ~XprBuffer_Mapped;
 #endif
 }

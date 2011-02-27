@@ -20,13 +20,13 @@ XprGpuShader* xprGpuShaderAlloc()
 	return self;
 }
 
-void xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type)
+XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type)
 {
 	int compileStatus;
 
-	if(self->flags & XprGpuShaderFlag_Compiled) {
+	if(self->flags & XprGpuShader_Inited) {
 		XprDbgStr("XprGpuShader already inited!\n");
-		return;
+		return XprFalse;
 	}
 
 	self->type = type;
@@ -47,10 +47,14 @@ void xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, X
 			XprDbgStr("glCompileShader failed: %s", buf);
 			free(buf);
 		}
+
+		return XprFalse;
 	}
 	else {
-		self->flags |= XprGpuShaderFlag_Compiled;
+		self->flags |= XprGpuShader_Inited;
 	}
+
+	return XprTrue;
 }
 
 void xprGpuShaderFree(XprGpuShader* self)
@@ -70,14 +74,14 @@ XprGpuProgram* xprGpuProgramAlloc()
 	return self;
 }
 
-void xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt)
+XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt)
 {
 	size_t i;
 	int linkStatus;
 
-	if(self->flags & XprGpuProgramFlag_Linked) {
+	if(self->flags & XprGpuProgram_Inited) {
 		XprDbgStr("XprGpuProgram already inited!\n");
-		return;
+		return XprFalse;
 	}
 	
 	self->impl->glName = glCreateProgram();
@@ -103,10 +107,10 @@ void xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shade
 			XprDbgStr("glLinkProgram failed: %s", buf);
 			free(buf);
 		}
-		return;
+		return XprFalse;
 	}
 	
-	self->flags |= XprGpuProgramFlag_Linked;
+	self->flags |= XprGpuProgram_Inited;
 
 	glUseProgram(self->impl->glName);
 	
@@ -156,6 +160,8 @@ void xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shade
 		}
 		
 	}
+
+	return XprTrue;
 	
 }
 
@@ -181,7 +187,7 @@ void xprGpuProgramPreRender(XprGpuProgram* self)
 	if(nullptr == self)
 		return;
 
-	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+	if(0 == (self->flags & XprGpuProgram_Inited)) {
 		//XprDbgStr("XprGpuProgram is not inited!\n");
 		return;
 	}
@@ -195,7 +201,7 @@ XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	if(nullptr == self)
 		return XprFalse;
 
-	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+	if(0 == (self->flags & XprGpuProgram_Inited)) {
 		//XprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
@@ -214,7 +220,7 @@ XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	if(nullptr == self)
 		return XprFalse;
 
-	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+	if(0 == (self->flags & XprGpuProgram_Inited)) {
 		//XprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
@@ -233,7 +239,7 @@ XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	if(nullptr == self)
 		return XprFalse;
 
-	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+	if(0 == (self->flags & XprGpuProgram_Inited)) {
 		//XprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
@@ -252,7 +258,7 @@ XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	if(nullptr == self)
 		return XprFalse;
 
-	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+	if(0 == (self->flags & XprGpuProgram_Inited)) {
 		//XprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
@@ -271,7 +277,7 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 	if(nullptr == self)
 		return XprFalse;
 
-	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+	if(0 == (self->flags & XprGpuProgram_Inited)) {
 		//XprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
@@ -290,7 +296,7 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	if(nullptr == self)
 		return XprFalse;
 
-	if(0 == (self->flags & XprGpuProgramFlag_Linked)) {
+	if(0 == (self->flags & XprGpuProgram_Inited)) {
 		//XprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}

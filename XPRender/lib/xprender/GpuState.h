@@ -9,7 +9,7 @@ extern "C" {
 
 typedef enum XprGpuStateFlag
 {
-	XprGpuStateFlag_Inited = 1 << 0,
+	XprGpuState_Inited = 1 << 0,
 } XprGpuStateFlag;
 
 typedef enum XprGpuStateType

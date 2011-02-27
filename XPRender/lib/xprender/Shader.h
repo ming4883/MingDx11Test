@@ -22,7 +22,7 @@ typedef enum XprGpuShaderType
 
 typedef enum XprGpuShaderFlag
 {
-	XprGpuShaderFlag_Compiled = 1 << 0,
+	XprGpuShader_Inited = 1 << 0,
 } XprGpuShaderFlag;
 
 struct XprGpuShaderImpl;
@@ -40,12 +40,12 @@ XprGpuShader* xprGpuShaderAlloc();
 
 void xprGpuShaderFree(XprGpuShader* self);
 
-void xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type);
+XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type);
 
 // XprGpuProgram
 typedef enum XprGpuProgramFlag
 {
-	XprGpuProgramFlag_Linked = 1 << 0,
+	XprGpuProgram_Inited = 1 << 0,
 } XprGpuProgramFlag;
 
 struct XprGpuProgramImpl;
@@ -61,7 +61,7 @@ XprGpuProgram* xprGpuProgramAlloc();
 
 void xprGpuProgramFree(XprGpuProgram* self);
 
-void xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt);
+XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt);
 
 void xprGpuProgramPreRender(XprGpuProgram* self);
 

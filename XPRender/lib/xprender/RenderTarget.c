@@ -10,7 +10,7 @@ XprRenderTarget* xprRenderTargetAlloc()
 
 void xprRenderTargetFree(XprRenderTarget* self)
 {
-	if(self->flags & XprRenderTargetFlag_Inited) {
+	if(self->flags & XprRenderTarget_Inited) {
 		
 		XprRenderBuffer* it; XprRenderBuffer* tmp;
 
@@ -30,7 +30,7 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 	if(nullptr == self)
 		return;
 
-	if(self->flags & XprRenderTargetFlag_Inited) {
+	if(self->flags & XprRenderTarget_Inited) {
 		XprDbgStr("XprRenderTarget already inited!\n");
 		return;
 	}
@@ -40,15 +40,15 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 
 	glGenFramebuffers(1, &self->impl->glName);
 	
-	self->flags |= XprRenderTargetFlag_Inited;
+	self->flags |= XprRenderTarget_Inited;
 }
 
-XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, const char* format)
+XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprTextureFormat format)
 {
 	XprRenderBuffer* buffer;
 	XprRenderBuffer* it;
 	LL_FOREACH(self->impl->bufferList, it) {
-		if(XprFalse == it->acquired && strcmp(it->texture->format, format) == 0) {
+		if(XprFalse == it->acquired && (it->texture->format == format)) {
 			return it;
 		}
 	}

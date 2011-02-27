@@ -3,28 +3,28 @@
 
 #if defined(XPR_GLES_2)
 XprTextureFormatMapping XprTextureFormatMappings[] = {
-	{XprTexture_unormR8G8B8A8, 4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
-	{XprTexture_unormR8, 1, GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE},
+	{XprTexture_UnormR8G8B8A8, 4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
+	{XprTexture_UnormR8, 1, GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE},
 };
 #else
 XprTextureFormatMapping XprTextureFormatMappings[] = {
-	{XprTexture_unormR8G8B8A8, 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
-	{XprTexture_unormR8, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
-	{XprTexture_floatR16, 2, GL_R16F, GL_RED, GL_HALF_FLOAT},
-	{XprTexture_floatR32, 4, GL_R32F, GL_RED, GL_FLOAT},
-	{XprTexture_floatR16G16B16A16, 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
-	{XprTexture_floatR32G32B32A32, 16, GL_RGBA32F, GL_RGBA, GL_FLOAT},
-	{XprTexture_depth16, 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
-	{XprTexture_depth32, 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
+	{XprTexture_UnormR8G8B8A8, 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
+	{XprTexture_UnormR8, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
+	{XprTexture_FloatR16, 2, GL_R16F, GL_RED, GL_HALF_FLOAT},
+	{XprTexture_FloatR32, 4, GL_R32F, GL_RED, GL_FLOAT},
+	{XprTexture_FloatR16G16B16A16, 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
+	{XprTexture_FloatR32G32B32A32, 16, GL_RGBA32F, GL_RGBA, GL_FLOAT},
+	{XprTexture_Depth16, 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
+	{XprTexture_Depth32, 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
 };
 #endif
 
-XprTextureFormatMapping* XprTextureFormatMapping_Get(const char* name)
+XprTextureFormatMapping* XprTextureFormatMapping_Get(XprTextureFormat name)
 {
 	size_t i=0;
 	for(i=0; i<XprCountOf(XprTextureFormatMappings); ++i) {
 		XprTextureFormatMapping* mapping = &XprTextureFormatMappings[i];
-		if(strcasecmp(name, mapping->name) == 0)
+		if(name == mapping->name)
 			return mapping;
 	}
 
@@ -57,7 +57,7 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 	return offset;
 }
 
-void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
+void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprTextureFormat format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		XprDbgStr("texture already inited!\n");
@@ -76,7 +76,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		return;
 	}
 
-	strcpy(self->format, format);
+	self->format = format;
 	self->width = width;
 	self->height = height;
 	self->mipCount = mipCount;
@@ -101,7 +101,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	xprTextureCommit(self);
 }
 
-void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, const char* format)
+void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprTextureFormat format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		XprDbgStr("texture already inited!\n");
@@ -120,7 +120,7 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 		return;
 	}
 
-	strcpy(self->format, format);
+	self->format = format;
 	self->width = width;
 	self->height = height;
 	self->mipCount = mipCount;

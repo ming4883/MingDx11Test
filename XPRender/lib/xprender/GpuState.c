@@ -28,7 +28,7 @@ void xprGpuStateInit(XprGpuState* self)
 	self->desc.blendFactorDestA = XprGpuState_BlendFactor_Zero;
 	self->desc.polygonMode = XprGpuState_PolygonMode_Fill;
 
-	self->flags = XprGpuStateFlag_Inited;
+	self->flags = XprGpuState_Inited;
 }
 
 static GLenum XprGpuState_blendFactorMapping[] = {

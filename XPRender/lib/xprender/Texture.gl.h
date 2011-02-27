@@ -3,7 +3,6 @@
 
 #include "Opengl.h"
 #include "Texture.h"
-#include "Texture.common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -11,7 +10,7 @@ extern "C" {
 
 typedef struct XprTextureFormatMapping
 {
-	const char* name;
+	XprTextureFormat name;
 	size_t pixelSize;
 	int internalFormat;
 	int format;

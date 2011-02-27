@@ -69,7 +69,7 @@ XprBool materialInitWithShaders(Material* self, const char** args)
 	self->program = xprGpuProgramAlloc();
 	xprGpuProgramInit(self->program, self->shaders, ShaderCount);
 
-	if(!(self->program->flags & XprGpuProgramFlag_Linked))
+	if(!(self->program->flags & XprGpuProgram_Inited))
 		return XprFalse;
 
 	self->flags |= MaterialFlag_Inited;

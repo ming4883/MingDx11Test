@@ -1,6 +1,5 @@
 #include "Label.windows.h"
 #include "../lib/xprender/Texture.h"
-#include "../lib/xprender/Texture.common.h"
 
 Label* Label_alloc()
 {
@@ -28,7 +27,7 @@ void Label_init(Label* self, size_t width, size_t height)
 	self->impl->hdc = CreateCompatibleDC(nullptr);
 	self->impl->hbmp = CreateBitmap(width, height, 1, 32, nullptr);
 	self->texture = xprTextureAlloc();
-	xprTextureInit(self->texture, width, height, 1, 1, XprTexture_unormR8);
+	xprTextureInit(self->texture, width, height, 1, 1, XprTexture_UnormR8);
 	SelectObject(self->impl->hdc, self->impl->hbmp);
 }
 
@@ -52,7 +51,6 @@ void Label_setFont(Label* self, const char* font)
 {
     return (depth==32 ? 4 : 3);
 }
-
 
 int GetBytesPerRow(int width, int depth)
 {

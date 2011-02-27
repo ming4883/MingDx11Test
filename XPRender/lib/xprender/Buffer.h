@@ -16,8 +16,8 @@ typedef enum XprBufferType
 
 typedef enum XprBufferFlag
 {
-	XprBufferFlag_Inited = 1 << 0,
-	XprBufferFlag_Mapped = 1 << 1,
+	XprBuffer_Inited = 1 << 0,
+	XprBuffer_Mapped = 1 << 1,
 } XprBufferFlag;
 
 typedef enum XprBufferMapAccess

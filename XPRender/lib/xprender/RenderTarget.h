@@ -2,6 +2,7 @@
 #define __XPRENDER_RENDERTARGET_H__
 
 #include "Platform.h"
+#include "Texture.format.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,7 +13,7 @@ struct XprRenderBuffer;
 
 typedef enum XprRenderTargetFlag
 {
-	XprRenderTargetFlag_Inited = 1 << 0,
+	XprRenderTarget_Inited = 1 << 0,
 } XprRenderTargetFlag;
 
 struct XprRenderTargetImpl;
@@ -34,7 +35,7 @@ void xprRenderTargetFree(XprRenderTarget* self);
 
 void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height);
 
-XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, const char* format);
+XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprTextureFormat format);
 
 void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer);
 
