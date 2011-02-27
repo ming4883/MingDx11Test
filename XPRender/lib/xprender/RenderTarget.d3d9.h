@@ -1,7 +1,7 @@
-#ifndef __XPRENDER_RENDERTARGET_GL_H__
-#define __XPRENDER_RENDERTARGET_GL_H__
+#ifndef __XPRENDER_RENDERTARGET_D3D9_H__
+#define __XPRENDER_RENDERTARGET_D3D9_H__
 
-#include "API.gl.h"
+#include "API.d3d9.h"
 #include "RenderTarget.h"
 #include "Texture.gl.h"
 #include "uthash/utlist.h"
@@ -30,4 +30,4 @@ typedef struct XprRenderTargetImpl
 }
 #endif
 
-#endif	// __XPRENDER_RENDERTARGET_GL_H__
+#endif	// __XPRENDER_RENDERTARGET_D3D9_H__

@@ -1,7 +1,7 @@
-#ifndef __XPRENDER_SHADER_GL_H__
-#define __XPRENDER_SHADER_GL_H__
+#ifndef __XPRENDER_SHADER_D3D9_H__
+#define __XPRENDER_SHADER_D3D9_H__
 
-#include "API.gl.h"
+#include "API.d3d9.h"
 #include "Shader.h"
 #include "uthash/uthash.h"
 
@@ -36,4 +36,4 @@ typedef struct XprGpuProgramImpl
 }
 #endif
 
-#endif // __XPRENDER_SHADER_GL_H__
+#endif // __XPRENDER_SHADER_D3D9_H__

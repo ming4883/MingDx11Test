@@ -1,7 +1,7 @@
 #ifndef __XPRENDER_BUFFER_GL_H__
 #define __XPRENDER_BUFFER_GL_H__
 
-#include "Opengl.h"
+#include "API.gl.h"
 #include "Buffer.h"
 
 #ifdef __cplusplus

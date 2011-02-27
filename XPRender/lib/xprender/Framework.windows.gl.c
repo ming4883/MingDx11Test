@@ -6,7 +6,8 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <GL\glew.h>
+
+#include "Api.gl.h"
 #include <GL\wglew.h>
 
 XprAppContext xprAppContext = {

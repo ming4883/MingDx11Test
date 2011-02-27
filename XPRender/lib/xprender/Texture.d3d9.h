@@ -1,7 +1,7 @@
-#ifndef __XPRENDER_TEXTURE_GL_H__
-#define __XPRENDER_TEXTURE_GL_H__
+#ifndef __XPRENDER_TEXTURE_D3D9_H__
+#define __XPRENDER_TEXTURE_D3D9_H__
 
-#include "API.gl.h"
+#include "API.d3d9.h"
 #include "Texture.h"
 
 #ifdef __cplusplus
@@ -28,4 +28,4 @@ typedef struct XprTextureImpl
 }
 #endif
 
-#endif	// __XPRENDER_TEXTURE_H__
+#endif	// __XPRENDER_TEXTURE_D3D9_H__

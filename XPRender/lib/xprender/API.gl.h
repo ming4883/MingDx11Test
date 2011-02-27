@@ -1,5 +1,5 @@
-#ifndef __XPRENDER_OPENGL_H__
-#define __XPRENDER_OPENGL_H__
+#ifndef __XPRENDER_API_GL_H__
+#define __XPRENDER_API_GL_H__
 
 #ifdef XPR_ANDROID
 #	include <GLES2/gl2.h>
@@ -13,4 +13,4 @@
 #	define glDepthRange glDepthRangef
 #endif
 
-#endif	// __XPRENDER_OPENGL_H__
+#endif	// __XPRENDER_API_GL_H__

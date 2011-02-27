@@ -15,35 +15,35 @@ IF( WIN32 )
 
 	#FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
 	SET( XPRENDER
-		lib/xprender/Buffer.c
+		lib/xprender/API.gl.h
 		lib/xprender/Buffer.h
+		lib/xprender/Buffer.gl.c
 		lib/xprender/Buffer.gl.h
 		lib/xprender/Framework.h
 		lib/xprender/Framework.windows.gl.c
-		lib/xprender/GpuState.c
 		lib/xprender/GpuState.h
+		lib/xprender/GpuState.gl.c
 		lib/xprender/GpuState.gl.h
 		lib/xprender/Mat44.c
 		lib/xprender/Mat44.h
 		lib/xprender/NvpParser.c
 		lib/xprender/NvpParser.h
-		lib/xprender/Opengl.h
 		lib/xprender/Platform.c
 		lib/xprender/Platform.h
 		lib/xprender/pstdint.h
-		lib/xprender/RenderTarget.c
 		lib/xprender/RenderTarget.h
+		lib/xprender/RenderTarget.gl.c
 		lib/xprender/RenderTarget.gl.h
-		lib/xprender/Shader.c
 		lib/xprender/Shader.h
+		lib/xprender/Shader.gl.c
 		lib/xprender/Shader.gl.h
 		lib/xprender/StrHash.c
 		lib/xprender/StrHash.h
 		lib/xprender/StrHashMacro.h
 		lib/xprender/StrUtil.h
-		lib/xprender/Texture.c
 		lib/xprender/Texture.h
-		lib/xprender/Texture.common.h
+		lib/xprender/Texture.format.h
+		lib/xprender/Texture.gl.c
 		lib/xprender/Texture.gl.h
 		lib/xprender/Vec2.c
 		lib/xprender/Vec2.h
@@ -52,8 +52,45 @@ IF( WIN32 )
 		lib/xprender/Vec4.c
 		lib/xprender/Vec4.h
 		)
-	
-	#SET( PEZ lib/pez/pez.windows.c lib/pez/pez.h )
+		
+	SET( XPRENDER_D3D9
+		lib/xprender/API.d3d9.h
+		lib/xprender/Buffer.h
+		lib/xprender/Buffer.d3d9.c
+		lib/xprender/Buffer.d3d9.h
+		lib/xprender/Framework.h
+		lib/xprender/Framework.windows.d3d9.c
+		lib/xprender/GpuState.h
+		lib/xprender/GpuState.d3d9.c
+		lib/xprender/GpuState.d3d9.h
+		lib/xprender/Mat44.c
+		lib/xprender/Mat44.h
+		lib/xprender/NvpParser.c
+		lib/xprender/NvpParser.h
+		lib/xprender/Platform.c
+		lib/xprender/Platform.h
+		lib/xprender/pstdint.h
+		lib/xprender/RenderTarget.h
+		lib/xprender/RenderTarget.d3d9.c
+		lib/xprender/RenderTarget.d3d9.h
+		lib/xprender/Shader.h
+		lib/xprender/Shader.d3d9.c
+		lib/xprender/Shader.d3d9.h
+		lib/xprender/StrHash.c
+		lib/xprender/StrHash.h
+		lib/xprender/StrHashMacro.h
+		lib/xprender/StrUtil.h
+		lib/xprender/Texture.h
+		lib/xprender/Texture.format.h
+		lib/xprender/Texture.d3d9.c
+		lib/xprender/Texture.d3d9.h
+		lib/xprender/Vec2.c
+		lib/xprender/Vec2.h
+		lib/xprender/Vec3.c
+		lib/xprender/Vec3.h
+		lib/xprender/Vec4.c
+		lib/xprender/Vec4.h
+		)
 	
 	SET( CONSOLE_SYSTEM WIN32 )
 	
@@ -70,11 +107,11 @@ IF( WIN32 )
 	ELSE()
 		# assume MSVC
 		ADD_DEFINITIONS( /wd4996 )
-		#SOURCE_GROUP( "freeglut" FILES ${FREEGLUT} )
 		SOURCE_GROUP( "glew" FILES ${GLEW} )
 		SOURCE_GROUP( "glsw" FILES ${GLSW} )
 		SOURCE_GROUP( "httpd" FILES ${HTTPD} )
 		SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
+		SOURCE_GROUP( "xprender" FILES ${XPRENDER_D3D9} )
 		SOURCE_GROUP( "pez" FILES ${PEZ} )
 		SET( PLATFORM_LIBS opengl32 glu32 winmm ws2_32 )
 		
@@ -83,7 +120,6 @@ IF( WIN32 )
 ELSEIF( UNIX )
 
 	FILE( GLOB XPRENDER xprender/*.c xprender/*.h )
-	#SET( PEZ lib/pez/pez.linux.c lib/pez/pez.h )
 	
 	SET( PLATFORM_LIBS GL GLU X11 )
 	
@@ -92,20 +128,16 @@ ELSEIF( UNIX )
 ENDIF()
 
 INCLUDE_DIRECTORIES(
-	lib/freeglut
 	lib/glew
 	lib/glsw
 	lib/httpd
-	#lib/pez
 )
 
 ADD_LIBRARY( xprender
-    ${FREEGLUT}
 	${GLEW}
 	${GLSW}
 	${HTTPD}
 	${XPRENDER}
-	#${PEZ}
 	)
 
 # UNIT test_xprender
@@ -229,3 +261,30 @@ TARGET_LINK_LIBRARIES( example_android xprender ${PLATFORM_LIBS} )
 #	example/MosegaardsClothTutorial.cpp
 #	)
 #TARGET_LINK_LIBRARIES( MosegaardsClothTutorial xprender ${PLATFORM_LIBS} )
+
+
+IF( WIN32 )
+ADD_LIBRARY( xprender-d3d9
+	${GLSW}
+	${HTTPD}
+	${XPRENDER_D3D9}
+	)
+	
+ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
+	example/EmbeddedHttpd.example.c
+	example/Common.c
+	example/Common.h
+	example/Common.glsl
+	example/Stream.h
+	example/Stream.c
+	example/Remote.c
+	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} d3d9 )
+
+ENDIF()
