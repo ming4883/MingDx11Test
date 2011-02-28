@@ -21,7 +21,7 @@ typedef struct XprTextureImpl
 {
 	int glTarget;
 	int glName;
-	struct XprTextureFormatMapping* glFormatMapping;
+	struct XprTextureFormatMapping* apiFormatMapping;
 } XprTextureImpl;
 
 #ifdef __cplusplus

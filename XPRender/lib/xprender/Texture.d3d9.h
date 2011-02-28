@@ -10,18 +10,15 @@ extern "C" {
 
 typedef struct XprTextureFormatMapping
 {
-	XprTextureFormat name;
+	XprTextureFormat xprFormat;
 	size_t pixelSize;
-	int internalFormat;
-	int format;
-	int type;
+	D3DFORMAT d3dFormat;
 } XprTextureFormatMapping;
 
 typedef struct XprTextureImpl
 {
-	int glTarget;
-	int glName;
-	struct XprTextureFormatMapping* glFormatMapping;
+	IDirect3DTexture9* d3dtex;
+	struct XprTextureFormatMapping* apiFormatMapping;
 } XprTextureImpl;
 
 #ifdef __cplusplus

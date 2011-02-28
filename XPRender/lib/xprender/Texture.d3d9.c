@@ -1,30 +1,21 @@
 #include "Texture.d3d9.h"
 #include "StrUtil.h"
 
-#if defined(XPR_GLES_2)
 XprTextureFormatMapping XprTextureFormatMappings[] = {
-	{XprTexture_UnormR8G8B8A8, 4, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE},
-	{XprTexture_UnormR8, 1, GL_LUMINANCE, GL_LUMINANCE, GL_UNSIGNED_BYTE},
+	{XprTexture_UnormR8G8B8A8, 4, D3DFMT_A8R8G8B8},
+	{XprTexture_UnormR8, 1, D3DFMT_A8},
+	{XprTexture_FloatR16, 2, D3DFMT_R16F},
+	{XprTexture_FloatR32, 4, D3DFMT_R32F},
+	{XprTexture_FloatR16G16B16A16, 8, D3DFMT_A16B16G16R16F},
+	{XprTexture_FloatR32G32B32A32, 16, D3DFMT_A32B32G32R32F},
 };
-#else
-XprTextureFormatMapping XprTextureFormatMappings[] = {
-	{XprTexture_UnormR8G8B8A8, 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
-	{XprTexture_UnormR8, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
-	{XprTexture_FloatR16, 2, GL_R16F, GL_RED, GL_HALF_FLOAT},
-	{XprTexture_FloatR32, 4, GL_R32F, GL_RED, GL_FLOAT},
-	{XprTexture_FloatR16G16B16A16, 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
-	{XprTexture_FloatR32G32B32A32, 16, GL_RGBA32F, GL_RGBA, GL_FLOAT},
-	{XprTexture_Depth16, 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
-	{XprTexture_Depth32, 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
-};
-#endif
 
-XprTextureFormatMapping* XprTextureFormatMapping_Get(XprTextureFormat name)
+XprTextureFormatMapping* XprTextureFormatMapping_Get(XprTextureFormat xprFormat)
 {
 	size_t i=0;
 	for(i=0; i<XprCountOf(XprTextureFormatMappings); ++i) {
 		XprTextureFormatMapping* mapping = &XprTextureFormatMappings[i];
-		if(name == mapping->name)
+		if(xprFormat == mapping->xprFormat)
 			return mapping;
 	}
 
@@ -48,7 +39,7 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 	
 	do {
 		if(i < mipIndex) {
-			offset += self->impl->glFormatMapping->pixelSize * (*mipWidth) * (*mipHeight);
+			offset += self->impl->apiFormatMapping->pixelSize * (*mipWidth) * (*mipHeight);
 			if(*mipWidth > 1) *mipWidth /= 2;
 			if(*mipHeight > 1) *mipHeight /= 2;
 		}
@@ -69,9 +60,9 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		return;
 	}
 
-	self->impl->glFormatMapping = XprTextureFormatMapping_Get(format);
+	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
 	
-	if(nullptr == self->impl->glFormatMapping) {
+	if(nullptr == self->impl->apiFormatMapping) {
 		XprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
@@ -82,6 +73,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	self->mipCount = mipCount;
 	self->surfCount = surfCount;
 
+	// init cache memory
 	{
 		size_t tmpw, tmph;
 		self->surfSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
@@ -89,13 +81,14 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		memset(self->data, 0, self->surfSizeInByte * self->surfCount);
 	}
 
-	glGenTextures(1, &self->impl->glName);
-	
-	if(self->surfCount == 1) {
-		self->impl->glTarget = GL_TEXTURE_2D;
-		glBindTexture(self->impl->glTarget, self->impl->glName);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// create texture
+	{
+		HRESULT hr;
+		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount+1, 0, self->impl->apiFormatMapping->d3dFormat, D3DPOOL_MANAGED, &self->impl->d3dtex, nullptr);
+		if(FAILED(hr)) {
+			XprDbgStr("d3d9 failed to create texture %8x", hr);
+			return;
+		}
 	}
 
 	xprTextureCommit(self);
@@ -113,9 +106,9 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 		return;
 	}
 
-	self->impl->glFormatMapping = XprTextureFormatMapping_Get(format);
+	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
 	
-	if(nullptr == self->impl->glFormatMapping) {
+	if(nullptr == self->impl->apiFormatMapping) {
 		XprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
@@ -126,22 +119,22 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 	self->mipCount = mipCount;
 	self->surfCount = surfCount;
 
+	// set cache memory to null
 	{
 		size_t tmpw, tmph;
 		self->surfSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
 		self->data = nullptr;
 	}
 
-	glGenTextures(1, &self->impl->glName);
-	
-	if(self->surfCount == 1) {
-		self->impl->glTarget = GL_TEXTURE_2D;
-		glBindTexture(self->impl->glTarget, self->impl->glName);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// create d3d texture
+	{
+		HRESULT hr;
+		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount+1, D3DUSAGE_RENDERTARGET, self->impl->apiFormatMapping->d3dFormat, D3DPOOL_MANAGED, &self->impl->d3dtex, nullptr);
+		if(FAILED(hr)) {
+			XprDbgStr("d3d9 failed to create texture %8x", hr);
+			return;
+		}
 	}
-
-	xprTextureCommit(self);
 }
 
 
@@ -164,27 +157,31 @@ unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t 
 
 void xprTextureCommit(XprTexture* self)
 {
-	size_t i;
 	const XprTextureFormatMapping* mapping;
 
 	if(nullptr == self)
 		return;
 
-	if(nullptr == self->impl->glFormatMapping)
+	if(nullptr == self->impl->apiFormatMapping)
 		return;
 	
-	mapping = self->impl->glFormatMapping;
+	mapping = self->impl->apiFormatMapping;
 
 	if(self->surfCount == 1) {
-		
-		glBindTexture(self->impl->glTarget, self->impl->glName);
+		HRESULT hr;
+		size_t i;
 
-		glTexImage2D(self->impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, self->data);
-		
 		for(i=1; i<=self->mipCount; ++i) {
 			size_t mipW, mipH;
+			D3DLOCKED_RECT locked;
 			unsigned char* data = xprTextureGetMipLevel(self, 0, i, &mipW, &mipH);
-			glTexImage2D(self->impl->glTarget, i, mapping->internalFormat, mipW, mipH, 0, mapping->format, mapping->type, data);
+
+			hr = IDirect3DTexture9_LockRect(self->impl->d3dtex, i, &locked, nullptr, D3DLOCK_DISCARD);
+			if(FAILED(hr))
+				continue;
+
+			memcpy(locked.pBits, data, mipW * mipH * self->impl->apiFormatMapping->pixelSize);
+			IDirect3DTexture9_UnlockRect(self->impl->d3dtex, i);
 		}
 	}
 }
@@ -197,8 +194,9 @@ void xprTextureFree(XprTexture* self)
 	if(nullptr != self->data)
 		free(self->data);
 
-	if(0 != self->impl->glName)
-		glDeleteTextures(1, &self->impl->glName);
+	if(nullptr != self->impl->d3dtex) {
+		IDirect3DTexture9_Release(self->impl->d3dtex);
+	}
 	
 	free(self);
 }

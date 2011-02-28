@@ -48,7 +48,7 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 	
 	do {
 		if(i < mipIndex) {
-			offset += self->impl->glFormatMapping->pixelSize * (*mipWidth) * (*mipHeight);
+			offset += self->impl->apiFormatMapping->pixelSize * (*mipWidth) * (*mipHeight);
 			if(*mipWidth > 1) *mipWidth /= 2;
 			if(*mipHeight > 1) *mipHeight /= 2;
 		}
@@ -69,9 +69,9 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		return;
 	}
 
-	self->impl->glFormatMapping = XprTextureFormatMapping_Get(format);
+	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
 	
-	if(nullptr == self->impl->glFormatMapping) {
+	if(nullptr == self->impl->apiFormatMapping) {
 		XprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
@@ -113,9 +113,9 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 		return;
 	}
 
-	self->impl->glFormatMapping = XprTextureFormatMapping_Get(format);
+	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
 	
-	if(nullptr == self->impl->glFormatMapping) {
+	if(nullptr == self->impl->apiFormatMapping) {
 		XprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
@@ -170,10 +170,10 @@ void xprTextureCommit(XprTexture* self)
 	if(nullptr == self)
 		return;
 
-	if(nullptr == self->impl->glFormatMapping)
+	if(nullptr == self->impl->apiFormatMapping)
 		return;
 	
-	mapping = self->impl->glFormatMapping;
+	mapping = self->impl->apiFormatMapping;
 
 	if(self->surfCount == 1) {
 		
