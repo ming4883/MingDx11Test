@@ -34,7 +34,7 @@ void xprBufferFree(XprBuffer* self)
 	free(self);
 }
 
-void xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData)
+XprBool xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData)
 {
 	self->sizeInBytes = sizeInBytes;
 	self->type = type;
@@ -44,6 +44,8 @@ void xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void
 	glBufferData(xprGL_BUFFER_TARGET[self->type], self->sizeInBytes, initialData, GL_STREAM_DRAW);
 
 	self->flags = XprBuffer_Inited;
+
+	return XprTrue;
 }
 
 void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data)

@@ -22,18 +22,34 @@ void xprBufferFree(XprBuffer* self)
 	free(self);
 }
 
-void xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData)
+XprBool xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData)
 {
+	HRESULT hr;
 	self->sizeInBytes = sizeInBytes;
 	self->type = type;
 
-	/*
-	glGenBuffers(1, &self->impl->glName);
-	glBindBuffer(xprGL_BUFFER_TARGET[self->type], self->impl->glName);
-	glBufferData(xprGL_BUFFER_TARGET[self->type], self->sizeInBytes, initialData, GL_STREAM_DRAW);
-	*/
+	if(XprBufferType_Vertex == type) {
+		hr = IDirect3DDevice9_CreateVertexBuffer(xprAPI.d3ddev, self->sizeInBytes, D3DUSAGE_DYNAMIC, 0, D3DPOOL_MANAGED, &self->impl->d3dvb, nullptr);
+		if(FAILED(hr)) {
+			XprDbgStr("d3d9 failed to create vertex buffer %8x", hr);
+			return XprFalse;
+		}
+	}
+	else if(XprBufferType_Index == type) {
+		hr = IDirect3DDevice9_CreateIndexBuffer(xprAPI.d3ddev, self->sizeInBytes, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_MANAGED, &self->impl->d3dib, nullptr);
+		if(FAILED(hr)) {
+			XprDbgStr("d3d9 failed to create index buffer %8x", hr);
+			return XprFalse;
+		}
+	}
+	else
+	{
+		XprDbgStr("uniform buffer is not supported on d3d9");
+		return XprFalse;
+	}
 
 	self->flags = XprBuffer_Inited;
+	return XprTrue;
 }
 
 void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data)

@@ -43,7 +43,7 @@ XprBuffer* xprBufferAlloc();
 
 void xprBufferFree(XprBuffer* self);
 
-void xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData);
+XprBool xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData);
 
 void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, void* data);
 
