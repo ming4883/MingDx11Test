@@ -285,6 +285,6 @@ ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
 	example/Material.c
 	example/Material.h
 	)
-TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} d3d9 )
+TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} d3d9 d3dx9 )
 
 ENDIF()

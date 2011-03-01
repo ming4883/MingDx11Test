@@ -3,7 +3,7 @@
 
 #include "API.d3d9.h"
 #include "RenderTarget.h"
-#include "Texture.gl.h"
+#include "Texture.d3d9.h"
 #include "uthash/utlist.h"
 
 #ifdef __cplusplus
@@ -20,7 +20,7 @@ typedef struct XprRenderBuffer
 
 typedef struct XprRenderTargetImpl
 {
-	int glName;
+	//int glName;
 	size_t bufferCount;
 	struct XprRenderBuffer* bufferList;
 } XprRenderTargetImpl;

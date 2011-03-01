@@ -31,117 +31,46 @@ void xprGpuStateInit(XprGpuState* self)
 	self->flags = XprGpuState_Inited;
 }
 
-static GLenum XprGpuState_blendFactorMapping[] = {
-	GL_ONE,
-	GL_ZERO,
-	GL_SRC_COLOR,
-	GL_ONE_MINUS_SRC_COLOR,
-	GL_DST_COLOR,
-	GL_ONE_MINUS_DST_COLOR,
-	GL_SRC_ALPHA,
-	GL_ONE_MINUS_SRC_ALPHA,
-	GL_DST_ALPHA,
-	GL_ONE_MINUS_DST_ALPHA,
+static D3DBLEND XprGpuState_blendFactorMapping[] = {
+	D3DBLEND_ONE,
+	D3DBLEND_ZERO,
+	D3DBLEND_SRCCOLOR,
+	D3DBLEND_INVSRCCOLOR,
+	D3DBLEND_DESTCOLOR,
+	D3DBLEND_INVDESTCOLOR,
+	D3DBLEND_SRCALPHA,
+	D3DBLEND_INVSRCALPHA,
+	D3DBLEND_DESTALPHA,
+	D3DBLEND_INVDESTALPHA,
 };
 
-#if !defined(XPR_GLES_2)
-static GLenum XprGpuState_polygonModeMapping[] = {
-	GL_LINE,
-	GL_FILL,
+static D3DFILLMODE XprGpuState_polygonModeMapping[] = {
+	D3DFILL_WIREFRAME,
+	D3DFILL_SOLID,
 };
-#endif
 
 void xprGpuStatePreRender(XprGpuState* self)
 {
-	if(self->desc.depthTest)
-		glEnable(GL_DEPTH_TEST);
-	else
-		glDisable(GL_DEPTH_TEST);
+	IDirect3DDevice9* d3ddev = xprAPI.d3ddev;
 
-	if(self->desc.depthWrite)
-		glDepthMask(GL_TRUE);
-	else
-		glDepthMask(GL_FALSE);
-
-	if(self->desc.cull)
-		glEnable(GL_CULL_FACE);
-	else
-		glDisable(GL_CULL_FACE);
-
+	IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_ZENABLE, (BOOL)self->desc.depthTest);
+	IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_ZWRITEENABLE, (BOOL)self->desc.depthWrite);
+	IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_CULLMODE, self->desc.cull ? D3DCULL_CW : D3DCULL_NONE);
+	
 	if(self->desc.blend) {
-		glEnable(GL_BLEND);
+		IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_ALPHABLENDENABLE, TRUE);
+		IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_SEPARATEALPHABLENDENABLE, TRUE);
+
+		IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_SRCBLEND, XprGpuState_blendFactorMapping[self->desc.blendFactorSrcRGB - XprGpuState_BlendFactor_One]);
+		IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_DESTBLEND, XprGpuState_blendFactorMapping[self->desc.blendFactorDestRGB - XprGpuState_BlendFactor_One]);
 		
-		glBlendFuncSeparate(
-			XprGpuState_blendFactorMapping[self->desc.blendFactorSrcRGB - XprGpuState_BlendFactor_One],
-			XprGpuState_blendFactorMapping[self->desc.blendFactorDestRGB - XprGpuState_BlendFactor_One],
-			XprGpuState_blendFactorMapping[self->desc.blendFactorSrcA - XprGpuState_BlendFactor_One],
-			XprGpuState_blendFactorMapping[self->desc.blendFactorDestA - XprGpuState_BlendFactor_One]);
+		IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_SRCBLENDALPHA, XprGpuState_blendFactorMapping[self->desc.blendFactorSrcA - XprGpuState_BlendFactor_One]);
+		IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_DESTBLENDALPHA, XprGpuState_blendFactorMapping[self->desc.blendFactorDestA - XprGpuState_BlendFactor_One]);
+		
 	}
 	else {
-		glDisable(GL_BLEND);
+		IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_ALPHABLENDENABLE, FALSE);
 	}
 
-#if !defined(XPR_GLES_2)
-	glPolygonMode(GL_FRONT_AND_BACK, XprGpuState_polygonModeMapping[self->desc.polygonMode - XprGpuState_PolygonMode_Line]);
-#endif
+	IDirect3DDevice9_SetRenderState(d3ddev, D3DRS_FILLMODE, XprGpuState_polygonModeMapping[self->desc.polygonMode - XprGpuState_PolygonMode_Line]);
 }
-
-/*
-void xprGpuStateSetDepthTestEnabled(XprGpuState* self, XprBool value)
-{
-	if(nullptr == self)
-		return;
-
-	self->desc.impl->depthTest = value;
-}
-
-void xprGpuStateSetDepthWriteEnabled(XprGpuState* self, XprBool value)
-{
-	if(nullptr == self)
-		return;
-
-	self->desc.impl->depthWrite = value;
-}
-
-void xprGpuStateSetCullEnabled(XprGpuState* self, XprBool value)
-{
-	if(nullptr == self)
-		return;
-
-	self->desc.impl->culling = value;
-}
-
-void xprGpuStateSetBlendEnabled(XprGpuState* self, XprBool value)
-{
-	if(nullptr == self)
-		return;
-
-	self->desc.impl->blending = value;
-}
-
-void xprGpuStateSetBlendFactorRGB(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
-{
-	if(nullptr == self)
-		return;
-
-	self->desc.impl->blendFactorSrc = blendFactorSrc;
-	self->desc.impl->blendFactorDest = blendFactorDest;
-}
-
-void xprGpuStateSetBlendFactorA(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest)
-{
-	if(nullptr == self)
-		return;
-
-	self->desc.impl->blendFactorSrcAlpha = blendFactorSrc;
-	self->desc.impl->blendFactorDestAlpha = blendFactorDest;
-}
-
-void xprGpuStateSetPolygonMode(XprGpuState* self, XprGpuStateType polygonMode)
-{
-	if(nullptr == self)
-		return;
-
-	self->desc.impl->polygonMode = polygonMode;
-}
-*/

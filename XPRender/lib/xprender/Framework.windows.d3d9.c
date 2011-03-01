@@ -90,6 +90,9 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 				return 0;
 			}
 		}
+
+		IDirect3DDevice9_GetBackBuffer(xprAPI.d3ddev, 0, 0, D3DBACKBUFFER_TYPE_MONO, &xprAPI.d3dcolorbuf);
+		IDirect3DDevice9_GetDepthStencilSurface(xprAPI.d3ddev, &xprAPI.d3ddepthbuf);
 	}
 
 	xprAppInitialize();
@@ -119,6 +122,8 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 
 	xprAppFinalize();
 
+	IDirect3DSurface9_Release(xprAPI.d3ddepthbuf);
+	IDirect3DSurface9_Release(xprAPI.d3dcolorbuf);
 	IDirect3DDevice9_Release(xprAPI.d3ddev);
 	IDirect3D9_Release(xprAPI.d3d);
 

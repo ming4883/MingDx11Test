@@ -20,7 +20,7 @@ void xprRenderTargetFree(XprRenderTarget* self)
 			free(it);
 		}
 
-		glDeleteFramebuffers(1, &self->impl->glName);
+		//glDeleteFramebuffers(1, &self->impl->glName);
 	}
 	free(self);
 }
@@ -38,7 +38,7 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 	self->width = width;
 	self->height = height;
 
-	glGenFramebuffers(1, &self->impl->glName);
+	//glGenFramebuffers(1, &self->impl->glName);
 	
 	self->flags |= XprRenderTarget_Inited;
 }
@@ -86,29 +86,16 @@ struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBu
 	return ((XprRenderBuffer*)buffer)->texture;
 }
 
-GLenum glAttachmentPoints[] =
-{	GL_COLOR_ATTACHMENT0,
-#if !defined(XPR_GLES_2)
-	GL_COLOR_ATTACHMENT1,
-	GL_COLOR_ATTACHMENT2,
-	GL_COLOR_ATTACHMENT3,
-	GL_COLOR_ATTACHMENT4,
-	GL_COLOR_ATTACHMENT5,
-	GL_COLOR_ATTACHMENT6,
-	GL_COLOR_ATTACHMENT7,
-#endif
-};
-
 void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth)
 {
 	size_t bufCnt;
 	XprRenderBuffer** curr;
 	if(nullptr == self) {
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		IDirect3DDevice9_SetRenderTarget(xprAPI.d3ddev, 0, xprAPI.d3dcolorbuf);
 		return;
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, self->impl->glName);
+	//glBindFramebuffer(GL_FRAMEBUFFER, self->impl->glName);
 	
 	// attach color buffers
 	bufCnt = 0;
@@ -116,7 +103,7 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colo
 		curr = (XprRenderBuffer**)colors;
 		while(*curr != nullptr) {
 			XprTexture* tex = (*curr)->texture;
-			glFramebufferTexture2D(GL_FRAMEBUFFER, glAttachmentPoints[bufCnt], tex->impl->glTarget, tex->impl->glName, 0);
+			//glFramebufferTexture2D(GL_FRAMEBUFFER, glAttachmentPoints[bufCnt], tex->impl->glTarget, tex->impl->glName, 0);
 			++curr;
 			++bufCnt;
 		}
@@ -125,35 +112,32 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colo
 	// attach depth buffers
 	if(depth != nullptr) {
 		XprTexture* tex = ((XprRenderBuffer*)depth)->texture;
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
+		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
 	}
 
-#if !defined(XPR_GLES_2)
 	// assign buffer bindings
-	glDrawBuffers(bufCnt, glAttachmentPoints);
-#endif
-	{	// check for framebuffer's complete status
-		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		if(GL_FRAMEBUFFER_COMPLETE != status) {
-			xprDbgStr("imcomplete framebuffer status:%x", status);
-		}
-	}
+	//glDrawBuffers(bufCnt, glAttachmentPoints);
 }
 
 void xprRenderTargetSetViewport(float x, float y, float w, float h, float zmin, float zmax)
 {
-	glViewport((GLint)x, (GLint)y, (GLsizei)w, (GLsizei)h);
-	glDepthRange(zmin, zmax);
+	D3DVIEWPORT9 vp;
+	vp.X = (DWORD)x;
+	vp.Y = (DWORD)y;
+	vp.Width  = (DWORD)w;
+	vp.Height = (DWORD)h;
+	vp.MinZ = zmin;
+	vp.MaxZ = zmax;
+
+	IDirect3DDevice9_SetViewport(xprAPI.d3ddev, &vp);
 }
 
 void xprRenderTargetClearColor(float r, float g, float b, float a)
 {
-	glClearColor(r, g, b, a);
-	glClear(GL_COLOR_BUFFER_BIT);
+	IDirect3DDevice9_Clear(xprAPI.d3ddev, 0, nullptr, D3DCLEAR_TARGET, D3DCOLOR_COLORVALUE(r, g, b, a), 1, 0);
 }
 
 void xprRenderTargetClearDepth(float z)
 {
-	glClearDepth(z);
-	glClear(GL_DEPTH_BUFFER_BIT);
+	IDirect3DDevice9_Clear(xprAPI.d3ddev, 0, nullptr, D3DCLEAR_ZBUFFER, 0, z, 0);
 }
