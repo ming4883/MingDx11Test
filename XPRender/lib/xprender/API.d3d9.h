@@ -2,6 +2,7 @@
 #define __XPRENDER_API_D3D9_H__
 
 #include <d3d9.h>
+#include <d3dx9.h>
 
 #ifdef __cplusplus
 extern "C" {

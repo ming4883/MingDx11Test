@@ -51,19 +51,19 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprTextureFormat format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
-		XprDbgStr("texture already inited!\n");
+		xprDbgStr("texture already inited!\n");
 		return;
 	}
 
 	if(surfCount > 1) {
-		XprDbgStr("Current not support surfCount > 1!\n");
+		xprDbgStr("Current not support surfCount > 1!\n");
 		return;
 	}
 
 	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
 	
 	if(nullptr == self->impl->apiFormatMapping) {
-		XprDbgStr("Non supported texture format: %s\n", format);
+		xprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
 
@@ -86,7 +86,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		HRESULT hr;
 		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount+1, 0, self->impl->apiFormatMapping->d3dFormat, D3DPOOL_MANAGED, &self->impl->d3dtex, nullptr);
 		if(FAILED(hr)) {
-			XprDbgStr("d3d9 failed to create texture %8x", hr);
+			xprDbgStr("d3d9 failed to create texture %8x", hr);
 			return;
 		}
 	}
@@ -97,19 +97,19 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprTextureFormat format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
-		XprDbgStr("texture already inited!\n");
+		xprDbgStr("texture already inited!\n");
 		return;
 	}
 
 	if(surfCount > 1) {
-		XprDbgStr("Current not support surfCount > 1!\n");
+		xprDbgStr("Current not support surfCount > 1!\n");
 		return;
 	}
 
 	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
 	
 	if(nullptr == self->impl->apiFormatMapping) {
-		XprDbgStr("Non supported texture format: %s\n", format);
+		xprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
 
@@ -131,7 +131,7 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 		HRESULT hr;
 		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount+1, D3DUSAGE_RENDERTARGET, self->impl->apiFormatMapping->d3dFormat, D3DPOOL_MANAGED, &self->impl->d3dtex, nullptr);
 		if(FAILED(hr)) {
-			XprDbgStr("d3d9 failed to create texture %8x", hr);
+			xprDbgStr("d3d9 failed to create texture %8x", hr);
 			return;
 		}
 	}

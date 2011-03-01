@@ -99,7 +99,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 
         if (!wglChoosePixelFormatARB)
         {
-            XprDbgStr("Could not load function pointer for 'wglChoosePixelFormatARB'.  Is your driver properly installed?");
+            xprDbgStr("Could not load function pointer for 'wglChoosePixelFormatARB'.  Is your driver properly installed?");
         }
 
         // Try fewer and fewer samples per pixel till we find one that is supported:
@@ -127,9 +127,9 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
     err = glewInit();
     if (GLEW_OK != err)
     {
-        XprDbgStr("GLEW Error: %s\n", glewGetErrorString(err));
+        xprDbgStr("GLEW Error: %s\n", glewGetErrorString(err));
     }
-    XprDbgStr("OpenGL Version: %s\n", glGetString(GL_VERSION));
+    xprDbgStr("OpenGL Version: %s\n", glGetString(GL_VERSION));
 
     if (!xprAppContext.vsync)
     {
@@ -180,7 +180,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
             
 			if ((err = glGetError()) != GL_NO_ERROR)
             {
-                XprDbgStr("OpenGL error %d.\n", err);
+                xprDbgStr("OpenGL error %d.\n", err);
             }
         }
     }

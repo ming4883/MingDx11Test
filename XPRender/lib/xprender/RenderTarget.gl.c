@@ -31,7 +31,7 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 		return;
 
 	if(self->flags & XprRenderTarget_Inited) {
-		XprDbgStr("XprRenderTarget already inited!\n");
+		xprDbgStr("XprRenderTarget already inited!\n");
 		return;
 	}
 
@@ -135,7 +135,7 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colo
 	{	// check for framebuffer's complete status
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(GL_FRAMEBUFFER_COMPLETE != status) {
-			XprDbgStr("imcomplete framebuffer status:%x", status);
+			xprDbgStr("imcomplete framebuffer status:%x", status);
 		}
 	}
 }

@@ -76,7 +76,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 			&xprAPI.d3ddev);
 
 		if(FAILED(hr)) {
-			XprDbgStr("using software vertex processing device...");
+			xprDbgStr("using software vertex processing device...");
 			hr = IDirect3D9_CreateDevice(xprAPI.d3d,
 				D3DADAPTER_DEFAULT,
 				D3DDEVTYPE_HAL,
@@ -86,7 +86,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 				&xprAPI.d3ddev);
 
 			if(FAILED(hr)) {
-				XprDbgStr("even software vertex processing device is not support :-(");
+				xprDbgStr("even software vertex processing device is not support :-(");
 				return 0;
 			}
 		}

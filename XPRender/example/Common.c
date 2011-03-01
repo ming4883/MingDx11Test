@@ -83,7 +83,7 @@ void appInit(AppContext* self)
 
 	xprRenderTargetSetViewport(0, 0, self->aspect.width, self->aspect.height, -1, 1);
 	
-	XprDbgStr("xprender started with %d x %d", xprAppContext.xres, xprAppContext.yres);
+	xprDbgStr("xprender started with %d x %d", xprAppContext.xres, xprAppContext.yres);
 }
 
 void appFree(AppContext* self)
@@ -155,7 +155,7 @@ Material* appLoadMaterial(const char* vsKey, const char* fsKey, const char* tcKe
 	materialInitWithShaders(material, args);
 
 	if(0 == (material->flags & MaterialFlag_Inited))
-		XprDbgStr("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
+		xprDbgStr("failed to load material vs=%s,fs=%s!\n", vsKey, fsKey);
 
 	return material;
 }

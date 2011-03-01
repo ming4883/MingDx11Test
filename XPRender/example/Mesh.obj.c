@@ -105,7 +105,7 @@ XprBool meshInitWithObjFile(Mesh* self, const char* path, InputStream* stream)
 	size_t vpf = 0;
 
 	if(nullptr == (fp = stream->open(path))) {
-		XprDbgStr("obj file %s not found", path);
+		xprDbgStr("obj file %s not found", path);
 		return XprFalse;
 	}
 

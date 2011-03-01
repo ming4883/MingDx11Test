@@ -23,7 +23,7 @@ typedef uint8_t XprBool;
 #define XprFalse 0
 #define XprTrue 1
 
-void XprDbgStr(const char* str, ...);
+void xprDbgStr(const char* str, ...);
 
 #define XprCountOf(A) (sizeof(A) / sizeof(A[0]))
 

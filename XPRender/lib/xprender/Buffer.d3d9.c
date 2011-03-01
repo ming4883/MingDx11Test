@@ -31,20 +31,20 @@ XprBool xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, v
 	if(XprBufferType_Vertex == type) {
 		hr = IDirect3DDevice9_CreateVertexBuffer(xprAPI.d3ddev, self->sizeInBytes, D3DUSAGE_DYNAMIC, 0, D3DPOOL_MANAGED, &self->impl->d3dvb, nullptr);
 		if(FAILED(hr)) {
-			XprDbgStr("d3d9 failed to create vertex buffer %8x", hr);
+			xprDbgStr("d3d9 failed to create vertex buffer %8x", hr);
 			return XprFalse;
 		}
 	}
 	else if(XprBufferType_Index == type) {
 		hr = IDirect3DDevice9_CreateIndexBuffer(xprAPI.d3ddev, self->sizeInBytes, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_MANAGED, &self->impl->d3dib, nullptr);
 		if(FAILED(hr)) {
-			XprDbgStr("d3d9 failed to create index buffer %8x", hr);
+			xprDbgStr("d3d9 failed to create index buffer %8x", hr);
 			return XprFalse;
 		}
 	}
 	else
 	{
-		XprDbgStr("uniform buffer is not supported on d3d9");
+		xprDbgStr("uniform buffer is not supported on d3d9");
 		return XprFalse;
 	}
 

@@ -11,15 +11,18 @@ extern "C" {
 
 typedef struct XprGpuShaderImpl
 {
-	int glName;
+	IDirect3DVertexShader9* d3dvs;
+	IDirect3DPixelShader9* d3dps;
+	ID3DXBuffer* bytecode;
+	ID3DXConstantTable* constTable;
 
 } XprGpuShaderImpl;
 
 typedef struct XprGpuProgramUniform
 {
 	XprHashCode hash;
-	GLuint loc;
-	GLuint size;
+	UINT loc;
+	UINT size;
 	int texunit;
 	UT_hash_handle hh;
 
@@ -27,8 +30,10 @@ typedef struct XprGpuProgramUniform
 
 typedef struct XprGpuProgramImpl
 {
-	int glName;
-	struct XprGpuProgramUniform* uniforms;
+	IDirect3DVertexShader9* d3dvs;
+	IDirect3DPixelShader9* d3dps;
+	XprGpuProgramUniform* uniformVs;
+	XprGpuProgramUniform* uniformPs;
 
 } XprGpuProgramImpl;
 

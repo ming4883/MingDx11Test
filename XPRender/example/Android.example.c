@@ -146,7 +146,7 @@ XprBool xprAppInitialize()
 	
 	bgClr = xprVec4(0.25f, 1, 0.25f, 1);
 	
-	XprDbgStr("XpRender Android example started");
+	xprDbgStr("XpRender Android example started");
 
 	return XprTrue;
 }

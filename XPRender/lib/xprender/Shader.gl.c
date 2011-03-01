@@ -25,7 +25,7 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 	int compileStatus;
 
 	if(self->flags & XprGpuShader_Inited) {
-		XprDbgStr("XprGpuShader already inited!\n");
+		xprDbgStr("XprGpuShader already inited!\n");
 		return XprFalse;
 	}
 
@@ -44,7 +44,7 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 		if(len > 0) {
 			char* buf = (char*)malloc(len);
 			glGetShaderInfoLog(self->impl->glName, len, nullptr, buf);
-			XprDbgStr("glCompileShader failed: %s", buf);
+			xprDbgStr("glCompileShader failed: %s", buf);
 			free(buf);
 		}
 
@@ -80,7 +80,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 	int linkStatus;
 
 	if(self->flags & XprGpuProgram_Inited) {
-		XprDbgStr("XprGpuProgram already inited!\n");
+		xprDbgStr("XprGpuProgram already inited!\n");
 		return XprFalse;
 	}
 	
@@ -104,7 +104,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		if(len > 0) {
 			char* buf = (char*)malloc(len);
 			glGetProgramInfoLog(self->impl->glName, len, nullptr, buf);
-			XprDbgStr("glLinkProgram failed: %s", buf);
+			xprDbgStr("glLinkProgram failed: %s", buf);
 			free(buf);
 		}
 		return XprFalse;
@@ -126,7 +126,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		
 		glGetProgramiv(self->impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
 		
-		XprDbgStr("glProgram %d has %d uniforms\n", self->impl->glName, uniformCnt);
+		xprDbgStr("glProgram %d has %d uniforms\n", self->impl->glName, uniformCnt);
 
 		for(i=0; i<uniformCnt; ++i) {
 			XprGpuProgramUniform* uniform;
@@ -156,7 +156,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 					uniform->texunit = -1;
 					break;
 			}
-			//XprDbgStr("%s %d %d %d %d\n", uniformName, i, uniformSize, uniformType, uniform->texunit);
+			//xprDbgStr("%s %d %d %d %d\n", uniformName, i, uniformSize, uniformType, uniform->texunit);
 		}
 		
 	}
@@ -188,7 +188,7 @@ void xprGpuProgramPreRender(XprGpuProgram* self)
 		return;
 
 	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//XprDbgStr("XprGpuProgram is not inited!\n");
+		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return;
 	}
 
@@ -202,7 +202,7 @@ XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 
 	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//XprDbgStr("XprGpuProgram is not inited!\n");
+		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
 
@@ -221,7 +221,7 @@ XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 
 	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//XprDbgStr("XprGpuProgram is not inited!\n");
+		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
 
@@ -240,7 +240,7 @@ XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 
 	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//XprDbgStr("XprGpuProgram is not inited!\n");
+		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
 
@@ -259,7 +259,7 @@ XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 
 	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//XprDbgStr("XprGpuProgram is not inited!\n");
+		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
 
@@ -278,7 +278,7 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 		return XprFalse;
 
 	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//XprDbgStr("XprGpuProgram is not inited!\n");
+		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
 
@@ -297,7 +297,7 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		return XprFalse;
 
 	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//XprDbgStr("XprGpuProgram is not inited!\n");
+		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
 
@@ -306,7 +306,7 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		return XprFalse;
 		
 	if(uniform->texunit < 0) {
-		XprDbgStr("Not a texture!\n");
+		xprDbgStr("Not a texture!\n");
 		return XprFalse;
 	}
 	

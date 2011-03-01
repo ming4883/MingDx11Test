@@ -11,7 +11,7 @@
 
 #include <windows.h>
 
-void XprDbgStr(const char* str, ...)
+void xprDbgStr(const char* str, ...)
 {
 	char msg[1024] = {0};
 
@@ -26,7 +26,7 @@ void XprDbgStr(const char* str, ...)
 
 #include <android/log.h>
 
-void XprDbgStr(const char* str, ...)
+void xprDbgStr(const char* str, ...)
 {
 	va_list args;
 	
@@ -37,7 +37,7 @@ void XprDbgStr(const char* str, ...)
 
 #else
 
-void XprDbgStr(const char* str, ...)
+void xprDbgStr(const char* str, ...)
 {
 	char msg[1024] = {0};
 
