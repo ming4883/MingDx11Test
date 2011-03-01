@@ -249,9 +249,10 @@ void xprGpuProgramPreRender(XprGpuProgram* self)
 	IDirect3DDevice9_SetPixelShader(xprAPI.d3ddev, self->impl->d3dps);
 }
 
-XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
+XprBool xprGpuProgramUniformfv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -259,94 +260,50 @@ XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
-
-	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
-	if(nullptr == uniform)
-		return XprFalse;
 	
-	//glUniform1fv(uniform->loc, count, value);
+	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
+	if(nullptr != uniform) {
+		IDirect3DDevice9_SetVertexShaderConstantF(xprAPI.d3ddev, uniform->loc, value, uniform->size * count);
+	}
+
+	HASH_FIND_INT(self->impl->uniformPs, &hash, uniform);
+	if(nullptr != uniform) {
+		IDirect3DDevice9_SetPixelShaderConstantF(xprAPI.d3ddev, uniform->loc, value, uniform->size * count);
+	}
+	
 	return XprTrue;
+}
+
+
+XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
+{
+	return xprGpuProgramUniformfv(self, hash, count, value);
 }
 
 XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
-	XprGpuProgramUniform* uniform;
-	if(nullptr == self)
-		return XprFalse;
-
-	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//xprDbgStr("XprGpuProgram is not inited!\n");
-		return XprFalse;
-	}
-
-	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
-	if(nullptr == uniform)
-		return XprFalse;
-	
-	//glUniform2fv(uniform->loc, count, value);
-	return XprTrue;
+	return xprGpuProgramUniformfv(self, hash, count, value);
 }
 
 XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
-	XprGpuProgramUniform* uniform;
-	if(nullptr == self)
-		return XprFalse;
-
-	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//xprDbgStr("XprGpuProgram is not inited!\n");
-		return XprFalse;
-	}
-
-	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
-	if(nullptr == uniform)
-		return XprFalse;
-	
-	//glUniform3fv(uniform->loc, count, value);
-	return XprTrue;
+	return xprGpuProgramUniformfv(self, hash, count, value);
 }
 
 XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
-	XprGpuProgramUniform* uniform;
-	if(nullptr == self)
-		return XprFalse;
-
-	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//xprDbgStr("XprGpuProgram is not inited!\n");
-		return XprFalse;
-	}
-
-	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
-	if(nullptr == uniform)
-		return XprFalse;
-	
-	//glUniform4fv(uniform->loc, count, value);
-	return XprTrue;
+	return xprGpuProgramUniformfv(self, hash, count, value);
 }
 
 XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value)
 {
-	XprGpuProgramUniform* uniform;
-	if(nullptr == self)
-		return XprFalse;
-
-	if(0 == (self->flags & XprGpuProgram_Inited)) {
-		//xprDbgStr("XprGpuProgram is not inited!\n");
-		return XprFalse;
-	}
-
-	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
-	if(nullptr == uniform)
-		return XprFalse;
-	
-	//glUniformMatrix4fv(uniform->loc, count, transpose, value);
-	return XprTrue;
+	return xprGpuProgramUniformfv(self, hash, count, value);
 }
 
 XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
 {
 	XprGpuProgramUniform* uniform;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -354,21 +311,16 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		//xprDbgStr("XprGpuProgram is not inited!\n");
 		return XprFalse;
 	}
-
+	
 	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
-	if(nullptr == uniform)
-		return XprFalse;
-		
-	if(uniform->texunit < 0) {
-		xprDbgStr("Not a texture!\n");
-		return XprFalse;
+	if(nullptr != uniform && -1 != uniform->texunit) {
+		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)texture->impl->d3dtex);
 	}
-	/*
-	glActiveTexture(GL_TEXTURE0 + uniform->texunit);
-	if(nullptr == texture)
-		glBindTexture(GL_TEXTURE_2D, 0);
-	else
-		glBindTexture(texture->impl->glTarget, texture->impl->glName);
-	*/	
+
+	HASH_FIND_INT(self->impl->uniformPs, &hash, uniform);
+	if(nullptr != uniform) {
+		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)texture->impl->d3dtex);
+	}
+	
 	return XprTrue;
 }
