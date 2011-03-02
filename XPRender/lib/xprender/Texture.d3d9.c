@@ -1,20 +1,20 @@
 #include "Texture.d3d9.h"
 #include "StrUtil.h"
 
-XprTextureFormatMapping XprTextureFormatMappings[] = {
-	{XprTexture_UnormR8G8B8A8, 4, D3DFMT_A8R8G8B8},
-	{XprTexture_UnormR8, 1, D3DFMT_A8},
-	{XprTexture_FloatR16, 2, D3DFMT_R16F},
-	{XprTexture_FloatR32, 4, D3DFMT_R32F},
-	{XprTexture_FloatR16G16B16A16, 8, D3DFMT_A16B16G16R16F},
-	{XprTexture_FloatR32G32B32A32, 16, D3DFMT_A32B32G32R32F},
+XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
+	{XprGpuFormat_UnormR8G8B8A8, 4, D3DFMT_A8R8G8B8},
+	{XprGpuFormat_UnormR8, 1, D3DFMT_A8},
+	{XprGpuFormat_FloatR16, 2, D3DFMT_R16F},
+	{XprGpuFormat_FloatR32, 4, D3DFMT_R32F},
+	{XprGpuFormat_FloatR16G16B16A16, 8, D3DFMT_A16B16G16R16F},
+	{XprGpuFormat_FloatR32G32B32A32, 16, D3DFMT_A32B32G32R32F},
 };
 
-XprTextureFormatMapping* XprTextureFormatMapping_Get(XprTextureFormat xprFormat)
+XprTextureGpuFormatMapping* xprTextureGpuFormatMappingGet(XprGpuFormat xprFormat)
 {
 	size_t i=0;
-	for(i=0; i<XprCountOf(XprTextureFormatMappings); ++i) {
-		XprTextureFormatMapping* mapping = &XprTextureFormatMappings[i];
+	for(i=0; i<XprCountOf(XprTextureGpuFormatMappings); ++i) {
+		XprTextureGpuFormatMapping* mapping = &XprTextureGpuFormatMappings[i];
 		if(xprFormat == mapping->xprFormat)
 			return mapping;
 	}
@@ -29,7 +29,7 @@ XprTexture* xprTextureAlloc()
 	return self;
 }
 
-size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
+size_t XprGpuFormat_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
 {
 	size_t i = 0;
 	size_t offset = 0;
@@ -48,7 +48,7 @@ size_t XprTexture_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* m
 	return offset;
 }
 
-void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprTextureFormat format)
+void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprGpuFormat format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		xprDbgStr("texture already inited!\n");
@@ -60,7 +60,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		return;
 	}
 
-	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
+	self->impl->apiFormatMapping = xprTextureGpuFormatMappingGet(format);
 	
 	if(nullptr == self->impl->apiFormatMapping) {
 		xprDbgStr("Non supported texture format: %s\n", format);
@@ -76,7 +76,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	// init cache memory
 	{
 		size_t tmpw, tmph;
-		self->surfSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
+		self->surfSizeInByte = XprGpuFormat_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
 		self->data = (unsigned char*)malloc(self->surfSizeInByte * self->surfCount);
 		memset(self->data, 0, self->surfSizeInByte * self->surfCount);
 	}
@@ -94,7 +94,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	xprTextureCommit(self);
 }
 
-void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprTextureFormat format)
+void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprGpuFormat format)
 {
 	if(self->flags & XprTextureFlag_Inited) {
 		xprDbgStr("texture already inited!\n");
@@ -106,7 +106,7 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 		return;
 	}
 
-	self->impl->apiFormatMapping = XprTextureFormatMapping_Get(format);
+	self->impl->apiFormatMapping = xprTextureGpuFormatMappingGet(format);
 	
 	if(nullptr == self->impl->apiFormatMapping) {
 		xprDbgStr("Non supported texture format: %s\n", format);
@@ -122,7 +122,7 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 	// set cache memory to null
 	{
 		size_t tmpw, tmph;
-		self->surfSizeInByte = XprTexture_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
+		self->surfSizeInByte = XprGpuFormat_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
 		self->data = nullptr;
 	}
 
@@ -152,12 +152,12 @@ unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t 
 	if(nullptr == self->data)
 		return nullptr;
 
-	return self->data + (surfIndex * self->surfSizeInByte) + XprTexture_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
+	return self->data + (surfIndex * self->surfSizeInByte) + XprGpuFormat_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
 }
 
 void xprTextureCommit(XprTexture* self)
 {
-	const XprTextureFormatMapping* mapping;
+	const XprTextureGpuFormatMapping* mapping;
 
 	if(nullptr == self)
 		return;

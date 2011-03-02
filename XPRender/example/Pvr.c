@@ -36,7 +36,7 @@ XprTexture* Pvr_createTexture(const PvrDataType* pvr)
 
 	tex = xprTextureAlloc();
 
-	xprTextureInit(tex, width, height, mipCount, 1, XprTexture_UnormR8G8B8A8);
+	xprTextureInit(tex, width, height, mipCount, 1, XprGpuFormat_UnormR8G8B8A8);
 
 	if(dataSize == tex->surfSizeInByte)
 		memcpy(tex->data, data, dataSize);

@@ -11,6 +11,8 @@ extern "C" {
 
 typedef struct XprGpuShaderImpl
 {
+	XprGpuShader i;
+
 	int glName;
 
 } XprGpuShaderImpl;
@@ -27,10 +29,22 @@ typedef struct XprGpuProgramUniform
 
 typedef struct XprGpuProgramImpl
 {
+	XprGpuProgram i;
+
 	int glName;
+	int glVertexArray;
 	struct XprGpuProgramUniform* uniforms;
 
 } XprGpuProgramImpl;
+
+typedef struct XprInputGpuFormatMapping
+{
+	XprGpuFormat xprFormat;
+	int elemCnt;
+	int elemType;
+	int normalized;
+	int stride;
+} XprInputGpuFormatMapping;
 
 #ifdef __cplusplus
 }

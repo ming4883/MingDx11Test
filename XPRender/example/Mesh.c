@@ -1,7 +1,7 @@
 #include "Mesh.h"
 
 #include "../lib/xprender/Buffer.gl.h"
-#include "../lib/xprender/Shader.gl.h"
+#include "../lib/xprender/Shader.h"
 #include "../lib/xprender/Vec2.h"
 #include "../lib/xprender/Vec3.h"
 #include "../lib/xprender/Vec4.h"
@@ -73,9 +73,6 @@ void meshInit(Mesh* self, size_t vertexCount, size_t indexCount)
 		xprBufferInit(self->impl->tcBuffer[i], XprBufferType_Vertex, self->texcoord[i].sizeInBytes, nullptr);
 	}	
 	
-#if !defined(XPR_GLES_2)
-	glGenVertexArrays(1, &self->impl->ia);
-#endif
 	self->flags |= MeshFlag_Inited;
 }
 
@@ -84,9 +81,7 @@ void meshFree(Mesh* self)
 	size_t i;
 
 	if(self->flags & MeshFlag_Inited) {
-#if !defined(XPR_GLES_2)
-		glDeleteVertexArrays(1, &self->impl->ia);
-#endif
+
 		xprBufferFree(self->impl->indexBuffer);
 		xprBufferFree(self->impl->vertexBuffer);
 		xprBufferFree(self->impl->normalBuffer);
@@ -135,6 +130,7 @@ void meshCommit(Mesh* self)
 
 void meshPreRender(Mesh* self, struct XprGpuProgram* program)
 {
+	/*
 	int vertLoc = glGetAttribLocation(program->impl->glName, self->vertex.shaderName);
 	int normLoc = glGetAttribLocation(program->impl->glName, self->normal.shaderName);
 	int colorLoc = glGetAttribLocation(program->impl->glName, self->color.shaderName);
@@ -172,6 +168,18 @@ void meshPreRender(Mesh* self, struct XprGpuProgram* program)
 			glEnableVertexAttribArray(uvLoc[i]);
 		}
 	}
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
+	*/
+
+	XprGpuProgramInput inputs[] = {
+		{self->impl->vertexBuffer, self->vertex.shaderName, 0, XprGpuFormat_FloatR32G32B32},
+		{self->impl->normalBuffer, self->normal.shaderName, 0, XprGpuFormat_FloatR32G32B32},
+		{self->impl->colorBuffer, self->color.shaderName, 0, XprGpuFormat_FloatR32G32B32A32},
+		{self->impl->tcBuffer[0], self->texcoord[0].shaderName, 0, XprGpuFormat_FloatR32G32},
+	};
+
+	xprGpuProgramBindInput(program, inputs, XprCountOf(inputs));
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
 }

@@ -12,11 +12,11 @@ void xprRenderTargetFree(XprRenderTarget* self)
 {
 	if(self->flags & XprRenderTarget_Inited) {
 		
-		XprRenderBuffer* it; XprRenderBuffer* tmp;
+		XprRenderBufferImpl* it; XprRenderBufferImpl* tmp;
 
 		LL_FOREACH_SAFE(self->impl->bufferList, it, tmp) {
 			LL_DELETE(self->impl->bufferList, it);
-			xprTextureFree(it->texture);
+			xprTextureFree(it->i.texture);
 			free(it);
 		}
 
@@ -43,28 +43,28 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 	self->flags |= XprRenderTarget_Inited;
 }
 
-XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprTextureFormat format)
+XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuFormat format)
 {
-	XprRenderBuffer* buffer;
-	XprRenderBuffer* it;
+	XprRenderBufferImpl* buffer;
+	XprRenderBufferImpl* it;
 	LL_FOREACH(self->impl->bufferList, it) {
-		if(XprFalse == it->acquired && (it->texture->format == format)) {
-			return it;
+		if(XprFalse == it->acquired && (it->i.texture->format == format)) {
+			return &it->i;
 		}
 	}
 
-	buffer = malloc(sizeof(XprRenderBuffer));
+	buffer = malloc(sizeof(XprRenderBufferImpl));
 	buffer->acquired = XprTrue;
-	buffer->texture = xprTextureAlloc();
-	xprTextureInitRtt(buffer->texture, self->width, self->height, 0, 1, format);
+	buffer->i.texture = xprTextureAlloc();
+	xprTextureInitRtt(buffer->i.texture, self->width, self->height, 0, 1, format);
 
 	LL_APPEND(self->impl->bufferList, buffer);
 	++self->impl->bufferCount;
 
-	return buffer;
+	return &buffer->i;
 }
 
-void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer)
+void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBuffer* buffer)
 {
 	if(nullptr == self)
 		return;
@@ -72,21 +72,10 @@ void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBufferHandle b
 	if(nullptr == buffer)
 		return;
 
-	((XprRenderBuffer*)buffer)->acquired = XprFalse;
+	((XprRenderBufferImpl*)buffer)->acquired = XprFalse;
 }
 
-struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBufferHandle buffer)
-{
-	if(nullptr == self)
-		return nullptr;
-
-	if(nullptr == buffer)
-		return nullptr;
-
-	return ((XprRenderBuffer*)buffer)->texture;
-}
-
-void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth)
+void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, XprRenderBuffer* depth)
 {
 	size_t bufCnt;
 	XprRenderBuffer** curr;
@@ -111,7 +100,7 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colo
 
 	// attach depth buffers
 	if(depth != nullptr) {
-		XprTexture* tex = ((XprRenderBuffer*)depth)->texture;
+		XprTexture* tex = depth->texture;
 		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
 	}
 

@@ -21,6 +21,7 @@ IF( WIN32 )
 		lib/xprender/Buffer.gl.h
 		lib/xprender/Framework.h
 		lib/xprender/Framework.windows.gl.c
+		lib/xprender/GpuFormat.h
 		lib/xprender/GpuState.h
 		lib/xprender/GpuState.gl.c
 		lib/xprender/GpuState.gl.h
@@ -42,7 +43,6 @@ IF( WIN32 )
 		lib/xprender/StrHashMacro.h
 		lib/xprender/StrUtil.h
 		lib/xprender/Texture.h
-		lib/xprender/Texture.format.h
 		lib/xprender/Texture.gl.c
 		lib/xprender/Texture.gl.h
 		lib/xprender/Vec2.c
@@ -60,6 +60,7 @@ IF( WIN32 )
 		lib/xprender/Buffer.d3d9.h
 		lib/xprender/Framework.h
 		lib/xprender/Framework.windows.d3d9.c
+		lib/xprender/GpuFormat.h
 		lib/xprender/GpuState.h
 		lib/xprender/GpuState.d3d9.c
 		lib/xprender/GpuState.d3d9.h
@@ -81,7 +82,6 @@ IF( WIN32 )
 		lib/xprender/StrHashMacro.h
 		lib/xprender/StrUtil.h
 		lib/xprender/Texture.h
-		lib/xprender/Texture.format.h
 		lib/xprender/Texture.d3d9.c
 		lib/xprender/Texture.d3d9.h
 		lib/xprender/Vec2.c

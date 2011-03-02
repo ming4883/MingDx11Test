@@ -1,5 +1,6 @@
 #include "Shader.gl.h"
 #include "Texture.gl.h"
+#include "Buffer.gl.h"
 #include <stdio.h>
 
 GLenum xprGL_SHADER_TYPE[] = {
@@ -14,36 +15,36 @@ GLenum xprGL_SHADER_TYPE[] = {
 
 XprGpuShader* xprGpuShaderAlloc()
 {
-	XprGpuShader* self;
-	XprAllocWithImpl(self, XprGpuShader, XprGpuShaderImpl);
-
-	return self;
+	XprGpuShaderImpl* self = malloc(sizeof(XprGpuShaderImpl));
+	memset(self, 0, sizeof(XprGpuShaderImpl));
+	return &self->i;
 }
 
 XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type)
 {
 	int compileStatus;
+	XprGpuShaderImpl* impl = (XprGpuShaderImpl*)self;
 
 	if(self->flags & XprGpuShader_Inited) {
 		xprDbgStr("XprGpuShader already inited!\n");
 		return XprFalse;
 	}
 
-	self->type = type;
-	self->impl->glName = glCreateShader(xprGL_SHADER_TYPE[self->type]);
 	self->flags = 0;
+	self->type = type;
+	impl->glName = glCreateShader(xprGL_SHADER_TYPE[self->type]);
 
-	glShaderSource(self->impl->glName, srcCnt, sources, nullptr);
-	glCompileShader(self->impl->glName);
+	glShaderSource(impl->glName, srcCnt, sources, nullptr);
+	glCompileShader(impl->glName);
 
-	glGetShaderiv(self->impl->glName, GL_COMPILE_STATUS, &compileStatus);
+	glGetShaderiv(impl->glName, GL_COMPILE_STATUS, &compileStatus);
 
 	if(GL_FALSE == compileStatus) {
 		GLint len;
-		glGetShaderiv(self->impl->glName, GL_INFO_LOG_LENGTH, &len);
+		glGetShaderiv(impl->glName, GL_INFO_LOG_LENGTH, &len);
 		if(len > 0) {
 			char* buf = (char*)malloc(len);
-			glGetShaderInfoLog(self->impl->glName, len, nullptr, buf);
+			glGetShaderInfoLog(impl->glName, len, nullptr, buf);
 			xprDbgStr("glCompileShader failed: %s", buf);
 			free(buf);
 		}
@@ -59,51 +60,52 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 
 void xprGpuShaderFree(XprGpuShader* self)
 {
+	XprGpuShaderImpl* impl = (XprGpuShaderImpl*)self;
+
 	if(nullptr == self)
 		return;
 
-	glDeleteShader(self->impl->glName);
+	glDeleteShader(impl->glName);
 	free(self);
 }
 
 XprGpuProgram* xprGpuProgramAlloc()
 {
-	XprGpuProgram* self;
-	XprAllocWithImpl(self, XprGpuProgram, XprGpuProgramImpl);
-
-	return self;
+	XprGpuProgramImpl* self = malloc(sizeof(XprGpuProgramImpl));
+	memset(self, 0, sizeof(XprGpuProgramImpl));
+	return &self->i;
 }
 
 XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt)
 {
 	size_t i;
 	int linkStatus;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
 
 	if(self->flags & XprGpuProgram_Inited) {
 		xprDbgStr("XprGpuProgram already inited!\n");
 		return XprFalse;
 	}
 	
-	self->impl->glName = glCreateProgram();
-	self->flags = 0;
+	impl->glName = glCreateProgram();
 
 	// attach shaders
 	for(i=0; i<shaderCnt; ++i) {
 		if(nullptr != shaders[i]) {
-			glAttachShader(self->impl->glName, shaders[i]->impl->glName);
+			glAttachShader(impl->glName, ((XprGpuShaderImpl*)shaders[i])->glName);
 		}
 	}
 
 	// link program
-	glLinkProgram(self->impl->glName);
+	glLinkProgram(impl->glName);
 
-	glGetProgramiv(self->impl->glName, GL_LINK_STATUS, &linkStatus);
+	glGetProgramiv(impl->glName, GL_LINK_STATUS, &linkStatus);
 	if(GL_FALSE == linkStatus) {
 		GLint len;
-		glGetProgramiv(self->impl->glName, GL_INFO_LOG_LENGTH, &len);
+		glGetProgramiv(impl->glName, GL_INFO_LOG_LENGTH, &len);
 		if(len > 0) {
 			char* buf = (char*)malloc(len);
-			glGetProgramInfoLog(self->impl->glName, len, nullptr, buf);
+			glGetProgramInfoLog(impl->glName, len, nullptr, buf);
 			xprDbgStr("glLinkProgram failed: %s", buf);
 			free(buf);
 		}
@@ -112,7 +114,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 	
 	self->flags |= XprGpuProgram_Inited;
 
-	glUseProgram(self->impl->glName);
+	glUseProgram(impl->glName);
 	
 	// query all uniforms
 	{
@@ -124,20 +126,20 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		char uniformName[32];
 		GLuint texunit = 0;	
 		
-		glGetProgramiv(self->impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
+		glGetProgramiv(impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
 		
-		xprDbgStr("glProgram %d has %d uniforms\n", self->impl->glName, uniformCnt);
+		xprDbgStr("glProgram %d has %d uniforms\n", impl->glName, uniformCnt);
 
 		for(i=0; i<uniformCnt; ++i) {
 			XprGpuProgramUniform* uniform;
-			glGetActiveUniform(self->impl->glName, i, XprCountOf(uniformName), &uniformLength, &uniformSize, &uniformType, uniformName);
+			glGetActiveUniform(impl->glName, i, XprCountOf(uniformName), &uniformLength, &uniformSize, &uniformType, uniformName);
 			uniform = malloc(sizeof(XprGpuProgramUniform));
 			uniform->hash = XprHash(uniformName);
 			uniform->loc = i;
 			uniform->size = uniformSize;
 			uniform->texunit = texunit;
 
-			HASH_ADD_INT(self->impl->uniforms, hash, uniform);
+			HASH_ADD_INT(impl->uniforms, hash, uniform);
 			
 			switch(uniformType) {
 				case GL_SAMPLER_2D:
@@ -161,29 +163,41 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		
 	}
 
+#if !defined(XPR_GLES_2)
+	glGenVertexArrays(1, &impl->glVertexArray);
+#endif
+
 	return XprTrue;
 	
 }
 
 void xprGpuProgramFree(XprGpuProgram* self)
 {
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
 	if(nullptr == self)
 		return;
 
 	{
 		XprGpuProgramUniform* curr, *temp;
-		HASH_ITER(hh, self->impl->uniforms, curr, temp) {
-			HASH_DEL(self->impl->uniforms, curr);
+		HASH_ITER(hh, impl->uniforms, curr, temp) {
+			HASH_DEL(impl->uniforms, curr);
 			free(curr);
 		}
 	}
 
-	glDeleteProgram(self->impl->glName);
+	glDeleteProgram(impl->glName);
+
+#if !defined(XPR_GLES_2)
+	glDeleteVertexArrays(1, &impl->glVertexArray);
+#endif
+
 	free(self);
 }
 
 void xprGpuProgramPreRender(XprGpuProgram* self)
 {
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return;
 
@@ -192,12 +206,14 @@ void xprGpuProgramPreRender(XprGpuProgram* self)
 		return;
 	}
 
-	glUseProgram(self->impl->glName);
+	glUseProgram(impl->glName);
 }
 
 XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -206,7 +222,7 @@ XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->uniforms, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -217,6 +233,8 @@ XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t co
 XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -225,7 +243,7 @@ XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->uniforms, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -236,6 +254,8 @@ XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t co
 XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -244,7 +264,7 @@ XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->uniforms, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -255,6 +275,8 @@ XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t co
 XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -263,7 +285,7 @@ XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->uniforms, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -274,6 +296,8 @@ XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t co
 XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -282,7 +306,7 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->uniforms, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -293,6 +317,8 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return XprFalse;
 
@@ -301,7 +327,7 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(self->impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->uniforms, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 		
@@ -317,4 +343,47 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		glBindTexture(texture->impl->glTarget, texture->impl->glName);
 		
 	return XprTrue;
+}
+
+XprInputGpuFormatMapping XprInputGpuFormatMappings[] = {
+	{XprGpuFormat_FloatR32,				1, GL_FLOAT, 0, sizeof(float)},
+	{XprGpuFormat_FloatR32G32,			2, GL_FLOAT, 0, sizeof(float) * 2},
+	{XprGpuFormat_FloatR32G32B32,		3, GL_FLOAT, 0, sizeof(float) * 3},
+	{XprGpuFormat_FloatR32G32B32A32,	4, GL_FLOAT, 0, sizeof(float) * 4},
+};
+
+XprInputGpuFormatMapping* xprInputGpuFormatMappingGet(XprGpuFormat xprFormat)
+{
+	size_t i=0;
+	for(i=0; i<XprCountOf(XprInputGpuFormatMappings); ++i) {
+		XprInputGpuFormatMapping* mapping = &XprInputGpuFormatMappings[i];
+		if(xprFormat == mapping->xprFormat)
+			return mapping;
+	}
+
+	return nullptr;
+}
+
+void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count)
+{
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
+	size_t attri = 0;
+	
+#if !defined(XPR_GLES_2)
+	glBindVertexArray(impl->glVertexArray);
+#endif
+
+	for(attri=0; attri<count; ++attri) {
+		XprGpuProgramInput* i = &inputs[attri];
+		XprInputGpuFormatMapping* m = xprInputGpuFormatMappingGet(i->format);
+
+		int loc = glGetAttribLocation(impl->glName, i->name);
+
+		if(nullptr != m && nullptr != i->buffer && -1 != loc) {
+			glBindBuffer(GL_ARRAY_BUFFER, i->buffer->impl->glName);
+			glVertexAttribPointer(loc, m->elemCnt, m->elemType, m->normalized, m->stride, (void*)i->offset);
+			glEnableVertexAttribArray(loc);
+		}
+	}
 }

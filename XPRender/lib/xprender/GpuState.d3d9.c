@@ -2,10 +2,9 @@
 
 XprGpuState* xprGpuStateAlloc()
 {
-	XprGpuState* self;
-	XprAllocWithImpl(self, XprGpuState, XprGpuStateImpl);
-
-	return self;
+	XprGpuStateImpl* self = malloc(sizeof(XprGpuStateImpl));
+	memset(self, 0, sizeof(XprGpuStateImpl));
+	return &self->i;
 }
 
 void xprGpuStateFree(XprGpuState* self)

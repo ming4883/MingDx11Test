@@ -10,17 +10,7 @@ extern "C" {
 
 typedef struct XprGpuStateImpl
 {
-	/*
-	XprBool depthTest;
-	XprBool depthWrite;
-	XprBool culling;
-	XprBool blending;
-	XprGpuStateType blendFactorSrc;
-	XprGpuStateType blendFactorDest;
-	XprGpuStateType blendFactorSrcAlpha;
-	XprGpuStateType blendFactorDestAlpha;
-	XprGpuStateType polygonMode;
-	*/
+	XprGpuState i;
 	XprGpuStateDesc last;
 	
 } XprGpuStateImpl;

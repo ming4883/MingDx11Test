@@ -31,8 +31,6 @@ typedef enum XprGpuStateType
 	XprGpuState_PolygonMode_Fill,
 } XprGpuStateType;
 
-struct XprGpuStateImpl;
-
 typedef struct XprGpuStateDesc
 {
 	XprBool depthTest;
@@ -50,7 +48,6 @@ typedef struct XprGpuState
 {
 	size_t flags;	// combinations of XprGpuStateFlag
 	XprGpuStateDesc desc;
-	struct XprGpuStateImpl* impl;
 
 } XprGpuState;
 
@@ -62,21 +59,6 @@ void xprGpuStateInit(XprGpuState* self);
 
 void xprGpuStatePreRender(XprGpuState* self);
 
-/*
-void xprGpuStateSetDepthTestEnabled(XprGpuState* self, XprBool value);
-
-void xprGpuStateSetDepthWriteEnabled(XprGpuState* self, XprBool value);
-
-void xprGpuStateSetCullEnabled(XprGpuState* self, XprBool value);
-
-void xprGpuStateSetBlendEnabled(XprGpuState* self, XprBool value);
-
-void xprGpuStateSetBlendFactorRGB(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest);
-
-void xprGpuStateSetBlendFactorA(XprGpuState* self, XprGpuStateType blendFactorSrc, XprGpuStateType blendFactorDest);
-
-void xprGpuStateSetPolygonMode(XprGpuState* self, XprGpuStateType polygonMode);
-*/
 
 #ifdef __cplusplus
 }

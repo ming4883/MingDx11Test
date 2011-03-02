@@ -10,6 +10,7 @@ extern "C" {
 
 typedef struct XprGpuStateImpl
 {
+	XprGpuState i;
 	XprGpuStateDesc last;
 	
 } XprGpuStateImpl;

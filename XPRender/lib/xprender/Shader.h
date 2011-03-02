@@ -3,12 +3,14 @@
 
 #include "Platform.h"
 #include "StrHash.h"
+#include "GpuFormat.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct XprTexture;
+struct XprBuffer;
 
 // XprGpuShader
 typedef enum XprGpuShaderType
@@ -25,13 +27,10 @@ typedef enum XprGpuShaderFlag
 	XprGpuShader_Inited = 1 << 0,
 } XprGpuShaderFlag;
 
-struct XprGpuShaderImpl;
-
 typedef struct XprGpuShader
 {
 	size_t flags;
 	XprGpuShaderType type;
-	struct XprGpuShaderImpl* impl;
 
 } XprGpuShader;
 
@@ -48,12 +47,9 @@ typedef enum XprGpuProgramFlag
 	XprGpuProgram_Inited = 1 << 0,
 } XprGpuProgramFlag;
 
-struct XprGpuProgramImpl;
-
 typedef struct XprGpuProgram
 {
 	size_t flags;
-	struct XprGpuProgramImpl* impl;
 
 } XprGpuProgram;
 
@@ -71,6 +67,16 @@ XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t co
 XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
 XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value);
 XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture);
+
+typedef struct XprGpuProgramInput
+{
+	struct XprBuffer* buffer;
+	const char* name;
+	size_t offset;
+	XprGpuFormat format;
+} XprGpuProgramInput;
+
+void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count);
 
 #ifdef __cplusplus
 }

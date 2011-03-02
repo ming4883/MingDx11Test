@@ -27,7 +27,7 @@ void Label_init(Label* self, size_t width, size_t height)
 	self->impl->hdc = CreateCompatibleDC(nullptr);
 	self->impl->hbmp = CreateBitmap(width, height, 1, 32, nullptr);
 	self->texture = xprTextureAlloc();
-	xprTextureInit(self->texture, width, height, 1, 1, XprTexture_UnormR8);
+	xprTextureInit(self->texture, width, height, 1, 1, XprGpuFormat_UnormR8);
 	SelectObject(self->impl->hdc, self->impl->hbmp);
 }
 

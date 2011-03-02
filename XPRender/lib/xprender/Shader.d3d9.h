@@ -11,6 +11,8 @@ extern "C" {
 
 typedef struct XprGpuShaderImpl
 {
+	XprGpuShader i;
+
 	IDirect3DVertexShader9* d3dvs;
 	IDirect3DPixelShader9* d3dps;
 	ID3DXBuffer* bytecode;
@@ -30,6 +32,8 @@ typedef struct XprGpuProgramUniform
 
 typedef struct XprGpuProgramImpl
 {
+	XprGpuProgram i;
+
 	IDirect3DVertexShader9* d3dvs;
 	IDirect3DPixelShader9* d3dps;
 	XprGpuProgramUniform* uniformVs;

@@ -4,10 +4,9 @@
 
 XprGpuShader* xprGpuShaderAlloc()
 {
-	XprGpuShader* self;
-	XprAllocWithImpl(self, XprGpuShader, XprGpuShaderImpl);
-
-	return self;
+	XprGpuShaderImpl* self = malloc(sizeof(XprGpuShaderImpl));
+	memset(self, 0, sizeof(XprGpuShaderImpl));
+	return &self->i;
 }
 
 XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt, XprGpuShaderType type)
@@ -16,6 +15,7 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 	ID3DXBuffer* code;
 	ID3DXBuffer* errors;
 	ID3DXConstantTable* constTable;
+	XprGpuShaderImpl* impl = (XprGpuShaderImpl*)self;
 
 	// compile shader
 	if(XprGpuShaderType_Vertex == type) {
@@ -45,13 +45,13 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 	if(XprGpuShaderType_Vertex == type) {
 		hr = IDirect3DDevice9_CreateVertexShader(xprAPI.d3ddev,
 			code->lpVtbl->GetBufferPointer(code),
-			&self->impl->d3dvs
+			&impl->d3dvs
 			);
 	}
 	else if(XprGpuShaderType_Fragment == type) {
 		hr = IDirect3DDevice9_CreatePixelShader(xprAPI.d3ddev,
 			code->lpVtbl->GetBufferPointer(code),
-			&self->impl->d3dps
+			&impl->d3dps
 			);
 	}
 
@@ -63,8 +63,8 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 	}
 
 	// save the byte code for later use
-	self->impl->bytecode = code;
-	self->impl->constTable = constTable;
+	impl->bytecode = code;
+	impl->constTable = constTable;
 
 	self->flags |= XprGpuShader_Inited;
 
@@ -73,20 +73,22 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 
 void xprGpuShaderFree(XprGpuShader* self)
 {
+	XprGpuShaderImpl* impl = (XprGpuShaderImpl*)self;
+
 	if(nullptr == self)
 		return;
 
-	if(nullptr != self->impl->d3dvs) {
-		IDirect3DVertexShader9_Release(self->impl->d3dvs);
+	if(nullptr != impl->d3dvs) {
+		IDirect3DVertexShader9_Release(impl->d3dvs);
 	}
-	if(nullptr != self->impl->d3dps) {
-		IDirect3DPixelShader9_Release(self->impl->d3dps);
+	if(nullptr != impl->d3dps) {
+		IDirect3DPixelShader9_Release(impl->d3dps);
 	}
-	if(nullptr != self->impl->bytecode) {
-		self->impl->bytecode->lpVtbl->Release(self->impl->bytecode);
+	if(nullptr != impl->bytecode) {
+		impl->bytecode->lpVtbl->Release(impl->bytecode);
 	}
-	if(nullptr != self->impl->constTable) {
-		self->impl->constTable->lpVtbl->Release(self->impl->constTable);
+	if(nullptr != impl->constTable) {
+		impl->constTable->lpVtbl->Release(impl->constTable);
 	}
 
 	free(self);
@@ -94,23 +96,22 @@ void xprGpuShaderFree(XprGpuShader* self)
 
 XprGpuProgram* xprGpuProgramAlloc()
 {
-	XprGpuProgram* self;
-	XprAllocWithImpl(self, XprGpuProgram, XprGpuProgramImpl);
-
-	return self;
+	XprGpuProgramImpl* self = malloc(sizeof(XprGpuProgramImpl));
+	memset(self, 0, sizeof(XprGpuProgramImpl));
+	return &self->i;
 }
 
 void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform* table)
 {
 	UINT i;
-	ID3DXConstantTable* constTable = self->impl->constTable;
+	ID3DXConstantTable* constTable = ((XprGpuShaderImpl*)self)->constTable;
 
 	{
 		const char* samplers[16] = {0};
 		UINT samplerCnt = 0;
 		
 		D3DXGetShaderSamplers(
-			self->impl->bytecode->lpVtbl->GetBufferPointer(self->impl->bytecode),
+			((XprGpuShaderImpl*)self)->bytecode->lpVtbl->GetBufferPointer(((XprGpuShaderImpl*)self)->bytecode),
 			samplers,
 			&samplerCnt);
 
@@ -154,6 +155,7 @@ void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform* table
 
 XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt)
 {
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
 	XprGpuShader* vs = nullptr;
 	XprGpuShader* ps = nullptr;
 
@@ -175,15 +177,15 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 				case XprGpuShaderType_Vertex:
 					{
 						vs = shaders[i];
-						self->impl->d3dvs = shaders[i]->impl->d3dvs;
-						COM_ADD_REF(self->impl->d3dvs);
+						impl->d3dvs = ((XprGpuShaderImpl*)shaders[i])->d3dvs;
+						COM_ADD_REF(impl->d3dvs);
 						break;
 					}
 				case XprGpuShaderType_Fragment:
 					{
 						ps = shaders[i];
-						self->impl->d3dps = shaders[i]->impl->d3dps;
-						COM_ADD_REF(self->impl->d3dps);
+						impl->d3dps = ((XprGpuShaderImpl*)shaders[i])->d3dps;
+						COM_ADD_REF(impl->d3dps);
 						break;
 					}
 			}
@@ -191,14 +193,14 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 	}
 #undef COM_ADD_REF
 
-	if(nullptr == self->impl->d3dvs || nullptr == self->impl->d3dps) {
-		xprDbgStr("d3d9 incomplete program vs:%d ps:%d", self->impl->d3dvs, self->impl->d3dps);
+	if(nullptr == impl->d3dvs || nullptr == impl->d3dps) {
+		xprDbgStr("d3d9 incomplete program vs:%d ps:%d", impl->d3dvs, impl->d3dps);
 		return XprFalse;
 	}
 
 	// collect uniforms
-	xprGpuProgramUniformCollect(vs, self->impl->uniformVs);
-	xprGpuProgramUniformCollect(ps, self->impl->uniformPs);
+	xprGpuProgramUniformCollect(vs, impl->uniformVs);
+	xprGpuProgramUniformCollect(ps, impl->uniformPs);
 
 	self->flags |= XprGpuProgram_Inited;
 
@@ -208,28 +210,30 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 
 void xprGpuProgramFree(XprGpuProgram* self)
 {
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return;
 
 	{
 		XprGpuProgramUniform* curr, *temp;
-		HASH_ITER(hh, self->impl->uniformVs, curr, temp) {
-			HASH_DEL(self->impl->uniformVs, curr);
+		HASH_ITER(hh, impl->uniformVs, curr, temp) {
+			HASH_DEL(impl->uniformVs, curr);
 			free(curr);
 		}
 
-		HASH_ITER(hh, self->impl->uniformPs, curr, temp) {
-			HASH_DEL(self->impl->uniformPs, curr);
+		HASH_ITER(hh, impl->uniformPs, curr, temp) {
+			HASH_DEL(impl->uniformPs, curr);
 			free(curr);
 		}
 	}
 
-	if(nullptr != self->impl->d3dvs) {
-		IDirect3DVertexShader9_Release(self->impl->d3dvs);
+	if(nullptr != impl->d3dvs) {
+		IDirect3DVertexShader9_Release(impl->d3dvs);
 	}
 
-	if(nullptr != self->impl->d3dps) {
-		IDirect3DPixelShader9_Release(self->impl->d3dps);
+	if(nullptr != impl->d3dps) {
+		IDirect3DPixelShader9_Release(impl->d3dps);
 	}
 
 	free(self);
@@ -237,6 +241,8 @@ void xprGpuProgramFree(XprGpuProgram* self)
 
 void xprGpuProgramPreRender(XprGpuProgram* self)
 {
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
 	if(nullptr == self)
 		return;
 
@@ -245,13 +251,14 @@ void xprGpuProgramPreRender(XprGpuProgram* self)
 		return;
 	}
 
-	IDirect3DDevice9_SetVertexShader(xprAPI.d3ddev, self->impl->d3dvs);
-	IDirect3DDevice9_SetPixelShader(xprAPI.d3ddev, self->impl->d3dps);
+	IDirect3DDevice9_SetVertexShader(xprAPI.d3ddev, impl->d3dvs);
+	IDirect3DDevice9_SetPixelShader(xprAPI.d3ddev, impl->d3dps);
 }
 
 XprBool xprGpuProgramUniformfv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
 
 	if(nullptr == self)
 		return XprFalse;
@@ -261,12 +268,12 @@ XprBool xprGpuProgramUniformfv(XprGpuProgram* self, XprHashCode hash, size_t cou
 		return XprFalse;
 	}
 	
-	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
+	HASH_FIND_INT(impl->uniformVs, &hash, uniform);
 	if(nullptr != uniform) {
 		IDirect3DDevice9_SetVertexShaderConstantF(xprAPI.d3ddev, uniform->loc, value, uniform->size * count);
 	}
 
-	HASH_FIND_INT(self->impl->uniformPs, &hash, uniform);
+	HASH_FIND_INT(impl->uniformPs, &hash, uniform);
 	if(nullptr != uniform) {
 		IDirect3DDevice9_SetPixelShaderConstantF(xprAPI.d3ddev, uniform->loc, value, uniform->size * count);
 	}
@@ -303,6 +310,7 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
 {
 	XprGpuProgramUniform* uniform;
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
 
 	if(nullptr == self)
 		return XprFalse;
@@ -312,12 +320,12 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		return XprFalse;
 	}
 	
-	HASH_FIND_INT(self->impl->uniformVs, &hash, uniform);
+	HASH_FIND_INT(impl->uniformVs, &hash, uniform);
 	if(nullptr != uniform && -1 != uniform->texunit) {
 		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)texture->impl->d3dtex);
 	}
 
-	HASH_FIND_INT(self->impl->uniformPs, &hash, uniform);
+	HASH_FIND_INT(impl->uniformPs, &hash, uniform);
 	if(nullptr != uniform) {
 		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)texture->impl->d3dtex);
 	}

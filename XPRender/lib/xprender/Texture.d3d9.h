@@ -8,17 +8,17 @@
 extern "C" {
 #endif
 
-typedef struct XprTextureFormatMapping
+typedef struct XprTextureGpuFormatMapping
 {
-	XprTextureFormat xprFormat;
+	XprGpuFormat xprFormat;
 	size_t pixelSize;
 	D3DFORMAT d3dFormat;
-} XprTextureFormatMapping;
+} XprTextureGpuFormatMapping;
 
 typedef struct XprTextureImpl
 {
 	IDirect3DTexture9* d3dtex;
-	struct XprTextureFormatMapping* apiFormatMapping;
+	struct XprTextureGpuFormatMapping* apiFormatMapping;
 } XprTextureImpl;
 
 #ifdef __cplusplus

@@ -10,19 +10,21 @@
 extern "C" {
 #endif
 
-typedef struct XprRenderBuffer
+typedef struct XprRenderBufferImpl
 {
-	struct XprRenderBuffer* next;
-	struct XprRenderBuffer* last;
-	XprTexture* texture;
+	XprRenderBuffer i;
+
+	struct XprRenderBufferImpl* next;
+	struct XprRenderBufferImpl* last;
 	XprBool acquired;
-} XprRenderBuffer;
+
+} XprRenderBufferImpl;
 
 typedef struct XprRenderTargetImpl
 {
 	int glName;
 	size_t bufferCount;
-	struct XprRenderBuffer* bufferList;
+	struct XprRenderBufferImpl* bufferList;
 } XprRenderTargetImpl;
 
 

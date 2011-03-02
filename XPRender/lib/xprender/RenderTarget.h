@@ -2,7 +2,7 @@
 #define __XPRENDER_RENDERTARGET_H__
 
 #include "Platform.h"
-#include "Texture.format.h"
+#include "GpuFormat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,10 @@ typedef struct XprRenderTarget
 
 } XprRenderTarget;
 
-typedef void* XprRenderBufferHandle;
+typedef struct XprRenderBuffer
+{
+	struct XprTexture* texture;
+} XprRenderBuffer;
 
 XprRenderTarget* xprRenderTargetAlloc();
 
@@ -35,13 +38,11 @@ void xprRenderTargetFree(XprRenderTarget* self);
 
 void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height);
 
-XprRenderBufferHandle xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprTextureFormat format);
+XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuFormat format);
 
-void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBufferHandle buffer);
+void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBuffer* buffer);
 
-struct XprTexture* XprRenderTarget_getTexture(XprRenderTarget* self, XprRenderBufferHandle buffer);
-
-void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBufferHandle* colors, XprRenderBufferHandle depth);
+void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, XprRenderBuffer* depth);
 
 void xprRenderTargetSetViewport(float x, float y, float w, float h, float zmin, float zmax);
 
