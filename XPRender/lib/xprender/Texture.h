@@ -14,8 +14,6 @@ typedef enum XprTextureFlag
 	XprTextureFlag_Dirty = 1 << 1,
 } XprTextureFlag;
 
-struct XprTextureImpl;
-
 typedef struct XprTexture
 {
 	size_t flags;
@@ -26,7 +24,6 @@ typedef struct XprTexture
 	size_t surfSizeInByte;
 	XprGpuFormat format;
 	unsigned char* data;	// nullptr implies this is a render-target
-	struct XprTextureImpl* impl;
 } XprTexture;
 
 XprTexture* xprTextureAlloc();

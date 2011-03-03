@@ -75,7 +75,7 @@ void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBuffer* buffer
 	((XprRenderBufferImpl*)buffer)->acquired = XprFalse;
 }
 
-GLenum glAttachmentPoints[] =
+static GLenum xprGL_ATTACHMENT_POINT[] =
 {	GL_COLOR_ATTACHMENT0,
 #if !defined(XPR_GLES_2)
 	GL_COLOR_ATTACHMENT1,
@@ -105,7 +105,7 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, X
 		curr = (XprRenderBuffer**)colors;
 		while(*curr != nullptr) {
 			XprTexture* tex = (*curr)->texture;
-			glFramebufferTexture2D(GL_FRAMEBUFFER, glAttachmentPoints[bufCnt], tex->impl->glTarget, tex->impl->glName, 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, xprGL_ATTACHMENT_POINT[bufCnt], ((XprTextureImpl*)tex)->glTarget, ((XprTextureImpl*)tex)->glName, 0);
 			++curr;
 			++bufCnt;
 		}
@@ -114,12 +114,12 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, X
 	// attach depth buffers
 	if(depth != nullptr) {
 		XprTexture* tex = depth->texture;
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, ((XprTextureImpl*)tex)->glTarget, ((XprTextureImpl*)tex)->glName, 0);
 	}
 
 #if !defined(XPR_GLES_2)
 	// assign buffer bindings
-	glDrawBuffers(bufCnt, glAttachmentPoints);
+	glDrawBuffers(bufCnt, xprGL_ATTACHMENT_POINT);
 #endif
 	{	// check for framebuffer's complete status
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);

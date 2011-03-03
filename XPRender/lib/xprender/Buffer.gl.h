@@ -10,6 +10,8 @@ extern "C" {
 
 typedef struct XprBufferImpl
 {
+	XprBuffer i;
+
 	int glName;
 	
 } XprBufferImpl;

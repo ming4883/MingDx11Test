@@ -3,7 +3,7 @@
 #include "Buffer.gl.h"
 #include <stdio.h>
 
-GLenum xprGL_SHADER_TYPE[] = {
+static GLenum xprGL_SHADER_TYPE[] = {
 	GL_VERTEX_SHADER,
 	GL_FRAGMENT_SHADER,
 #if !defined(XPR_GLES_2)
@@ -340,7 +340,7 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	if(nullptr == texture)
 		glBindTexture(GL_TEXTURE_2D, 0);
 	else
-		glBindTexture(texture->impl->glTarget, texture->impl->glName);
+		glBindTexture(((XprTextureImpl*)texture)->glTarget, ((XprTextureImpl*)texture)->glName);
 		
 	return XprTrue;
 }
@@ -376,14 +376,76 @@ void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, siz
 
 	for(attri=0; attri<count; ++attri) {
 		XprGpuProgramInput* i = &inputs[attri];
-		XprInputGpuFormatMapping* m = xprInputGpuFormatMappingGet(i->format);
 
-		int loc = glGetAttribLocation(impl->glName, i->name);
+		if(nullptr == i->buffer)
+			continue;
 
-		if(nullptr != m && nullptr != i->buffer && -1 != loc) {
-			glBindBuffer(GL_ARRAY_BUFFER, i->buffer->impl->glName);
-			glVertexAttribPointer(loc, m->elemCnt, m->elemType, m->normalized, m->stride, (void*)i->offset);
-			glEnableVertexAttribArray(loc);
+		if(XprBufferType_Index == i->buffer->type) {
+			// bind index buffer
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ((XprBufferImpl*)i->buffer)->glName);
 		}
+		else if(XprBufferType_Vertex == i->buffer->type) {
+			// bind vertex buffer
+			XprInputGpuFormatMapping* m = xprInputGpuFormatMappingGet(i->format);
+
+			int loc = glGetAttribLocation(impl->glName, i->name);
+
+			if(nullptr != m && -1 != loc) {
+				glBindBuffer(GL_ARRAY_BUFFER, ((XprBufferImpl*)i->buffer)->glName);
+				glVertexAttribPointer(loc, m->elemCnt, m->elemType, m->normalized, m->stride, (void*)i->offset);
+				glEnableVertexAttribArray(loc);
+			}
+		}
+	}
+}
+
+static GLenum xprGL_INDEX_TYPE[] = {
+	GL_UNSIGNED_SHORT,
+	GL_UNSIGNED_BYTE,
+	GL_UNSIGNED_INT,
+};
+
+void xprGpuDrawPoint(size_t offset, size_t count)
+{
+	glDrawArrays(GL_POINTS, offset, count);
+}
+
+void xprGpuDrawLine(size_t offset, size_t count, size_t flags)
+{
+	GLenum mode = (flags & XprGpuDraw_Stripped) ? GL_LINE_STRIP : GL_LINES;
+
+	if(flags & XprGpuDraw_Indexed) {
+		GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
+		glDrawElements(mode, count, indexType, (void*)offset);
+	}
+	else {
+		glDrawArrays(mode, offset, count);
+	}
+}
+
+void xprGpuDrawTriangle(size_t offset, size_t count, size_t flags)
+{
+	GLenum mode = (flags & XprGpuDraw_Stripped) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
+
+	if(flags & XprGpuDraw_Indexed) {
+		GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
+		glDrawElements(mode, count, indexType, (void*)offset);
+	}
+	else {
+		glDrawArrays(mode, offset, count);
+	}
+}
+
+void xprGpuDrawPatch(size_t offset, size_t count, size_t flags, size_t vertexPerPatch)
+{
+	GLenum mode = GL_PATCHES;
+	glPatchParameteri(GL_PATCH_VERTICES, vertexPerPatch);
+
+	if(flags & XprGpuDraw_Indexed) {
+		GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
+		glDrawElements(mode, count, indexType, (void*)offset);
+	}
+	else {
+		glDrawArrays(mode, offset, count);
 	}
 }

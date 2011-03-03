@@ -78,6 +78,25 @@ typedef struct XprGpuProgramInput
 
 void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count);
 
+typedef enum XprGpuDrawFlag
+{
+	XprGpuDraw_Stripped		= 0x0001,	//!< draw primitive strips, not supported with point and patch.
+
+	XprGpuDraw_Indexed		= 0x0010,	//!< draw with a 16-bit index buffer
+	XprGpuDraw_Indexed8		= 0x0011,	//!< draw with a 8-bit index buffer
+	XprGpuDraw_Indexed32	= 0x0012,	//!< draw with a 32-bit index buffer
+	
+} XprGpuDrawFlag;
+
+void xprGpuDrawPoint(size_t offset, size_t count);
+
+void xprGpuDrawLine(size_t offset, size_t count, size_t flags);
+
+void xprGpuDrawTriangle(size_t offset, size_t count, size_t flags);
+
+void xprGpuDrawPatch(size_t offset, size_t count, size_t flags, size_t vertexPerPatch);
+
+
 #ifdef __cplusplus
 }
 #endif

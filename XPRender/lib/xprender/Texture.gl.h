@@ -19,6 +19,7 @@ typedef struct XprTextureGpuFormatMapping
 
 typedef struct XprTextureImpl
 {
+	XprTexture i;
 	int glTarget;
 	int glName;
 	struct XprTextureGpuFormatMapping* apiFormatMapping;

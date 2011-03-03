@@ -9,15 +9,21 @@ extern "C" {
 
 typedef enum XprBufferType
 {
-	XprBufferType_Vertex,
-	XprBufferType_Index,
-	XprBufferType_Uniform,
+	XprBufferType_Vertex,	//!< vertex buffer
+	XprBufferType_Index,	//!< 16-bit index buffer
+	XprBufferType_Index8,	//!< 8-bit index buffer
+
+#if !defined(XPR_GLES_2)
+	XprBufferType_Index32,	//!< 32-bit index buffer
+	XprBufferType_Uniform,	//!< shader uniform buffer
+#endif
+
 } XprBufferType;
 
 typedef enum XprBufferFlag
 {
-	XprBuffer_Inited = 1 << 0,
-	XprBuffer_Mapped = 1 << 1,
+	XprBuffer_Inited = 0x0001,
+	XprBuffer_Mapped = 0x0002,
 } XprBufferFlag;
 
 typedef enum XprBufferMapAccess
@@ -27,15 +33,11 @@ typedef enum XprBufferMapAccess
 	XprBufferMapAccess_ReadWrite,
 } XprBufferMapAccess;
 
-struct XprBufferImpl;
-
 typedef struct XprBuffer
 {
 	size_t flags;	// combinations of XprBufferFlag
 	XprBufferType type;
 	size_t sizeInBytes;
-	
-	struct XprBufferImpl* impl;
 
 } XprBuffer;
 

@@ -2,13 +2,10 @@ CMAKE_MINIMUM_REQUIRED( VERSION 2.6 )
 
 PROJECT( xprender )
 
-#FILE( GLOB FREEGLUT lib/freeglut/*.c lib/freeglut/*.h )
 FILE( GLOB GLEW lib/glew/*.c lib/glew/*.h )
 FILE( GLOB GLSW lib/glsw/*.c lib/glsw/*.h )
 FILE( GLOB HTTPD lib/httpd/*.c lib/httpd/*.h )
 
-#ADD_DEFINITIONS( -DFREEGLUT_STATIC )
-#ADD_DEFINITIONS( -DFREEGLUT_LIB_PRAGMAS=0 )
 ADD_DEFINITIONS( -DGLEW_STATIC )
 
 IF( WIN32 )
@@ -264,6 +261,9 @@ TARGET_LINK_LIBRARIES( example_android xprender ${PLATFORM_LIBS} )
 
 
 IF( WIN32 )
+
+SET( PLATFORM_LIBS d3d9 d3dx9 winmm ws2_32 )
+
 ADD_LIBRARY( xprender-d3d9
 	${GLSW}
 	${HTTPD}
@@ -285,6 +285,6 @@ ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
 	example/Material.c
 	example/Material.h
 	)
-TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} d3d9 d3dx9 )
+TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
 
 ENDIF()

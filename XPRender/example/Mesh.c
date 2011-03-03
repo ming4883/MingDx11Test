@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#include "../lib/xprender/Buffer.gl.h"
+#include "../lib/xprender/Buffer.h"
 #include "../lib/xprender/Shader.h"
 #include "../lib/xprender/Vec2.h"
 #include "../lib/xprender/Vec3.h"
@@ -130,79 +130,34 @@ void meshCommit(Mesh* self)
 
 void meshPreRender(Mesh* self, struct XprGpuProgram* program)
 {
-	/*
-	int vertLoc = glGetAttribLocation(program->impl->glName, self->vertex.shaderName);
-	int normLoc = glGetAttribLocation(program->impl->glName, self->normal.shaderName);
-	int colorLoc = glGetAttribLocation(program->impl->glName, self->color.shaderName);
-	int uvLoc[MeshTrait_MaxTexcoord];
-	int i;
-	
-	for(i=0; i<MeshTrait_MaxTexcoord; ++i)
-		uvLoc[i] = glGetAttribLocation(program->impl->glName, self->texcoord[i].shaderName);
-
-#if !defined(XPR_GLES_2)
-	glBindVertexArray(self->impl->ia);
-#endif
-	if(vertLoc >= 0) {
-		glBindBuffer(GL_ARRAY_BUFFER, self->impl->vertexBuffer->impl->glName);
-		glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
-		glEnableVertexAttribArray(vertLoc);
-	}
-
-	if(normLoc >= 0) {
-		glBindBuffer(GL_ARRAY_BUFFER, self->impl->normalBuffer->impl->glName);
-		glVertexAttribPointer(normLoc, 3, GL_FLOAT, GL_FALSE, sizeof(XprVec3), 0);
-		glEnableVertexAttribArray(normLoc);
-	}
-	
-	if(colorLoc >= 0) {
-		glBindBuffer(GL_ARRAY_BUFFER, self->impl->colorBuffer->impl->glName);
-		glVertexAttribPointer(colorLoc, 4, GL_FLOAT, GL_FALSE, sizeof(XprVec4), 0);
-		glEnableVertexAttribArray(colorLoc);
-	}
-
-	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
-		if(uvLoc[i] >= 0) {
-			glBindBuffer(GL_ARRAY_BUFFER, self->impl->tcBuffer[i]->impl->glName);
-			glVertexAttribPointer(uvLoc[i], 2, GL_FLOAT, GL_FALSE, sizeof(XprVec2), 0);
-			glEnableVertexAttribArray(uvLoc[i]);
-		}
-	}
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
-	*/
-
 	XprGpuProgramInput inputs[] = {
+		{self->impl->indexBuffer},
 		{self->impl->vertexBuffer, self->vertex.shaderName, 0, XprGpuFormat_FloatR32G32B32},
 		{self->impl->normalBuffer, self->normal.shaderName, 0, XprGpuFormat_FloatR32G32B32},
 		{self->impl->colorBuffer, self->color.shaderName, 0, XprGpuFormat_FloatR32G32B32A32},
 		{self->impl->tcBuffer[0], self->texcoord[0].shaderName, 0, XprGpuFormat_FloatR32G32},
+		{self->impl->tcBuffer[1], self->texcoord[1].shaderName, 0, XprGpuFormat_FloatR32G32},
 	};
 
 	xprGpuProgramBindInput(program, inputs, XprCountOf(inputs));
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, self->impl->indexBuffer->impl->glName);
 }
 
 void meshRenderTriangles(Mesh* self)
 {
-	glDrawElements(GL_TRIANGLES, self->indexCount, GL_UNSIGNED_SHORT, 0);
+	xprGpuDrawTriangle(0, self->indexCount, XprGpuDraw_Indexed);
 }
 
 void meshRenderPatches(Mesh* self)
 {
-#if !defined(XPR_GLES_2)
 	if((self->indexCount % self->vertexPerPatch) != 0)
 		return;
 
-	glPatchParameteri(GL_PATCH_VERTICES, self->vertexPerPatch);
-	glDrawElements(GL_PATCHES, self->indexCount, GL_UNSIGNED_SHORT, 0);
-#endif
+	xprGpuDrawPatch(0, self->indexCount, XprGpuDraw_Indexed, self->vertexPerPatch);
 }
 
 void meshRenderPoints(Mesh* self)
 {
-	glDrawArrays(GL_POINTS, 0, self->vertexCount);
+	xprGpuDrawPoint(0, self->vertexCount);
 }
 
 void meshInitWithUnitSphere(Mesh* self, size_t segmentCount)

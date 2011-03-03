@@ -33,22 +33,23 @@ XprTextureGpuFormatMapping* xprTextureGpuFormatMappingGet(XprGpuFormat xprFormat
 
 XprTexture* xprTextureAlloc()
 {
-	XprTexture* self;
-	XprAllocWithImpl(self, XprTexture, XprTextureImpl);
-	return self;
+	XprTextureImpl* self = malloc(sizeof(XprTextureImpl));
+	memset(self, 0, sizeof(XprTextureImpl));
+	return &self->i;
 }
 
 size_t XprGpuFormat_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t* mipWidth, size_t* mipHeight)
 {
 	size_t i = 0;
 	size_t offset = 0;
+	XprTextureImpl* impl = (XprTextureImpl*)self;
 	
 	*mipWidth = self->width;
 	*mipHeight = self->height;
 	
 	do {
 		if(i < mipIndex) {
-			offset += self->impl->apiFormatMapping->pixelSize * (*mipWidth) * (*mipHeight);
+			offset += impl->apiFormatMapping->pixelSize * (*mipWidth) * (*mipHeight);
 			if(*mipWidth > 1) *mipWidth /= 2;
 			if(*mipHeight > 1) *mipHeight /= 2;
 		}
@@ -59,6 +60,7 @@ size_t XprGpuFormat_getMipLevelOffset(XprTexture* self, size_t mipIndex, size_t*
 
 void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprGpuFormat format)
 {
+	XprTextureImpl* impl = (XprTextureImpl*)self;
 	if(self->flags & XprTextureFlag_Inited) {
 		xprDbgStr("texture already inited!\n");
 		return;
@@ -69,9 +71,9 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		return;
 	}
 
-	self->impl->apiFormatMapping = xprTextureGpuFormatMappingGet(format);
+	impl->apiFormatMapping = xprTextureGpuFormatMappingGet(format);
 	
-	if(nullptr == self->impl->apiFormatMapping) {
+	if(nullptr == impl->apiFormatMapping) {
 		xprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
@@ -89,13 +91,13 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 		memset(self->data, 0, self->surfSizeInByte * self->surfCount);
 	}
 
-	glGenTextures(1, &self->impl->glName);
+	glGenTextures(1, &impl->glName);
 	
 	if(self->surfCount == 1) {
-		self->impl->glTarget = GL_TEXTURE_2D;
-		glBindTexture(self->impl->glTarget, self->impl->glName);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		impl->glTarget = GL_TEXTURE_2D;
+		glBindTexture(impl->glTarget, impl->glName);
+		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
 	xprTextureCommit(self);
@@ -103,6 +105,8 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 
 void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mipCount, size_t surfCount, XprGpuFormat format)
 {
+	XprTextureImpl* impl = (XprTextureImpl*)self;
+
 	if(self->flags & XprTextureFlag_Inited) {
 		xprDbgStr("texture already inited!\n");
 		return;
@@ -113,9 +117,9 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 		return;
 	}
 
-	self->impl->apiFormatMapping = xprTextureGpuFormatMappingGet(format);
+	impl->apiFormatMapping = xprTextureGpuFormatMappingGet(format);
 	
-	if(nullptr == self->impl->apiFormatMapping) {
+	if(nullptr == impl->apiFormatMapping) {
 		xprDbgStr("Non supported texture format: %s\n", format);
 		return;
 	}
@@ -132,13 +136,13 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 		self->data = nullptr;
 	}
 
-	glGenTextures(1, &self->impl->glName);
+	glGenTextures(1, &impl->glName);
 	
 	if(self->surfCount == 1) {
-		self->impl->glTarget = GL_TEXTURE_2D;
-		glBindTexture(self->impl->glTarget, self->impl->glName);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(self->impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		impl->glTarget = GL_TEXTURE_2D;
+		glBindTexture(impl->glTarget, impl->glName);
+		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
 	xprTextureCommit(self);
@@ -166,39 +170,42 @@ void xprTextureCommit(XprTexture* self)
 {
 	size_t i;
 	const XprTextureGpuFormatMapping* mapping;
+	XprTextureImpl* impl = (XprTextureImpl*)self;
 
 	if(nullptr == self)
 		return;
 
-	if(nullptr == self->impl->apiFormatMapping)
+	if(nullptr == impl->apiFormatMapping)
 		return;
 	
-	mapping = self->impl->apiFormatMapping;
+	mapping = impl->apiFormatMapping;
 
 	if(self->surfCount == 1) {
 		
-		glBindTexture(self->impl->glTarget, self->impl->glName);
+		glBindTexture(impl->glTarget, impl->glName);
 
-		glTexImage2D(self->impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, self->data);
+		glTexImage2D(impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, self->data);
 		
 		for(i=1; i<=self->mipCount; ++i) {
 			size_t mipW, mipH;
 			unsigned char* data = xprTextureGetMipLevel(self, 0, i, &mipW, &mipH);
-			glTexImage2D(self->impl->glTarget, i, mapping->internalFormat, mipW, mipH, 0, mapping->format, mapping->type, data);
+			glTexImage2D(impl->glTarget, i, mapping->internalFormat, mipW, mipH, 0, mapping->format, mapping->type, data);
 		}
 	}
 }
 
 void xprTextureFree(XprTexture* self)
 {
+	XprTextureImpl* impl = (XprTextureImpl*)self;
+
 	if(nullptr == self)
 		return;
 
 	if(nullptr != self->data)
 		free(self->data);
 
-	if(0 != self->impl->glName)
-		glDeleteTextures(1, &self->impl->glName);
+	if(0 != impl->glName)
+		glDeleteTextures(1, &impl->glName);
 	
 	free(self);
 }

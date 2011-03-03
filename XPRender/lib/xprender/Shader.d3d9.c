@@ -322,12 +322,12 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	
 	HASH_FIND_INT(impl->uniformVs, &hash, uniform);
 	if(nullptr != uniform && -1 != uniform->texunit) {
-		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)texture->impl->d3dtex);
+		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)((XprTextureImpl*)texture)->d3dtex);
 	}
 
 	HASH_FIND_INT(impl->uniformPs, &hash, uniform);
 	if(nullptr != uniform) {
-		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)texture->impl->d3dtex);
+		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)((XprTextureImpl*)texture)->d3dtex);
 	}
 	
 	return XprTrue;

@@ -17,6 +17,7 @@ typedef struct XprTextureGpuFormatMapping
 
 typedef struct XprTextureImpl
 {
+	XprTexture i;
 	IDirect3DTexture9* d3dtex;
 	struct XprTextureGpuFormatMapping* apiFormatMapping;
 } XprTextureImpl;

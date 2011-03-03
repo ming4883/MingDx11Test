@@ -10,6 +10,8 @@ extern "C" {
 
 typedef struct XprBufferImpl
 {
+	XprBuffer i;
+
 	IDirect3DVertexBuffer9* d3dvb;
 	IDirect3DIndexBuffer9* d3dib;
 	
