@@ -278,7 +278,7 @@ XprBool xprAppInitialize()
 
 	// materials
 	{
-		const char* directives[]  = {"", "#version 150", nullptr};
+		const char* directives[]  = {nullptr};
 		
 		appLoadMaterialBegin(app, directives);
 

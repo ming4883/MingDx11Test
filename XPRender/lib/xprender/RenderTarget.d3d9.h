@@ -22,6 +22,8 @@ typedef struct XprRenderBufferImpl
 
 typedef struct XprRenderTargetImpl
 {
+	XprRenderTarget i;
+
 	//int glName;
 	size_t bufferCount;
 	struct XprRenderBufferImpl* bufferList;

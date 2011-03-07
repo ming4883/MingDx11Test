@@ -13,6 +13,7 @@ XprAPI xprAPI = {0};
 
 XprAppContext xprAppContext = {
 	"xprApp",
+	"d3d9",
 	9, 0,
 	XprFalse,
 	XprFalse,
@@ -114,7 +115,12 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 			previousTime = currentTime;
 
             xprAppUpdate(deltaTime);
+
+			IDirect3DDevice9_BeginScene(xprAPI.d3ddev);
+
             xprAppRender();
+
+			IDirect3DDevice9_EndScene(xprAPI.d3ddev);
 
 			IDirect3DDevice9_Present(xprAPI.d3ddev, nullptr, nullptr, nullptr, nullptr);
         }

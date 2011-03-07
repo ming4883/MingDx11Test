@@ -253,13 +253,6 @@ ADD_EXECUTABLE( example_android ${CONSOLE_SYSTEM}
 	)
 TARGET_LINK_LIBRARIES( example_android xprender ${PLATFORM_LIBS} )
 
-# MosegaardsClothTutorial
-#ADD_EXECUTABLE( MosegaardsClothTutorial ${CONSOLE_SYSTEM}
-#	example/MosegaardsClothTutorial.cpp
-#	)
-#TARGET_LINK_LIBRARIES( MosegaardsClothTutorial xprender ${PLATFORM_LIBS} )
-
-
 IF( WIN32 )
 
 SET( PLATFORM_LIBS d3d9 d3dx9 winmm ws2_32 )
@@ -286,5 +279,47 @@ ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
 	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
+
+ADD_EXECUTABLE( example_cloth_simulation-d3d9 ${CONSOLE_SYSTEM}
+	example/ClothSimulation.example.c
+	example/ClothSimulation.hlsl
+	example/Common.c
+	example/Common.h
+	example/Common.hlsl
+	example/Stream.h
+	example/Stream.c
+	example/Remote.c
+	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
+	example/Mesh.c
+	example/Mesh.h
+	example/Material.c
+	example/Material.h
+	example/Cloth.c
+	example/Cloth.h
+	example/Sphere.c
+	example/Sphere.h
+	example/Pvr.c
+	example/Pvr.h
+	)
+TARGET_LINK_LIBRARIES( example_cloth_simulation-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
+
+ADD_EXECUTABLE( example_label-d3d9 ${CONSOLE_SYSTEM}
+	example/Label.example.c
+	example/Common.c
+	example/Common.h
+	example/Common.hlsl
+	example/Stream.h
+	example/Stream.c
+	example/Label.c
+	example/Label.h
+	example/Mesh.c
+	example/Mesh.h
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_label-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
 
 ENDIF()

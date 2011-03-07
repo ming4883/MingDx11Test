@@ -2,31 +2,33 @@
 
 XprRenderTarget* xprRenderTargetAlloc()
 {
-	XprRenderTarget* self;
-	XprAllocWithImpl(self, XprRenderTarget, XprRenderTargetImpl);
-
-	return self;
+	XprRenderTargetImpl* self = malloc(sizeof(XprRenderTargetImpl));
+	memset(self, 0, sizeof(XprRenderTargetImpl));
+	return &self->i;
 }
 
 void xprRenderTargetFree(XprRenderTarget* self)
 {
+	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
 	if(self->flags & XprRenderTarget_Inited) {
 		
 		XprRenderBufferImpl* it; XprRenderBufferImpl* tmp;
 
-		LL_FOREACH_SAFE(self->impl->bufferList, it, tmp) {
-			LL_DELETE(self->impl->bufferList, it);
+		LL_FOREACH_SAFE(impl->bufferList, it, tmp) {
+			LL_DELETE(impl->bufferList, it);
 			xprTextureFree(it->i.texture);
 			free(it);
 		}
 
-		glDeleteFramebuffers(1, &self->impl->glName);
+		glDeleteFramebuffers(1, &impl->glName);
 	}
 	free(self);
 }
 
 void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 {
+	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
+
 	if(nullptr == self)
 		return;
 
@@ -38,16 +40,18 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 	self->width = width;
 	self->height = height;
 
-	glGenFramebuffers(1, &self->impl->glName);
+	glGenFramebuffers(1, &impl->glName);
 	
 	self->flags |= XprRenderTarget_Inited;
 }
 
 XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuFormat format)
 {
+	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
+
 	XprRenderBufferImpl* buffer;
 	XprRenderBufferImpl* it;
-	LL_FOREACH(self->impl->bufferList, it) {
+	LL_FOREACH(impl->bufferList, it) {
 		if(XprFalse == it->acquired && (it->i.texture->format == format)) {
 			return &it->i;
 		}
@@ -58,8 +62,8 @@ XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuForma
 	buffer->i.texture = xprTextureAlloc();
 	xprTextureInitRtt(buffer->i.texture, self->width, self->height, 0, 1, format);
 
-	LL_APPEND(self->impl->bufferList, buffer);
-	++self->impl->bufferCount;
+	LL_APPEND(impl->bufferList, buffer);
+	++impl->bufferCount;
 
 	return &buffer->i;
 }
@@ -90,6 +94,8 @@ static GLenum xprGL_ATTACHMENT_POINT[] =
 
 void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, XprRenderBuffer* depth)
 {
+	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
+
 	size_t bufCnt;
 	XprRenderBuffer** curr;
 	if(nullptr == self) {
@@ -97,7 +103,7 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, X
 		return;
 	}
 
-	glBindFramebuffer(GL_FRAMEBUFFER, self->impl->glName);
+	glBindFramebuffer(GL_FRAMEBUFFER, impl->glName);
 	
 	// attach color buffers
 	bufCnt = 0;

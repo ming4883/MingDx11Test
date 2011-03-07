@@ -95,7 +95,19 @@ void appFree(AppContext* self)
 void appLoadMaterialBegin(AppContext* self, const char** directives)
 {
 	glswInit(&myFileSystem);
-	glswSetPath("", ".glsl");
+
+	if(strcmp("gl", xprAppContext.apiName) == 0) {
+		glswSetPath("", ".glsl");
+		if(3 == xprAppContext.apiMajorVer) {
+			glswAddDirectiveToken("", "#version 150"); 
+		}
+		else if(4 == xprAppContext.apiMajorVer) {
+			glswAddDirectiveToken("", "#version 400");
+		}
+	}
+	else if(strcmp("d3d9", xprAppContext.apiName) == 0) {
+		glswSetPath("", ".hlsl");
+	}
 
 	if(nullptr != directives) {
 		int i = 0;

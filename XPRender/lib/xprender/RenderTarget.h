@@ -16,14 +16,11 @@ typedef enum XprRenderTargetFlag
 	XprRenderTarget_Inited = 1 << 0,
 } XprRenderTargetFlag;
 
-struct XprRenderTargetImpl;
-
 typedef struct XprRenderTarget
 {
 	size_t flags;
 	size_t width;
 	size_t height;
-	struct XprRenderTargetImpl* impl;
 
 } XprRenderTarget;
 

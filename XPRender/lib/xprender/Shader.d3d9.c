@@ -1,5 +1,6 @@
 #include "Shader.d3d9.h"
 #include "Texture.d3d9.h"
+#include "Buffer.d3d9.h"
 #include <stdio.h>
 
 XprGpuShader* xprGpuShaderAlloc()
@@ -15,25 +16,25 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 	ID3DXBuffer* code;
 	ID3DXBuffer* errors;
 	ID3DXConstantTable* constTable;
+	const char* profile = nullptr;
 	XprGpuShaderImpl* impl = (XprGpuShaderImpl*)self;
 
 	// compile shader
 	if(XprGpuShaderType_Vertex == type) {
-		hr = D3DXCompileShader(sources[0], strlen(sources[0]),
-			nullptr, nullptr, "main", D3DXGetVertexShaderProfile(xprAPI.d3ddev),
-			0, &code, &errors, &constTable
-			);
+		profile = D3DXGetVertexShaderProfile(xprAPI.d3ddev);
 	}
 	else if(XprGpuShaderType_Fragment == type) {
-		hr = D3DXCompileShader(sources[0], strlen(sources[0]),
-			nullptr, nullptr, "main", D3DXGetPixelShaderProfile(xprAPI.d3ddev),
-			0, &code, &errors, &constTable
-			);
+		profile = D3DXGetPixelShaderProfile(xprAPI.d3ddev);
 	}
 	else {
 		xprDbgStr("d3d9 unsupported shader type %d", type);
 		return XprFalse;
 	}
+
+	hr = D3DXCompileShader(sources[0], strlen(sources[0]),
+		nullptr, nullptr, "main", profile,
+		0, &code, &errors, &constTable
+		);
 
 	if(FAILED(hr)) {
 		xprDbgStr("d3d9 failed to compile shader %s", errors->lpVtbl->GetBufferPointer(errors));
@@ -66,6 +67,7 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 	impl->bytecode = code;
 	impl->constTable = constTable;
 
+	self->type = type;
 	self->flags |= XprGpuShader_Inited;
 
 	return XprTrue;
@@ -105,27 +107,7 @@ void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform* table
 {
 	UINT i;
 	ID3DXConstantTable* constTable = ((XprGpuShaderImpl*)self)->constTable;
-
-	{
-		const char* samplers[16] = {0};
-		UINT samplerCnt = 0;
-		
-		D3DXGetShaderSamplers(
-			((XprGpuShaderImpl*)self)->bytecode->lpVtbl->GetBufferPointer(((XprGpuShaderImpl*)self)->bytecode),
-			samplers,
-			&samplerCnt);
-
-		for(i=0; i<samplerCnt; ++i) {
-			D3DXHANDLE h = constTable->lpVtbl->GetConstantByName(constTable, nullptr, samplers[i]);
-			XprGpuProgramUniform* uniform = malloc(sizeof(XprGpuProgramUniform));
-			uniform->loc = 0;
-			uniform->size = 0;
-			uniform->hash = XprHash(samplers[i]);
-			uniform->texunit = constTable->lpVtbl->GetSamplerIndex(constTable, h);
-
-			HASH_ADD_INT(table, hash, uniform);
-		}
-	}
+	
 	{
 		D3DXCONSTANTTABLE_DESC tblDesc;
 		constTable->lpVtbl->GetDesc(constTable, &tblDesc);
@@ -143,14 +125,16 @@ void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform* table
 			uniform->loc = constDesc.RegisterIndex;
 			uniform->size = constDesc.RegisterCount;
 			uniform->hash = XprHash(constDesc.Name);
-			uniform->texunit = -1;
 
+			if(D3DXRS_SAMPLER == constDesc.RegisterSet) {
+				uniform->texunit = constTable->lpVtbl->GetSamplerIndex(constTable, h);
+			}
+			else {
+				uniform->texunit = -1;
+			}
 			HASH_ADD_INT(table, hash, uniform);
-
 		}
 	}
-
-
 }
 
 XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t shaderCnt)
@@ -234,6 +218,10 @@ void xprGpuProgramFree(XprGpuProgram* self)
 
 	if(nullptr != impl->d3dps) {
 		IDirect3DPixelShader9_Release(impl->d3dps);
+	}
+
+	if(nullptr != impl->d3dvdecl) {
+		IDirect3DVertexDeclaration9_Release(impl->d3dvdecl);
 	}
 
 	free(self);
@@ -331,4 +319,146 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	}
 	
 	return XprTrue;
+}
+
+
+XprInputGpuFormatMapping XprInputGpuFormatMappings[] = {
+	{XprGpuFormat_FloatR32,				D3DDECLTYPE_FLOAT1, sizeof(float)},
+	{XprGpuFormat_FloatR32G32,			D3DDECLTYPE_FLOAT2, sizeof(float) * 2},
+	{XprGpuFormat_FloatR32G32B32,		D3DDECLTYPE_FLOAT3, sizeof(float) * 3},
+	{XprGpuFormat_FloatR32G32B32A32,	D3DDECLTYPE_FLOAT4, sizeof(float) * 4},
+};
+
+XprInputGpuFormatMapping* xprInputGpuFormatMappingGet(XprGpuFormat xprFormat)
+{
+	size_t i=0;
+	for(i=0; i<XprCountOf(XprInputGpuFormatMappings); ++i) {
+		XprInputGpuFormatMapping* mapping = &XprInputGpuFormatMappings[i];
+		if(xprFormat == mapping->xprFormat)
+			return mapping;
+	}
+
+	return nullptr;
+}
+
+D3DDECLUSAGE xprGpuInputGetUsage(XprGpuProgramInput* input)
+{
+	if(strstr(input->name, "pos"))
+		return D3DDECLUSAGE_POSITION;
+
+	if(strstr(input->name, "nor"))
+		return D3DDECLUSAGE_NORMAL;
+
+	if(strstr(input->name, "tex"))
+		return D3DDECLUSAGE_TEXCOORD;
+
+	return D3DDECLUSAGE_POSITION;
+}
+
+BYTE xprGpuInputGetUsageIndex(XprGpuProgramInput* input)
+{
+	size_t len = strlen(input->name);
+	char ch;
+
+	if(0 == len)
+		return 0;
+
+	ch = input->name[len-1];
+
+	if(ch < '0' || ch > '9')
+		return 0;
+
+	return ch - '0';
+}
+
+static D3DVERTEXELEMENT9 elemEnd = D3DDECL_END();
+
+void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count)
+{
+	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
+
+	D3DVERTEXELEMENT9* elems = malloc(sizeof(D3DVERTEXELEMENT9) * (count+1));
+
+	size_t attri = 0;
+	size_t stream = 0;
+	size_t offset = 0;
+	size_t lastElem = 0;
+	XprBuffer* lastBuffer = nullptr;
+
+	for(attri=0; attri<count; ++attri) {
+		XprGpuProgramInput* i = &inputs[attri];
+
+		if(nullptr == i->buffer)
+			continue;
+
+		if(XprBufferType_Index == i->buffer->type) {
+			// bind index buffer
+			IDirect3DDevice9_SetIndices(xprAPI.d3ddev, ((XprBufferImpl*)i->buffer)->d3dib);
+		}
+		else if(XprBufferType_Vertex == i->buffer->type) {
+			// bind vertex buffer
+			XprInputGpuFormatMapping* m = xprInputGpuFormatMappingGet(i->format);
+
+			if(lastBuffer != i->buffer) {
+				IDirect3DDevice9_SetStreamSource(xprAPI.d3ddev, stream, ((XprBufferImpl*)i->buffer)->d3dvb, 0, m->stride);
+
+				if(nullptr != lastBuffer) {
+					++stream;
+					offset = 0;
+					lastBuffer = i->buffer;
+				}
+			}
+
+			elems[attri].Stream = stream;
+			elems[attri].Offset = offset;
+			elems[attri].Type = m->declType;
+			elems[attri].Method = D3DDECLMETHOD_DEFAULT;
+			elems[attri].Usage = xprGpuInputGetUsage(i);
+			elems[attri].UsageIndex = xprGpuInputGetUsageIndex(i);
+
+			offset += m->stride;
+			++lastElem;
+		}
+	}
+
+	elems[lastElem] = elemEnd;
+
+	{
+		if(nullptr != impl->d3dvdecl)
+			IDirect3DVertexDeclaration9_Release(impl->d3dvdecl);
+		IDirect3DDevice9_CreateVertexDeclaration(xprAPI.d3ddev, elems, &impl->d3dvdecl);
+		IDirect3DDevice9_SetVertexDeclaration(xprAPI.d3ddev, impl->d3dvdecl);
+	}
+
+	free(elems);
+}
+
+void xprGpuDrawPoint(size_t offset, size_t count)
+{
+	IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, D3DPT_POINTLIST, offset, count);
+}
+
+void xprGpuDrawLine(size_t offset, size_t count, size_t flags)
+{
+	D3DPRIMITIVETYPE mode = (flags & XprGpuDraw_Stripped) ? D3DPT_LINESTRIP : D3DPT_LINELIST;
+
+	if(flags & XprGpuDraw_Indexed)
+		IDirect3DDevice9_DrawIndexedPrimitive(xprAPI.d3ddev, mode, 0, 0, 0xffff, offset, count / 2);
+	else
+		IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, mode, offset, count / 2);
+}
+
+void xprGpuDrawTriangle(size_t offset, size_t count, size_t flags)
+{
+	D3DPRIMITIVETYPE mode = (flags & XprGpuDraw_Stripped) ? D3DPT_TRIANGLESTRIP : D3DPT_TRIANGLELIST;
+
+	if(flags & XprGpuDraw_Indexed)
+		IDirect3DDevice9_DrawIndexedPrimitive(xprAPI.d3ddev, mode, 0, 0, 0xffff, offset, count / 2);
+	else
+		IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, mode, offset, count / 2);
+}
+
+void xprGpuDrawPatch(size_t offset, size_t count, size_t flags, size_t vertexPerPatch)
+{
+	// not supported
 }

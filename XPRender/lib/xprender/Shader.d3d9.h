@@ -39,7 +39,16 @@ typedef struct XprGpuProgramImpl
 	XprGpuProgramUniform* uniformVs;
 	XprGpuProgramUniform* uniformPs;
 
+	IDirect3DVertexDeclaration9* d3dvdecl;
+
 } XprGpuProgramImpl;
+
+typedef struct XprInputGpuFormatMapping
+{
+	XprGpuFormat xprFormat;
+	D3DDECLTYPE declType;
+	int stride;
+} XprInputGpuFormatMapping;
 
 #ifdef __cplusplus
 }

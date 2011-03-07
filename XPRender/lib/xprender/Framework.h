@@ -20,6 +20,7 @@ void xprAppFinalize();								// application finalization
 typedef struct XprAppContext
 {
 	const char* appName;
+	const char* apiName;
 	int apiMajorVer;
 	int apiMinorVer;
 	XprBool multiSampling;

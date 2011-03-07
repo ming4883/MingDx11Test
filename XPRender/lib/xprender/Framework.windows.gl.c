@@ -12,6 +12,7 @@
 
 XprAppContext xprAppContext = {
 	"xprApp",
+	"gl",
 	3, 3,
 	XprFalse,
 	XprFalse,
