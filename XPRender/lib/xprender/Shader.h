@@ -91,11 +91,13 @@ typedef enum XprGpuDrawFlag
 void xprGpuDrawPoint(size_t offset, size_t count);
 
 void xprGpuDrawLine(size_t offset, size_t count, size_t flags);
+void xprGpuDrawLineIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t flags);
 
 void xprGpuDrawTriangle(size_t offset, size_t count, size_t flags);
+void xprGpuDrawTriangleIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t flags);
 
-void xprGpuDrawPatch(size_t offset, size_t count, size_t flags, size_t vertexPerPatch);
-
+void xprGpuDrawPatch(size_t offset, size_t count, size_t vertexPerPatch, size_t flags);
+void xprGpuDrawPatchIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t vertexPerPatch, size_t flags);
 
 #ifdef __cplusplus
 }

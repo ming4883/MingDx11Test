@@ -58,13 +58,15 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 
 	if(FAILED(hr)) {
 		xprDbgStr("d3d9 failed to create shader %8x", hr);
-		code->lpVtbl->Release(code);
+		
 		constTable->lpVtbl->Release(constTable);
 		return XprFalse;
 	}
+	
+	code->lpVtbl->Release(code);
 
 	// save the byte code for later use
-	impl->bytecode = code;
+	//impl->bytecode = code;
 	impl->constTable = constTable;
 
 	self->type = type;
@@ -86,9 +88,9 @@ void xprGpuShaderFree(XprGpuShader* self)
 	if(nullptr != impl->d3dps) {
 		IDirect3DPixelShader9_Release(impl->d3dps);
 	}
-	if(nullptr != impl->bytecode) {
-		impl->bytecode->lpVtbl->Release(impl->bytecode);
-	}
+	//if(nullptr != impl->bytecode) {
+	//	impl->bytecode->lpVtbl->Release(impl->bytecode);
+	//}
 	if(nullptr != impl->constTable) {
 		impl->constTable->lpVtbl->Release(impl->constTable);
 	}
@@ -103,7 +105,7 @@ XprGpuProgram* xprGpuProgramAlloc()
 	return &self->i;
 }
 
-void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform* table)
+void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform** table)
 {
 	UINT i;
 	ID3DXConstantTable* constTable = ((XprGpuShaderImpl*)self)->constTable;
@@ -132,7 +134,7 @@ void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform* table
 			else {
 				uniform->texunit = -1;
 			}
-			HASH_ADD_INT(table, hash, uniform);
+			HASH_ADD_INT(*table, hash, uniform);
 		}
 	}
 }
@@ -183,8 +185,8 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 	}
 
 	// collect uniforms
-	xprGpuProgramUniformCollect(vs, impl->uniformVs);
-	xprGpuProgramUniformCollect(ps, impl->uniformPs);
+	xprGpuProgramUniformCollect(vs, &impl->uniformVs);
+	xprGpuProgramUniformCollect(ps, &impl->uniformPs);
 
 	self->flags |= XprGpuProgram_Inited;
 
@@ -343,12 +345,15 @@ XprInputGpuFormatMapping* xprInputGpuFormatMappingGet(XprGpuFormat xprFormat)
 
 D3DDECLUSAGE xprGpuInputGetUsage(XprGpuProgramInput* input)
 {
-	if(strstr(input->name, "pos"))
+	if(strstr(input->name, "pos") || strstr(input->name, "vertex"))
 		return D3DDECLUSAGE_POSITION;
 
 	if(strstr(input->name, "nor"))
 		return D3DDECLUSAGE_NORMAL;
 
+	if(strstr(input->name, "col"))
+		return D3DDECLUSAGE_COLOR;
+	
 	if(strstr(input->name, "tex"))
 		return D3DDECLUSAGE_TEXCOORD;
 
@@ -372,12 +377,11 @@ BYTE xprGpuInputGetUsageIndex(XprGpuProgramInput* input)
 }
 
 static D3DVERTEXELEMENT9 elemEnd = D3DDECL_END();
+static D3DVERTEXELEMENT9 elems[16];
 
 void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count)
 {
 	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
-
-	D3DVERTEXELEMENT9* elems = malloc(sizeof(D3DVERTEXELEMENT9) * (count+1));
 
 	size_t attri = 0;
 	size_t stream = 0;
@@ -400,21 +404,20 @@ void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, siz
 			XprInputGpuFormatMapping* m = xprInputGpuFormatMappingGet(i->format);
 
 			if(lastBuffer != i->buffer) {
-				IDirect3DDevice9_SetStreamSource(xprAPI.d3ddev, stream, ((XprBufferImpl*)i->buffer)->d3dvb, 0, m->stride);
-
 				if(nullptr != lastBuffer) {
 					++stream;
 					offset = 0;
-					lastBuffer = i->buffer;
 				}
+				IDirect3DDevice9_SetStreamSource(xprAPI.d3ddev, stream, ((XprBufferImpl*)i->buffer)->d3dvb, 0, m->stride);
+				lastBuffer = i->buffer;
 			}
 
-			elems[attri].Stream = stream;
-			elems[attri].Offset = offset;
-			elems[attri].Type = m->declType;
-			elems[attri].Method = D3DDECLMETHOD_DEFAULT;
-			elems[attri].Usage = xprGpuInputGetUsage(i);
-			elems[attri].UsageIndex = xprGpuInputGetUsageIndex(i);
+			elems[lastElem].Stream = stream;
+			elems[lastElem].Offset = offset;
+			elems[lastElem].Type = m->declType;
+			elems[lastElem].Method = D3DDECLMETHOD_DEFAULT;
+			elems[lastElem].Usage = xprGpuInputGetUsage(i);
+			elems[lastElem].UsageIndex = xprGpuInputGetUsageIndex(i);
 
 			offset += m->stride;
 			++lastElem;
@@ -430,7 +433,7 @@ void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, siz
 		IDirect3DDevice9_SetVertexDeclaration(xprAPI.d3ddev, impl->d3dvdecl);
 	}
 
-	free(elems);
+	//free(elems);
 }
 
 void xprGpuDrawPoint(size_t offset, size_t count)
@@ -438,27 +441,37 @@ void xprGpuDrawPoint(size_t offset, size_t count)
 	IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, D3DPT_POINTLIST, offset, count);
 }
 
+
 void xprGpuDrawLine(size_t offset, size_t count, size_t flags)
 {
 	D3DPRIMITIVETYPE mode = (flags & XprGpuDraw_Stripped) ? D3DPT_LINESTRIP : D3DPT_LINELIST;
+	IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, mode, offset, count / 2);
+}
 
-	if(flags & XprGpuDraw_Indexed)
-		IDirect3DDevice9_DrawIndexedPrimitive(xprAPI.d3ddev, mode, 0, 0, 0xffff, offset, count / 2);
-	else
-		IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, mode, offset, count / 2);
+void xprGpuDrawLineIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t flags)
+{
+	D3DPRIMITIVETYPE mode = (flags & XprGpuDraw_Stripped) ? D3DPT_LINESTRIP : D3DPT_LINELIST;
+	IDirect3DDevice9_DrawIndexedPrimitive(xprAPI.d3ddev, mode, 0, minIdx, maxIdx+1, offset, count / 2);
 }
 
 void xprGpuDrawTriangle(size_t offset, size_t count, size_t flags)
 {
 	D3DPRIMITIVETYPE mode = (flags & XprGpuDraw_Stripped) ? D3DPT_TRIANGLESTRIP : D3DPT_TRIANGLELIST;
-
-	if(flags & XprGpuDraw_Indexed)
-		IDirect3DDevice9_DrawIndexedPrimitive(xprAPI.d3ddev, mode, 0, 0, 0xffff, offset, count / 2);
-	else
-		IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, mode, offset, count / 2);
+	IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, mode, offset, count / 3);
 }
 
-void xprGpuDrawPatch(size_t offset, size_t count, size_t flags, size_t vertexPerPatch)
+void xprGpuDrawTriangleIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t flags)
+{
+	D3DPRIMITIVETYPE mode = (flags & XprGpuDraw_Stripped) ? D3DPT_TRIANGLESTRIP : D3DPT_TRIANGLELIST;
+	IDirect3DDevice9_DrawIndexedPrimitive(xprAPI.d3ddev, mode, 0, minIdx, maxIdx+1, offset, count / 3);
+}
+
+void xprGpuDrawPatch(size_t offset, size_t count, size_t vertexPerPatch, size_t flags)
+{
+	// not supported
+}
+
+void xprGpuDrawPatchIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t vertexPerPatch, size_t flags)
 {
 	// not supported
 }

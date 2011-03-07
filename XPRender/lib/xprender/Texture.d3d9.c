@@ -3,7 +3,7 @@
 
 XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
 	{XprGpuFormat_UnormR8G8B8A8, 4, D3DFMT_A8R8G8B8},
-	{XprGpuFormat_UnormR8, 1, D3DFMT_A8},
+	{XprGpuFormat_UnormR8, 1, D3DFMT_L8},
 	{XprGpuFormat_FloatR16, 2, D3DFMT_R16F},
 	{XprGpuFormat_FloatR32, 4, D3DFMT_R32F},
 	{XprGpuFormat_FloatR16G16B16A16, 8, D3DFMT_A16B16G16R16F},
@@ -87,7 +87,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	// create texture
 	{
 		HRESULT hr;
-		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount+1, 0, impl->apiFormatMapping->d3dFormat, D3DPOOL_MANAGED, &impl->d3dtex, nullptr);
+		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount, 0, impl->apiFormatMapping->d3dFormat, D3DPOOL_DEFAULT, &impl->d3dtex, nullptr);
 		if(FAILED(hr)) {
 			xprDbgStr("d3d9 failed to create texture %8x", hr);
 			return;
@@ -134,7 +134,7 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 	// create d3d texture
 	{
 		HRESULT hr;
-		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount+1, D3DUSAGE_RENDERTARGET, impl->apiFormatMapping->d3dFormat, D3DPOOL_MANAGED, &impl->d3dtex, nullptr);
+		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, width, height, self->mipCount, D3DUSAGE_RENDERTARGET, impl->apiFormatMapping->d3dFormat, D3DPOOL_DEFAULT, &impl->d3dtex, nullptr);
 		if(FAILED(hr)) {
 			xprDbgStr("d3d9 failed to create texture %8x", hr);
 			return;
@@ -162,7 +162,6 @@ unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t 
 
 void xprTextureCommit(XprTexture* self)
 {
-	const XprTextureGpuFormatMapping* mapping;
 	XprTextureImpl* impl = (XprTextureImpl*)self;
 
 	if(nullptr == self)
@@ -170,25 +169,34 @@ void xprTextureCommit(XprTexture* self)
 
 	if(nullptr == impl->apiFormatMapping)
 		return;
-	
-	mapping = impl->apiFormatMapping;
 
 	if(self->surfCount == 1) {
 		HRESULT hr;
 		size_t i;
+		IDirect3DTexture9* stageTex;
 
-		for(i=1; i<=self->mipCount; ++i) {
+		hr = IDirect3DDevice9_CreateTexture(xprAPI.d3ddev, self->width, self->height, self->mipCount, 0, impl->apiFormatMapping->d3dFormat, D3DPOOL_SYSTEMMEM, &stageTex, nullptr);
+		if(FAILED(hr)) {
+			xprDbgStr("d3d9 failed to create texture %8x", hr);
+			return;
+		}
+
+		for(i=0; i<self->mipCount; ++i) {
 			size_t mipW, mipH;
 			D3DLOCKED_RECT locked;
 			unsigned char* data = xprTextureGetMipLevel(self, 0, i, &mipW, &mipH);
 
-			hr = IDirect3DTexture9_LockRect(impl->d3dtex, i, &locked, nullptr, D3DLOCK_DISCARD);
+			hr = IDirect3DTexture9_LockRect(stageTex, i, &locked, nullptr, 0);
 			if(FAILED(hr))
 				continue;
 
 			memcpy(locked.pBits, data, mipW * mipH * impl->apiFormatMapping->pixelSize);
-			IDirect3DTexture9_UnlockRect(impl->d3dtex, i);
+			IDirect3DTexture9_UnlockRect(stageTex, i);
 		}
+
+		IDirect3DDevice9_UpdateTexture(xprAPI.d3ddev, (IDirect3DBaseTexture9*)stageTex, (IDirect3DBaseTexture9*)impl->d3dtex);
+
+		IDirect3DTexture9_Release(stageTex);
 	}
 }
 

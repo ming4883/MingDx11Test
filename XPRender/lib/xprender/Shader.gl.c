@@ -413,39 +413,56 @@ void xprGpuDrawPoint(size_t offset, size_t count)
 void xprGpuDrawLine(size_t offset, size_t count, size_t flags)
 {
 	GLenum mode = (flags & XprGpuDraw_Stripped) ? GL_LINE_STRIP : GL_LINES;
+	glDrawArrays(mode, offset, count);
+}
 
-	if(flags & XprGpuDraw_Indexed) {
-		GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
-		glDrawElements(mode, count, indexType, (void*)offset);
-	}
-	else {
-		glDrawArrays(mode, offset, count);
-	}
+void xprGpuDrawLineIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t flags)
+{
+	GLenum mode = (flags & XprGpuDraw_Stripped) ? GL_LINE_STRIP : GL_LINES;
+	GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
+#if defined(XPR_GLES_2)
+	glDrawElements(mode, count, indexType, (void*)offset);
+#else
+	glDrawRangeElements(mode, minIdx, maxIdx, count, indexType, (void*)offset);
+#endif
 }
 
 void xprGpuDrawTriangle(size_t offset, size_t count, size_t flags)
 {
 	GLenum mode = (flags & XprGpuDraw_Stripped) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
-
-	if(flags & XprGpuDraw_Indexed) {
-		GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
-		glDrawElements(mode, count, indexType, (void*)offset);
-	}
-	else {
-		glDrawArrays(mode, offset, count);
-	}
+	glDrawArrays(mode, offset, count);
 }
 
-void xprGpuDrawPatch(size_t offset, size_t count, size_t flags, size_t vertexPerPatch)
+void xprGpuDrawTriangleIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t flags)
+{
+	GLenum mode = (flags & XprGpuDraw_Stripped) ? GL_TRIANGLE_STRIP : GL_TRIANGLES;
+	GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
+#if defined(XPR_GLES_2)
+	glDrawElements(mode, count, indexType, (void*)offset);
+#else
+	glDrawRangeElements(mode, minIdx, maxIdx, count, indexType, (void*)offset);
+#endif
+}
+
+void xprGpuDrawPatch(size_t offset, size_t count, size_t vertexPerPatch, size_t flags)
 {
 	GLenum mode = GL_PATCHES;
-	glPatchParameteri(GL_PATCH_VERTICES, vertexPerPatch);
-
-	if(flags & XprGpuDraw_Indexed) {
-		GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
-		glDrawElements(mode, count, indexType, (void*)offset);
-	}
-	else {
+#if !defined(XPR_GLES_2)
+	if(nullptr != glPatchParameteri) {
+		glPatchParameteri(GL_PATCH_VERTICES, vertexPerPatch);
 		glDrawArrays(mode, offset, count);
 	}
+#endif
+}
+
+void xprGpuDrawPatchIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t vertexPerPatch, size_t flags)
+{
+	GLenum mode = GL_PATCHES;
+	GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
+#if !defined(XPR_GLES_2)
+	if(nullptr != glPatchParameteri) {
+		glPatchParameteri(GL_PATCH_VERTICES, vertexPerPatch);
+		glDrawRangeElements(mode, minIdx, maxIdx, count, indexType, (void*)offset);
+	}
+#endif
 }

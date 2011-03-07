@@ -15,7 +15,7 @@ typedef struct XprGpuShaderImpl
 
 	IDirect3DVertexShader9* d3dvs;
 	IDirect3DPixelShader9* d3dps;
-	ID3DXBuffer* bytecode;
+	//ID3DXBuffer* bytecode;
 	ID3DXConstantTable* constTable;
 
 } XprGpuShaderImpl;

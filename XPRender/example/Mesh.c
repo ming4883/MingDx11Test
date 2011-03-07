@@ -144,7 +144,7 @@ void meshPreRender(Mesh* self, struct XprGpuProgram* program)
 
 void meshRenderTriangles(Mesh* self)
 {
-	xprGpuDrawTriangle(0, self->indexCount, XprGpuDraw_Indexed);
+	xprGpuDrawTriangleIndexed(0, self->indexCount, 0, self->vertexCount-1, 0);
 }
 
 void meshRenderPatches(Mesh* self)
@@ -152,7 +152,7 @@ void meshRenderPatches(Mesh* self)
 	if((self->indexCount % self->vertexPerPatch) != 0)
 		return;
 
-	xprGpuDrawPatch(0, self->indexCount, XprGpuDraw_Indexed, self->vertexPerPatch);
+	xprGpuDrawPatchIndexed(0, self->indexCount, 0, self->vertexCount-1, 0, self->vertexPerPatch);
 }
 
 void meshRenderPoints(Mesh* self)

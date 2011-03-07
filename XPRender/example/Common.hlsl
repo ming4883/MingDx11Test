@@ -95,6 +95,5 @@ ps_out main(ps_in i) {
 	ps_out o;
 
 	o.fragColor = float4(u_textColor.xyz, u_textColor.w * tex2D(u_tex, i.texcoord).x);
-
 	return o;
 }

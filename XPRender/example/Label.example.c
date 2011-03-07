@@ -46,8 +46,8 @@ void xprAppRender()
 void xprAppConfig()
 {
 	xprAppContext.appName = "Label";
-	xprAppContext.xres = 800;
-	xprAppContext.yres = 600;
+	xprAppContext.xres = 400;
+	xprAppContext.yres = 300;
 	xprAppContext.multiSampling = XprFalse;
 	xprAppContext.vsync = XprFalse;
 	xprAppContext.apiMajorVer = 3;

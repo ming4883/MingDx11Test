@@ -168,7 +168,6 @@ unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t 
 
 void xprTextureCommit(XprTexture* self)
 {
-	size_t i;
 	const XprTextureGpuFormatMapping* mapping;
 	XprTextureImpl* impl = (XprTextureImpl*)self;
 
@@ -182,11 +181,12 @@ void xprTextureCommit(XprTexture* self)
 
 	if(self->surfCount == 1) {
 		
-		glBindTexture(impl->glTarget, impl->glName);
+		size_t i;
 
-		glTexImage2D(impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, self->data);
+		glBindTexture(impl->glTarget, impl->glName);
+		//glTexImage2D(impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, self->data);
 		
-		for(i=1; i<=self->mipCount; ++i) {
+		for(i=0; i<self->mipCount; ++i) {
 			size_t mipW, mipH;
 			unsigned char* data = xprTextureGetMipLevel(self, 0, i, &mipW, &mipH);
 			glTexImage2D(impl->glTarget, i, mapping->internalFormat, mipW, mipH, 0, mapping->format, mapping->type, data);

@@ -122,8 +122,8 @@ void xprRenderTargetSetViewport(float x, float y, float w, float h, float zmin, 
 	vp.Y = (DWORD)y;
 	vp.Width  = (DWORD)w;
 	vp.Height = (DWORD)h;
-	vp.MinZ = zmin;
-	vp.MaxZ = zmax;
+	vp.MinZ = zmin * 0.5f + 0.5f;
+	vp.MaxZ = zmax * 0.5f + 0.5f;;
 
 	IDirect3DDevice9_SetViewport(xprAPI.d3ddev, &vp);
 }
