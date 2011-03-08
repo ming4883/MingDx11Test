@@ -8,12 +8,12 @@ XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
 };
 #else
 XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
-	{XprGpuFormat_UnormR8G8B8A8, 4, GL_RGBA8, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV},
+	{XprGpuFormat_UnormR8G8B8A8, 4, GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV},
 	{XprGpuFormat_UnormR8, 1, GL_R8, GL_RED, GL_UNSIGNED_BYTE},
 	{XprGpuFormat_FloatR16, 2, GL_R16F, GL_RED, GL_HALF_FLOAT},
 	{XprGpuFormat_FloatR32, 4, GL_R32F, GL_RED, GL_FLOAT},
-	{XprGpuFormat_FloatR16G16B16A16, 8, GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT},
-	{XprGpuFormat_FloatR32G32B32A32, 16, GL_RGBA32F, GL_RGBA, GL_FLOAT},
+	{XprGpuFormat_FloatR16G16B16A16, 8, GL_RGBA16F, GL_BGRA, GL_HALF_FLOAT},
+	{XprGpuFormat_FloatR32G32B32A32, 16, GL_RGBA32F, GL_BGRA, GL_FLOAT},
 	{XprGpuFormat_Depth16, 2, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT},  
 	{XprGpuFormat_Depth32, 4, GL_DEPTH_COMPONENT32F, GL_DEPTH_COMPONENT, GL_FLOAT},
 };
