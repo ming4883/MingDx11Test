@@ -37,8 +37,13 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 		);
 
 	if(FAILED(hr)) {
-		xprDbgStr("d3d9 failed to compile shader %s", errors->lpVtbl->GetBufferPointer(errors));
+		xprDbgStr("d3d9 failed to compile shader\n%s", errors->lpVtbl->GetBufferPointer(errors));
 		errors->lpVtbl->Release(errors);
+		{
+			FILE* fp = fopen("error-shader.txt", "w");
+			fprintf(fp, "%s", sources[0]);
+			fclose(fp);
+		}
 		return XprFalse;
 	}
 

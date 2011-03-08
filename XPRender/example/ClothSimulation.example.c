@@ -91,7 +91,8 @@ void drawScene()
 
 	// draw floor
 	{	
-		app->shaderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
+		//app->shaderContext.matDiffuse = xprVec4(1.0f, 0.88f, 0.33f, 1);
+		app->shaderContext.matDiffuse = xprVec4(1.0f, 1.0f, 1.0f, 1);
 		app->shaderContext.matSpecular = xprVec4(0, 0, 0, 1);
 		app->shaderContext.matShininess = 32;
 		{

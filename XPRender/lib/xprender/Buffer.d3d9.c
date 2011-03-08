@@ -17,7 +17,7 @@ void xprBufferFree(XprBuffer* self)
 	if(nullptr != impl->d3dvb)
 		IDirect3DVertexBuffer9_Release(impl->d3dvb);
 
-	if(nullptr != impl->d3dvb)
+	if(nullptr != impl->d3dib)
 		IDirect3DIndexBuffer9_Release(impl->d3dib);
 
 	free(self);

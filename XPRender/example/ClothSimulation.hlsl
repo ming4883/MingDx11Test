@@ -1,50 +1,67 @@
 -- Scene.Vertex
-in vec4 i_vertex;
-in vec3 i_normal;
-in vec2 i_texcoord0;
+struct vs_in {
+	float4 vertex : POSITION;
+	float3 normal : NORMAL;
+	float2 texcoord0 : TEXCOORD0;
+};
 
-out vec3 v_normal;
-out vec3 v_pos;
-out vec2 v_texcoord;
+struct vs_out {
+	float4 vertex : POSITION;
+	float3 normal : TEXCOORD0;
+	float3 pos : TEXCOORD1;
+	float2 texcoord : TEXCOORD2;
+};
 
-uniform mat4 u_worldViewMtx;
-uniform mat4 u_worldViewProjMtx;
+uniform float4x4 u_worldViewMtx;
+uniform float4x4 u_worldViewProjMtx;
 
-void main() {
-	gl_Position = u_worldViewProjMtx * i_vertex;
-	v_normal = (u_worldViewMtx * vec4(i_normal, 0)).xyz;
-	v_pos = (u_worldViewMtx * i_vertex).xyz;
-	v_texcoord = i_texcoord0;
+vs_out main(vs_in i) {
+	vs_out o;
+
+	o.vertex = mul(u_worldViewProjMtx, i.vertex);
+	o.normal = mul(u_worldViewMtx, float4(i.normal, 0)).xyz;
+	o.pos = mul(u_worldViewMtx, i.vertex).xyz;
+	o.texcoord = i.texcoord0;
+
+	return o;
 }
 
 -- Scene.Fragment
-in vec3 v_normal;
-in vec3 v_pos;
-in vec2 v_texcoord;
+struct ps_in {
+	float3 normal : TEXCOORD0;
+	float3 pos : TEXCOORD1;
+	float2 texcoord : TEXCOORD2;
+};
 
-out vec4 o_fragColor;
+struct ps_out {
+	float4 fragColor : COLOR0;
+};
 
-uniform vec4 u_matDiffuse;
-uniform vec4 u_matSpecular;
+uniform float4 u_matDiffuse;
+uniform float4 u_matSpecular;
 uniform float u_matShininess;
 
 uniform sampler2D u_tex;
 
-void main() {
-	vec3 n = normalize(v_normal.xyz);
-	vec3 l = normalize(vec3(0,10,10) - v_pos.xyz);
-	vec3 h = normalize(l + vec3(0, 0, 1));
+ps_out main(ps_in i) {
+	ps_out o;
+
+	float3 n = normalize(i.normal.xyz);
+	float3 l = normalize(float3(0,10,10) - i.pos.xyz);
+	float3 h = normalize(l + float3(0, 0, 1));
 	
-	if(false == gl_FrontFacing)
-		n *= -1;
+	//if(false == gl_FrontFacing)
+	//	n *= -1;
 		
 	float ndl = max(0, dot(n, l)) * 0.8 + 0.2;
 	float ndh = max(0, dot(n, h));
 	ndh = pow(ndh, u_matShininess);
 	
-	vec4 color = u_matDiffuse * texture(u_tex, v_texcoord);
+	float4 color = u_matDiffuse * tex2D(u_tex, i.texcoord);
 	color.xyz *= ndl;
 	color.xyz += u_matSpecular.xyz * ndh;
 	
-	o_fragColor = color;
+	o.fragColor = color;
+
+	return o;
 }

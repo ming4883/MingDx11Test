@@ -1,5 +1,4 @@
 -- Bg.Vertex
-
 struct vs_in {
 	float4 vertex : POSITION;
 	float2 texcoord0 : TEXCOORD0;
@@ -14,7 +13,7 @@ vs_out main(vs_in i) {
 	vs_out o;
 
 	o.vertex = i.vertex;
-	v.texcoord = i.texcoord0;
+	o.texcoord = i.texcoord0;
 
 	return o;
 }
@@ -33,9 +32,9 @@ uniform float4 u_colors[4];
 ps_out main(ps_in i) {
 	ps_out o;
 
-	float4 c0 = mix(u_colors[0], u_colors[1], i.texcoord.x);
-	float4 c1 = mix(u_colors[2], u_colors[3], i.texcoord.x);
-	o.fragColor = mix(c0, c1, i.texcoord.y);
+	float4 c0 = lerp(u_colors[0], u_colors[1], i.texcoord.x);
+	float4 c1 = lerp(u_colors[2], u_colors[3], i.texcoord.x);
+	o.fragColor = lerp(c0, c1, i.texcoord.y);
 
 	return o;
 }
