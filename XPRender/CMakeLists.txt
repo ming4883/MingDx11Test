@@ -231,10 +231,10 @@ ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
 	)
 TARGET_LINK_LIBRARIES( example_embedded_httpd xprender ${PLATFORM_LIBS} )
 
-# example_android
-ADD_EXECUTABLE( example_android ${CONSOLE_SYSTEM}
-	example/Android.example.c
-	example/Android.glsl
+# example_mesh
+ADD_EXECUTABLE( example_mesh ${CONSOLE_SYSTEM}
+	example/Mesh.example.c
+	example/Mesh.glsl
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
@@ -251,7 +251,7 @@ ADD_EXECUTABLE( example_android ${CONSOLE_SYSTEM}
 	example/Material.c
 	example/Material.h
 	)
-TARGET_LINK_LIBRARIES( example_android xprender ${PLATFORM_LIBS} )
+TARGET_LINK_LIBRARIES( example_mesh xprender ${PLATFORM_LIBS} )
 
 IF( WIN32 )
 
@@ -321,5 +321,26 @@ ADD_EXECUTABLE( example_label-d3d9 ${CONSOLE_SYSTEM}
 	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_label-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
+
+ADD_EXECUTABLE( example_mesh-d3d9 ${CONSOLE_SYSTEM}
+	example/Mesh.example.c
+	example/Mesh.hlsl
+	example/Common.c
+	example/Common.h
+	example/Common.hlsl
+	example/Remote.c
+	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
+	example/Stream.c
+	example/Stream.h
+	example/Mesh.c
+	example/Mesh.obj.c
+	example/Mesh.h
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_mesh-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
 
 ENDIF()

@@ -13,4 +13,20 @@
 #	define glDepthRange glDepthRangef
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct XprAPI
+{
+	unsigned int gpuInputId;
+} XprAPI;
+
+extern XprAPI xprAPI;
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif	// __XPRENDER_API_GL_H__

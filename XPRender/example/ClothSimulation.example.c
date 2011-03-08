@@ -239,7 +239,7 @@ void xprAppConfig()
 	xprAppContext.appName = "Cloth Simulation";
 	xprAppContext.xres = 800;
 	xprAppContext.yres = 600;
-	xprAppContext.multiSampling = XprTrue;
+	xprAppContext.multiSampling = XprFalse;
 	xprAppContext.vsync = XprFalse;
 	xprAppContext.apiMajorVer = 3;
 	xprAppContext.apiMinorVer = 3;

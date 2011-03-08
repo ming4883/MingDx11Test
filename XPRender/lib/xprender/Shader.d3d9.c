@@ -227,8 +227,13 @@ void xprGpuProgramFree(XprGpuProgram* self)
 		IDirect3DPixelShader9_Release(impl->d3dps);
 	}
 
-	if(nullptr != impl->d3dvdecl) {
-		IDirect3DVertexDeclaration9_Release(impl->d3dvdecl);
+	{
+		XprGpuProgramInputAssembly* curr, *temp;
+		HASH_ITER(hh, impl->ias, curr, temp) {
+			HASH_DEL(impl->ias, curr);
+			IDirect3DVertexDeclaration9_Release(curr->d3ddecl);
+			free(curr);
+		}
 	}
 
 	free(self);
@@ -416,65 +421,76 @@ void xprGpuProgramBindBuffer(XprGpuProgram* self, XprGpuProgramInput* inputs, si
 static D3DVERTEXELEMENT9 xprD3D9_ELEM_END = D3DDECL_END();
 static D3DVERTEXELEMENT9 xprD3D9_ELEMS[16];
 
-void xprGpuProgramBindVertexDecl(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count)
+void xprGpuProgramBindVertexDecl(XprGpuProgram* self, size_t gpuInputId, XprGpuProgramInput* inputs, size_t count)
 {
+	XprGpuProgramInputAssembly* ia;
 	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
-	size_t i = 0;
-	size_t stream = 0;
-	size_t offset = 0;
-	size_t elem = 0;
-	XprBufferImpl* lastBuffer = nullptr;
 
-	for(i=0; i<count; ++i) {
-		XprGpuProgramInput* input = &inputs[i];
-		XprBufferImpl* buffer = (XprBufferImpl*)input->buffer;
-		XprInputGpuFormatMapping* m = xprInputGpuFormatMappingGet(input->format);
+	HASH_FIND_INT(impl->ias, &gpuInputId, ia);
+	if(nullptr == ia) {
 
-		if(nullptr == buffer)
-			continue;
+		size_t i = 0;
+		size_t stream = 0;
+		size_t offset = 0;
+		size_t elem = 0;
+		XprBufferImpl* lastBuffer = nullptr;
 
-		if(XprBufferType_Vertex != buffer->i.type)
-			continue;
+		for(i=0; i<count; ++i) {
+			XprGpuProgramInput* input = &inputs[i];
+			XprBufferImpl* buffer = (XprBufferImpl*)input->buffer;
+			XprInputGpuFormatMapping* m = xprInputGpuFormatMappingGet(input->format);
 
-		if(lastBuffer != buffer) {
-			if(nullptr != lastBuffer) {
-				++stream;
-				offset = 0;
+			if(nullptr == buffer)
+				continue;
+
+			if(XprBufferType_Vertex != buffer->i.type)
+				continue;
+
+			if(lastBuffer != buffer) {
+				if(nullptr != lastBuffer) {
+					++stream;
+					offset = 0;
+				}
+				lastBuffer = buffer;
 			}
-			lastBuffer = buffer;
+
+			xprD3D9_ELEMS[elem].Stream = stream;
+			xprD3D9_ELEMS[elem].Offset = offset;
+			xprD3D9_ELEMS[elem].Type = m->declType;
+			xprD3D9_ELEMS[elem].Method = D3DDECLMETHOD_DEFAULT;
+			xprD3D9_ELEMS[elem].Usage = xprGpuInputGetUsage(input);
+			xprD3D9_ELEMS[elem].UsageIndex = xprGpuInputGetUsageIndex(input);
+
+			++elem;
+			offset += m->stride;
 		}
+		xprD3D9_ELEMS[elem] = xprD3D9_ELEM_END;
 
-		xprD3D9_ELEMS[elem].Stream = stream;
-		xprD3D9_ELEMS[elem].Offset = offset;
-		xprD3D9_ELEMS[elem].Type = m->declType;
-		xprD3D9_ELEMS[elem].Method = D3DDECLMETHOD_DEFAULT;
-		xprD3D9_ELEMS[elem].Usage = xprGpuInputGetUsage(input);
-		xprD3D9_ELEMS[elem].UsageIndex = xprGpuInputGetUsageIndex(input);
+		ia = malloc(sizeof(XprGpuProgramInputAssembly));
+		ia->gpuInputId = gpuInputId;
+		IDirect3DDevice9_CreateVertexDeclaration(xprAPI.d3ddev, xprD3D9_ELEMS, &ia->d3ddecl);
 
-		++elem;
-		offset += m->stride;
+		HASH_ADD_INT(impl->ias, gpuInputId, ia);
 	}
-	xprD3D9_ELEMS[elem] = xprD3D9_ELEM_END;
 
-	{
-		if(nullptr != impl->d3dvdecl)
-			IDirect3DVertexDeclaration9_Release(impl->d3dvdecl);
-		IDirect3DDevice9_CreateVertexDeclaration(xprAPI.d3ddev, xprD3D9_ELEMS, &impl->d3dvdecl);
-		IDirect3DDevice9_SetVertexDeclaration(xprAPI.d3ddev, impl->d3dvdecl);
-	}
+	IDirect3DDevice9_SetVertexDeclaration(xprAPI.d3ddev, ia->d3ddecl);
 }
 
-void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count)
+size_t xprGenGpuInputId()
+{
+	return ++xprAPI.gpuInputId;
+}
+
+void xprGpuProgramBindInput(XprGpuProgram* self, size_t gpuInputId, XprGpuProgramInput* inputs, size_t count)
 {
 	xprGpuProgramBindBuffer(self, inputs, count);
-	xprGpuProgramBindVertexDecl(self, inputs, count);
+	xprGpuProgramBindVertexDecl(self, gpuInputId, inputs, count);
 }
 
 void xprGpuDrawPoint(size_t offset, size_t count)
 {
 	IDirect3DDevice9_DrawPrimitive(xprAPI.d3ddev, D3DPT_POINTLIST, offset, count);
 }
-
 
 void xprGpuDrawLine(size_t offset, size_t count, size_t flags)
 {

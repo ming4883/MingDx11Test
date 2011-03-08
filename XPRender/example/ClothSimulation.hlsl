@@ -31,6 +31,7 @@ struct ps_in {
 	float3 normal : TEXCOORD0;
 	float3 pos : TEXCOORD1;
 	float2 texcoord : TEXCOORD2;
+	float facing : VFACE;
 };
 
 struct ps_out {
@@ -50,8 +51,7 @@ ps_out main(ps_in i) {
 	float3 l = normalize(float3(0,10,10) - i.pos.xyz);
 	float3 h = normalize(l + float3(0, 0, 1));
 	
-	//if(false == gl_FrontFacing)
-	//	n *= -1;
+	n *= -i.facing;
 		
 	float ndl = max(0, dot(n, l)) * 0.8 + 0.2;
 	float ndh = max(0, dot(n, h));

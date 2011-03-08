@@ -364,7 +364,12 @@ XprInputGpuFormatMapping* xprInputGpuFormatMappingGet(XprGpuFormat xprFormat)
 	return nullptr;
 }
 
-void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count)
+size_t xprGenGpuInputId()
+{
+	return ++xprAPI.gpuInputId;
+}
+
+void xprGpuProgramBindInput(XprGpuProgram* self, size_t gpuInputId, XprGpuProgramInput* inputs, size_t count)
 {
 	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
 

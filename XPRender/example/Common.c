@@ -34,11 +34,29 @@ void* myOpen(const char* filename)
 {
 	static char buf[512];
 
+	static const char* paths[] = {
+		"../../example/",
+		"../example/",
+		"../../media/",
+		"../media/",
+		"media",
+		nullptr,
+	};
+
+	
 	FILE* fp;
+	const char** path;
 
 	if(nullptr != (fp = fopen(filename, "rb")))
 		return fp;
 
+	for(path = paths; nullptr != *path; ++path) {
+		strcpy(buf, *path);
+		if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
+			return fp;
+	}
+
+	/*
 	strcpy(buf, "../example/");
 	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
 		return fp;
@@ -50,6 +68,7 @@ void* myOpen(const char* filename)
 	strcpy(buf, "media/");
 	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
 		return fp;
+	*/
 
 	return nullptr;
 }

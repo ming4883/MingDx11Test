@@ -30,6 +30,14 @@ typedef struct XprGpuProgramUniform
 
 } XprGpuProgramUniform;
 
+typedef struct XprGpuProgramInputAssembly
+{
+	size_t gpuInputId;
+	IDirect3DVertexDeclaration9* d3ddecl;
+	UT_hash_handle hh;
+
+} XprGpuProgramInputAssembly;
+
 typedef struct XprGpuProgramImpl
 {
 	XprGpuProgram i;
@@ -38,8 +46,7 @@ typedef struct XprGpuProgramImpl
 	IDirect3DPixelShader9* d3dps;
 	XprGpuProgramUniform* uniformVs;
 	XprGpuProgramUniform* uniformPs;
-
-	IDirect3DVertexDeclaration9* d3dvdecl;
+	XprGpuProgramInputAssembly* ias;
 
 } XprGpuProgramImpl;
 

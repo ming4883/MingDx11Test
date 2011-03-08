@@ -15,7 +15,7 @@ typedef struct MeshImpl {
 	struct XprBuffer* normalBuffer;
 	struct XprBuffer* colorBuffer;
 	struct XprBuffer* tcBuffer[MeshTrait_MaxTexcoord];
-	int ia;
+	size_t gpuInputId;
 } MeshImpl;
 
 Mesh* meshAlloc()
@@ -71,7 +71,9 @@ void meshInit(Mesh* self, size_t vertexCount, size_t indexCount)
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
 		self->impl->tcBuffer[i] = xprBufferAlloc();
 		xprBufferInit(self->impl->tcBuffer[i], XprBufferType_Vertex, self->texcoord[i].sizeInBytes, nullptr);
-	}	
+	}
+
+	self->impl->gpuInputId = xprGenGpuInputId();
 	
 	self->flags |= MeshFlag_Inited;
 }
@@ -139,7 +141,7 @@ void meshPreRender(Mesh* self, struct XprGpuProgram* program)
 		{self->impl->tcBuffer[1], self->texcoord[1].shaderName, 0, XprGpuFormat_FloatR32G32},
 	};
 
-	xprGpuProgramBindInput(program, inputs, XprCountOf(inputs));
+	xprGpuProgramBindInput(program, self->impl->gpuInputId, inputs, XprCountOf(inputs));
 }
 
 void meshRenderTriangles(Mesh* self)

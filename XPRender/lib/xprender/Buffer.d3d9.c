@@ -31,21 +31,21 @@ XprBool xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, v
 	self->type = type;
 
 	if(XprBufferType_Vertex == type) {
-		hr = IDirect3DDevice9_CreateVertexBuffer(xprAPI.d3ddev, self->sizeInBytes, D3DUSAGE_DYNAMIC, 0, D3DPOOL_DEFAULT, &impl->d3dvb, nullptr);
+		hr = IDirect3DDevice9_CreateVertexBuffer(xprAPI.d3ddev, self->sizeInBytes, 0, 0, D3DPOOL_DEFAULT, &impl->d3dvb, nullptr);
 		if(FAILED(hr)) {
 			xprDbgStr("d3d9 failed to create vertex buffer %8x", hr);
 			return XprFalse;
 		}
 	}
 	else if(XprBufferType_Index == type) {
-		hr = IDirect3DDevice9_CreateIndexBuffer(xprAPI.d3ddev, self->sizeInBytes, D3DUSAGE_DYNAMIC, D3DFMT_INDEX16, D3DPOOL_DEFAULT, &impl->d3dib, nullptr);
+		hr = IDirect3DDevice9_CreateIndexBuffer(xprAPI.d3ddev, self->sizeInBytes, 0, D3DFMT_INDEX16, D3DPOOL_DEFAULT, &impl->d3dib, nullptr);
 		if(FAILED(hr)) {
 			xprDbgStr("d3d9 failed to create index buffer %8x", hr);
 			return XprFalse;
 		}
 	}
 	else if(XprBufferType_Index32 == type) {
-		hr = IDirect3DDevice9_CreateIndexBuffer(xprAPI.d3ddev, self->sizeInBytes, D3DUSAGE_DYNAMIC, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &impl->d3dib, nullptr);
+		hr = IDirect3DDevice9_CreateIndexBuffer(xprAPI.d3ddev, self->sizeInBytes, 0, D3DFMT_INDEX32, D3DPOOL_DEFAULT, &impl->d3dib, nullptr);
 		if(FAILED(hr)) {
 			xprDbgStr("d3d9 failed to create index 32 buffer %8x", hr);
 			return XprFalse;

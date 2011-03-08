@@ -76,7 +76,9 @@ typedef struct XprGpuProgramInput
 	XprGpuFormat format;
 } XprGpuProgramInput;
 
-void xprGpuProgramBindInput(XprGpuProgram* self, XprGpuProgramInput* inputs, size_t count);
+size_t xprGenGpuInputId();
+
+void xprGpuProgramBindInput(XprGpuProgram* self, size_t gpuInputId, XprGpuProgramInput* inputs, size_t count);
 
 typedef enum XprGpuDrawFlag
 {

@@ -67,12 +67,20 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 		d3dpp.AutoDepthStencilFormat = D3DFMT_D24S8;
 		d3dpp.EnableAutoDepthStencil = TRUE;
 
+		if(xprAppContext.vsync) {
+			d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+		}
+		else {
+			d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
+		}
+		
+
 		// create a device class using this information and information from the d3dpp stuct
 		hr = IDirect3D9_CreateDevice(xprAPI.d3d,
 			D3DADAPTER_DEFAULT,
 			D3DDEVTYPE_HAL,
 			hWnd,
-			D3DCREATE_HARDWARE_VERTEXPROCESSING,
+			D3DCREATE_PUREDEVICE | D3DCREATE_HARDWARE_VERTEXPROCESSING,
 			&d3dpp,
 			&xprAPI.d3ddev);
 
@@ -82,7 +90,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 				D3DADAPTER_DEFAULT,
 				D3DDEVTYPE_HAL,
 				hWnd,
-				D3DCREATE_SOFTWARE_VERTEXPROCESSING,
+				D3DCREATE_PUREDEVICE | D3DCREATE_SOFTWARE_VERTEXPROCESSING,
 				&d3dpp,
 				&xprAPI.d3ddev);
 

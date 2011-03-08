@@ -14,6 +14,7 @@ typedef struct XprAPI
 	IDirect3DDevice9* d3ddev;
 	IDirect3DSurface9* d3dcolorbuf;
 	IDirect3DSurface9* d3ddepthbuf;
+	unsigned int gpuInputId;
 } XprAPI;
 
 extern XprAPI xprAPI;

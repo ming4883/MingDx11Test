@@ -10,6 +10,8 @@
 #include "Api.gl.h"
 #include <GL\wglew.h>
 
+XprAPI xprAPI = {0};
+
 XprAppContext xprAppContext = {
 	"xprApp",
 	"gl",
@@ -126,8 +128,7 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 
 
     err = glewInit();
-    if (GLEW_OK != err)
-    {
+    if (GLEW_OK != err) {
         xprDbgStr("GLEW Error: %s\n", glewGetErrorString(err));
     }
     xprDbgStr("OpenGL Version: %s\n", glGetString(GL_VERSION));
@@ -153,6 +154,11 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
         wglDeleteContext(hRC);
         hRC = newRC;
         wglMakeCurrent(hDC, hRC);
+
+		err = glewInit();
+		if (GLEW_OK != err) {
+			xprDbgStr("GLEW Error: %s\n", glewGetErrorString(err));
+		}
     }
 
 	xprAppInitialize();
