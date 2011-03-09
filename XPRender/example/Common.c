@@ -12,6 +12,10 @@ extern struct android_app* XPR_ANDROID_APP;
 void* androidOpen(const char* filename)
 {
 	AAsset* asset = AAssetManager_open(XPR_ANDROID_APP->activity->assetManager, filename, AASSET_MODE_UNKNOWN);
+
+	if(nullptr == asset) {
+		xprDbgStr("failed to open asset '%s'!\n", filename);
+	}
 	return asset;
 }
 
@@ -42,7 +46,6 @@ void* myOpen(const char* filename)
 		"media",
 		nullptr,
 	};
-
 	
 	FILE* fp;
 	const char** path;
@@ -56,19 +59,7 @@ void* myOpen(const char* filename)
 			return fp;
 	}
 
-	/*
-	strcpy(buf, "../example/");
-	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
-		return fp;
-
-	strcpy(buf, "../media/");
-	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
-		return fp;
-
-	strcpy(buf, "media/");
-	if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
-		return fp;
-	*/
+	xprDbgStr("failed to open asset '%s'!\n", filename);
 
 	return nullptr;
 }
@@ -102,7 +93,7 @@ void appInit(AppContext* self)
 
 	xprRenderTargetSetViewport(0, 0, self->aspect.width, self->aspect.height, -1, 1);
 	
-	xprDbgStr("xprender started with %d x %d", xprAppContext.xres, xprAppContext.yres);
+	xprDbgStr("xprender started with %d x %d, api=%s\n", xprAppContext.xres, xprAppContext.yres, xprAppContext.apiName);
 }
 
 void appFree(AppContext* self)
@@ -123,6 +114,9 @@ void appLoadMaterialBegin(AppContext* self, const char** directives)
 		else if(4 == xprAppContext.apiMajorVer) {
 			glswAddDirectiveToken("", "#version 400");
 		}
+	}
+	else if(strcmp("gles", xprAppContext.apiName) == 0) {
+		glswSetPath("", ".glsl");
 	}
 	else if(strcmp("d3d9", xprAppContext.apiName) == 0) {
 		glswSetPath("", ".hlsl");

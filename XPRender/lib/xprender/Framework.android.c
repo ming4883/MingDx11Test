@@ -15,7 +15,8 @@
 /**
 * Shared state for our app.
 */
-struct engine {
+struct engine
+{
 	struct android_app* app;
 
 	ASensorManager* sensorManager;
@@ -25,12 +26,22 @@ struct engine {
 	EGLDisplay display;
 	EGLSurface surface;
 	EGLContext context;
+	
+	long previousTime;
 };
+
+long engine_get_time() 
+{
+	struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return now.tv_sec*1000000 + now.tv_nsec/1000;
+}
 
 /**
 * Initialize an EGL context for the current display.
 */
-static int engine_init_display(struct engine* engine) {
+static int engine_init_display(struct engine* engine)
+{
 
 	const EGLint configAttribs[] = {
 			EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
@@ -78,6 +89,8 @@ static int engine_init_display(struct engine* engine) {
 	engine->context = context;
 	engine->surface = surface;
 	
+	engine->previousTime = engine_get_time();
+	
 	xprAppContext.xres = w;
 	xprAppContext.yres = h;
 
@@ -90,15 +103,18 @@ static int engine_init_display(struct engine* engine) {
 /**
 * Just the current frame in the display.
 */
-static void engine_draw_frame(struct engine* engine) {
+static void engine_draw_frame(struct engine* engine)
+{
+	long currentTime = engine_get_time();
+	long deltaTime = currentTime - engine->previousTime;
+	engine->previousTime = currentTime;
+	
 	if (engine->display == NULL) {
 		// No display.
 		return;
 	}
-
 	
-	// Just fill the screen with a color.
-	xprAppUpdate(10);
+	xprAppUpdate(deltaTime / 1000);
 	xprAppRender();
 	
 	{
@@ -109,12 +125,15 @@ static void engine_draw_frame(struct engine* engine) {
 	}
 
 	eglSwapBuffers(engine->display, engine->surface);
+	
+	
 }
 
 /**
 * Tear down the EGL context currently associated with the display.
 */
-static void engine_term_display(struct engine* engine) {
+static void engine_term_display(struct engine* engine)
+{
 	xprAppFinalize();
 	if (engine->display != EGL_NO_DISPLAY) {
 		eglMakeCurrent(engine->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);

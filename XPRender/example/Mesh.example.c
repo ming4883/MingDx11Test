@@ -15,17 +15,23 @@ typedef struct Settings
 
 Settings settings = {100};
 
+float t = 0;
+
 void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
+	t += elapsedMilliseconds * 0.0001f;
+	if(t > 1.0f) {
+		t = 0.0f;
+	}
 }
 
 void xprAppHandleMouse(int x, int y, int action)
 {
+	xprDbgStr("handle mouse x=%d, y=%d, a=%d\n", x, y, action); 
 }
 
 void xprAppRender()
 {
-	static float t = 0.0f;
 	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
 	XprVec3 lookAt = xprVec3(0, 0, 0);
 	XprVec3 eyeUp = *XprVec3_c010();
@@ -40,11 +46,6 @@ void xprAppRender()
 	remoteConfigLock(config);
 	lsettings = settings;
 	remoteConfigUnlock(config);
-	
-	t += 0.001f;
-	if(t > 1.0f) {
-		t = 0.0f;
-	}
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
@@ -118,7 +119,7 @@ XprBool xprAppInitialize()
 			{nullptr, nullptr, 0, 0}
 		};
 		
-		config = remoteConfigAlloc();
+		//config = remoteConfigAlloc();
 		//remoteConfigInit(config, 80, XprTrue);
 		//remoteConfigAddVars(config, descs);
 	}
