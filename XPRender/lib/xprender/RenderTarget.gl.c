@@ -25,7 +25,7 @@ void xprRenderTargetFree(XprRenderTarget* self)
 	free(self);
 }
 
-void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
+void xprRenderTargetInit(XprRenderTarget* self)
 {
 	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
 
@@ -37,22 +37,20 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 		return;
 	}
 
-	self->width = width;
-	self->height = height;
-
 	glGenFramebuffers(1, &impl->glName);
 	
 	self->flags |= XprRenderTarget_Inited;
 }
 
-XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuFormat format)
+XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, size_t width, size_t height, XprGpuFormat format)
 {
 	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
 
 	XprRenderBufferImpl* buffer;
 	XprRenderBufferImpl* it;
 	LL_FOREACH(impl->bufferList, it) {
-		if(XprFalse == it->acquired && (it->i.texture->format == format)) {
+		XprTexture* tex = it->i.texture;
+		if(!it->acquired && (width == tex->width) && (height == tex->height) && (format == tex->format)) {
 			return &it->i;
 		}
 	}
@@ -60,7 +58,7 @@ XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuForma
 	buffer = malloc(sizeof(XprRenderBufferImpl));
 	buffer->acquired = XprTrue;
 	buffer->i.texture = xprTextureAlloc();
-	xprTextureInitRtt(buffer->i.texture, self->width, self->height, 0, 1, format);
+	xprTextureInitRtt(buffer->i.texture, width, height, 0, 1, format);
 
 	LL_APPEND(impl->bufferList, buffer);
 	++impl->bufferCount;

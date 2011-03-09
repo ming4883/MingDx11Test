@@ -19,8 +19,6 @@ typedef enum XprRenderTargetFlag
 typedef struct XprRenderTarget
 {
 	size_t flags;
-	size_t width;
-	size_t height;
 
 } XprRenderTarget;
 
@@ -33,9 +31,9 @@ XprRenderTarget* xprRenderTargetAlloc();
 
 void xprRenderTargetFree(XprRenderTarget* self);
 
-void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height);
+void xprRenderTargetInit(XprRenderTarget* self);
 
-XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuFormat format);
+XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, size_t width, size_t height, XprGpuFormat format);
 
 void xprRenderTargetReleaseBuffer(XprRenderTarget* self, XprRenderBuffer* buffer);
 

@@ -11,8 +11,10 @@ typedef enum XprGpuFormat
 	XprGpuFormat_FloatR32G32B32,
 	XprGpuFormat_FloatR16G16B16A16,
 	XprGpuFormat_FloatR32G32B32A32,
-	XprGpuFormat_Depth16,
-	XprGpuFormat_Depth32,
+	XprGpuFormat_Depth = 0x00010000,
+	XprGpuFormat_Depth16 = 0x00010001,
+	XprGpuFormat_Depth32 = 0x00010002,
+	XprGpuFormat_Depth24Stencil8 = 0x00010003,
 
 } XprGpuFormat;
 
