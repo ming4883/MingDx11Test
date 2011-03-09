@@ -451,8 +451,8 @@ void xprGpuDrawTriangleIndexed(size_t offset, size_t count, size_t minIdx, size_
 
 void xprGpuDrawPatch(size_t offset, size_t count, size_t vertexPerPatch, size_t flags)
 {
-	GLenum mode = GL_PATCHES;
 #if !defined(XPR_GLES_2)
+	GLenum mode = GL_PATCHES;
 	if(nullptr != glPatchParameteri) {
 		glPatchParameteri(GL_PATCH_VERTICES, vertexPerPatch);
 		glDrawArrays(mode, offset, count);
@@ -462,9 +462,9 @@ void xprGpuDrawPatch(size_t offset, size_t count, size_t vertexPerPatch, size_t 
 
 void xprGpuDrawPatchIndexed(size_t offset, size_t count, size_t minIdx, size_t maxIdx, size_t vertexPerPatch, size_t flags)
 {
+#if !defined(XPR_GLES_2)
 	GLenum mode = GL_PATCHES;
 	GLenum indexType = xprGL_INDEX_TYPE[flags & 0x000F];
-#if !defined(XPR_GLES_2)
 	if(nullptr != glPatchParameteri) {
 		glPatchParameteri(GL_PATCH_VERTICES, vertexPerPatch);
 		glDrawRangeElements(mode, minIdx, maxIdx, count, indexType, (void*)offset);

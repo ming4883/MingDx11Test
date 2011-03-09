@@ -1,4 +1,5 @@
 #include "Framework.h"
+#include "Api.gl.h"
 #include <sys/time.h>
 
 #include <jni.h>
@@ -55,7 +56,7 @@ static int engine_init_display(struct engine* engine) {
 	eglChooseConfig(display, configAttribs, &config, 1, &numConfigs);
 	
 	if (0 == numConfigs) {
-		XprDbgStr("eglChooseConfig return %d configs", numConfigs);
+		xprDbgStr("eglChooseConfig return %d configs", numConfigs);
 		return -1;
 	}
 
@@ -66,7 +67,7 @@ static int engine_init_display(struct engine* engine) {
 	context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs);
 
 	if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
-		XprDbgStr("Unable to eglMakeCurrent");
+		xprDbgStr("Unable to eglMakeCurrent");
 		return -1;
 	}
 
@@ -103,7 +104,7 @@ static void engine_draw_frame(struct engine* engine) {
 	{
 		GLint err = glGetError();
 		if(err != GL_NO_ERROR) {
-			XprDbgStr("GL has error %x", err);
+			xprDbgStr("GL has error %x", err);
 		}
 	}
 
@@ -136,8 +137,8 @@ static void engine_term_display(struct engine* engine) {
 static int32_t engine_handle_input(struct android_app* app, AInputEvent* event) {
 	struct engine* engine = (struct engine*)app->userData;
 	if (AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-		engine->state.x = AMotionEvent_getX(event, 0);
-		engine->state.y = AMotionEvent_getY(event, 0);
+		//engine->state.x = AMotionEvent_getX(event, 0);
+		//engine->state.y = AMotionEvent_getY(event, 0);
 		return 1;
 	}
 	return 0;
@@ -151,9 +152,9 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
 	switch (cmd) {
 		case APP_CMD_SAVE_STATE:
 			// The system has asked us to save our current state.  Do so.
-			engine->app->savedState = malloc(sizeof(struct saved_state));
+			//engine->app->savedState = malloc(sizeof(struct saved_state));
 			//*((struct saved_state*)engine->app->savedState) = engine->state;
-			engine->app->savedStateSize = sizeof(struct saved_state);
+			//engine->app->savedStateSize = sizeof(struct saved_state);
 			break;
 		case APP_CMD_INIT_WINDOW:
 			// The window is being shown, get it ready.
@@ -191,8 +192,11 @@ static void engine_handle_cmd(struct android_app* app, int32_t cmd) {
 
 struct android_app* XPR_ANDROID_APP = 0;
 
+XprAPI xprAPI = {0};
+
 XprAppContext xprAppContext = {
 	"xprApp",
+	"gles",
 	2, 0,
 	XprFalse,
 	XprFalse,

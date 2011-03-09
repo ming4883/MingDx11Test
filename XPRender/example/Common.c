@@ -7,11 +7,11 @@
 #include <android_native_app_glue.h>
 #include <android/asset_manager.h>
 
-extern struct android_app* PEZ_ANDROID_APP;
+extern struct android_app* XPR_ANDROID_APP;
 
 void* androidOpen(const char* filename)
 {
-	AAsset* asset = AAssetManager_open(PEZ_ANDROID_APP->activity->assetManager, filename, AASSET_MODE_UNKNOWN);
+	AAsset* asset = AAssetManager_open(XPR_ANDROID_APP->activity->assetManager, filename, AASSET_MODE_UNKNOWN);
 	return asset;
 }
 
