@@ -4,20 +4,19 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE	:= xprender
 
-LOCAL_SRC_FILES	+= xprender/Buffer.c
-LOCAL_SRC_FILES	+= xprender/GpuState.c
+LOCAL_SRC_FILES	+= xprender/Buffer.gl.c
+LOCAL_SRC_FILES	+= xprender/Framework.android.c
+LOCAL_SRC_FILES	+= xprender/GpuState.gl.c
 LOCAL_SRC_FILES	+= xprender/Mat44.c
 LOCAL_SRC_FILES	+= xprender/NvpParser.c
 LOCAL_SRC_FILES	+= xprender/Platform.c
-LOCAL_SRC_FILES	+= xprender/RenderTarget.c
-LOCAL_SRC_FILES	+= xprender/Shader.c
+LOCAL_SRC_FILES	+= xprender/RenderTarget.gl.c
+LOCAL_SRC_FILES	+= xprender/Shader.gl.c
 LOCAL_SRC_FILES	+= xprender/StrHash.c
-LOCAL_SRC_FILES	+= xprender/Texture.c
+LOCAL_SRC_FILES	+= xprender/Texture.gl.c
 LOCAL_SRC_FILES	+= xprender/Vec2.c
 LOCAL_SRC_FILES	+= xprender/Vec3.c
 LOCAL_SRC_FILES	+= xprender/Vec4.c
-
-LOCAL_SRC_FILES	+= pez/pez.android.c
 
 LOCAL_SRC_FILES	+= glsw/glsw.c
 LOCAL_SRC_FILES	+= glsw/bstrlib.c

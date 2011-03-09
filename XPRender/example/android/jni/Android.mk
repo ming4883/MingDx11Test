@@ -2,9 +2,9 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := xprender-example
+LOCAL_MODULE := xprender-example-mesh
 
-LOCAL_SRC_FILES += ../../Android.example.c
+LOCAL_SRC_FILES += ../../Mesh.example.c
 LOCAL_SRC_FILES += ../../Common.c
 LOCAL_SRC_FILES += ../../Stream.c
 LOCAL_SRC_FILES += ../../Mesh.c
