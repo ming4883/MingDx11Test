@@ -60,6 +60,7 @@ XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, size_t widt
 	}
 
 	buffer = malloc(sizeof(XprRenderBufferImpl));
+	memset(buffer, 0, sizeof(XprRenderBufferImpl));
 	buffer->acquired = XprTrue;
 
 	if(format & XprGpuFormat_Depth) {

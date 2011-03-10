@@ -46,29 +46,34 @@ typedef struct Mouse
 
 Mouse mouse = {0};
 
+XprMat44 shadowMapMtx;
+XprRenderBuffer* shadowMap;
+XprRenderBuffer* shadowMapZ;
+
 void computeShadowMapMatrix(XprMat44* m, const XprVec3* minPt, const XprVec3* maxPt)
 {
-	XprVec3 c, d, eyeAt, lookAt, eyeUp;
+	XprVec3 eyeAt;
+	XprVec3 lookAt;
+	XprVec3 eyeUp;
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
-
-	xprVec3Add(&c, maxPt, minPt);
-	xprVec3MultS(&c, &c, 0.5f);
-
-	xprVec3Sub(&d, maxPt, minPt);
-	xprVec3MultS(&d, &d, 0.5f);
-
-	eyeAt = c;
-	lookAt = c;
-	lookAt.y -= 1;
-	eyeUp = *XprVec3_c001();
-	eyeUp.z *= -1;
-
-	xprMat44SetIdentity(&projMtx);
-	projMtx.m00 = 1 / d.x;
-	projMtx.m11 = 1 / d.y;
-	projMtx.m22 = 1 / d.z;
 	
+	eyeAt.x = (maxPt->x + minPt->x) / 2;
+	eyeAt.y = maxPt->y;
+	eyeAt.z = (maxPt->z + minPt->z) / 2;
+
+	lookAt = eyeAt;
+	lookAt.y = minPt->y;
+
+	eyeUp = *XprVec3_c001();
+
+	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
+	
+	xprMat44SetIdentity(&projMtx);
+	projMtx.m00 = 2 / (maxPt->x - minPt->x);
+	projMtx.m11 = 2 / (maxPt->y - minPt->y);
+	projMtx.m22 = -2 / (maxPt->z - minPt->z);
+
 	xprMat44Mult(m, &projMtx, &viewMtx);
 }
 
@@ -93,6 +98,88 @@ void drawBackground()
 	meshRenderTriangles(bgMesh);
 }
 
+void drawShadowMap()
+{
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
+	
+	XprRenderBuffer* bufs[] = {shadowMap, nullptr};
+	xprRenderTargetPreRender(app->renderTarget, bufs, shadowMapZ);
+	xprRenderTargetSetViewport(0, 0, 512, 512, -1, 1);
+	xprRenderTargetClearColor(1, 1, 1, 1);
+	xprRenderTargetClearDepth(1);
+
+	// compute shadow map matrix
+	{
+		XprVec3 minPt = {-5, -5, -5};
+		XprVec3 maxPt = { 5,  5,  5};
+		computeShadowMapMatrix(&shadowMapMtx, &minPt, &maxPt);
+	}
+	
+	gpuState->cull = XprTrue;
+	gpuState->depthTest = XprTrue;
+	xprGpuStatePreRender(app->gpuState);
+
+	xprGpuProgramPreRender(sceneMtl->program);
+
+	// draw floor
+	{	
+		{
+			XprMat44 m;
+			XprVec3 axis = {1, 0, 0};
+			xprMat44MakeRotation(&m, &axis, -90);
+			
+			//xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
+			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
+		}
+		appShaderContextPreRender(app, sceneMtl);
+
+		meshPreRender(floorMesh, sceneMtl->program);
+		meshRenderTriangles(floorMesh);
+	}
+
+	// draw cloth
+	{	
+		gpuState->cull = XprFalse;
+		xprGpuStatePreRender(app->gpuState);
+		{
+			XprMat44 m;
+			xprMat44SetIdentity(&m);
+
+			//xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
+			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
+		}
+		appShaderContextPreRender(app, sceneMtl);
+
+		meshPreRender(cloth->mesh, sceneMtl->program);
+		meshRenderTriangles(cloth->mesh);
+		
+		gpuState->cull = XprTrue;
+		xprGpuStatePreRender(app->gpuState);
+	}
+
+	// draw balls
+	{	
+		int i;
+		for(i=0; i<BallCount; ++i) {
+			XprMat44 m;
+			XprVec3 scale = {ball[i].radius, ball[i].radius, ball[i].radius};
+			xprMat44MakeScale(&m, &scale);
+			xprMat44SetTranslation(&m, &ball[i].center);
+			
+			//xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
+			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
+
+			appShaderContextPreRender(app, sceneMtl);
+			
+			meshPreRender(ballMesh, sceneMtl->program);
+			meshRenderTriangles(ballMesh);
+		}
+	}
+
+	xprRenderTargetPreRender(nullptr, nullptr, nullptr);
+	xprRenderTargetSetViewport(0, 0, (float)xprAppContext.xres, (float)xprAppContext.yres, -1, 1);
+}
+
 void drawScene()
 {
 	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
@@ -107,13 +194,6 @@ void drawScene()
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
-	/*
-	{
-		XprVec3 minPt = {-5, -5, -5};
-		XprVec3 maxPt = { 5,  5,  5};
-		computeShadowMapMatrix(&viewProjMtx, &minPt, &maxPt);
-	}
-	*/
 
 	gpuState->cull = XprTrue;
 	gpuState->depthTest = XprTrue;
@@ -261,8 +341,9 @@ void xprAppHandleMouse(int x, int y, int action)
 
 void xprAppRender()
 {
-	xprRenderTargetClearDepth(1);
+	drawShadowMap();
 
+	xprRenderTargetClearDepth(1);
 	drawBackground();
 	drawScene();
 }
@@ -369,6 +450,9 @@ XprBool xprAppInitialize()
 		bgMesh = meshAlloc();
 		meshInitWithScreenQuad(bgMesh);
 	}
+
+	shadowMap = xprRenderTargetAcquireBuffer(app->renderTarget, 512, 512, XprGpuFormat_FloatR16);
+	shadowMapZ = xprRenderTargetAcquireBuffer(app->renderTarget, 512, 512, XprGpuFormat_Depth16);
 
 	return XprTrue;
 }
