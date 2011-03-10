@@ -10,8 +10,6 @@
 #include "../lib/xprender/GpuState.h"
 #include "../lib/xprender/RenderTarget.h"
 
-//#include "../lib/pez/pez.h"
-
 #include "Material.h"
 #include "Stream.h"
 
@@ -43,6 +41,8 @@ typedef struct AppContext
 	ShaderContext shaderContext;
 
 	XprGpuState* gpuState;
+
+	XprRenderTarget* renderTarget;
 
 	InputStream* inputStream;
 

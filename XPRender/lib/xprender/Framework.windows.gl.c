@@ -154,11 +154,6 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
         wglDeleteContext(hRC);
         hRC = newRC;
         wglMakeCurrent(hDC, hRC);
-
-		err = glewInit();
-		if (GLEW_OK != err) {
-			xprDbgStr("GLEW Error: %s\n", glewGetErrorString(err));
-		}
     }
 
 	xprAppInitialize();

@@ -1,11 +1,11 @@
 -- Scene.Vertex
-attribute vec4 i_vertex;
-attribute vec3 i_normal;
-attribute vec2 i_texcoord0;
+in vec4 i_vertex;
+in vec3 i_normal;
+in vec2 i_texcoord0;
 
-varying vec3 v_normal;
-varying vec3 v_pos;
-varying vec2 v_texcoord;
+out vec3 v_normal;
+out vec3 v_pos;
+out vec2 v_texcoord;
 
 uniform mat4 u_worldViewMtx;
 uniform mat4 u_worldViewProjMtx;
@@ -18,10 +18,11 @@ void main() {
 }
 
 -- Scene.Fragment
-precision mediump float;
-varying vec3 v_normal;
-varying vec3 v_pos;
-varying vec2 v_texcoord;
+in vec3 v_normal;
+in vec3 v_pos;
+in vec2 v_texcoord;
+
+out vec4 o_fragColor;
 
 uniform vec4 u_matDiffuse;
 uniform vec4 u_matSpecular;
@@ -44,5 +45,5 @@ void main() {
 	color.xyz *= ndl;
 	color.xyz += u_matSpecular.xyz * ndh;
 	
-	gl_FragColor = color;
+	o_fragColor = color;
 }

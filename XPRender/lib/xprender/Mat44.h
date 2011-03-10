@@ -35,9 +35,14 @@ XprMat44 xprMat44(
 
 void xprMat44Mult(XprMat44* _out, const XprMat44* a, const XprMat44* b);
 
+XprBool xprMat44Inverse(XprMat44* _out, const XprMat44* m);
+
 void xprMat44Transpose(XprMat44* _out, const XprMat44* m);
 
 void xprMat44Transform(struct XprVec4* _out, const XprMat44* m);
+
+//! assume the plane equation is stored as A, B, C, D
+void xprMat44TransformPlane(struct XprVec4* _out, const XprMat44* m);
 
 void xprMat44TransformAffineDir(struct XprVec3* _out, const XprMat44* m);
 

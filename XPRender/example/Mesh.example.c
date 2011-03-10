@@ -94,9 +94,15 @@ void xprAppConfig()
 	xprAppContext.yres = 800;
 	xprAppContext.multiSampling = XprFalse;
 	xprAppContext.vsync = XprFalse;
-	xprAppContext.apiMajorVer = 2;
-	xprAppContext.apiMinorVer = 1;
-	
+
+	if(strcmp(xprAppContext.apiName, "gles") == 0) {
+		xprAppContext.apiMajorVer = 2;
+		xprAppContext.apiMinorVer = 0;
+	}
+	else {
+		xprAppContext.apiMajorVer = 3;
+		xprAppContext.apiMinorVer = 3;
+	}
 }
 
 void xprAppFinalize()
