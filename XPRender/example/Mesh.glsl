@@ -1,7 +1,7 @@
 -- Scene.Vertex
-attribute  vec4 i_vertex;
-attribute  vec3 i_normal;
-attribute  vec2 i_texcoord0;
+attribute vec4 i_vertex;
+attribute vec3 i_normal;
+attribute vec2 i_texcoord0;
 
 varying vec3 v_normal;
 varying vec3 v_pos;

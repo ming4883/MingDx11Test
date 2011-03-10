@@ -241,8 +241,8 @@ void xprAppConfig()
 	xprAppContext.yres = 600;
 	xprAppContext.multiSampling = XprFalse;
 	xprAppContext.vsync = XprFalse;
-	xprAppContext.apiMajorVer = 3;
-	xprAppContext.apiMinorVer = 3;
+	xprAppContext.apiMajorVer = 2;
+	xprAppContext.apiMinorVer = 1;
 }
 
 void xprAppFinalize()
