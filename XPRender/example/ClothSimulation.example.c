@@ -46,6 +46,32 @@ typedef struct Mouse
 
 Mouse mouse = {0};
 
+void computeShadowMapMatrix(XprMat44* m, const XprVec3* minPt, const XprVec3* maxPt)
+{
+	XprVec3 c, d, eyeAt, lookAt, eyeUp;
+	XprMat44 viewMtx;
+	XprMat44 projMtx;
+
+	xprVec3Add(&c, maxPt, minPt);
+	xprVec3MultS(&c, &c, 0.5f);
+
+	xprVec3Sub(&d, maxPt, minPt);
+	xprVec3MultS(&d, &d, 0.5f);
+
+	eyeAt = c;
+	lookAt = c;
+	lookAt.y -= 1;
+	eyeUp = *XprVec3_c001();
+	eyeUp.z *= -1;
+
+	xprMat44SetIdentity(&projMtx);
+	projMtx.m00 = 1 / d.x;
+	projMtx.m11 = 1 / d.y;
+	projMtx.m22 = 1 / d.z;
+	
+	xprMat44Mult(m, &projMtx, &viewMtx);
+}
+
 void drawBackground()
 {
 	static const XprVec4 c[] = {
@@ -81,6 +107,13 @@ void drawScene()
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
+	/*
+	{
+		XprVec3 minPt = {-5, -5, -5};
+		XprVec3 maxPt = { 5,  5,  5};
+		computeShadowMapMatrix(&viewProjMtx, &minPt, &maxPt);
+	}
+	*/
 
 	gpuState->cull = XprTrue;
 	gpuState->depthTest = XprTrue;
