@@ -328,6 +328,8 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	HASH_FIND_INT(impl->uniformPs, &hash, uniform);
 	if(nullptr != uniform) {
 		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)((XprTextureImpl*)texture)->d3dtex);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
 	}
 	
 	return XprTrue;

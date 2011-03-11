@@ -77,6 +77,9 @@ void xprMat44PlanarReflect(XprMat44* _out, const struct XprVec3* normal, const s
 //! adjust a projection matrix to match the API's depth range
 void xprMat44AdjustToAPIDepthRange(XprMat44* _out);
 
+//! adjust a projection matrix to match the API's projective texture lookup
+void xprMat44AdjustToAPIProjectiveTexture(XprMat44* _out);
+
 #ifdef __cplusplus
 }
 #endif
