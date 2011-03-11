@@ -65,6 +65,9 @@ void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, 
 	HRESULT hr;
 	XprBufferImpl* impl = (XprBufferImpl*)self;
 
+	//UINT lockFlags = D3DLOCK_DISCARD;
+	UINT lockFlags = 0;
+
 	if(nullptr == self)
 		return;
 
@@ -73,7 +76,7 @@ void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, 
 
 	if(nullptr != impl->d3dvb) {
 		void* ptr;
-		hr = IDirect3DVertexBuffer9_Lock(impl->d3dvb, offsetInBytes, sizeInBytes, &ptr, D3DLOCK_DISCARD);
+		hr = IDirect3DVertexBuffer9_Lock(impl->d3dvb, offsetInBytes, sizeInBytes, &ptr, lockFlags);
 		if(FAILED(hr)) {
 			return;
 		}
@@ -85,7 +88,7 @@ void xprBufferUpdate(XprBuffer* self, size_t offsetInBytes, size_t sizeInBytes, 
 
 	if(nullptr != impl->d3dib) {
 		void* ptr;
-		hr = IDirect3DIndexBuffer9_Lock(impl->d3dib, offsetInBytes, sizeInBytes, &ptr, D3DLOCK_DISCARD);
+		hr = IDirect3DIndexBuffer9_Lock(impl->d3dib, offsetInBytes, sizeInBytes, &ptr, lockFlags);
 		if(FAILED(hr)) {
 			return;
 		}
@@ -101,6 +104,9 @@ void* xprBufferMap(XprBuffer* self, XprBufferMapAccess access)
 	HRESULT hr;
 	XprBufferImpl* impl = (XprBufferImpl*)self;
 	void* ret = nullptr;
+
+	//UINT lockFlags = D3DLOCK_DISCARD;
+	UINT lockFlags = 0;
 	
 	if(nullptr == self)
 		return nullptr;
@@ -109,14 +115,14 @@ void* xprBufferMap(XprBuffer* self, XprBufferMapAccess access)
 		return nullptr;
 
 	if(nullptr != impl->d3dvb) {
-		hr = IDirect3DVertexBuffer9_Lock(impl->d3dvb, 0, self->sizeInBytes, &ret, D3DLOCK_NOOVERWRITE);
+		hr = IDirect3DVertexBuffer9_Lock(impl->d3dvb, 0, self->sizeInBytes, &ret, lockFlags);
 		if(FAILED(hr)) {
 			return nullptr;
 		}
 	}
 
 	if(nullptr != impl->d3dib) {
-		hr = IDirect3DIndexBuffer9_Lock(impl->d3dib, 0, self->sizeInBytes, &ret, D3DLOCK_NOOVERWRITE);
+		hr = IDirect3DIndexBuffer9_Lock(impl->d3dib, 0, self->sizeInBytes, &ret, lockFlags);
 		if(FAILED(hr)) {
 			return nullptr;
 		}

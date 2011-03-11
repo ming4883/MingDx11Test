@@ -154,6 +154,7 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/ShadowMap.glsl
 	example/Stream.h
 	example/Stream.c
 	example/Remote.c
@@ -286,6 +287,7 @@ ADD_EXECUTABLE( example_cloth_simulation-d3d9 ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.hlsl
+	example/ShadowMap.hlsl
 	example/Stream.h
 	example/Stream.c
 	example/Remote.c

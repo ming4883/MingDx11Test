@@ -24,7 +24,14 @@ Mesh* bgMesh = nullptr;
 
 Material* sceneMtl = nullptr;
 Material* bgMtl = nullptr;
+Material* shadowMapMtl = nullptr;
 XprTexture* texture = nullptr;
+
+XprMat44 shadowMapMtx;
+XprRenderBuffer* shadowMap = nullptr;
+XprRenderBuffer* shadowMapZ = nullptr;
+size_t shadowMapSize = 512;
+
 
 typedef struct Settings
 {
@@ -45,10 +52,6 @@ typedef struct Mouse
 } Mouse;
 
 Mouse mouse = {0};
-
-XprMat44 shadowMapMtx;
-XprRenderBuffer* shadowMap;
-XprRenderBuffer* shadowMapZ;
 
 void computeShadowMapMatrix(XprMat44* m, const XprVec3* minPt, const XprVec3* maxPt)
 {
@@ -104,14 +107,14 @@ void drawShadowMap()
 	
 	XprRenderBuffer* bufs[] = {shadowMap, nullptr};
 	xprRenderTargetPreRender(app->renderTarget, bufs, shadowMapZ);
-	xprRenderTargetSetViewport(0, 0, 512, 512, -1, 1);
+	xprRenderTargetSetViewport(0, 0, (float)shadowMapSize, (float)shadowMapSize, -1, 1);
 	xprRenderTargetClearColor(1, 1, 1, 1);
 	xprRenderTargetClearDepth(1);
 
 	// compute shadow map matrix
 	{
-		XprVec3 minPt = {-5, -5, -5};
-		XprVec3 maxPt = { 5,  5,  5};
+		XprVec3 minPt = {-3, -3, -3};
+		XprVec3 maxPt = { 3,  3,  3};
 		computeShadowMapMatrix(&shadowMapMtx, &minPt, &maxPt);
 	}
 	
@@ -119,21 +122,19 @@ void drawShadowMap()
 	gpuState->depthTest = XprTrue;
 	xprGpuStatePreRender(app->gpuState);
 
-	xprGpuProgramPreRender(sceneMtl->program);
+	xprGpuProgramPreRender(shadowMapMtl->program);
 
 	// draw floor
 	{	
 		{
 			XprMat44 m;
-			XprVec3 axis = {1, 0, 0};
-			xprMat44MakeRotation(&m, &axis, -90);
+			xprMat44MakeRotation(&m, XprVec3_c100(), -90);
 			
-			//xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
 		}
-		appShaderContextPreRender(app, sceneMtl);
+		appShaderContextPreRender(app, shadowMapMtl);
 
-		meshPreRender(floorMesh, sceneMtl->program);
+		meshPreRender(floorMesh, shadowMapMtl->program);
 		meshRenderTriangles(floorMesh);
 	}
 
@@ -145,12 +146,11 @@ void drawShadowMap()
 			XprMat44 m;
 			xprMat44SetIdentity(&m);
 
-			//xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
 		}
-		appShaderContextPreRender(app, sceneMtl);
+		appShaderContextPreRender(app, shadowMapMtl);
 
-		meshPreRender(cloth->mesh, sceneMtl->program);
+		meshPreRender(cloth->mesh, shadowMapMtl->program);
 		meshRenderTriangles(cloth->mesh);
 		
 		gpuState->cull = XprTrue;
@@ -169,9 +169,9 @@ void drawShadowMap()
 			//xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
 
-			appShaderContextPreRender(app, sceneMtl);
+			appShaderContextPreRender(app, shadowMapMtl);
 			
-			meshPreRender(ballMesh, sceneMtl->program);
+			meshPreRender(ballMesh, shadowMapMtl->program);
 			meshRenderTriangles(ballMesh);
 		}
 	}
@@ -210,8 +210,7 @@ void drawScene()
 		app->shaderContext.matShininess = 32;
 		{
 			XprMat44 m;
-			XprVec3 axis = {1, 0, 0};
-			xprMat44MakeRotation(&m, &axis, -90);
+			xprMat44MakeRotation(&m, XprVec3_c100(), -90);
 			
 			xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &m);
@@ -373,6 +372,7 @@ void xprAppFinalize()
 	meshFree(ballMesh);
 	meshFree(floorMesh);
 	meshFree(bgMesh);
+	materialFree(shadowMapMtl);
 	materialFree(sceneMtl);
 	materialFree(bgMtl);
 	xprTextureFree(texture);
@@ -398,6 +398,10 @@ XprBool xprAppInitialize()
 		remoteConfigAddVars(config, descs);
 	}
 
+	// shadow map
+	shadowMap = xprRenderTargetAcquireBuffer(app->renderTarget, shadowMapSize, shadowMapSize, XprGpuFormat_FloatR16);
+	shadowMapZ = xprRenderTargetAcquireBuffer(app->renderTarget, shadowMapSize, shadowMapSize, XprGpuFormat_Depth16);
+
 	// materials
 	{
 		const char* directives[]  = {nullptr};
@@ -412,6 +416,11 @@ XprBool xprAppInitialize()
 		bgMtl = appLoadMaterial(
 			"Common.Bg.Vertex",
 			"Common.Bg.Fragment",
+			nullptr, nullptr, nullptr);
+
+		shadowMapMtl = appLoadMaterial(
+			"ShadowMap.Create.Vertex",
+			"ShadowMap.Create.Fragment",
 			nullptr, nullptr, nullptr);
 		
 		appLoadMaterialEnd(app);
@@ -451,8 +460,6 @@ XprBool xprAppInitialize()
 		meshInitWithScreenQuad(bgMesh);
 	}
 
-	shadowMap = xprRenderTargetAcquireBuffer(app->renderTarget, 512, 512, XprGpuFormat_FloatR16);
-	shadowMapZ = xprRenderTargetAcquireBuffer(app->renderTarget, 512, 512, XprGpuFormat_Depth16);
 
 	return XprTrue;
 }
