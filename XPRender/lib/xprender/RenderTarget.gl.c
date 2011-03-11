@@ -128,7 +128,7 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, X
 	{	// check for framebuffer's complete status
 		GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if(GL_FRAMEBUFFER_COMPLETE != status) {
-			xprDbgStr("imcomplete framebuffer status:%x", status);
+			xprDbgStr("imcomplete framebuffer status: %x\n", status);
 		}
 	}
 }

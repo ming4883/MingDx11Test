@@ -74,6 +74,9 @@ void xprMat44Prespective(XprMat44* _out, float fovyDeg, float aspect, float znea
 
 void xprMat44PlanarReflect(XprMat44* _out, const struct XprVec3* normal, const struct XprVec3* point);
 
+//! adjust a projection matrix to match the API's depth range
+void xprMat44AdjustToAPIDepthRange(XprMat44* _out);
+
 #ifdef __cplusplus
 }
 #endif

@@ -23,6 +23,7 @@ IF( WIN32 )
 		lib/xprender/GpuState.gl.c
 		lib/xprender/GpuState.gl.h
 		lib/xprender/Mat44.c
+		lib/xprender/Mat44.gl.c
 		lib/xprender/Mat44.h
 		lib/xprender/NvpParser.c
 		lib/xprender/NvpParser.h
@@ -62,6 +63,7 @@ IF( WIN32 )
 		lib/xprender/GpuState.d3d9.c
 		lib/xprender/GpuState.d3d9.h
 		lib/xprender/Mat44.c
+		lib/xprender/Mat44.d3d9.c
 		lib/xprender/Mat44.h
 		lib/xprender/NvpParser.c
 		lib/xprender/NvpParser.h

@@ -49,6 +49,7 @@ void xprAppRender()
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
+	xprMat44AdjustToAPIDepthRange(&projMtx);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 		
 	// clear

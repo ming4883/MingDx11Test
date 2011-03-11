@@ -154,8 +154,8 @@ unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t 
 	if(mipIndex > self->mipCount)
 		return nullptr;
 
-	if(nullptr == self->data)
-		return nullptr;
+	//if(nullptr == self->data)
+	//	return nullptr;
 
 	return self->data + (surfIndex * self->surfSizeInByte) + XprGpuFormat_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
 }
