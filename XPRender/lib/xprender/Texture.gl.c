@@ -22,7 +22,7 @@ XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
 XprTextureGpuFormatMapping* xprTextureGpuFormatMappingGet(XprGpuFormat xprFormat)
 {
 	size_t i=0;
-	for(i=0; i<XprCountOf(XprTextureGpuFormatMappings); ++i) {
+	for(i=0; i<xprCountOf(XprTextureGpuFormatMappings); ++i) {
 		XprTextureGpuFormatMapping* mapping = &XprTextureGpuFormatMappings[i];
 		if(xprFormat == mapping->xprFormat)
 			return mapping;
@@ -141,8 +141,8 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 	if(self->surfCount == 1) {
 		impl->glTarget = GL_TEXTURE_2D;
 		glBindTexture(impl->glTarget, impl->glName);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
 	xprTextureCommit(self);

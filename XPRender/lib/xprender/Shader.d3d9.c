@@ -346,7 +346,7 @@ XprInputGpuFormatMapping XprInputGpuFormatMappings[] = {
 XprInputGpuFormatMapping* xprInputGpuFormatMappingGet(XprGpuFormat xprFormat)
 {
 	size_t i=0;
-	for(i=0; i<XprCountOf(XprInputGpuFormatMappings); ++i) {
+	for(i=0; i<xprCountOf(XprInputGpuFormatMappings); ++i) {
 		XprInputGpuFormatMapping* mapping = &XprInputGpuFormatMappings[i];
 		if(xprFormat == mapping->xprFormat)
 			return mapping;

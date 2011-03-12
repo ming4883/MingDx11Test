@@ -37,7 +37,8 @@ ps_out main(ps_in i) {
 	ps_out o;
 
 	float depth = i.clipPos.z / i.clipPos.w;
-	o.fragColor = float4(depth, 0, 0, 0);
+	float dz = max( abs(ddx(depth)), abs(ddy(depth)) ) * 4;
+	o.fragColor = float4(depth + dz, 0, 0, 0);
 
 	return o;
 }

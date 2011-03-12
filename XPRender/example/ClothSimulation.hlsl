@@ -53,15 +53,15 @@ uniform sampler2D u_shadowMapTex;
 
 float computeShadowTerm(float3 sm, float2 offset)
 {
-	float smBias = u_shadowMapParam[0];
-	float smTexel = u_shadowMapParam[1];
+	float smTexel = u_shadowMapParam[0];
+	float smBias = u_shadowMapParam[1];
 	
 	float4 smDepth;
 	float2 samples[4] = {
-		float2(0, 0),
-		float2(0, 1),
-		float2(1, 0),
-		float2(1, 1),
+		float2(0+0.5, 0+0.5),
+		float2(0+0.5, 1+0.5),
+		float2(1+0.5, 0+0.5),
+		float2(1+0.5, 1+0.5),
 	};
 	
 	for(int i=0; i<4; ++i) {
@@ -69,7 +69,7 @@ float computeShadowTerm(float3 sm, float2 offset)
 		smDepth[i] = tex2D(u_shadowMapTex, uv).x;
 	}
 	
-	return dot((sm.zzzz - smBias) < smDepth, 0.25);
+	return dot(sm.zzzz - smBias < smDepth, 0.25);
 }
 
 ps_out main(ps_in i) {

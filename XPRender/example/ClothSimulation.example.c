@@ -30,7 +30,8 @@ XprTexture* texture = nullptr;
 XprMat44 shadowMapMtx;
 XprRenderBuffer* shadowMap = nullptr;
 XprRenderBuffer* shadowMapZ = nullptr;
-size_t shadowMapSize = 512;
+size_t shadowMapSize = 1024;
+XprVec4 shadowMapParam = { 1.f / 1024, 1e-3f * 1.5f, 0, 0};
 
 typedef struct Settings
 {
@@ -53,29 +54,66 @@ typedef struct Mouse
 Mouse mouse = {0};
 
 void computeShadowMapMatrix(XprMat44* m, const XprVec3* minPt, const XprVec3* maxPt)
-{
-	XprVec3 eyeAt;
-	XprVec3 lookAt;
-	XprVec3 eyeUp;
+{	
 	XprMat44 viewMtx;
 	XprMat44 projMtx;
+	{
+		XprVec3 eyeAt;
+		XprVec3 lookAt;
+		XprVec3 eyeUp;
+		
+		eyeAt.x = (maxPt->x + minPt->x) / 2;
+		eyeAt.y = maxPt->y;
+		eyeAt.z = (maxPt->z + minPt->z) / 2;
+
+		lookAt = eyeAt;
+		lookAt.y = minPt->y;
+
+		lookAt.z = minPt->z;
+
+		eyeUp = *XprVec3_c001();
+
+		xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
+	}
+
+	{
+		int i;
+		XprVec3 vmax, vmin;
+		XprVec3 c[8] = {
+			{minPt->x, minPt->y, minPt->z},
+			{maxPt->x, minPt->y, minPt->z},
+			{minPt->x, maxPt->y, minPt->z},
+			{maxPt->x, maxPt->y, minPt->z},
+			{minPt->x, minPt->y, maxPt->z},
+			{maxPt->x, minPt->y, maxPt->z},
+			{minPt->x, maxPt->y, maxPt->z},
+			{maxPt->x, maxPt->y, maxPt->z},
+		};
+
+		for(i=0; i<8; ++i) {
+			XprVec3* pt = &c[i];
+			xprMat44TransformAffinePt(pt, &viewMtx);
+			if(0 ==i) {
+				vmax = *pt;
+				vmin = *pt;
+			}
+			else {
+				vmax.x = xprMax(vmax.x, pt->x);
+				vmax.y = xprMax(vmax.y, pt->y);
+				vmax.z = xprMax(vmax.z, pt->z);
+
+				vmin.x = xprMin(vmin.x, pt->x);
+				vmin.y = xprMin(vmin.y, pt->y);
+				vmin.z = xprMin(vmin.z, pt->z);
+			}
+		}
+
+		xprMat44SetIdentity(&projMtx);
+		projMtx.m00 = 2 / (vmax.x - vmin.x);
+		projMtx.m11 = 2 / (vmax.y - vmin.y);
+		projMtx.m22 =-2 / (vmax.z - vmin.z);
+	}
 	
-	eyeAt.x = (maxPt->x + minPt->x) / 2;
-	eyeAt.y = maxPt->y;
-	eyeAt.z = (maxPt->z + minPt->z) / 2;
-
-	lookAt = eyeAt;
-	lookAt.y = minPt->y;
-
-	eyeUp = *XprVec3_c001();
-
-	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
-	
-	xprMat44SetIdentity(&projMtx);
-	projMtx.m00 = 2 / (maxPt->x - minPt->x);
-	projMtx.m11 = 2 / (maxPt->y - minPt->y);
-	projMtx.m22 = -2 / (maxPt->z - minPt->z);
-
 	xprMat44Mult(m, &projMtx, &viewMtx);
 	xprMat44AdjustToAPIDepthRange(m);
 }
@@ -113,8 +151,8 @@ void drawShadowMap()
 
 	// compute shadow map matrix
 	{
-		XprVec3 minPt = {-3, -3, -3};
-		XprVec3 maxPt = { 3,  3,  3};
+		XprVec3 minPt = {-4, -4, -4};
+		XprVec3 maxPt = { 4,  4,  4};
 		computeShadowMapMatrix(&shadowMapMtx, &minPt, &maxPt);
 	}
 	
@@ -204,7 +242,6 @@ void drawScene()
 	xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_tex"), texture);
 	xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_shadowMapTex"), shadowMap->texture);
 	{
-		XprVec4 shadowMapParam = {1e-3f, 1.f / shadowMapSize, 0, 0};
 		XprMat44 shadowMapTexMtx = shadowMapMtx;
 		xprMat44AdjustToAPIProjectiveTexture(&shadowMapTexMtx);
 		xprMat44Transpose(&shadowMapTexMtx, &shadowMapTexMtx);
@@ -290,16 +327,20 @@ void xprAppUpdate(unsigned int elapsedMilliseconds)
 	int iter;
 	XprVec3 f;
 
+	float dt = (float)elapsedMilliseconds / 1000;
+
 	remoteConfigLock(config);
 	lsettings = settings;
 	remoteConfigUnlock(config);
 
-	t += 0.0005f * lsettings.impact;
+	//t += 0.0005f * lsettings.impact;
+	t += dt * 0.1f * lsettings.impact;
 
 	ball[0].center.z = cosf(t) * 5.f;
 	ball[1].center.z = sinf(t) * 5.f;
 
-	cloth->timeStep = 0.01f;	// fixed time step
+	//cloth->timeStep = 0.01f;	// fixed time step
+	cloth->timeStep = dt * 2;	// fixed time step
 	cloth->damping = lsettings.airResistance * 1e-3f;
 
 	// perform relaxation

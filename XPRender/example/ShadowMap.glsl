@@ -25,5 +25,6 @@ out vec4 o_fragColor;
 void main() {
 	
 	float depth = v_clipPos.z / v_clipPos.w;
-	o_fragColor = vec4(depth, 0, 0, 0);
+	float dz = max( abs(dFdx(depth)), abs(dFdy(depth)) ) * 4;
+	o_fragColor = vec4(depth + dz, 0, 0, 0);
 }

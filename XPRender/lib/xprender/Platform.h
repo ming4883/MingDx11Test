@@ -25,7 +25,11 @@ typedef uint8_t XprBool;
 
 void xprDbgStr(const char* str, ...);
 
-#define XprCountOf(A) (sizeof(A) / sizeof(A[0]))
+#define xprCountOf(A) (sizeof(A) / sizeof(A[0]))
+
+#define xprMin(a, b) (a < b ? a : b)
+
+#define xprMax(a, b) (a > b ? a : b)
 
 #define XprAllocWithImpl(obj, CLASS, CLASSIMPL) \
 	obj = (CLASS*)malloc(sizeof(CLASS)+sizeof(CLASSIMPL));\

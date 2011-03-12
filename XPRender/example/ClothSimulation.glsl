@@ -39,8 +39,8 @@ uniform sampler2D u_shadowMapTex;
 
 float computeShadowTerm(vec3 sm, vec2 offset)
 {
-	float smBias = u_shadowMapParam[0];
-	float smTexel = u_shadowMapParam[1];
+	float smTexel = u_shadowMapParam[0];
+	float smBias = u_shadowMapParam[1];
 	
 	vec4 smDepth;
 	vec2 samples[4] = vec2[4](
