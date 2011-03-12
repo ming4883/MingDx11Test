@@ -96,8 +96,8 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	if(self->surfCount == 1) {
 		impl->glTarget = GL_TEXTURE_2D;
 		glBindTexture(impl->glTarget, impl->glName);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
 	xprTextureCommit(self);
@@ -141,8 +141,8 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 	if(self->surfCount == 1) {
 		impl->glTarget = GL_TEXTURE_2D;
 		glBindTexture(impl->glTarget, impl->glName);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
 	xprTextureCommit(self);

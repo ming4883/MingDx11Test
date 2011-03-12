@@ -34,7 +34,14 @@ void xprAppRender()
 	xprGpuStatePreRender(app->gpuState);
 	
 	xprGpuProgramPreRender(mtlText->program);
-	xprGpuProgramUniformTexture(mtlText->program, XprHash("u_tex"), label->texture);
+	{
+		XprSampler sampler = {
+			XprSamplerFilter_MagMin_Linear_Mip_None,
+			XprSamplerAddress_Clamp,
+			XprSamplerAddress_Clamp
+		};
+		xprGpuProgramUniformTexture(mtlText->program, XprHash("u_tex"), label->texture, &sampler);
+	}
 	xprGpuProgramUniform4fv(mtlText->program, XprHash("u_textColor"), 1, textColor.v);
 	
 	meshPreRender(meshBg, mtlText->program);

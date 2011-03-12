@@ -239,8 +239,22 @@ void drawScene()
 	xprGpuStatePreRender(app->gpuState);
 
 	xprGpuProgramPreRender(sceneMtl->program);
-	xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_tex"), texture);
-	xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_shadowMapTex"), shadowMap->texture);
+	{	
+		XprSampler sampler = {
+			XprSamplerFilter_MagMinMip_Linear, 
+			XprSamplerAddress_Wrap, 
+			XprSamplerAddress_Wrap
+		};
+		xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_tex"), texture, &sampler);
+	}
+	{
+		XprSampler sampler = {
+			XprSamplerFilter_MagMin_Linear_Mip_None, 
+			XprSamplerAddress_Clamp, 
+			XprSamplerAddress_Clamp
+		};
+		xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_shadowMapTex"), shadowMap->texture, &sampler);
+	}
 	{
 		XprMat44 shadowMapTexMtx = shadowMapMtx;
 		xprMat44AdjustToAPIProjectiveTexture(&shadowMapTexMtx);
