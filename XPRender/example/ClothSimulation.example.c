@@ -38,9 +38,10 @@ typedef struct Settings
 	float gravity;
 	float airResistance;
 	float impact;
+	float shadowSlopScale;
 } Settings;
 
-Settings settings = {10, 5, 3};
+Settings settings = {10, 5, 3, 4};
 
 typedef struct Mouse
 {
@@ -161,6 +162,7 @@ void drawShadowMap()
 	xprGpuStatePreRender(app->gpuState);
 
 	xprGpuProgramPreRender(shadowMapMtl->program);
+	xprGpuProgramUniform4fv(shadowMapMtl->program, XprHash("u_shadowMapParam"), 1, shadowMapParam.v);
 
 	// draw floor
 	{	
@@ -220,7 +222,7 @@ void drawShadowMap()
 
 void drawScene()
 {
-	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
+	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 4);
 	XprVec3 lookAt = xprVec3(0, 0, 0);
 	XprVec3 eyeUp = *XprVec3_c010();
 	XprMat44 viewMtx;
@@ -347,6 +349,8 @@ void xprAppUpdate(unsigned int elapsedMilliseconds)
 	lsettings = settings;
 	remoteConfigUnlock(config);
 
+	shadowMapParam.z = settings.shadowSlopScale;
+
 	//t += 0.0005f * lsettings.impact;
 	t += dt * 0.1f * lsettings.impact;
 
@@ -458,6 +462,7 @@ XprBool xprAppInitialize()
 			{"gravity", &settings.gravity, 1, 100},
 			{"airResistance", &settings.airResistance, 1, 20},
 			{"impact", &settings.impact, 1, 10},
+			{"shadowSlopScale", &settings.shadowSlopScale, 0, 8},
 			{nullptr, nullptr, 0, 0}
 		};
 		

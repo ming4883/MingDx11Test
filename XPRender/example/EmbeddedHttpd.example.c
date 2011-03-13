@@ -8,6 +8,7 @@ float bgB = 0;
 
 void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
+	remoteConfigProcessRequest(_config);
 }
 
 void xprAppHandleMouse(int x, int y, int action)
@@ -53,7 +54,7 @@ XprBool xprAppInitialize()
 	xprRenderTargetSetViewport(0, 0, (float)xprAppContext.xres, (float)xprAppContext.yres, -1, 1);
 
 	_config = remoteConfigAlloc();
-	remoteConfigInit(_config, 80, XprTrue);
+	remoteConfigInit(_config, 80, XprFalse);
 	remoteConfigAddVars(_config, descs);
 
 	return XprTrue;

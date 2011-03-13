@@ -22,9 +22,13 @@ in vec4 v_clipPos;
 
 out vec4 o_fragColor;
 
+uniform vec4 u_shadowMapParam;
+
 void main() {
+
+	float slopScale = u_shadowMapParam[2];
 	
 	float depth = v_clipPos.z / v_clipPos.w;
-	float dz = max( abs(dFdx(depth)), abs(dFdy(depth)) ) * 4;
+	float dz = max( abs(dFdx(depth)), abs(dFdy(depth)) ) * slopScale;
 	o_fragColor = vec4(depth + dz, 0, 0, 0);
 }
