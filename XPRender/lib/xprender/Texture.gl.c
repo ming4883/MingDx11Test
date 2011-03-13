@@ -22,7 +22,7 @@ XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
 XprTextureGpuFormatMapping* xprTextureGpuFormatMappingGet(XprGpuFormat xprFormat)
 {
 	size_t i=0;
-	for(i=0; i<XprCountOf(XprTextureGpuFormatMappings); ++i) {
+	for(i=0; i<xprCountOf(XprTextureGpuFormatMappings); ++i) {
 		XprTextureGpuFormatMapping* mapping = &XprTextureGpuFormatMappings[i];
 		if(xprFormat == mapping->xprFormat)
 			return mapping;
@@ -96,8 +96,8 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	if(self->surfCount == 1) {
 		impl->glTarget = GL_TEXTURE_2D;
 		glBindTexture(impl->glTarget, impl->glName);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
 	xprTextureCommit(self);
@@ -141,8 +141,8 @@ void xprTextureInitRtt(XprTexture* self, size_t width, size_t height, size_t mip
 	if(self->surfCount == 1) {
 		impl->glTarget = GL_TEXTURE_2D;
 		glBindTexture(impl->glTarget, impl->glName);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		//glTexParameteri(impl->glTarget, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 
 	xprTextureCommit(self);
@@ -160,8 +160,8 @@ unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t 
 	if(mipIndex > self->mipCount)
 		return nullptr;
 
-	if(nullptr == self->data)
-		return nullptr;
+	//if(nullptr == self->data)
+	//	return nullptr;
 
 	return self->data + (surfIndex * self->surfSizeInByte) + XprGpuFormat_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
 }
@@ -186,11 +186,18 @@ void xprTextureCommit(XprTexture* self)
 		glBindTexture(impl->glTarget, impl->glName);
 		//glTexImage2D(impl->glTarget, 0, mapping->internalFormat, self->width, self->height, 0, mapping->format, mapping->type, self->data);
 		
-		for(i=0; i<self->mipCount; ++i) {
+		for(i=0; i<self->mipCount+1; ++i) {
 			size_t mipW, mipH;
 			unsigned char* data = xprTextureGetMipLevel(self, 0, i, &mipW, &mipH);
 			glTexImage2D(impl->glTarget, i, mapping->internalFormat, mipW, mipH, 0, mapping->format, mapping->type, data);
 		}
+	}
+
+	{
+		GLenum err = glGetError();
+
+		if(GL_NO_ERROR != err)
+			xprDbgStr("failed to commit texture: 0x%04x\n", (int)err);
 	}
 }
 

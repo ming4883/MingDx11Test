@@ -23,6 +23,7 @@ IF( WIN32 )
 		lib/xprender/GpuState.gl.c
 		lib/xprender/GpuState.gl.h
 		lib/xprender/Mat44.c
+		lib/xprender/Mat44.gl.c
 		lib/xprender/Mat44.h
 		lib/xprender/NvpParser.c
 		lib/xprender/NvpParser.h
@@ -62,6 +63,7 @@ IF( WIN32 )
 		lib/xprender/GpuState.d3d9.c
 		lib/xprender/GpuState.d3d9.h
 		lib/xprender/Mat44.c
+		lib/xprender/Mat44.d3d9.c
 		lib/xprender/Mat44.h
 		lib/xprender/NvpParser.c
 		lib/xprender/NvpParser.h
@@ -154,6 +156,7 @@ ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
+	example/ShadowMap.glsl
 	example/Stream.h
 	example/Stream.c
 	example/Remote.c
@@ -286,6 +289,7 @@ ADD_EXECUTABLE( example_cloth_simulation-d3d9 ${CONSOLE_SYSTEM}
 	example/Common.c
 	example/Common.h
 	example/Common.hlsl
+	example/ShadowMap.hlsl
 	example/Stream.h
 	example/Stream.c
 	example/Remote.c

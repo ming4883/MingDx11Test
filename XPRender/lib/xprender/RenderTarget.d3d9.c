@@ -18,15 +18,14 @@ void xprRenderTargetFree(XprRenderTarget* self)
 		LL_FOREACH_SAFE(impl->bufferList, it, tmp) {
 			LL_DELETE(impl->bufferList, it);
 			xprTextureFree(it->i.texture);
+			IDirect3DSurface9_Release(it->d3dsurf);
 			free(it);
 		}
-
-		//glDeleteFramebuffers(1, &impl->glName);
 	}
 	free(self);
 }
 
-void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
+void xprRenderTargetInit(XprRenderTarget* self)
 {
 	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
 
@@ -38,30 +37,49 @@ void xprRenderTargetInit(XprRenderTarget* self, size_t width, size_t height)
 		return;
 	}
 
-	self->width = width;
-	self->height = height;
-
-	//glGenFramebuffers(1, &impl->glName);
-	
 	self->flags |= XprRenderTarget_Inited;
 }
 
-XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, XprGpuFormat format)
+D3DFORMAT xprD3D9_DEPTH_FORMAT[] = {
+	D3DFMT_D16,
+	D3DFMT_D32,
+	D3DFMT_D24S8,
+};
+
+XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, size_t width, size_t height, XprGpuFormat format)
 {
 	XprRenderTargetImpl* impl = (XprRenderTargetImpl*)self;
 
 	XprRenderBufferImpl* buffer;
 	XprRenderBufferImpl* it;
 	LL_FOREACH(impl->bufferList, it) {
-		if(XprFalse == it->acquired && (it->i.texture->format == format)) {
+		XprTexture* tex = it->i.texture;
+		if(XprFalse == it->acquired && (width == tex->width) && (height == tex->height) && (format == tex->format)) {
 			return &it->i;
 		}
 	}
 
 	buffer = malloc(sizeof(XprRenderBufferImpl));
+	memset(buffer, 0, sizeof(XprRenderBufferImpl));
 	buffer->acquired = XprTrue;
-	buffer->i.texture = xprTextureAlloc();
-	xprTextureInitRtt(buffer->i.texture, self->width, self->height, 0, 1, format);
+
+	if(format & XprGpuFormat_Depth) {
+		IDirect3DDevice9_CreateDepthStencilSurface(
+			xprAPI.d3ddev,
+			width, height,
+			xprD3D9_DEPTH_FORMAT[XprGpuFormat_Depth & 0xffff],
+			D3DMULTISAMPLE_NONE, 0,
+			TRUE, 
+			&buffer->d3dsurf,
+			nullptr);
+	}
+	else {
+		buffer->i.texture = xprTextureAlloc();
+		xprTextureInitRtt(buffer->i.texture, width, height, 0, 1, format);
+		IDirect3DTexture9_GetSurfaceLevel(
+			((XprTextureImpl*)buffer->i.texture)->d3dtex, 0,
+			&buffer->d3dsurf);
+	}
 
 	LL_APPEND(impl->bufferList, buffer);
 	++impl->bufferCount;
@@ -88,18 +106,17 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, X
 	XprRenderBuffer** curr;
 	if(nullptr == self) {
 		IDirect3DDevice9_SetRenderTarget(xprAPI.d3ddev, 0, xprAPI.d3dcolorbuf);
+		IDirect3DDevice9_SetDepthStencilSurface(xprAPI.d3ddev, xprAPI.d3ddepthbuf);
 		return;
 	}
 
-	//glBindFramebuffer(GL_FRAMEBUFFER, impl->glName);
-	
 	// attach color buffers
 	bufCnt = 0;
 	if(nullptr != colors) {
 		curr = (XprRenderBuffer**)colors;
 		while(*curr != nullptr) {
-			XprTexture* tex = (*curr)->texture;
-			//glFramebufferTexture2D(GL_FRAMEBUFFER, glAttachmentPoints[bufCnt], tex->impl->glTarget, tex->impl->glName, 0);
+			XprRenderBufferImpl* buf = (XprRenderBufferImpl*)*curr;
+			IDirect3DDevice9_SetRenderTarget(xprAPI.d3ddev, bufCnt, buf->d3dsurf);
 			++curr;
 			++bufCnt;
 		}
@@ -108,11 +125,12 @@ void xprRenderTargetPreRender(XprRenderTarget* self, XprRenderBuffer** colors, X
 	// attach depth buffers
 	if(depth != nullptr) {
 		XprTexture* tex = depth->texture;
-		//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, tex->impl->glTarget, tex->impl->glName, 0);
+		XprRenderBufferImpl* buf = (XprRenderBufferImpl*)depth;
+		IDirect3DDevice9_SetDepthStencilSurface(xprAPI.d3ddev, buf->d3dsurf);
 	}
-
-	// assign buffer bindings
-	//glDrawBuffers(bufCnt, glAttachmentPoints);
+	else {
+		IDirect3DDevice9_SetDepthStencilSurface(xprAPI.d3ddev, nullptr);
+	}
 }
 
 void xprRenderTargetSetViewport(float x, float y, float w, float h, float zmin, float zmax)

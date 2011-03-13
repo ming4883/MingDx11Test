@@ -86,6 +86,9 @@ void appInit(AppContext* self)
 	self->gpuState = xprGpuStateAlloc();
 	xprGpuStateInit(self->gpuState);
 
+	self->renderTarget = xprRenderTargetAlloc();
+	xprRenderTargetInit(self->renderTarget);
+
 	self->inputStream = &myInputStream;
 
 	self->aspect.width = (float)xprAppContext.xres;
@@ -98,6 +101,7 @@ void appInit(AppContext* self)
 
 void appFree(AppContext* self)
 {
+	xprRenderTargetFree(self->renderTarget);
 	xprGpuStateFree(self->gpuState);
 	free(self);
 }
@@ -116,7 +120,7 @@ void appLoadMaterialBegin(AppContext* self, const char** directives)
 		}
 	}
 	else if(strcmp("gles", xprAppContext.apiName) == 0) {
-		glswSetPath("", ".glsl");
+		glswSetPath("", ".gles");
 	}
 	else if(strcmp("d3d9", xprAppContext.apiName) == 0) {
 		glswSetPath("", ".hlsl");

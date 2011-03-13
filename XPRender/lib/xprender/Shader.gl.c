@@ -132,7 +132,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 
 		for(i=0; i<uniformCnt; ++i) {
 			XprGpuProgramUniform* uniform;
-			glGetActiveUniform(impl->glName, i, XprCountOf(uniformName), &uniformLength, &uniformSize, &uniformType, uniformName);
+			glGetActiveUniform(impl->glName, i, xprCountOf(uniformName), &uniformLength, &uniformSize, &uniformType, uniformName);
 			uniform = malloc(sizeof(XprGpuProgramUniform));
 			uniform->hash = XprHash(uniformName);
 			uniform->loc = i;
@@ -314,7 +314,30 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 	return XprTrue;
 }
 
-XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
+static GLenum xprGL_SAMPLER_MIN_FILTER[] = {
+	GL_NEAREST_MIPMAP_NEAREST,
+	GL_LINEAR_MIPMAP_LINEAR,
+	GL_NEAREST_MIPMAP_LINEAR,
+	GL_LINEAR_MIPMAP_NEAREST,
+	GL_NEAREST,
+	GL_LINEAR,
+};
+
+static GLenum xprGL_SAMPLER_MAG_FILTER[] = {
+	GL_NEAREST,
+	GL_LINEAR,
+	GL_NEAREST,
+	GL_LINEAR,
+	GL_NEAREST,
+	GL_LINEAR,
+};
+
+static GLenum xprGL_SAMPLER_ADDRESS[] = {
+	GL_REPEAT,
+	GL_CLAMP_TO_EDGE,
+};
+
+XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture, const struct XprSampler* sampler)
 {
 	XprGpuProgramUniform* uniform;
 	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
@@ -339,8 +362,18 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	glActiveTexture(GL_TEXTURE0 + uniform->texunit);
 	if(nullptr == texture)
 		glBindTexture(GL_TEXTURE_2D, 0);
-	else
-		glBindTexture(((XprTextureImpl*)texture)->glTarget, ((XprTextureImpl*)texture)->glName);
+	else {
+		int gltarget = ((XprTextureImpl*)texture)->glTarget;
+		int glname = ((XprTextureImpl*)texture)->glName;
+		glBindTexture(gltarget, glname);
+		glTexParameteri(gltarget, GL_TEXTURE_MAG_FILTER, xprGL_SAMPLER_MAG_FILTER[sampler->filter]);
+		glTexParameteri(gltarget, GL_TEXTURE_MIN_FILTER, xprGL_SAMPLER_MIN_FILTER[sampler->filter]);
+		glTexParameteri(gltarget, GL_TEXTURE_WRAP_S, xprGL_SAMPLER_ADDRESS[sampler->addressU]);
+		glTexParameteri(gltarget, GL_TEXTURE_WRAP_T, xprGL_SAMPLER_ADDRESS[sampler->addressV]);
+		if(GL_TEXTURE_2D != gltarget) {
+			glTexParameteri(gltarget, GL_TEXTURE_WRAP_R, xprGL_SAMPLER_ADDRESS[sampler->addressW]);
+		}
+	}
 		
 	return XprTrue;
 }
@@ -355,7 +388,7 @@ XprInputGpuFormatMapping XprInputGpuFormatMappings[] = {
 XprInputGpuFormatMapping* xprInputGpuFormatMappingGet(XprGpuFormat xprFormat)
 {
 	size_t i=0;
-	for(i=0; i<XprCountOf(XprInputGpuFormatMappings); ++i) {
+	for(i=0; i<xprCountOf(XprInputGpuFormatMappings); ++i) {
 		XprInputGpuFormatMapping* mapping = &XprInputGpuFormatMappings[i];
 		if(xprFormat == mapping->xprFormat)
 			return mapping;

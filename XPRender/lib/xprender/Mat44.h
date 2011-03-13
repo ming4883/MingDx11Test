@@ -35,9 +35,14 @@ XprMat44 xprMat44(
 
 void xprMat44Mult(XprMat44* _out, const XprMat44* a, const XprMat44* b);
 
+XprBool xprMat44Inverse(XprMat44* _out, const XprMat44* m);
+
 void xprMat44Transpose(XprMat44* _out, const XprMat44* m);
 
 void xprMat44Transform(struct XprVec4* _out, const XprMat44* m);
+
+//! assume the plane equation is stored as A, B, C, D
+void xprMat44TransformPlane(struct XprVec4* _out, const XprMat44* m);
 
 void xprMat44TransformAffineDir(struct XprVec3* _out, const XprMat44* m);
 
@@ -68,6 +73,12 @@ void xprMat44CameraLookAt(XprMat44* _out, const struct XprVec3* eyeAt, const str
 void xprMat44Prespective(XprMat44* _out, float fovyDeg, float aspect, float znear, float zfar);
 
 void xprMat44PlanarReflect(XprMat44* _out, const struct XprVec3* normal, const struct XprVec3* point);
+
+//! adjust a projection matrix to match the API's depth range
+void xprMat44AdjustToAPIDepthRange(XprMat44* _out);
+
+//! adjust a projection matrix to match the API's projective texture lookup
+void xprMat44AdjustToAPIProjectiveTexture(XprMat44* _out);
 
 #ifdef __cplusplus
 }

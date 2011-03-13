@@ -141,7 +141,7 @@ void meshPreRender(Mesh* self, struct XprGpuProgram* program)
 		{self->impl->tcBuffer[1], self->texcoord[1].shaderName, 0, XprGpuFormat_FloatR32G32},
 	};
 
-	xprGpuProgramBindInput(program, self->impl->gpuInputId, inputs, XprCountOf(inputs));
+	xprGpuProgramBindInput(program, self->impl->gpuInputId, inputs, xprCountOf(inputs));
 }
 
 void meshRenderTriangles(Mesh* self)

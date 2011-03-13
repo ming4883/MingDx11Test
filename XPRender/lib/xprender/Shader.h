@@ -12,6 +12,32 @@ extern "C" {
 struct XprTexture;
 struct XprBuffer;
 
+typedef enum XprSamplerFilter
+{
+	XprSamplerFilter_MagMinMip_Nearest,
+	XprSamplerFilter_MagMinMip_Linear,
+	XprSamplerFilter_MagMin_Nearest_Mip_Linear,
+	XprSamplerFilter_MagMin_Linear_Mip_Nearest,
+	XprSamplerFilter_MagMin_Nearest_Mip_None,
+	XprSamplerFilter_MagMin_Linear_Mip_None,
+
+} XprSamplerFilter;
+
+typedef enum XprSamplerAddress
+{
+	XprSamplerAddress_Wrap,
+	XprSamplerAddress_Clamp,
+
+} XprSamplerAddress;
+
+typedef struct XprSampler
+{
+	XprSamplerFilter filter;
+	XprSamplerAddress addressU, addressV, addressW;
+
+} XprSampler;
+
+
 // XprGpuShader
 typedef enum XprGpuShaderType
 {
@@ -66,7 +92,7 @@ XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t co
 XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
 XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t count, const float* value);
 XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t count, XprBool transpose, const float* value);
-XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture);
+XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture, const struct XprSampler* sampler);
 
 typedef struct XprGpuProgramInput
 {

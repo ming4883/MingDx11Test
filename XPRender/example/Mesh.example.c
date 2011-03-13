@@ -49,6 +49,7 @@ void xprAppRender()
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
+	xprMat44AdjustToAPIDepthRange(&projMtx);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 		
 	// clear
@@ -94,9 +95,15 @@ void xprAppConfig()
 	xprAppContext.yres = 800;
 	xprAppContext.multiSampling = XprFalse;
 	xprAppContext.vsync = XprFalse;
-	xprAppContext.apiMajorVer = 2;
-	xprAppContext.apiMinorVer = 1;
-	
+
+	if(strcmp(xprAppContext.apiName, "gles") == 0) {
+		xprAppContext.apiMajorVer = 2;
+		xprAppContext.apiMinorVer = 0;
+	}
+	else {
+		xprAppContext.apiMajorVer = 3;
+		xprAppContext.apiMinorVer = 3;
+	}
 }
 
 void xprAppFinalize()

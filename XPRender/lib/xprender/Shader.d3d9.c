@@ -307,7 +307,39 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 	return xprGpuProgramUniformfv(self, hash, count, value);
 }
 
-XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture)
+static D3DTEXTUREFILTERTYPE xprD3D9_SAMPLER_MAG_FILTER[] = {
+	D3DTEXF_POINT,
+	D3DTEXF_LINEAR,
+	D3DTEXF_POINT,
+	D3DTEXF_LINEAR,
+	D3DTEXF_POINT,
+	D3DTEXF_LINEAR,
+};
+
+static D3DTEXTUREFILTERTYPE xprD3D9_SAMPLER_MIN_FILTER[] = {
+	D3DTEXF_POINT,
+	D3DTEXF_LINEAR,
+	D3DTEXF_POINT,
+	D3DTEXF_LINEAR,
+	D3DTEXF_POINT,
+	D3DTEXF_LINEAR,
+};
+
+static D3DTEXTUREFILTERTYPE xprD3D9_SAMPLER_MIP_FILTER[] = {
+	D3DTEXF_POINT,
+	D3DTEXF_LINEAR,
+	D3DTEXF_LINEAR,
+	D3DTEXF_POINT,
+	D3DTEXF_NONE,
+	D3DTEXF_NONE,
+};
+
+static D3DTEXTUREADDRESS xprD3D9_SAMPLER_ADDRESS[] = {
+	D3DTADDRESS_WRAP,
+	D3DTADDRESS_CLAMP,
+};
+
+XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struct XprTexture* texture, const struct XprSampler* sampler)
 {
 	XprGpuProgramUniform* uniform;
 	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
@@ -328,6 +360,12 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	HASH_FIND_INT(impl->uniformPs, &hash, uniform);
 	if(nullptr != uniform) {
 		IDirect3DDevice9_SetTexture(xprAPI.d3ddev, uniform->texunit, (IDirect3DBaseTexture9*)((XprTextureImpl*)texture)->d3dtex);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_MAGFILTER, xprD3D9_SAMPLER_MAG_FILTER[sampler->filter]);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_MINFILTER, xprD3D9_SAMPLER_MIN_FILTER[sampler->filter]);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_MIPFILTER, xprD3D9_SAMPLER_MIP_FILTER[sampler->filter]);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_ADDRESSU, xprD3D9_SAMPLER_ADDRESS[sampler->addressU]);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_ADDRESSV, xprD3D9_SAMPLER_ADDRESS[sampler->addressV]);
+		IDirect3DDevice9_SetSamplerState(xprAPI.d3ddev, uniform->texunit, D3DSAMP_ADDRESSW, xprD3D9_SAMPLER_ADDRESS[sampler->addressW]);
 	}
 	
 	return XprTrue;
@@ -344,7 +382,7 @@ XprInputGpuFormatMapping XprInputGpuFormatMappings[] = {
 XprInputGpuFormatMapping* xprInputGpuFormatMappingGet(XprGpuFormat xprFormat)
 {
 	size_t i=0;
-	for(i=0; i<XprCountOf(XprInputGpuFormatMappings); ++i) {
+	for(i=0; i<xprCountOf(XprInputGpuFormatMappings); ++i) {
 		XprInputGpuFormatMapping* mapping = &XprInputGpuFormatMappings[i];
 		if(xprFormat == mapping->xprFormat)
 			return mapping;

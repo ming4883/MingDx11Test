@@ -45,6 +45,68 @@ void xprMat44Mult(XprMat44* _out, const XprMat44* a, const XprMat44* b)
 	_out->m33 = ta.m30 * tb.m03 + ta.m31 * tb.m13 + ta.m32 * tb.m23 + ta.m33 * tb.m33;
 }
 
+XprBool xprMat44Inverse(XprMat44* _out, const XprMat44* m)
+{
+	float invDet;
+
+	XprMat44 t = *m;
+
+	float v0 = t.m20 * t.m31 - t.m21 * t.m30;
+	float v1 = t.m20 * t.m32 - t.m22 * t.m30;
+	float v2 = t.m20 * t.m33 - t.m23 * t.m30;
+	float v3 = t.m21 * t.m32 - t.m22 * t.m31;
+	float v4 = t.m21 * t.m33 - t.m23 * t.m31;
+	float v5 = t.m22 * t.m33 - t.m23 * t.m32;
+
+	float t00 = + (v5 * t.m11 - v4 * t.m12 + v3 * t.m13);
+	float t10 = - (v5 * t.m10 - v2 * t.m12 + v1 * t.m13);
+	float t20 = + (v4 * t.m10 - v2 * t.m11 + v0 * t.m13);
+	float t30 = - (v3 * t.m10 - v1 * t.m11 + v0 * t.m12);
+
+	float det = t00 * t.m00 + t10 * t.m01 + t20 * t.m02 + t30 * t.m03;
+
+	if(fabsf(det) < 1e-4f)
+		return XprFalse;
+
+	invDet = 1 / det;
+
+	_out->m00 = t00 * invDet;
+	_out->m10 = t10 * invDet;
+	_out->m20 = t20 * invDet;
+	_out->m30 = t30 * invDet;
+
+	_out->m01 = - (v5 * t.m01 - v4 * t.m02 + v3 * t.m03) * invDet;
+	_out->m11 = + (v5 * t.m00 - v2 * t.m02 + v1 * t.m03) * invDet;
+	_out->m21 = - (v4 * t.m00 - v2 * t.m01 + v0 * t.m03) * invDet;
+	_out->m31 = + (v3 * t.m00 - v1 * t.m01 + v0 * t.m02) * invDet;
+
+	v0 = t.m10 * t.m31 - t.m11 * t.m30;
+	v1 = t.m10 * t.m32 - t.m12 * t.m30;
+	v2 = t.m10 * t.m33 - t.m13 * t.m30;
+	v3 = t.m11 * t.m32 - t.m12 * t.m31;
+	v4 = t.m11 * t.m33 - t.m13 * t.m31;
+	v5 = t.m12 * t.m33 - t.m13 * t.m32;
+
+	_out->m02 = + (v5 * t.m01 - v4 * t.m02 + v3 * t.m03) * invDet;
+	_out->m12 = - (v5 * t.m00 - v2 * t.m02 + v1 * t.m03) * invDet;
+	_out->m22 = + (v4 * t.m00 - v2 * t.m01 + v0 * t.m03) * invDet;
+	_out->m32 = - (v3 * t.m00 - v1 * t.m01 + v0 * t.m02) * invDet;
+
+	v0 = t.m21 * t.m10 - t.m20 * t.m11;
+	v1 = t.m22 * t.m10 - t.m20 * t.m12;
+	v2 = t.m23 * t.m10 - t.m20 * t.m13;
+	v3 = t.m22 * t.m11 - t.m21 * t.m12;
+	v4 = t.m23 * t.m11 - t.m21 * t.m13;
+	v5 = t.m23 * t.m12 - t.m22 * t.m13;
+
+	_out->m03 = - (v5 * t.m01 - v4 * t.m02 + v3 * t.m03) * invDet;
+	_out->m13 = + (v5 * t.m00 - v2 * t.m02 + v1 * t.m03) * invDet;
+	_out->m23 = - (v4 * t.m00 - v2 * t.m01 + v0 * t.m03) * invDet;
+	_out->m33 = + (v3 * t.m00 - v1 * t.m01 + v0 * t.m02) * invDet;
+
+	return XprTrue;
+}
+
 void xprMat44Transpose(XprMat44* _out, const XprMat44* m)
 {
 	XprMat44 t = *m;
@@ -61,6 +123,17 @@ void xprMat44Transform(XprVec4* _out, const XprMat44* m)
 	_out->y = m->m10 * v.x + m->m11 * v.y + m->m12 * v.z + m->m13 * v.w;
 	_out->z = m->m20 * v.x + m->m21 * v.y + m->m22 * v.z + m->m23 * v.w;
 	_out->w = m->m30 * v.x + m->m31 * v.y + m->m32 * v.z + m->m33 * v.w;
+}
+
+void xprMat44TransformPlane(XprVec4* _out, const XprMat44* m)
+{
+	/*
+	XprVec4 v = *_out;
+	_out->x = m->m00 * v.x + m->m01 * v.y + m->m02 * v.z + m->m03 * v.w;
+	_out->y = m->m10 * v.x + m->m11 * v.y + m->m12 * v.z + m->m13 * v.w;
+	_out->z = m->m20 * v.x + m->m21 * v.y + m->m22 * v.z + m->m23 * v.w;
+	_out->w = m->m30 * v.x + m->m31 * v.y + m->m32 * v.z + m->m33 * v.w;
+	*/
 }
 
 void xprMat44TransformAffineDir(XprVec3* _out, const XprMat44* m)

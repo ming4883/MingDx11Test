@@ -17,6 +17,7 @@ typedef struct XprRenderBufferImpl
 	struct XprRenderBufferImpl* next;
 	struct XprRenderBufferImpl* last;
 	XprBool acquired;
+	IDirect3DSurface9* d3dsurf;
 
 } XprRenderBufferImpl;
 
@@ -24,7 +25,6 @@ typedef struct XprRenderTargetImpl
 {
 	XprRenderTarget i;
 
-	//int glName;
 	size_t bufferCount;
 	struct XprRenderBufferImpl* bufferList;
 } XprRenderTargetImpl;

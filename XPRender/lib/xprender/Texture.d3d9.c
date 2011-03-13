@@ -13,7 +13,7 @@ XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
 XprTextureGpuFormatMapping* xprTextureGpuFormatMappingGet(XprGpuFormat xprFormat)
 {
 	size_t i=0;
-	for(i=0; i<XprCountOf(XprTextureGpuFormatMappings); ++i) {
+	for(i=0; i<xprCountOf(XprTextureGpuFormatMappings); ++i) {
 		XprTextureGpuFormatMapping* mapping = &XprTextureGpuFormatMappings[i];
 		if(xprFormat == mapping->xprFormat)
 			return mapping;
@@ -154,8 +154,8 @@ unsigned char* xprTextureGetMipLevel(XprTexture* self, size_t surfIndex, size_t 
 	if(mipIndex > self->mipCount)
 		return nullptr;
 
-	if(nullptr == self->data)
-		return nullptr;
+	//if(nullptr == self->data)
+	//	return nullptr;
 
 	return self->data + (surfIndex * self->surfSizeInByte) + XprGpuFormat_getMipLevelOffset(self, mipIndex, mipWidth, mipHeight);
 }

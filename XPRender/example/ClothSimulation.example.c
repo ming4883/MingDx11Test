@@ -24,16 +24,24 @@ Mesh* bgMesh = nullptr;
 
 Material* sceneMtl = nullptr;
 Material* bgMtl = nullptr;
+Material* shadowMapMtl = nullptr;
 XprTexture* texture = nullptr;
+
+XprMat44 shadowMapMtx;
+XprRenderBuffer* shadowMap = nullptr;
+XprRenderBuffer* shadowMapZ = nullptr;
+size_t shadowMapSize = 1024;
+XprVec4 shadowMapParam = { 1.f / 1024, 1e-3f * 1.5f, 0, 0};
 
 typedef struct Settings
 {
 	float gravity;
 	float airResistance;
 	float impact;
+	float shadowSlopScale;
 } Settings;
 
-Settings settings = {10, 5, 3};
+Settings settings = {10, 5, 3, 4};
 
 typedef struct Mouse
 {
@@ -45,6 +53,71 @@ typedef struct Mouse
 } Mouse;
 
 Mouse mouse = {0};
+
+void computeShadowMapMatrix(XprMat44* m, const XprVec3* minPt, const XprVec3* maxPt)
+{	
+	XprMat44 viewMtx;
+	XprMat44 projMtx;
+	{
+		XprVec3 eyeAt;
+		XprVec3 lookAt;
+		XprVec3 eyeUp;
+		
+		eyeAt.x = (maxPt->x + minPt->x) / 2;
+		eyeAt.y = maxPt->y;
+		eyeAt.z = (maxPt->z + minPt->z) / 2;
+
+		lookAt = eyeAt;
+		lookAt.y = minPt->y;
+
+		lookAt.z = minPt->z;
+
+		eyeUp = *XprVec3_c001();
+
+		xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
+	}
+
+	{
+		int i;
+		XprVec3 vmax, vmin;
+		XprVec3 c[8] = {
+			{minPt->x, minPt->y, minPt->z},
+			{maxPt->x, minPt->y, minPt->z},
+			{minPt->x, maxPt->y, minPt->z},
+			{maxPt->x, maxPt->y, minPt->z},
+			{minPt->x, minPt->y, maxPt->z},
+			{maxPt->x, minPt->y, maxPt->z},
+			{minPt->x, maxPt->y, maxPt->z},
+			{maxPt->x, maxPt->y, maxPt->z},
+		};
+
+		for(i=0; i<8; ++i) {
+			XprVec3* pt = &c[i];
+			xprMat44TransformAffinePt(pt, &viewMtx);
+			if(0 ==i) {
+				vmax = *pt;
+				vmin = *pt;
+			}
+			else {
+				vmax.x = xprMax(vmax.x, pt->x);
+				vmax.y = xprMax(vmax.y, pt->y);
+				vmax.z = xprMax(vmax.z, pt->z);
+
+				vmin.x = xprMin(vmin.x, pt->x);
+				vmin.y = xprMin(vmin.y, pt->y);
+				vmin.z = xprMin(vmin.z, pt->z);
+			}
+		}
+
+		xprMat44SetIdentity(&projMtx);
+		projMtx.m00 = 2 / (vmax.x - vmin.x);
+		projMtx.m11 = 2 / (vmax.y - vmin.y);
+		projMtx.m22 =-2 / (vmax.z - vmin.z);
+	}
+	
+	xprMat44Mult(m, &projMtx, &viewMtx);
+	xprMat44AdjustToAPIDepthRange(m);
+}
 
 void drawBackground()
 {
@@ -67,9 +140,89 @@ void drawBackground()
 	meshRenderTriangles(bgMesh);
 }
 
+void drawShadowMap()
+{
+	XprGpuStateDesc* gpuState = &app->gpuState->desc;
+	
+	XprRenderBuffer* bufs[] = {shadowMap, nullptr};
+	xprRenderTargetPreRender(app->renderTarget, bufs, shadowMapZ);
+	xprRenderTargetSetViewport(0, 0, (float)shadowMapSize, (float)shadowMapSize, -1, 1);
+	xprRenderTargetClearColor(1, 1, 1, 1);
+	xprRenderTargetClearDepth(1);
+
+	// compute shadow map matrix
+	{
+		XprVec3 minPt = {-4, -4, -4};
+		XprVec3 maxPt = { 4,  4,  4};
+		computeShadowMapMatrix(&shadowMapMtx, &minPt, &maxPt);
+	}
+	
+	gpuState->cull = XprTrue;
+	gpuState->depthTest = XprTrue;
+	xprGpuStatePreRender(app->gpuState);
+
+	xprGpuProgramPreRender(shadowMapMtl->program);
+	xprGpuProgramUniform4fv(shadowMapMtl->program, XprHash("u_shadowMapParam"), 1, shadowMapParam.v);
+
+	// draw floor
+	{	
+		{
+			XprMat44 m;
+			xprMat44MakeRotation(&m, XprVec3_c100(), -90);
+			
+			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
+		}
+		appShaderContextPreRender(app, shadowMapMtl);
+
+		meshPreRender(floorMesh, shadowMapMtl->program);
+		meshRenderTriangles(floorMesh);
+	}
+
+	// draw cloth
+	{	
+		gpuState->cull = XprFalse;
+		xprGpuStatePreRender(app->gpuState);
+		{
+			XprMat44 m;
+			xprMat44SetIdentity(&m);
+
+			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
+		}
+		appShaderContextPreRender(app, shadowMapMtl);
+
+		meshPreRender(cloth->mesh, shadowMapMtl->program);
+		meshRenderTriangles(cloth->mesh);
+		
+		gpuState->cull = XprTrue;
+		xprGpuStatePreRender(app->gpuState);
+	}
+
+	// draw balls
+	{	
+		int i;
+		for(i=0; i<BallCount; ++i) {
+			XprMat44 m;
+			XprVec3 scale = {ball[i].radius, ball[i].radius, ball[i].radius};
+			xprMat44MakeScale(&m, &scale);
+			xprMat44SetTranslation(&m, &ball[i].center);
+			
+			//xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
+			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &shadowMapMtx, &m);
+
+			appShaderContextPreRender(app, shadowMapMtl);
+			
+			meshPreRender(ballMesh, shadowMapMtl->program);
+			meshRenderTriangles(ballMesh);
+		}
+	}
+
+	xprRenderTargetPreRender(nullptr, nullptr, nullptr);
+	xprRenderTargetSetViewport(0, 0, (float)xprAppContext.xres, (float)xprAppContext.yres, -1, 1);
+}
+
 void drawScene()
 {
-	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 5);
+	XprVec3 eyeAt = xprVec3(-2.5f, 1.5f, 4);
 	XprVec3 lookAt = xprVec3(0, 0, 0);
 	XprVec3 eyeUp = *XprVec3_c010();
 	XprMat44 viewMtx;
@@ -80,6 +233,7 @@ void drawScene()
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
+	xprMat44AdjustToAPIDepthRange(&projMtx);
 	xprMat44Mult(&viewProjMtx, &projMtx, &viewMtx);
 
 	gpuState->cull = XprTrue;
@@ -87,7 +241,29 @@ void drawScene()
 	xprGpuStatePreRender(app->gpuState);
 
 	xprGpuProgramPreRender(sceneMtl->program);
-	xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_tex"), texture);
+	{	
+		XprSampler sampler = {
+			XprSamplerFilter_MagMinMip_Linear, 
+			XprSamplerAddress_Wrap, 
+			XprSamplerAddress_Wrap
+		};
+		xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_tex"), texture, &sampler);
+	}
+	{
+		XprSampler sampler = {
+			XprSamplerFilter_MagMin_Linear_Mip_None, 
+			XprSamplerAddress_Clamp, 
+			XprSamplerAddress_Clamp
+		};
+		xprGpuProgramUniformTexture(sceneMtl->program, XprHash("u_shadowMapTex"), shadowMap->texture, &sampler);
+	}
+	{
+		XprMat44 shadowMapTexMtx = shadowMapMtx;
+		xprMat44AdjustToAPIProjectiveTexture(&shadowMapTexMtx);
+		xprMat44Transpose(&shadowMapTexMtx, &shadowMapTexMtx);
+		xprGpuProgramUniformMtx4fv(sceneMtl->program, XprHash("u_shadowMapTexMtx"), 1, XprFalse, shadowMapTexMtx.v);
+		xprGpuProgramUniform4fv(sceneMtl->program, XprHash("u_shadowMapParam"), 1, shadowMapParam.v);
+	}
 
 	// draw floor
 	{	
@@ -97,9 +273,9 @@ void drawScene()
 		app->shaderContext.matShininess = 32;
 		{
 			XprMat44 m;
-			XprVec3 axis = {1, 0, 0};
-			xprMat44MakeRotation(&m, &axis, -90);
+			xprMat44MakeRotation(&m, XprVec3_c100(), -90);
 			
+			app->shaderContext.worldMtx = m;
 			xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
@@ -121,6 +297,7 @@ void drawScene()
 			XprMat44 m;
 			xprMat44SetIdentity(&m);
 
+			app->shaderContext.worldMtx = m;
 			xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &m);
 		}
@@ -146,6 +323,7 @@ void drawScene()
 			xprMat44MakeScale(&m, &scale);
 			xprMat44SetTranslation(&m, &ball[i].center);
 			
+			app->shaderContext.worldMtx = m;
 			xprMat44Mult(&app->shaderContext.worldViewMtx, &viewMtx, &m);
 			xprMat44Mult(&app->shaderContext.worldViewProjMtx, &viewProjMtx, &m);
 
@@ -165,16 +343,22 @@ void xprAppUpdate(unsigned int elapsedMilliseconds)
 	int iter;
 	XprVec3 f;
 
+	float dt = (float)elapsedMilliseconds / 1000;
+
 	remoteConfigLock(config);
 	lsettings = settings;
 	remoteConfigUnlock(config);
 
-	t += 0.0005f * lsettings.impact;
+	shadowMapParam.z = settings.shadowSlopScale;
+
+	//t += 0.0005f * lsettings.impact;
+	t += dt * 0.1f * lsettings.impact;
 
 	ball[0].center.z = cosf(t) * 5.f;
 	ball[1].center.z = sinf(t) * 5.f;
 
-	cloth->timeStep = 0.01f;	// fixed time step
+	//cloth->timeStep = 0.01f;	// fixed time step
+	cloth->timeStep = dt * 2;	// fixed time step
 	cloth->damping = lsettings.airResistance * 1e-3f;
 
 	// perform relaxation
@@ -228,8 +412,9 @@ void xprAppHandleMouse(int x, int y, int action)
 
 void xprAppRender()
 {
-	xprRenderTargetClearDepth(1);
+	drawShadowMap();
 
+	xprRenderTargetClearDepth(1);
 	drawBackground();
 	drawScene();
 }
@@ -241,8 +426,15 @@ void xprAppConfig()
 	xprAppContext.yres = 600;
 	xprAppContext.multiSampling = XprFalse;
 	xprAppContext.vsync = XprFalse;
-	xprAppContext.apiMajorVer = 3;
-	xprAppContext.apiMinorVer = 3;
+
+	if(strcmp(xprAppContext.apiName, "gles") == 0) {
+		xprAppContext.apiMajorVer = 2;
+		xprAppContext.apiMinorVer = 0;
+	}
+	else {
+		xprAppContext.apiMajorVer = 3;
+		xprAppContext.apiMinorVer = 3;
+	}
 }
 
 void xprAppFinalize()
@@ -252,6 +444,7 @@ void xprAppFinalize()
 	meshFree(ballMesh);
 	meshFree(floorMesh);
 	meshFree(bgMesh);
+	materialFree(shadowMapMtl);
 	materialFree(sceneMtl);
 	materialFree(bgMtl);
 	xprTextureFree(texture);
@@ -269,6 +462,7 @@ XprBool xprAppInitialize()
 			{"gravity", &settings.gravity, 1, 100},
 			{"airResistance", &settings.airResistance, 1, 20},
 			{"impact", &settings.impact, 1, 10},
+			{"shadowSlopScale", &settings.shadowSlopScale, 0, 8},
 			{nullptr, nullptr, 0, 0}
 		};
 		
@@ -276,6 +470,10 @@ XprBool xprAppInitialize()
 		remoteConfigInit(config, 80, XprTrue);
 		remoteConfigAddVars(config, descs);
 	}
+
+	// shadow map
+	shadowMap = xprRenderTargetAcquireBuffer(app->renderTarget, shadowMapSize, shadowMapSize, XprGpuFormat_FloatR16);
+	shadowMapZ = xprRenderTargetAcquireBuffer(app->renderTarget, shadowMapSize, shadowMapSize, XprGpuFormat_Depth16);
 
 	// materials
 	{
@@ -291,6 +489,11 @@ XprBool xprAppInitialize()
 		bgMtl = appLoadMaterial(
 			"Common.Bg.Vertex",
 			"Common.Bg.Fragment",
+			nullptr, nullptr, nullptr);
+
+		shadowMapMtl = appLoadMaterial(
+			"ShadowMap.Create.Vertex",
+			"ShadowMap.Create.Fragment",
 			nullptr, nullptr, nullptr);
 		
 		appLoadMaterialEnd(app);
@@ -329,6 +532,7 @@ XprBool xprAppInitialize()
 		bgMesh = meshAlloc();
 		meshInitWithScreenQuad(bgMesh);
 	}
+
 
 	return XprTrue;
 }

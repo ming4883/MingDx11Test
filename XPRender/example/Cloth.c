@@ -298,13 +298,14 @@ void Cloth_collideWithPlane(Cloth* self, const XprVec3* normal, const XprVec3* p
 	size_t i;
 	size_t cnt = self->segmentCount * self->segmentCount;
 	float d = -xprVec3Dot(normal, point);
+	float e = collisionEpsilon * 1e-1f;
 
 	for(i = 0; i < cnt; ++i) {
 		XprVec3* x = &self->p[i];
 		float l = xprVec3Dot((XprVec3*)normal, x) + d;
-		if(l < collisionEpsilon) {
+		if(l < e) {
 			XprVec3 dx;
-			xprVec3MultS(&dx, normal, -(l - collisionEpsilon));
+			xprVec3MultS(&dx, normal, -(l - e));
 			xprVec3Add(x, x, &dx);
 		}
 	}
