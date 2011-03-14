@@ -370,9 +370,11 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		glTexParameteri(gltarget, GL_TEXTURE_MIN_FILTER, xprGL_SAMPLER_MIN_FILTER[sampler->filter]);
 		glTexParameteri(gltarget, GL_TEXTURE_WRAP_S, xprGL_SAMPLER_ADDRESS[sampler->addressU]);
 		glTexParameteri(gltarget, GL_TEXTURE_WRAP_T, xprGL_SAMPLER_ADDRESS[sampler->addressV]);
+#if !defined(XPR_GLES_2)
 		if(GL_TEXTURE_2D != gltarget) {
 			glTexParameteri(gltarget, GL_TEXTURE_WRAP_R, xprGL_SAMPLER_ADDRESS[sampler->addressW]);
 		}
+#endif
 	}
 		
 	return XprTrue;

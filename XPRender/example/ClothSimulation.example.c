@@ -467,7 +467,7 @@ XprBool xprAppInitialize()
 		};
 		
 		config = remoteConfigAlloc();
-		remoteConfigInit(config, 80, XprTrue);
+		remoteConfigInit(config, 8080, XprTrue);
 		remoteConfigAddVars(config, descs);
 	}
 

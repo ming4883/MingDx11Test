@@ -110,7 +110,7 @@ void xprAppFinalize()
 {
 	meshFree(mesh);
 	materialFree(mtl);
-	//remoteConfigFree(config);
+	remoteConfigFree(config);
 	appFree(app);
 }
 
@@ -126,9 +126,9 @@ XprBool xprAppInitialize()
 			{nullptr, nullptr, 0, 0}
 		};
 		
-		//config = remoteConfigAlloc();
-		//remoteConfigInit(config, 80, XprTrue);
-		//remoteConfigAddVars(config, descs);
+		config = remoteConfigAlloc();
+		remoteConfigInit(config, 8080, XprTrue);
+		remoteConfigAddVars(config, descs);
 	}
 	
 	// load mesh
