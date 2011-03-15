@@ -256,6 +256,31 @@ ADD_EXECUTABLE( example_mesh ${CONSOLE_SYSTEM}
 	)
 TARGET_LINK_LIBRARIES( example_mesh xprender ${PLATFORM_LIBS} )
 
+
+# example_mesh_performance
+ADD_EXECUTABLE( example_mesh_performance ${CONSOLE_SYSTEM}
+	example/MeshPerformance.example.c
+	example/MeshPerformance.glsl
+	example/Common.c
+	example/Common.h
+	example/Common.glsl
+	example/Remote.c
+	example/Remote.h
+	example/Remote.impl.h
+	example/Remote.impl.windows.c
+	example/Remote.impl.windows.h
+	example/Stream.c
+	example/Stream.h
+	example/Pvr.c
+	example/Mesh.c
+	example/Mesh.obj.c
+	example/Mesh.h
+	example/Material.c
+	example/Material.h
+	)
+TARGET_LINK_LIBRARIES( example_mesh_performance xprender ${PLATFORM_LIBS} )
+
+
 IF( WIN32 )
 
 SET( PLATFORM_LIBS d3d9 d3dx9 winmm ws2_32 )

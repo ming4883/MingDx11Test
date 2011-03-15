@@ -48,6 +48,10 @@ void xprMat44TransformAffineDir(struct XprVec3* _out, const XprMat44* m);
 
 void xprMat44TransformAffinePt(struct XprVec3* _out, const XprMat44* m);
 
+void xprMat44TransformAffineDirs(struct XprVec3* _out, const struct XprVec3* _in, size_t cnt, const XprMat44* m);
+
+void xprMat44TransformAffinePts(struct XprVec3* _out, const struct XprVec3* _in, size_t cnt, const XprMat44* m);
+
 void xprMat44SetIdentity(XprMat44* _out);
 
 void xprMat44SetTranslation(XprMat44* _out, const struct XprVec3* v);

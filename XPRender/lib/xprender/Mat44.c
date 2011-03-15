@@ -152,6 +152,26 @@ void xprMat44TransformAffinePt(XprVec3* _out, const XprMat44* m)
 	_out->z = m->m20 * v.x + m->m21 * v.y + m->m22 * v.z + m->m23;
 }
 
+void xprMat44TransformAffineDirs(XprVec3* _out, const XprVec3* _in, size_t cnt, const XprMat44* m)
+{
+	size_t i = 0;
+	for(i = 0; i < cnt; ++i) {
+		_out[i].x = m->m00 * _in[i].x + m->m01 * _in[i].y + m->m02 * _in[i].z;
+		_out[i].y = m->m10 * _in[i].x + m->m11 * _in[i].y + m->m12 * _in[i].z;
+		_out[i].z = m->m20 * _in[i].x + m->m21 * _in[i].y + m->m22 * _in[i].z;
+	}
+}
+
+void xprMat44TransformAffinePts(XprVec3* _out, const XprVec3* _in, size_t cnt, const XprMat44* m)
+{
+	size_t i = 0;
+	for(i = 0; i < cnt; ++i) {
+		_out[i].x = m->m00 * _in[i].x + m->m01 * _in[i].y + m->m02 * _in[i].z + m->m03;
+		_out[i].y = m->m10 * _in[i].x + m->m11 * _in[i].y + m->m12 * _in[i].z + m->m13;
+		_out[i].z = m->m20 * _in[i].x + m->m21 * _in[i].y + m->m22 * _in[i].z + m->m23;
+	}
+}
+
 void xprMat44SetIdentity(XprMat44* _out)
 {
 	_out->m00 = 1; _out->m01 = 0; _out->m02 = 0; _out->m03 = 0;
