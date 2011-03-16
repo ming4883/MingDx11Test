@@ -64,3 +64,23 @@ XprHashCode HSIEH(const char * data, int len)
 {
 	return (XprHashCode)SuperFastHash(data, len);
 }
+
+#define xpr_hash_const(i) XPR_HASH_CONSTANTS[i % XPR_HASH_DEPTH]
+#define xpr_hash_mult(i) XPR_HASH_MULTS[i % XPR_HASH_DEPTH]
+
+XprHashCode XprHashStruct(const char * data, int len)
+{
+	if(1 == len) {
+		return XPR_HASH_FUNCTION(XPR_HASH_CONSTANTS[0], data[0]);
+	}
+	else {
+		size_t i;
+		size_t last = xpr_hash_mult(len-2) * XPR_HASH_FUNCTION(xpr_hash_const(len-1), data[len-1]);
+
+		for(i = len-2; i > 0; --i) {
+			last = xpr_hash_mult(i-1) * XPR_HASH_FUNCTION(last, data[i]);
+		}
+
+		return XPR_HASH_FUNCTION(last, data[0]);
+	}
+}

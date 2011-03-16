@@ -67,6 +67,17 @@ void TestStrHash(CuTest *tc)
 	CuAssertTrue(tc, XprHash("u_worldViewProjMtx") == XprHash(s2));
 }
 
+void TestStrHashStruct(CuTest *tc)
+{
+	const char* s1 = "u";
+	const char* s2 = "u_";
+	const char* sN = "u_worldViewProjMtx";
+
+	CuAssertTrue(tc, XprHash(s1) == XprHashStruct(s1, strlen(s1)));
+	CuAssertTrue(tc, XprHash(s2) == XprHashStruct(s2, strlen(s2)));
+	CuAssertTrue(tc, XprHash(sN) == XprHashStruct(sN, strlen(sN)));
+}
+
 int gResult;	// this avoid compile optimization
 
 void TestStrHashPerformance(CuTest *tc)
@@ -110,6 +121,7 @@ CuSuite* XprGetSuite()
 	CuSuite* suite = CuSuiteNew();
 	SUITE_ADD_TEST(suite, TestNvpParser);
 	SUITE_ADD_TEST(suite, TestStrHash);
+	SUITE_ADD_TEST(suite, TestStrHashStruct);
 	SUITE_ADD_TEST(suite, TestStrHashPerformance);
 	return suite;
 }

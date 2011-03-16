@@ -5,7 +5,7 @@
 #include "red_tile_texture.h"
 
 AppContext* app = nullptr;
-RemoteConfig* config = nullptr;
+//RemoteConfig* config = nullptr;
 XprVec4 bgClr = {0.25f, 0.25f, 0.25f, 1};
 Mesh* mesh = nullptr;
 Mesh* batchMesh = nullptr;
@@ -61,9 +61,9 @@ void xprAppRender()
 
 	Settings lsettings;
 
-	remoteConfigLock(config);
+	//remoteConfigLock(config);
 	lsettings = settings;
-	remoteConfigUnlock(config);
+	//remoteConfigUnlock(config);
 	
 	xprMat44CameraLookAt(&viewMtx, &eyeAt, &lookAt, &eyeUp);
 	xprMat44Prespective(&projMtx, 45.0f, app->aspect.width / app->aspect.height, 0.1f, 30.0f);
@@ -155,7 +155,7 @@ void xprAppFinalize()
 	meshFree(mesh);
 	xprTextureFree(texture);
 	materialFree(mtl);
-	remoteConfigFree(config);
+	//remoteConfigFree(config);
 	appFree(app);
 }
 
@@ -164,6 +164,7 @@ XprBool xprAppInitialize()
 	app = appAlloc();
 	appInit(app);
 
+	/*
 	// remote config
 	{
 		RemoteVarDesc descs[] = {
@@ -175,6 +176,7 @@ XprBool xprAppInitialize()
 		remoteConfigInit(config, 8080, XprTrue);
 		remoteConfigAddVars(config, descs);
 	}
+	*/
 	
 	// load mesh
 	{
