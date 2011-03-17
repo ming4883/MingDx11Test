@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 typedef size_t XprHashCode;
-XprHashCode XprHashStruct(const char * data, int len);
+XprHashCode XprHashStruct(const void* data, size_t len);
 
 #ifdef __cplusplus
 }

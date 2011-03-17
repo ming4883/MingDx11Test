@@ -67,15 +67,23 @@ void TestStrHash(CuTest *tc)
 	CuAssertTrue(tc, XprHash("u_worldViewProjMtx") == XprHash(s2));
 }
 
+typedef struct Foo
+{
+	size_t a, b, c;
+} Foo;
+
 void TestStrHashStruct(CuTest *tc)
 {
-	const char* s1 = "u";
-	const char* s2 = "u_";
-	const char* sN = "u_worldViewProjMtx";
+	Foo f1a = {0x000000a7, 0x00000002, 0x00000051};
+	Foo f1b = {0x00000145, 0x00000000, 0x0000013a};
+	Foo f2a = {0x00000115, 0x00000002, 0x000000ff};
+	Foo f2b = {0x0000012c, 0x00000002, 0x00000127};
+	Foo f3a = {0x00000102, 0x00000000, 0x000000fd};
+	Foo f3b = {0x000001f5, 0x00000003, 0x000001ee};
 
-	CuAssertTrue(tc, XprHash(s1) == XprHashStruct(s1, strlen(s1)));
-	CuAssertTrue(tc, XprHash(s2) == XprHashStruct(s2, strlen(s2)));
-	CuAssertTrue(tc, XprHash(sN) == XprHashStruct(sN, strlen(sN)));
+	CuAssertTrue(tc, XprHashStruct(&f1a, sizeof(Foo)) != XprHashStruct(&f1b, sizeof(Foo)));
+	CuAssertTrue(tc, XprHashStruct(&f2a, sizeof(Foo)) != XprHashStruct(&f2b, sizeof(Foo)));
+	CuAssertTrue(tc, XprHashStruct(&f3a, sizeof(Foo)) != XprHashStruct(&f3b, sizeof(Foo)));
 }
 
 int gResult;	// this avoid compile optimization

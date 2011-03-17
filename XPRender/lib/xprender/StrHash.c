@@ -68,19 +68,36 @@ XprHashCode HSIEH(const char * data, int len)
 #define xpr_hash_const(i) XPR_HASH_CONSTANTS[i % XPR_HASH_DEPTH]
 #define xpr_hash_mult(i) XPR_HASH_MULTS[i % XPR_HASH_DEPTH]
 
-XprHashCode XprHashStruct(const char * data, int len)
+XprHashCode XprHashStruct(const void* data, size_t len)
 {
+	/*
 	if(1 == len) {
-		return XPR_HASH_FUNCTION(XPR_HASH_CONSTANTS[0], data[0]);
+		return XPR_HASH_FUNCTION(XPR_HASH_CONSTANTS[0], ((char*)data)[0]);
 	}
 	else {
 		size_t i;
-		size_t last = xpr_hash_mult(len-2) * XPR_HASH_FUNCTION(xpr_hash_const(len-1), data[len-1]);
+		size_t last = xpr_hash_mult(len-2) * XPR_HASH_FUNCTION(xpr_hash_const(len-1), ((char*)data)[len-1]);
 
 		for(i = len-2; i > 0; --i) {
-			last = xpr_hash_mult(i-1) * XPR_HASH_FUNCTION(last, data[i]);
+			last = xpr_hash_mult(i-1) * XPR_HASH_FUNCTION(last, ((char*)data)[i]);
 		}
 
-		return XPR_HASH_FUNCTION(last, data[0]);
+		return XPR_HASH_FUNCTION(last, ((char*)data)[0]);
 	}
+	*/
+
+	// http://en.wikipedia.org/wiki/Jenkins_hash_function
+	uint32_t hash, i;
+    for(hash = i = 0; i < len; ++i)
+    {
+        hash += ((char*)data)[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+
+    return hash;
+
 }
