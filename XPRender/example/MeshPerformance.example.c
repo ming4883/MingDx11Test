@@ -12,8 +12,8 @@ Mesh* batchMesh = nullptr;
 Material* mtl = nullptr;
 XprTexture* texture = nullptr;
 
-#define CNT 4
-#define BATCH_DRAW 0
+#define CNT 5
+#define BATCH_DRAW 1
 
 typedef struct Settings
 {
