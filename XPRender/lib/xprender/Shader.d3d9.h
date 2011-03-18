@@ -44,8 +44,10 @@ typedef struct XprGpuProgramImpl
 
 	IDirect3DVertexShader9* d3dvs;
 	IDirect3DPixelShader9* d3dps;
-	XprGpuProgramUniform* uniformVs;
-	XprGpuProgramUniform* uniformPs;
+	XprGpuProgramUniform* cacheVs;
+	XprGpuProgramUniform* cachePs;
+	XprGpuProgramUniform* uniformsVs;
+	XprGpuProgramUniform* uniformsPs;
 	XprGpuProgramInputAssembly* ias;
 
 } XprGpuProgramImpl;

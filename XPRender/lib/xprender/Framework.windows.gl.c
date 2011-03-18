@@ -41,6 +41,8 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
     DWORD previousTime = GetTickCount();
     MSG msg = {0};
 	char glVersionStr[64];
+	DWORD accumTime = 0;
+	DWORD accumFrame = 0;
 
     xprAppConfig();
 
@@ -126,7 +128,6 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
         wglMakeCurrent(hDC, hRC);
     }
 
-
     err = glewInit();
     if (GLEW_OK != err) {
         xprDbgStr("GLEW Error: %s\n", glewGetErrorString(err));
@@ -174,6 +175,15 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
             DWORD deltaTime = currentTime - previousTime;
 			GLint err;
             previousTime = currentTime;
+
+			accumTime += deltaTime;
+			accumFrame += 1;
+
+			while(accumTime >= 4000) {
+				xprDbgStr("fps = %.0f\n", accumFrame * 0.25f);
+				accumTime -= 4000;
+				accumFrame = 0;
+			}
 
             xprAppUpdate(deltaTime);
             xprAppRender();

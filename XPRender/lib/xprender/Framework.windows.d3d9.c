@@ -34,6 +34,8 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
     HWND hWnd;
     DWORD previousTime = GetTickCount();
     MSG msg = {0};
+	DWORD accumTime = 0;
+	DWORD accumFrame = 0;
 	
     xprAppConfig();
 
@@ -74,7 +76,6 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
 			d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;
 		}
 		
-
 		// create a device class using this information and information from the d3dpp stuct
 		hr = IDirect3D9_CreateDevice(xprAPI.d3d,
 			D3DADAPTER_DEFAULT,
@@ -121,6 +122,15 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE ignoreMe0, LPSTR ignoreMe1, INT ig
             DWORD currentTime = GetTickCount();
             DWORD deltaTime = currentTime - previousTime;
 			previousTime = currentTime;
+
+			accumTime += deltaTime;
+			accumFrame += 1;
+
+			while(accumTime >= 4000) {
+				xprDbgStr("fps = %.0f\n", accumFrame * 0.25f);
+				accumTime -= 4000;
+				accumFrame = 0;
+			}
 
             xprAppUpdate(deltaTime);
 

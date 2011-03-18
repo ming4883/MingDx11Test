@@ -23,23 +23,12 @@ typedef struct Settings
 Settings settings = {100};
 
 float t = 0;
-unsigned int accumTime = 0;
-unsigned int accumFrame = 0;
 
 void xprAppUpdate(unsigned int elapsedMilliseconds)
 {
 	t += elapsedMilliseconds * 0.0001f;
 	if(t > 1.0f) {
 		t = 0.0f;
-	}
-
-	accumTime += elapsedMilliseconds;
-	accumFrame += 1;
-
-	while(accumTime >= 4000) {
-		xprDbgStr("fps = %.1f\n", accumFrame * 0.25f);
-		accumTime -= 4000;
-		accumFrame = 0;
 	}
 }
 

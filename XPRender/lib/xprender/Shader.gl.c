@@ -116,7 +116,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 
 	glUseProgram(impl->glName);
 	
-	// query all uniforms
+	// query all cache
 	{
 		GLuint i;
 		GLuint uniformCnt;
@@ -128,18 +128,20 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		
 		glGetProgramiv(impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
 		
-		xprDbgStr("glProgram %d has %d uniforms\n", impl->glName, uniformCnt);
+		impl->uniforms = malloc(sizeof(XprGpuProgramUniform) * uniformCnt);
+		memset(impl->uniforms, 0, sizeof(XprGpuProgramUniform) * uniformCnt);
+		xprDbgStr("glProgram %d has %d cache\n", impl->glName, uniformCnt);
 
 		for(i=0; i<uniformCnt; ++i) {
 			XprGpuProgramUniform* uniform;
 			glGetActiveUniform(impl->glName, i, xprCountOf(uniformName), &uniformLength, &uniformSize, &uniformType, uniformName);
-			uniform = malloc(sizeof(XprGpuProgramUniform));
+			uniform = &impl->uniforms[i];
 			uniform->hash = XprHash(uniformName);
 			uniform->loc = i;
 			uniform->size = uniformSize;
 			uniform->texunit = texunit;
 
-			HASH_ADD_INT(impl->uniforms, hash, uniform);
+			HASH_ADD_INT(impl->cache, hash, uniform);
 			
 			switch(uniformType) {
 				case GL_SAMPLER_2D:
@@ -177,13 +179,7 @@ void xprGpuProgramFree(XprGpuProgram* self)
 	if(nullptr == self)
 		return;
 
-	{
-		XprGpuProgramUniform* curr, *temp;
-		HASH_ITER(hh, impl->uniforms, curr, temp) {
-			HASH_DEL(impl->uniforms, curr);
-			free(curr);
-		}
-	}
+	free(impl->uniforms);
 
 	glDeleteProgram(impl->glName);
 
@@ -222,7 +218,7 @@ XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -243,7 +239,7 @@ XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -264,7 +260,7 @@ XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -285,7 +281,7 @@ XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t co
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -306,7 +302,7 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 	
@@ -350,7 +346,7 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		return XprFalse;
 	}
 
-	HASH_FIND_INT(impl->uniforms, &hash, uniform);
+	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
 		

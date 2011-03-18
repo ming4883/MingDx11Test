@@ -33,7 +33,8 @@ typedef struct XprGpuProgramImpl
 
 	int glName;
 	int glVertexArray;
-	struct XprGpuProgramUniform* uniforms;
+	XprGpuProgramUniform* cache;
+	XprGpuProgramUniform* uniforms;
 
 } XprGpuProgramImpl;
 
