@@ -1,21 +1,23 @@
 #include "NvpParser.h"
+#include "Memory.h"
 
 XprNvpParser* xprNvpParserAlloc()
 {
-	XprNvpParser* self = malloc(sizeof(XprNvpParser));
+	XprNvpParser* self = xprMemory()->alloc(sizeof(XprNvpParser), "XprNvpParser");
 	memset(self, 0, sizeof(XprNvpParser));
 	return self;
 }
 
 void xprNvpParserFree(XprNvpParser* self)
 {
-	free(self->mStr);
-	free(self);
+	xprMemory()->free(self->mStr, "XprNvpParser");
+	xprMemory()->free(self, "XprNvpParser");
 }
 
 void xprNvpParserInit(XprNvpParser* self, const char* str)
 {
-	self->mStr = self->mPos = strdup(str);
+	self->mStr = self->mPos = xprMemory()->alloc(strlen(str), "XprNvpParser");
+	memcpy(self->mStr, str, strlen(str));
 }
 
 XprBool advancePos(char** pos)

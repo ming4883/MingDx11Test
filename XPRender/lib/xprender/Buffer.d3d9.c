@@ -1,8 +1,9 @@
 #include "Buffer.d3d9.h"
+#include "Memory.h"
 
 XprBuffer* xprBufferAlloc()
 {
-	XprBufferImpl* self = malloc(sizeof(XprBufferImpl));
+	XprBufferImpl* self = xprMemory()->alloc(sizeof(XprBufferImpl), "XprBuffer");
 	memset(self, 0, sizeof(XprBufferImpl));
 	return &self->i;
 }
@@ -20,7 +21,7 @@ void xprBufferFree(XprBuffer* self)
 	if(nullptr != impl->d3dib)
 		IDirect3DIndexBuffer9_Release(impl->d3dib);
 
-	free(self);
+	xprMemory()->free(self, "XprBuffer");
 }
 
 XprBool xprBufferInit(XprBuffer* self, XprBufferType type, size_t sizeInBytes, void* initialData)

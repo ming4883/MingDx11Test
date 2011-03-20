@@ -1,5 +1,6 @@
 #include "Texture.d3d9.h"
 #include "StrUtil.h"
+#include "Memory.h"
 
 XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
 	{XprGpuFormat_UnormR8G8B8A8, 4, D3DFMT_A8R8G8B8},
@@ -24,7 +25,7 @@ XprTextureGpuFormatMapping* xprTextureGpuFormatMappingGet(XprGpuFormat xprFormat
 
 XprTexture* xprTextureAlloc()
 {
-	XprTextureImpl* self = malloc(sizeof(XprTextureImpl));
+	XprTextureImpl* self = xprMemory()->alloc(sizeof(XprTextureImpl), "XprTexture");
 	memset(self, 0, sizeof(XprTextureImpl));
 	return &self->i;
 }
@@ -80,7 +81,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	{
 		size_t tmpw, tmph;
 		self->surfSizeInByte = XprGpuFormat_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
-		self->data = (unsigned char*)malloc(self->surfSizeInByte * self->surfCount);
+		self->data = (unsigned char*)xprMemory()->alloc(self->surfSizeInByte * self->surfCount, "XprTexture");
 		memset(self->data, 0, self->surfSizeInByte * self->surfCount);
 	}
 
@@ -208,11 +209,11 @@ void xprTextureFree(XprTexture* self)
 		return;
 
 	if(nullptr != self->data)
-		free(self->data);
+		xprMemory()->free(self->data, "XprTexture");
 
 	if(nullptr != impl->d3dtex) {
 		IDirect3DTexture9_Release(impl->d3dtex);
 	}
 	
-	free(self);
+	xprMemory()->free(self, "XprTexture");
 }

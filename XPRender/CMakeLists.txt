@@ -25,6 +25,8 @@ IF( WIN32 )
 		lib/xprender/Mat44.c
 		lib/xprender/Mat44.gl.c
 		lib/xprender/Mat44.h
+		lib/xprender/Memory.c
+		lib/xprender/Memory.h
 		lib/xprender/NvpParser.c
 		lib/xprender/NvpParser.h
 		lib/xprender/Platform.c
@@ -65,6 +67,8 @@ IF( WIN32 )
 		lib/xprender/Mat44.c
 		lib/xprender/Mat44.d3d9.c
 		lib/xprender/Mat44.h
+		lib/xprender/Memory.c
+		lib/xprender/Memory.h
 		lib/xprender/NvpParser.c
 		lib/xprender/NvpParser.h
 		lib/xprender/Platform.c

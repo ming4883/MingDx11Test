@@ -1,8 +1,9 @@
 #include "RenderTarget.gl.h"
+#include "Memory.h"
 
 XprRenderTarget* xprRenderTargetAlloc()
 {
-	XprRenderTargetImpl* self = malloc(sizeof(XprRenderTargetImpl));
+	XprRenderTargetImpl* self = xprMemory()->alloc(sizeof(XprRenderTargetImpl), "XprRenderTarget");
 	memset(self, 0, sizeof(XprRenderTargetImpl));
 	return &self->i;
 }
@@ -17,12 +18,12 @@ void xprRenderTargetFree(XprRenderTarget* self)
 		LL_FOREACH_SAFE(impl->bufferList, it, tmp) {
 			LL_DELETE(impl->bufferList, it);
 			xprTextureFree(it->i.texture);
-			free(it);
+			xprMemory()->free(it, "XprRenderTarget");
 		}
 
 		glDeleteFramebuffers(1, &impl->glName);
 	}
-	free(self);
+	xprMemory()->free(self, "XprRenderTarget");
 }
 
 void xprRenderTargetInit(XprRenderTarget* self)
@@ -55,7 +56,7 @@ XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, size_t widt
 		}
 	}
 
-	buffer = malloc(sizeof(XprRenderBufferImpl));
+	buffer = xprMemory()->alloc(sizeof(XprRenderBufferImpl), "XprRenderTarget");
 	buffer->acquired = XprTrue;
 	buffer->i.texture = xprTextureAlloc();
 	xprTextureInitRtt(buffer->i.texture, width, height, 0, 1, format);

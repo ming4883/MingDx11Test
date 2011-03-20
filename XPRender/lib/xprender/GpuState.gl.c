@@ -1,8 +1,9 @@
 #include "GpuState.gl.h"
+#include "Memory.h"
 
 XprGpuState* xprGpuStateAlloc()
 {
-	XprGpuStateImpl* self = malloc(sizeof(XprGpuStateImpl));
+	XprGpuStateImpl* self = xprMemory()->alloc(sizeof(XprGpuStateImpl), "XprGpuState");
 	memset(self, 0, sizeof(XprGpuStateImpl));
 	return &self->i;
 }
@@ -12,7 +13,7 @@ void xprGpuStateFree(XprGpuState* self)
 	if(nullptr == self)
 		return;
 
-	free(self);
+	xprMemory()->free(self, "XprGpuState");
 }
 
 void xprGpuStateInit(XprGpuState* self)

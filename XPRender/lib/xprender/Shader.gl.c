@@ -1,6 +1,7 @@
 #include "Shader.gl.h"
 #include "Texture.gl.h"
 #include "Buffer.gl.h"
+#include "Memory.h"
 #include <stdio.h>
 
 static GLenum xprGL_SHADER_TYPE[] = {
@@ -15,7 +16,7 @@ static GLenum xprGL_SHADER_TYPE[] = {
 
 XprGpuShader* xprGpuShaderAlloc()
 {
-	XprGpuShaderImpl* self = malloc(sizeof(XprGpuShaderImpl));
+	XprGpuShaderImpl* self = xprMemory()->alloc(sizeof(XprGpuShaderImpl), "XprGpuShader");
 	memset(self, 0, sizeof(XprGpuShaderImpl));
 	return &self->i;
 }
@@ -43,10 +44,10 @@ XprBool xprGpuShaderInit(XprGpuShader* self, const char** sources, size_t srcCnt
 		GLint len;
 		glGetShaderiv(impl->glName, GL_INFO_LOG_LENGTH, &len);
 		if(len > 0) {
-			char* buf = (char*)malloc(len);
+			char* buf = (char*)xprMemory()->alloc(len, "XprGpuShader");
 			glGetShaderInfoLog(impl->glName, len, nullptr, buf);
 			xprDbgStr("glCompileShader failed: %s", buf);
-			free(buf);
+			xprMemory()->free(buf, "XprGpuShader");
 		}
 
 		return XprFalse;
@@ -66,12 +67,12 @@ void xprGpuShaderFree(XprGpuShader* self)
 		return;
 
 	glDeleteShader(impl->glName);
-	free(self);
+	xprMemory()->free(self, "XprGpuShader");
 }
 
 XprGpuProgram* xprGpuProgramAlloc()
 {
-	XprGpuProgramImpl* self = malloc(sizeof(XprGpuProgramImpl));
+	XprGpuProgramImpl* self = xprMemory()->alloc(sizeof(XprGpuProgramImpl), "XprGpuProgram");
 	memset(self, 0, sizeof(XprGpuProgramImpl));
 	return &self->i;
 }
@@ -104,10 +105,10 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		GLint len;
 		glGetProgramiv(impl->glName, GL_INFO_LOG_LENGTH, &len);
 		if(len > 0) {
-			char* buf = (char*)malloc(len);
+			char* buf = (char*)xprMemory()->alloc(len, "XprGpuProgram");
 			glGetProgramInfoLog(impl->glName, len, nullptr, buf);
 			xprDbgStr("glLinkProgram failed: %s", buf);
-			free(buf);
+			xprMemory()->free(buf, "XprGpuProgram");
 		}
 		return XprFalse;
 	}
@@ -128,7 +129,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		
 		glGetProgramiv(impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
 		
-		impl->uniforms = malloc(sizeof(XprGpuProgramUniform) * uniformCnt);
+		impl->uniforms = xprMemory()->alloc(sizeof(XprGpuProgramUniform) * uniformCnt, "XprGpuProgram");
 		memset(impl->uniforms, 0, sizeof(XprGpuProgramUniform) * uniformCnt);
 		xprDbgStr("glProgram %d has %d cache\n", impl->glName, uniformCnt);
 
@@ -179,7 +180,7 @@ void xprGpuProgramFree(XprGpuProgram* self)
 	if(nullptr == self)
 		return;
 
-	free(impl->uniforms);
+	xprMemory()->free(impl->uniforms, "XprGpuProgram");
 
 	glDeleteProgram(impl->glName);
 
@@ -187,7 +188,7 @@ void xprGpuProgramFree(XprGpuProgram* self)
 	glDeleteVertexArrays(1, &impl->glVertexArray);
 #endif
 
-	free(self);
+	xprMemory()->free(self, "XprGpuProgram");
 }
 
 void xprGpuProgramPreRender(XprGpuProgram* self)

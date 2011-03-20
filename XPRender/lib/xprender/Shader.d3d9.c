@@ -1,11 +1,12 @@
 #include "Shader.d3d9.h"
 #include "Texture.d3d9.h"
 #include "Buffer.d3d9.h"
+#include "Memory.h"
 #include <stdio.h>
 
 XprGpuShader* xprGpuShaderAlloc()
 {
-	XprGpuShaderImpl* self = malloc(sizeof(XprGpuShaderImpl));
+	XprGpuShaderImpl* self = xprMemory()->alloc(sizeof(XprGpuShaderImpl), "XprGpuShader");
 	memset(self, 0, sizeof(XprGpuShaderImpl));
 	return &self->i;
 }
@@ -100,12 +101,12 @@ void xprGpuShaderFree(XprGpuShader* self)
 		impl->constTable->lpVtbl->Release(impl->constTable);
 	}
 
-	free(self);
+	xprMemory()->free(self, "xprGpuShader");
 }
 
 XprGpuProgram* xprGpuProgramAlloc()
 {
-	XprGpuProgramImpl* self = malloc(sizeof(XprGpuProgramImpl));
+	XprGpuProgramImpl* self = xprMemory()->alloc(sizeof(XprGpuProgramImpl), "XprGpuProgram");
 	memset(self, 0, sizeof(XprGpuProgramImpl));
 	return &self->i;
 }
@@ -119,7 +120,7 @@ void xprGpuProgramUniformCollect(XprGpuShader* self, XprGpuProgramUniform** tabl
 		D3DXCONSTANTTABLE_DESC tblDesc;
 		constTable->lpVtbl->GetDesc(constTable, &tblDesc);
 
-		*uniforms = malloc(sizeof(XprGpuProgramUniform) * tblDesc.Constants);
+		*uniforms = xprMemory()->alloc(sizeof(XprGpuProgramUniform) * tblDesc.Constants, "XprGpuProgram");
 		memset(*uniforms, 0, sizeof(XprGpuProgramUniform) * tblDesc.Constants);
 
 		for(i=0; i<tblDesc.Constants; ++i) {
@@ -209,8 +210,8 @@ void xprGpuProgramFree(XprGpuProgram* self)
 	if(nullptr == self)
 		return;
 
-	free(impl->uniformsVs);
-	free(impl->uniformsPs);
+	xprMemory()->free(impl->uniformsVs, "xprGpuProgram");
+	xprMemory()->free(impl->uniformsPs, "xprGpuProgram");
 	
 	if(nullptr != impl->d3dvs) {
 		IDirect3DVertexShader9_Release(impl->d3dvs);
@@ -225,11 +226,11 @@ void xprGpuProgramFree(XprGpuProgram* self)
 		HASH_ITER(hh, impl->ias, curr, temp) {
 			HASH_DEL(impl->ias, curr);
 			IDirect3DVertexDeclaration9_Release(curr->d3ddecl);
-			free(curr);
+			xprMemory()->free(curr, "xprGpuProgram");
 		}
 	}
 
-	free(self);
+	xprMemory()->free(self, "xprGpuProgram");
 }
 
 void xprGpuProgramPreRender(XprGpuProgram* self)
@@ -497,7 +498,7 @@ void xprGpuProgramBindVertexDecl(XprGpuProgram* self, size_t gpuInputId, XprGpuP
 		}
 		xprD3D9_ELEMS[elem] = xprD3D9_ELEM_END;
 
-		ia = malloc(sizeof(XprGpuProgramInputAssembly));
+		ia = xprMemory()->alloc(sizeof(XprGpuProgramInputAssembly), "XprGpuProgram");
 		ia->gpuInputId = gpuInputId;
 		IDirect3DDevice9_CreateVertexDeclaration(xprAPI.d3ddev, xprD3D9_ELEMS, &ia->d3ddecl);
 

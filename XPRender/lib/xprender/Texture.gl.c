@@ -1,5 +1,6 @@
 #include "Texture.gl.h"
 #include "StrUtil.h"
+#include "Memory.h"
 
 #if defined(XPR_GLES_2)
 XprTextureGpuFormatMapping XprTextureGpuFormatMappings[] = {
@@ -33,7 +34,7 @@ XprTextureGpuFormatMapping* xprTextureGpuFormatMappingGet(XprGpuFormat xprFormat
 
 XprTexture* xprTextureAlloc()
 {
-	XprTextureImpl* self = malloc(sizeof(XprTextureImpl));
+	XprTextureImpl* self = xprMemory()->alloc(sizeof(XprTextureImpl), "XprTexture");
 	memset(self, 0, sizeof(XprTextureImpl));
 	return &self->i;
 }
@@ -87,7 +88,7 @@ void xprTextureInit(XprTexture* self, size_t width, size_t height, size_t mipCou
 	{
 		size_t tmpw, tmph;
 		self->surfSizeInByte = XprGpuFormat_getMipLevelOffset(self, self->mipCount+1, &tmpw, &tmph);
-		self->data = (unsigned char*)malloc(self->surfSizeInByte * self->surfCount);
+		self->data = (unsigned char*)xprMemory()->alloc(self->surfSizeInByte * self->surfCount, "XprTexture");
 		memset(self->data, 0, self->surfSizeInByte * self->surfCount);
 	}
 
@@ -209,10 +210,10 @@ void xprTextureFree(XprTexture* self)
 		return;
 
 	if(nullptr != self->data)
-		free(self->data);
+		xprMemory()->free(self->data, "XprTexture");
 
 	if(0 != impl->glName)
 		glDeleteTextures(1, &impl->glName);
 	
-	free(self);
+	xprMemory()->free(self, "XprTexture");
 }

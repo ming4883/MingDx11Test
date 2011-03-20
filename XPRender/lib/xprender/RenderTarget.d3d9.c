@@ -1,8 +1,9 @@
 #include "RenderTarget.d3d9.h"
+#include "Memory.h"
 
 XprRenderTarget* xprRenderTargetAlloc()
 {
-	XprRenderTargetImpl* self = malloc(sizeof(XprRenderTargetImpl));
+	XprRenderTargetImpl* self = xprMemory()->alloc(sizeof(XprRenderTargetImpl), "XprRenderTarget");
 	memset(self, 0, sizeof(XprRenderTargetImpl));
 	return &self->i;
 }
@@ -19,10 +20,10 @@ void xprRenderTargetFree(XprRenderTarget* self)
 			LL_DELETE(impl->bufferList, it);
 			xprTextureFree(it->i.texture);
 			IDirect3DSurface9_Release(it->d3dsurf);
-			free(it);
+			xprMemory()->free(it, "XprRenderTarget");
 		}
 	}
-	free(self);
+	xprMemory()->free(self, "XprRenderTarget");
 }
 
 void xprRenderTargetInit(XprRenderTarget* self)
@@ -59,7 +60,7 @@ XprRenderBuffer* xprRenderTargetAcquireBuffer(XprRenderTarget* self, size_t widt
 		}
 	}
 
-	buffer = malloc(sizeof(XprRenderBufferImpl));
+	buffer = xprMemory()->alloc(sizeof(XprRenderBufferImpl), "XprRenderTarget");
 	memset(buffer, 0, sizeof(XprRenderBufferImpl));
 	buffer->acquired = XprTrue;
 

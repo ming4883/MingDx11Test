@@ -36,6 +36,8 @@ void xprDbgStr(const char* str, ...);
 	memset(obj, 0, sizeof(CLASS)+sizeof(CLASSIMPL));\
 	obj->impl = (CLASSIMPL*)((char*)obj + sizeof(CLASS));
 
+typedef size_t (* StreamRead) (void* buff, size_t elsize, size_t nelem, void* handle);
+
 #ifdef __cplusplus
 }
 #endif
