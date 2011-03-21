@@ -9,6 +9,7 @@ LOCAL_SRC_FILES	+= xprender/Framework.android.c
 LOCAL_SRC_FILES	+= xprender/GpuState.gl.c
 LOCAL_SRC_FILES	+= xprender/Mat44.c
 LOCAL_SRC_FILES	+= xprender/Mat44.gl.c
+LOCAL_SRC_FILES	+= xprender/Memory.c
 LOCAL_SRC_FILES	+= xprender/NvpParser.c
 LOCAL_SRC_FILES	+= xprender/Platform.c
 LOCAL_SRC_FILES	+= xprender/RenderTarget.gl.c
