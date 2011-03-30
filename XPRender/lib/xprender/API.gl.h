@@ -3,7 +3,14 @@
 
 #ifdef XPR_ANDROID
 #	include <GLES2/gl2.h>
+#	include <GLES2/glext.h>
 #	define XPR_GLES_2
+
+#elif defined(XPR_APPLE_IOS)
+#	include <OpenGLES/ES2/gl.h>
+#	include <OpenGLES/ES2/glext.h>
+#	define XPR_GLES_2
+
 #else
 #	include <GL/glew.h>
 #endif

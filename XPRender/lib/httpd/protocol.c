@@ -26,11 +26,17 @@
 #include <sys/stat.h>
 #include <time.h>
 
-#if !defined(ANDROID)
+#if defined(ANDROID) || defined(TARGET_OS_IPHONE)
+#define HTTPD_HAS_IO 0
+#else
+#define HTTPD_HAS_IO 1
+#endif
+
+#if HTTPD_HAS_IO
 #include <io.h>
 #endif
 
-#if defined(_WIN32) 
+#if defined(_WIN32)
 #include <Winsock2.h>
 #else
 #include <unistd.h>
@@ -47,7 +53,7 @@ int _httpd_net_read(sock, buf, len)
 	char	*buf;
 	int	len;
 {
-#if defined(_WIN32) 
+#if defined(_WIN32)
 	return( recv(sock, buf, len, 0));
 #else
 	return( read(sock, buf, len));
@@ -60,7 +66,7 @@ int _httpd_net_write(sock, buf, len)
 	char	*buf;
 	int	len;
 {
-#if defined(_WIN32) 
+#if defined(_WIN32)
 	return( send(sock, buf, len, 0));
 #else
 	return( write(sock, buf, len));
@@ -74,7 +80,7 @@ int _httpd_readChar(server, cp)
 	if (server->readBufRemain == 0)
 	{
 		bzero(server->readBuf, HTTP_READ_BUF_LEN + 1);
-		server->readBufRemain = _httpd_net_read(server->clientSock, 
+		server->readBufRemain = _httpd_net_read(server->clientSock,
 			server->readBuf, HTTP_READ_BUF_LEN);
 		if (server->readBufRemain < 1)
 			return(0);
@@ -95,7 +101,7 @@ int _httpd_readLine(server, destBuf, len)
 	char	curChar,
 		*dst;
 	int	count;
-	
+
 
 	count = 0;
 	dst = destBuf;
@@ -131,7 +137,7 @@ int _httpd_readBuf(server, destBuf, len)
 	char	curChar,
 		*dst;
 	int	count;
-	
+
 
 	count = 0;
 	dst = destBuf;
@@ -164,15 +170,15 @@ int _httpd_sendExpandedText(server, buf, bufLen)
 	while(offset < bufLen)
 	{
 		/*
-		** Look for the start of a variable name 
+		** Look for the start of a variable name
 		*/
 		textEnd = strchr(textStart,'$');
 		if (!textEnd)
 		{
-			/* 
+			/*
 			** Nope.  Write the remainder and bail
 			*/
-			_httpd_net_write(server->clientSock, 
+			_httpd_net_write(server->clientSock,
 				textStart, bufLen - offset);
 			length += bufLen - offset;
 			offset += bufLen - offset;
@@ -183,7 +189,7 @@ int _httpd_sendExpandedText(server, buf, bufLen)
 		** Looks like there could be a variable.  Send the
 		** preceeding text and check it out
 		*/
-		_httpd_net_write(server->clientSock, textStart, 
+		_httpd_net_write(server->clientSock, textStart,
 			textEnd - textStart);
 		length += textEnd - textStart;
 		offset  += textEnd - textStart;
@@ -237,7 +243,7 @@ int _httpd_sendExpandedText(server, buf, bufLen)
 		/*
 		** Write the variables value and continue
 		*/
-		_httpd_net_write(server->clientSock, var->value, 
+		_httpd_net_write(server->clientSock, var->value,
 			strlen(var->value));
 		length += strlen(var->value);
 		textStart = varEnd + 2;
@@ -261,9 +267,9 @@ void _httpd_writeAccessLog(server)
 	timePtr = localtime(&clock);
 	strftime(dateBuf, 30, "%d/%b/%Y:%X %Z",  timePtr);
 	responseCode = atoi(server->response.response);
-	fprintf(server->accessLog, "%s - - [%s] %s \"%s\" %d %d\n", 
-		server->clientAddr, dateBuf, httpdRequestMethodName(server), 
-		httpdRequestPath(server), responseCode, 
+	fprintf(server->accessLog, "%s - - [%s] %s \"%s\" %d %d\n",
+		server->clientAddr, dateBuf, httpdRequestMethodName(server),
+		httpdRequestPath(server), responseCode,
 		server->response.responseLength);
 }
 
@@ -306,9 +312,9 @@ int _httpd_decode (bufcoded, bufplain, outbufsize)
     		'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
     		'a','b','c','d','e','f','g','h','i','j','k','l','m',
     		'n','o','p','q','r','s','t','u','v','w','x','y','z',
-    		'0','1','2','3','4','5','6','7','8','9','+','/'   
+    		'0','1','2','3','4','5','6','7','8','9','+','/'
 	};
-  
+
 	static unsigned char pr2six[256];
 
 	/* single character decode */
@@ -326,7 +332,7 @@ int _httpd_decode (bufcoded, bufplain, outbufsize)
 	** If this is the first call, initialize the mapping table.
 	** This code should work even on non-ASCII machines.
 	*/
-	if(first) 
+	if(first)
 	{
 		first = 0;
 		for(j=0; j<256; j++) pr2six[j] = _DECODE_MAXVAL+1;
@@ -346,13 +352,13 @@ int _httpd_decode (bufcoded, bufplain, outbufsize)
 	while(pr2six[(int)*(bufin++)] <= _DECODE_MAXVAL);
 	nprbytes = bufin - bufcoded - 1;
 	nbytesdecoded = ((nprbytes+3)/4) * 3;
-	if(nbytesdecoded > outbufsize) 
+	if(nbytesdecoded > outbufsize)
 	{
 		nprbytes = (outbufsize*4)/3;
 	}
 	bufin = bufcoded;
-   
-	while (nprbytes > 0) 
+
+	while (nprbytes > 0)
 	{
 		*(bufout++)=(unsigned char)(DEC(*bufin)<<2|DEC(bufin[1])>>4);
 		*(bufout++)=(unsigned char)(DEC(bufin[1])<<4|DEC(bufin[2])>>2);
@@ -360,13 +366,13 @@ int _httpd_decode (bufcoded, bufplain, outbufsize)
 		bufin += 4;
 		nprbytes -= 4;
 	}
-	if(nprbytes & 03) 
+	if(nprbytes & 03)
 	{
-		if(pr2six[(int)bufin[-2]] > _DECODE_MAXVAL) 
+		if(pr2six[(int)bufin[-2]] > _DECODE_MAXVAL)
 		{
 			nbytesdecoded -= 2;
 		}
-		else 
+		else
 		{
 			nbytesdecoded -= 1;
 		}
@@ -412,7 +418,7 @@ char * _httpd_unescape(str)
 
     *q++ = 0;
     return str;
-} 
+}
 
 
 void _httpd_freeVariables(var)
@@ -530,9 +536,9 @@ void _httpd_sendHeaders(server, contentLength, modTime)
 
 	server->response.headersSent = 1;
 	_httpd_net_write(server->clientSock, "HTTP/1.0 ", 9);
-	_httpd_net_write(server->clientSock, server->response.response, 
+	_httpd_net_write(server->clientSock, server->response.response,
 		strlen(server->response.response));
-	_httpd_net_write(server->clientSock, server->response.headers, 
+	_httpd_net_write(server->clientSock, server->response.headers,
 		strlen(server->response.headers));
 
 	_httpd_formatTimeString(server, timeBuf, 0);
@@ -542,7 +548,7 @@ void _httpd_sendHeaders(server, contentLength, modTime)
 
 	_httpd_net_write(server->clientSock, "Connection: close\n", 18);
 	_httpd_net_write(server->clientSock, "Content-Type: ", 14);
-	_httpd_net_write(server->clientSock, server->response.contentType, 
+	_httpd_net_write(server->clientSock, server->response.contentType,
 		strlen(server->response.contentType));
 	_httpd_net_write(server->clientSock, "\n", 1);
 
@@ -616,7 +622,7 @@ httpContent *_httpd_findContentEntry(server, dir, entryName)
 	curEntry = dir->entries;
 	while(curEntry)
 	{
-		if (curEntry->type == HTTP_WILDCARD || 
+		if (curEntry->type == HTTP_WILDCARD ||
 		    curEntry->type ==HTTP_C_WILDCARD)
 			break;
 		if (*entryName == 0 && curEntry->strchrFlag)
@@ -696,7 +702,7 @@ void _httpd_catFile(server, path, mode)
 	char	*path;
 	int	mode;
 {
-#if !defined(ANDROID)
+#if HTTPD_HAS_IO
 	int	fd,
 		readLen,
 		writeLen;
@@ -750,49 +756,49 @@ void _httpd_sendFile(server, path)
 	suffix = strrchr(path, '.');
 	if (suffix != NULL)
 	{
-		if (strcasecmp(suffix,".gif") == 0) 
+		if (strcasecmp(suffix,".gif") == 0)
 			strcpy(server->response.contentType,"image/gif");
-		if (strcasecmp(suffix,".bmp") == 0) 
+		if (strcasecmp(suffix,".bmp") == 0)
 			strcpy(server->response.contentType,"image/x-windows-bmp");
-		if (strcasecmp(suffix,".jpg") == 0) 
+		if (strcasecmp(suffix,".jpg") == 0)
 			strcpy(server->response.contentType,"image/jpeg");
-		if (strcasecmp(suffix,".xbm") == 0) 
+		if (strcasecmp(suffix,".xbm") == 0)
 			strcpy(server->response.contentType,"image/xbm");
-		if (strcasecmp(suffix,".png") == 0) 
+		if (strcasecmp(suffix,".png") == 0)
 			strcpy(server->response.contentType,"image/png");
-		if (strcasecmp(suffix,".css") == 0) 
+		if (strcasecmp(suffix,".css") == 0)
 			strcpy(server->response.contentType,"text/css");
-		if (strcasecmp(suffix,".rtf") == 0) 
+		if (strcasecmp(suffix,".rtf") == 0)
 			strcpy(server->response.contentType,"text/rtf");
-		if (strcasecmp(suffix,".tif") == 0) 
+		if (strcasecmp(suffix,".tif") == 0)
 			strcpy(server->response.contentType,"image/tiff");
-		if (strcasecmp(suffix,".ico") == 0) 
+		if (strcasecmp(suffix,".ico") == 0)
 			strcpy(server->response.contentType,"image/x-icon");
-		if (strcasecmp(suffix,".wbmp") == 0) 
+		if (strcasecmp(suffix,".wbmp") == 0)
 			strcpy(server->response.contentType,"image/vnd.wap.wbmp");
-		if (strcasecmp(suffix,".pdf") == 0) 
+		if (strcasecmp(suffix,".pdf") == 0)
 			strcpy(server->response.contentType,"application/pdf");
-		if (strcasecmp(suffix,".csv") == 0) 
+		if (strcasecmp(suffix,".csv") == 0)
 			strcpy(server->response.contentType,"application/csv");
-		if (strcasecmp(suffix,".swf") == 0) 
+		if (strcasecmp(suffix,".swf") == 0)
 			strcpy(server->response.contentType,"application/x-shockwave-flash");
-		if (strcasecmp(suffix,".js") == 0) 
+		if (strcasecmp(suffix,".js") == 0)
 			strcpy(server->response.contentType,"application/x-javascript");
-		if (strcasecmp(suffix,".xml") == 0) 
+		if (strcasecmp(suffix,".xml") == 0)
 			strcpy(server->response.contentType,"application/xml");
-		if (strcasecmp(suffix,".wml") == 0) 
+		if (strcasecmp(suffix,".wml") == 0)
 			strcpy(server->response.contentType,"application/vnd.wap.wml");
-		if (strcasecmp(suffix,".xhtml") == 0) 
+		if (strcasecmp(suffix,".xhtml") == 0)
 			strcpy(server->response.contentType,"application/xhtml+xml");
-		if (strcasecmp(suffix,".doc") == 0) 
+		if (strcasecmp(suffix,".doc") == 0)
 			strcpy(server->response.contentType,"application/msword");
-		if (strcasecmp(suffix,".xls") == 0) 
+		if (strcasecmp(suffix,".xls") == 0)
 			strcpy(server->response.contentType,"application/vnd.ms-excel");
-		if (strcasecmp(suffix,".ppt") == 0) 
+		if (strcasecmp(suffix,".ppt") == 0)
 			strcpy(server->response.contentType,"application/vnd.ms-powerpoint");
-		if (strcasecmp(suffix,".zip") == 0) 
+		if (strcasecmp(suffix,".zip") == 0)
 			strcpy(server->response.contentType,"application/zip");
-		if (strcasecmp(suffix,".exe") == 0) 
+		if (strcasecmp(suffix,".exe") == 0)
 			strcpy(server->response.contentType,"application/octet-stream");
 	}
 	if (stat(path, &sbuf) < 0)
@@ -868,7 +874,7 @@ static unsigned char isAcceptable[96] =
          7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,7,       /* 5X  PQRSTUVWXYZ[\]^_ */
          0,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,       /* 6x  `abcdefghijklmno */
          7,7,7,7,7,7,7,7,7,7,7,0,0,0,0,0 };     /* 7X  pqrstuvwxyz{\}~ DEL */
- 
+
 #define ACCEPTABLE(a)   ( a>=32 && a<128 && ((isAcceptable[a-32]) & mask))
 
 static char *hex = "0123456789ABCDEF";
@@ -957,7 +963,7 @@ void _httpd_sanitiseUrl(url)
 	from = to = last = url;
 	while(*from)
 	{
-		if (*from == '/' && *(from+1) == '.' && 
+		if (*from == '/' && *(from+1) == '.' &&
 			*(from+2)=='.' && *(from+3)=='/')
 		{
 			to = last;

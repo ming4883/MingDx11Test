@@ -11,7 +11,13 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef XPR_APPLE_IOS
+#include <stddef.h>
+#include <stdint.h>
+#else
 #include "pstdint.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

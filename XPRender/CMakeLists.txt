@@ -8,22 +8,12 @@ FILE( GLOB HTTPD lib/httpd/*.c lib/httpd/*.h )
 
 ADD_DEFINITIONS( -DGLEW_STATIC )
 
-IF( WIN32 )
-
-	#FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
-	SET( XPRENDER
-		lib/xprender/API.gl.h
+SET( XPRENDER_COMMON
 		lib/xprender/Buffer.h
-		lib/xprender/Buffer.gl.c
-		lib/xprender/Buffer.gl.h
 		lib/xprender/Framework.h
-		lib/xprender/Framework.windows.gl.c
 		lib/xprender/GpuFormat.h
 		lib/xprender/GpuState.h
-		lib/xprender/GpuState.gl.c
-		lib/xprender/GpuState.gl.h
 		lib/xprender/Mat44.c
-		lib/xprender/Mat44.gl.c
 		lib/xprender/Mat44.h
 		lib/xprender/Memory.c
 		lib/xprender/Memory.h
@@ -33,18 +23,12 @@ IF( WIN32 )
 		lib/xprender/Platform.h
 		lib/xprender/pstdint.h
 		lib/xprender/RenderTarget.h
-		lib/xprender/RenderTarget.gl.c
-		lib/xprender/RenderTarget.gl.h
 		lib/xprender/Shader.h
-		lib/xprender/Shader.gl.c
-		lib/xprender/Shader.gl.h
 		lib/xprender/StrHash.c
 		lib/xprender/StrHash.h
 		lib/xprender/StrHashMacro.h
 		lib/xprender/StrUtil.h
 		lib/xprender/Texture.h
-		lib/xprender/Texture.gl.c
-		lib/xprender/Texture.gl.h
 		lib/xprender/Vec2.c
 		lib/xprender/Vec2.h
 		lib/xprender/Vec3.c
@@ -52,47 +36,42 @@ IF( WIN32 )
 		lib/xprender/Vec4.c
 		lib/xprender/Vec4.h
 		)
+
+IF( WIN32 )
+
+	#FILE( GLOB XPRENDER lib/xprender/*.c lib/xprender/*.h )
+	SET( XPRENDER
+		${XPRENDER_COMMON}
+		lib/xprender/API.gl.h
+		lib/xprender/Buffer.gl.c
+		lib/xprender/Buffer.gl.h
+		lib/xprender/Framework.windows.gl.c
+		lib/xprender/GpuState.gl.c
+		lib/xprender/GpuState.gl.h
+		lib/xprender/Mat44.gl.c
+		lib/xprender/RenderTarget.gl.c
+		lib/xprender/RenderTarget.gl.h
+		lib/xprender/Shader.gl.c
+		lib/xprender/Shader.gl.h
+		lib/xprender/Texture.gl.c
+		lib/xprender/Texture.gl.h
+		)
 		
 	SET( XPRENDER_D3D9
+		${XPRENDER_COMMON}
 		lib/xprender/API.d3d9.h
-		lib/xprender/Buffer.h
 		lib/xprender/Buffer.d3d9.c
 		lib/xprender/Buffer.d3d9.h
-		lib/xprender/Framework.h
 		lib/xprender/Framework.windows.d3d9.c
-		lib/xprender/GpuFormat.h
-		lib/xprender/GpuState.h
 		lib/xprender/GpuState.d3d9.c
 		lib/xprender/GpuState.d3d9.h
-		lib/xprender/Mat44.c
 		lib/xprender/Mat44.d3d9.c
-		lib/xprender/Mat44.h
-		lib/xprender/Memory.c
-		lib/xprender/Memory.h
-		lib/xprender/NvpParser.c
-		lib/xprender/NvpParser.h
-		lib/xprender/Platform.c
-		lib/xprender/Platform.h
-		lib/xprender/pstdint.h
-		lib/xprender/RenderTarget.h
 		lib/xprender/RenderTarget.d3d9.c
 		lib/xprender/RenderTarget.d3d9.h
-		lib/xprender/Shader.h
 		lib/xprender/Shader.d3d9.c
 		lib/xprender/Shader.d3d9.h
-		lib/xprender/StrHash.c
-		lib/xprender/StrHash.h
-		lib/xprender/StrHashMacro.h
-		lib/xprender/StrUtil.h
-		lib/xprender/Texture.h
 		lib/xprender/Texture.d3d9.c
 		lib/xprender/Texture.d3d9.h
-		lib/xprender/Vec2.c
-		lib/xprender/Vec2.h
-		lib/xprender/Vec3.c
-		lib/xprender/Vec3.h
-		lib/xprender/Vec4.c
-		lib/xprender/Vec4.h
 		)
 	
 	SET( CONSOLE_SYSTEM WIN32 )
@@ -119,6 +98,42 @@ IF( WIN32 )
 		SET( PLATFORM_LIBS opengl32 glu32 winmm ws2_32 )
 		
 	ENDIF()
+	
+ELSEIF( APPLE )
+
+	SET( XPRENDER
+		${XPRENDER_COMMON}
+		lib/xprender/API.gl.h
+		lib/xprender/Buffer.gl.c
+		lib/xprender/Buffer.gl.h
+		lib/xprender/Framework.ios.m
+		lib/xprender/GpuState.gl.c
+		lib/xprender/GpuState.gl.h
+		lib/xprender/Mat44.gl.c
+		lib/xprender/RenderTarget.gl.c
+		lib/xprender/RenderTarget.gl.h
+		lib/xprender/Shader.gl.c
+		lib/xprender/Shader.gl.h
+		lib/xprender/Texture.gl.c
+		lib/xprender/Texture.gl.h
+		)
+		
+	SET( GLEW )
+		
+	ADD_DEFINITIONS( -DXPR_APPLE_IOS )
+	ADD_DEFINITIONS( -DTARGET_OS_IPHONE )
+	
+	set(APP_TYPE MACOSX_BUNDLE)
+	
+	SET( CMAKE_OSX_SYSROOT iphoneos )
+	SET( CMAKE_OSX_ARCHITECTURES $(ARCHS_STANDARD_32_BIT) )
+	SET( CMAKE_CXX_FLAGS "-x objective-c++" )
+	SET( CMAKE_EXE_LINKER_FLAGS
+		"-framework Foundation -framework CoreGraphics -framework QuartzCore -framework UIKit -framework OpenGLES"
+		)
+	
+	#SET(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mycompany.\${PRODUCT_NAME:identifier}")
+	SET( CONSOLE_SYSTEM MACOSX_BUNDLE )
 	
 ELSEIF( UNIX )
 
