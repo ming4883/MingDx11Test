@@ -56,23 +56,6 @@ IF( WIN32 )
 		lib/xprender/Texture.gl.c
 		lib/xprender/Texture.gl.h
 		)
-		
-	SET( XPRENDER_D3D9
-		${XPRENDER_COMMON}
-		lib/xprender/API.d3d9.h
-		lib/xprender/Buffer.d3d9.c
-		lib/xprender/Buffer.d3d9.h
-		lib/xprender/Framework.windows.d3d9.c
-		lib/xprender/GpuState.d3d9.c
-		lib/xprender/GpuState.d3d9.h
-		lib/xprender/Mat44.d3d9.c
-		lib/xprender/RenderTarget.d3d9.c
-		lib/xprender/RenderTarget.d3d9.h
-		lib/xprender/Shader.d3d9.c
-		lib/xprender/Shader.d3d9.h
-		lib/xprender/Texture.d3d9.c
-		lib/xprender/Texture.d3d9.h
-		)
 	
 	SET( CONSOLE_SYSTEM WIN32 )
 	
@@ -93,8 +76,6 @@ IF( WIN32 )
 		SOURCE_GROUP( "glsw" FILES ${GLSW} )
 		SOURCE_GROUP( "httpd" FILES ${HTTPD} )
 		SOURCE_GROUP( "xprender" FILES ${XPRENDER} )
-		SOURCE_GROUP( "xprender" FILES ${XPRENDER_D3D9} )
-		SOURCE_GROUP( "pez" FILES ${PEZ} )
 		SET( PLATFORM_LIBS opengl32 glu32 winmm ws2_32 )
 		
 	ENDIF()
@@ -119,6 +100,10 @@ ELSEIF( APPLE )
 		)
 		
 	SET( GLEW )
+	
+	SOURCE_GROUP( "glsw" FILES ${GLSW} )
+	SOURCE_GROUP( "httpd" FILES ${HTTPD} )
+	SOURCE_GROUP( "xprender" FILES ${XPRENDER} )	
 		
 	ADD_DEFINITIONS( -DXPR_APPLE_IOS )
 	ADD_DEFINITIONS( -DTARGET_OS_IPHONE )
@@ -132,7 +117,7 @@ ELSEIF( APPLE )
 		"-framework Foundation -framework CoreGraphics -framework QuartzCore -framework UIKit -framework OpenGLES"
 		)
 	
-	#SET(MACOSX_BUNDLE_GUI_IDENTIFIER "com.mycompany.\${PRODUCT_NAME:identifier}")
+	SET(MACOSX_BUNDLE_GUI_IDENTIFIER "com.xprender.\${PRODUCT_NAME:identifier}")
 	SET( CONSOLE_SYSTEM MACOSX_BUNDLE )
 	
 ELSEIF( UNIX )
@@ -168,153 +153,125 @@ ADD_EXECUTABLE( test_xprender
 	
 TARGET_LINK_LIBRARIES( test_xprender xprender ${PLATFORM_LIBS} )
 
-# example_cloth_simulation
-ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
-	example/ClothSimulation.example.c
-	example/ClothSimulation.glsl
+SET( EXAMPLE_COMMON 
 	example/Common.c
 	example/Common.h
 	example/Common.glsl
-	example/ShadowMap.glsl
 	example/Stream.h
 	example/Stream.c
 	example/Remote.c
 	example/Remote.h
 	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
 	example/Mesh.c
+	example/Mesh.obj.c
 	example/Mesh.h
 	example/Material.c
 	example/Material.h
+	example/Pvr.c
+	example/Pvr.h
+	)
+	
+
+IF( WIN32 )
+	LIST( APPEND EXAMPLE_COMMON 			
+		example/Remote.impl.windows.c
+		example/Remote.impl.windows.h
+	)
+ELSEIF( APPLE )
+	LIST( APPEND EXAMPLE_COMMON 			
+		example/Remote.impl.ios.m
+		example/Remote.impl.ios.h
+	)
+ENDIF()
+
+# example_cloth_simulation
+ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
+	example/ClothSimulation.example.c
+	example/ClothSimulation.glsl
+	example/ShadowMap.glsl
 	example/Cloth.c
 	example/Cloth.h
 	example/Sphere.c
 	example/Sphere.h
-	example/Pvr.c
-	example/Pvr.h
 	)
 TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
 
 # example_label
 ADD_EXECUTABLE( example_label ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
 	example/Label.example.c
-	example/Common.c
-	example/Common.h
-	example/Common.glsl
-	example/Stream.h
-	example/Stream.c
 	example/Label.c
 	example/Label.h
-	example/Mesh.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_label xprender ${PLATFORM_LIBS} )
 
 # example_triangle_tessellation
 ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
 	example/TriangleTessellation.example.c
 	example/TriangleTessellation.glsl
-	example/Common.c
-	example/Common.h
-	example/Common.glsl
-	example/Stream.h
-	example/Stream.c
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
-	example/Mesh.c
-	example/Mesh.obj.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_triangle_tessellation xprender ${PLATFORM_LIBS} )
 
 # example_embedded_httpd
 ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
 	example/EmbeddedHttpd.example.c
-	example/Common.c
-	example/Common.h
-	example/Common.glsl
-	example/Stream.h
-	example/Stream.c
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
-	example/Material.c
-	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_embedded_httpd xprender ${PLATFORM_LIBS} )
 
 # example_mesh
 ADD_EXECUTABLE( example_mesh ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
 	example/Mesh.example.c
 	example/Mesh.glsl
-	example/Common.c
-	example/Common.h
-	example/Common.glsl
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
-	example/Stream.c
-	example/Stream.h
-	example/Mesh.c
-	example/Mesh.obj.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_mesh xprender ${PLATFORM_LIBS} )
 
-
 # example_mesh_performance
 ADD_EXECUTABLE( example_mesh_performance ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
 	example/MeshPerformance.example.c
 	example/MeshPerformance.glsl
-	example/Common.c
-	example/Common.h
-	example/Common.glsl
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
-	example/Stream.c
-	example/Stream.h
-	example/Pvr.c
-	example/Mesh.c
-	example/Mesh.obj.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
 	)
 TARGET_LINK_LIBRARIES( example_mesh_performance xprender ${PLATFORM_LIBS} )
 
 
+#-------------------------------------------------------------------------------
+# d3d9 support
 IF( WIN32 )
 
 SET( PLATFORM_LIBS d3d9 d3dx9 winmm ws2_32 )
-
+	
+SET( XPRENDER_D3D9
+	${XPRENDER_COMMON}
+	lib/xprender/API.d3d9.h
+	lib/xprender/Buffer.d3d9.c
+	lib/xprender/Buffer.d3d9.h
+	lib/xprender/Framework.windows.d3d9.c
+	lib/xprender/GpuState.d3d9.c
+	lib/xprender/GpuState.d3d9.h
+	lib/xprender/Mat44.d3d9.c
+	lib/xprender/RenderTarget.d3d9.c
+	lib/xprender/RenderTarget.d3d9.h
+	lib/xprender/Shader.d3d9.c
+	lib/xprender/Shader.d3d9.h
+	lib/xprender/Texture.d3d9.c
+	lib/xprender/Texture.d3d9.h
+	)
+SOURCE_GROUP( "xprender" FILES ${XPRENDER_D3D9} )
+	
 ADD_LIBRARY( xprender-d3d9
 	${GLSW}
 	${HTTPD}
 	${XPRENDER_D3D9}
 	)
-	
-ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
-	example/EmbeddedHttpd.example.c
+
+SET( EXAMPLE_COMMON 
 	example/Common.c
 	example/Common.h
-	example/Common.glsl
+	example/Common.hlsl
 	example/Stream.h
 	example/Stream.c
 	example/Remote.c
@@ -322,73 +279,58 @@ ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
 	example/Remote.impl.h
 	example/Remote.impl.windows.c
 	example/Remote.impl.windows.h
-	example/Material.c
-	example/Material.h
-	)
-TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-ADD_EXECUTABLE( example_cloth_simulation-d3d9 ${CONSOLE_SYSTEM}
-	example/ClothSimulation.example.c
-	example/ClothSimulation.hlsl
-	example/Common.c
-	example/Common.h
-	example/Common.hlsl
-	example/ShadowMap.hlsl
-	example/Stream.h
-	example/Stream.c
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
-	example/Mesh.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
-	example/Cloth.c
-	example/Cloth.h
-	example/Sphere.c
-	example/Sphere.h
-	example/Pvr.c
-	example/Pvr.h
-	)
-TARGET_LINK_LIBRARIES( example_cloth_simulation-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-ADD_EXECUTABLE( example_label-d3d9 ${CONSOLE_SYSTEM}
-	example/Label.example.c
-	example/Common.c
-	example/Common.h
-	example/Common.hlsl
-	example/Stream.h
-	example/Stream.c
-	example/Label.c
-	example/Label.h
-	example/Mesh.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
-	)
-TARGET_LINK_LIBRARIES( example_label-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-ADD_EXECUTABLE( example_mesh-d3d9 ${CONSOLE_SYSTEM}
-	example/Mesh.example.c
-	example/Mesh.hlsl
-	example/Common.c
-	example/Common.h
-	example/Common.hlsl
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
-	example/Stream.c
-	example/Stream.h
 	example/Mesh.c
 	example/Mesh.obj.c
 	example/Mesh.h
 	example/Material.c
 	example/Material.h
+	example/Pvr.c
+	example/Pvr.h
+	)
+
+# example_cloth_simulation
+ADD_EXECUTABLE( example_cloth_simulation-d3d9 ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
+	example/ClothSimulation.example.c
+	example/ClothSimulation.hlsl
+	example/ShadowMap.hlsl
+	example/Cloth.c
+	example/Cloth.h
+	example/Sphere.c
+	example/Sphere.h
+	)
+TARGET_LINK_LIBRARIES( example_cloth_simulation-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
+
+# example_label
+ADD_EXECUTABLE( example_label-d3d9 ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
+	example/Label.example.c
+	example/Label.c
+	example/Label.h
+	)
+TARGET_LINK_LIBRARIES( example_label-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
+
+# example_embedded_httpd
+ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
+	example/EmbeddedHttpd.example.c
+	)
+TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
+
+# example_mesh
+ADD_EXECUTABLE( example_mesh-d3d9 ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
+	example/Mesh.example.c
+	example/Mesh.hlsl
 	)
 TARGET_LINK_LIBRARIES( example_mesh-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
+
+# example_mesh_performance
+ADD_EXECUTABLE( example_mesh_performance-d3d9 ${CONSOLE_SYSTEM}
+	${EXAMPLE_COMMON}
+	example/MeshPerformance.example.c
+	example/MeshPerformance.hlsl
+	)
+TARGET_LINK_LIBRARIES( example_mesh_performance-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
 
 ENDIF()

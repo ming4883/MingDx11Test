@@ -7,7 +7,7 @@
 //------------------------------------------------------------------------------
 // EAGLView
 @interface EAGLView : UIView
-{    
+{
 @private
     BOOL animating;
     BOOL displayLinkSupported;
@@ -44,7 +44,7 @@
 
 //The EAGL view is stored in the nib file. When it's unarchived it's sent -initWithCoder:
 - (id)initWithCoder:(NSCoder*)coder
-{    
+{
     if ((self = [super initWithCoder:coder]))
     {
         // Get the layer
@@ -54,7 +54,7 @@
         eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
                                         [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking, kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
 
-        
+
 		context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
 
         if (!context || ![EAGLContext setCurrentContext:context])
@@ -188,26 +188,26 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-	XprDbgStr("didFinishLaunchingWithOptions\n");
+	xprDbgStr("didFinishLaunchingWithOptions\n");
 	//[glView startAnimation];
     return YES;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application
 {
-	XprDbgStr("applicationWillResignActive\n");
+	xprDbgStr("applicationWillResignActive\n");
     //[glView stopAnimation];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
-	XprDbgStr("applicationDidBecomeActive\n");
+	xprDbgStr("applicationDidBecomeActive\n");
     //[glView startAnimation];
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application
 {
-	XprDbgStr("applicationWillTerminate\n");
+	xprDbgStr("applicationWillTerminate\n");
     //[glView stopAnimation];
 }
 

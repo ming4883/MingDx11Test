@@ -1,4 +1,4 @@
-#include "Remote.impl.android.h"
+#include "Remote.impl.ios.h"
 
 void* remoteConfigThread(void* param)
 {
@@ -49,7 +49,7 @@ void remoteConfigFreeImpl(RemoteConfigImpl* self)
 }
 
 void remoteConfigLockImpl(RemoteConfigImpl* self)
-{	
+{
 	if(nullptr == self->threadId)
 		return;
 

@@ -2,6 +2,8 @@
 #include "Remote.impl.windows.h"
 #elif defined(XPR_ANDROID)
 #include "Remote.impl.android.h"
+#elif defined(XPR_APPLE_IOS)
+#include "Remote.impl.ios.h"
 #endif
 
 #include <stdio.h>
@@ -106,7 +108,7 @@ void remoteConfigIndexhtml(httpd* server)
 ";
 		httpdPrintf(server, html, curr->desc.name, curr->desc.lowerBound, curr->desc.upperBound, *(curr->desc.value));
 	}
-	
+
 	// html body
 	{
 		char* html = "\
@@ -159,7 +161,7 @@ void remoteConfigInit(RemoteConfig* self, int port, XprBool useThread)
 
 	if(nullptr == self)
 		return;
-	
+
 	impl = (RemoteConfigImplBase*)self->impl;
 	impl->http = httpdCreate(nullptr, port);
 	impl->http->userData = self;
@@ -201,7 +203,7 @@ void remoteConfigProcessRequest(RemoteConfig* self)
 
 	to.tv_sec = 0;
 	to.tv_usec = 100;
-	
+
 	if (httpdGetConnection(impl->http, &to) <= 0)
 		return;
 

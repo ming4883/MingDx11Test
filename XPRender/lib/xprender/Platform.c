@@ -29,13 +29,15 @@ void xprDbgStr(const char* str, ...)
 void xprDbgStr(const char* str, ...)
 {
 	va_list args;
-	
+
 	va_start(args, str);
 	__android_log_vprint(ANDROID_LOG_INFO, "xprender", str, args);
 	va_end(args);
 }
 
 #else
+
+#include <stdarg.h>
 
 void xprDbgStr(const char* str, ...)
 {
