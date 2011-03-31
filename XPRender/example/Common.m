@@ -1,78 +1,69 @@
 #include "Common.h"
+#include "../xprender/Memory.h"
 
 #include "../lib/glsw/glsw.h"
 
-#if defined(XPR_ANDROID)
+#import <Foundation/NSString.h>
+#import <Foundation/NSBundle.h>
+#import <Foundation/NSData.h>
 
-#include <android_native_app_glue.h>
-#include <android/asset_manager.h>
-
-extern struct android_app* XPR_ANDROID_APP;
-
-void* androidOpen(const char* filename)
+typedef struct iosFILE
 {
-	AAsset* asset = AAssetManager_open(XPR_ANDROID_APP->activity->assetManager, filename, AASSET_MODE_UNKNOWN);
+	size_t offset;
+	NSData* data;
+} iosFILE;
 
-	if(nullptr == asset) {
-		xprDbgStr("failed to open asset '%s'!\n", filename);
-	}
-	return asset;
+void* iosOpen(const char* filename)
+{
+	NSString* path = [[NSBundle mainBundle] pathForResource:[NSString stringWithUTF8String: filename] ofType:nil];
+
+	if(nil == path)
+		return nil;
+
+	NSData* data = [[NSData dataWithContentsOfFile:path] retain];
+
+	if(nil == data)
+		return nil;
+
+	iosFILE* file = xprMemory()->alloc(sizeof(iosFILE), "io");
+	file->offset = 0;
+	file->data = data;
+	return file;
 }
 
-void androidClose(void* handle)
+void iosClose(void* handle)
 {
-	AAsset_close((AAsset*)handle);
+	if(nil == handle)
+		return;
+
+	iosFILE* file = handle;
+	[file->data release];
+	xprMemory()->free(file, "io");
 }
 
-size_t androidRead(void* buff, size_t elsize, size_t nelem, void* handle)
+size_t iosRead(void* buff, size_t elsize, size_t nelem, void* handle)
 {
-	return (size_t)AAsset_read((AAsset*)handle, buff, elsize * nelem);
-}
+	//return (size_t)AAsset_read((AAsset*)handle, buff, elsize * nelem);
+	iosFILE* file = handle;
 
-glswFileSystem myFileSystem = {androidRead, androidOpen, androidClose};
-InputStream myInputStream = {androidRead, androidOpen, androidClose};
+	NSRange range;
+	range.location = file->offset;
+	range.length = elsize * nelem;
 
-#else	// XPR_ANDROID
-
-void* myOpen(const char* filename)
-{
-	static char buf[512];
-
-	static const char* paths[] = {
-		"../../example/",
-		"../example/",
-		"../../media/",
-		"../media/",
-		"media",
-		nullptr,
-	};
-
-	FILE* fp;
-	const char** path;
-
-	if(nullptr != (fp = fopen(filename, "rb")))
-		return fp;
-
-	for(path = paths; nullptr != *path; ++path) {
-		strcpy(buf, *path);
-		if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
-			return fp;
+	if(range.location + range.length >= [file->data length]) {
+		range.length = ([file->data length]-1) - range.location;
 	}
 
-	xprDbgStr("failed to open asset '%s'!\n", filename);
+	if(range.length > 0) {
+		[file->data getBytes: buff range:range];
+		file->offset += range.length;
+	}
 
-	return nullptr;
+	return range.length;
 }
 
-void myClose(void* handle)
-{
-	fclose((FILE*)handle);
-}
-
-glswFileSystem myFileSystem = {fread, myOpen, myClose};
-InputStream myInputStream = {fread, myOpen, myClose};
-
-#endif	// XPR_ANDROID
+glswFileSystem myFileSystem = {iosRead, iosOpen, iosClose};
+InputStream myInputStream = {iosRead, iosOpen, iosClose};
 
 AppContext* appAlloc()
 {

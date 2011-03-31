@@ -87,7 +87,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		xprDbgStr("XprGpuProgram already inited!\n");
 		return XprFalse;
 	}
-	
+
 	impl->glName = glCreateProgram();
 
 	// attach shaders
@@ -112,23 +112,23 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 		}
 		return XprFalse;
 	}
-	
+
 	self->flags |= XprGpuProgram_Inited;
 
 	glUseProgram(impl->glName);
-	
+
 	// query all cache
 	{
 		GLuint i;
-		GLuint uniformCnt;
+		GLint uniformCnt;
 		GLsizei uniformLength;
 		GLint uniformSize;
 		GLenum uniformType;
 		char uniformName[32];
-		GLuint texunit = 0;	
-		
+		GLuint texunit = 0;
+
 		glGetProgramiv(impl->glName, GL_ACTIVE_UNIFORMS, &uniformCnt);
-		
+
 		impl->uniforms = xprMemory()->alloc(sizeof(XprGpuProgramUniform) * uniformCnt, "XprGpuProgram");
 		memset(impl->uniforms, 0, sizeof(XprGpuProgramUniform) * uniformCnt);
 		xprDbgStr("glProgram %d has %d cache\n", impl->glName, uniformCnt);
@@ -143,7 +143,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 			uniform->texunit = texunit;
 
 			HASH_ADD_INT(impl->cache, hash, uniform);
-			
+
 			switch(uniformType) {
 				case GL_SAMPLER_2D:
 				case GL_SAMPLER_CUBE:
@@ -151,7 +151,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 				case GL_SAMPLER_1D:
 				case GL_SAMPLER_3D:
 				case GL_SAMPLER_1D_SHADOW:
-				case GL_SAMPLER_2D_SHADOW: 
+				case GL_SAMPLER_2D_SHADOW:
 #endif
 					{	// bind sampler to the specific texture unit
 						glUniform1i(i, texunit++);
@@ -163,7 +163,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 			}
 			//xprDbgStr("%s %d %d %d %d\n", uniformName, i, uniformSize, uniformType, uniform->texunit);
 		}
-		
+
 	}
 
 #if !defined(XPR_GLES_2)
@@ -171,7 +171,7 @@ XprBool xprGpuProgramInit(XprGpuProgram* self, XprGpuShader** shaders, size_t sh
 #endif
 
 	return XprTrue;
-	
+
 }
 
 void xprGpuProgramFree(XprGpuProgram* self)
@@ -222,7 +222,7 @@ XprBool xprGpuProgramUniform1fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
-	
+
 	glUniform1fv(uniform->loc, count, value);
 	return XprTrue;
 }
@@ -243,7 +243,7 @@ XprBool xprGpuProgramUniform2fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
-	
+
 	glUniform2fv(uniform->loc, count, value);
 	return XprTrue;
 }
@@ -264,7 +264,7 @@ XprBool xprGpuProgramUniform3fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
-	
+
 	glUniform3fv(uniform->loc, count, value);
 	return XprTrue;
 }
@@ -285,7 +285,7 @@ XprBool xprGpuProgramUniform4fv(XprGpuProgram* self, XprHashCode hash, size_t co
 	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
-	
+
 	glUniform4fv(uniform->loc, count, value);
 	return XprTrue;
 }
@@ -306,7 +306,7 @@ XprBool xprGpuProgramUniformMtx4fv(XprGpuProgram* self, XprHashCode hash, size_t
 	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
-	
+
 	glUniformMatrix4fv(uniform->loc, count, transpose, value);
 	return XprTrue;
 }
@@ -350,12 +350,12 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 	HASH_FIND_INT(impl->cache, &hash, uniform);
 	if(nullptr == uniform)
 		return XprFalse;
-		
+
 	if(uniform->texunit < 0) {
 		xprDbgStr("Not a texture!\n");
 		return XprFalse;
 	}
-	
+
 	glActiveTexture(GL_TEXTURE0 + uniform->texunit);
 	if(nullptr == texture)
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -373,7 +373,7 @@ XprBool xprGpuProgramUniformTexture(XprGpuProgram* self, XprHashCode hash, struc
 		}
 #endif
 	}
-		
+
 	return XprTrue;
 }
 
@@ -406,7 +406,7 @@ void xprGpuProgramBindInput(XprGpuProgram* self, size_t gpuInputId, XprGpuProgra
 	XprGpuProgramImpl* impl = (XprGpuProgramImpl*)self;
 
 	size_t attri = 0;
-	
+
 #if !defined(XPR_GLES_2)
 	glBindVertexArray(impl->glVertexArray);
 #endif

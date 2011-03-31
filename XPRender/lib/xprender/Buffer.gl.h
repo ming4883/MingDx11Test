@@ -12,8 +12,8 @@ typedef struct XprBufferImpl
 {
 	XprBuffer i;
 
-	int glName;
-	
+	GLuint glName;
+
 } XprBufferImpl;
 
 #ifdef __cplusplus

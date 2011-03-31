@@ -75,6 +75,8 @@
         NSString *currSysVer = [[UIDevice currentDevice] systemVersion];
         if ([currSysVer compare:reqSysVer options:NSNumericSearch] != NSOrderedAscending)
             displayLinkSupported = TRUE;
+
+		xprAppInitialize();
     }
 
     return self;
@@ -83,6 +85,8 @@
 - (void)drawView:(id)sender
 {
     //[renderer render];
+	xprAppUpdate(0);
+	xprAppRender();
 }
 
 - (void)layoutSubviews
@@ -188,27 +192,28 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-	xprDbgStr("didFinishLaunchingWithOptions\n");
-	//[glView startAnimation];
+	xprDbgStr("xpr didFinishLaunchingWithOptions\n");
+	[glView startAnimation];
     return YES;
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application
 {
-	xprDbgStr("applicationWillResignActive\n");
-    //[glView stopAnimation];
+	xprDbgStr("xpr applicationWillResignActive\n");
+    [glView stopAnimation];
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application
 {
-	xprDbgStr("applicationDidBecomeActive\n");
-    //[glView startAnimation];
+	xprDbgStr("xpr applicationDidBecomeActive\n");
+    [glView startAnimation];
 }
 
 - (void)applicationWillTerminate:(UIApplication *)application
 {
-	xprDbgStr("applicationWillTerminate\n");
-    //[glView stopAnimation];
+	xprDbgStr("xpr applicationWillTerminate\n");
+	xprAppFinalize();
+    [glView stopAnimation];
 }
 
 - (void)dealloc
@@ -231,16 +236,17 @@ XprAppContext xprAppContext = {
 	2, 0,
 	XprFalse,
 	XprFalse,
-	853,
 	480,
+	320,
 };
 
 
 int main(int argc, char *argv[]) {
 
+	xprAppConfig();
+
 	NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
-    //int retVal = UIApplicationMain(argc, argv, nil, nil);
-    int retVal = UIApplicationMain(argc, argv, nil, @"XprAppDelegate");
-	[pool release];
+    int retVal = UIApplicationMain(argc, argv, nil, nil);
+    [pool release];
     return retVal;
 }

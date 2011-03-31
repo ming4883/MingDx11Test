@@ -42,7 +42,7 @@ char* objBufferAppend(ObjBuffer* buf)
 	}
 
 	ptr = buf->data + (buf->cnt * buf->elemSz);
-	
+
 	++buf->cnt;
 
 	return ptr;
@@ -135,7 +135,7 @@ void objVertexCacheInit(ObjVertexCache* self, ObjFace* faces, size_t faceCnt, si
 			ObjVertex* vert = &face->vert[v];
 			XprHashCode hash = XprHashStruct(vert, sizeof(ObjVertex));
 			//XprHashCode hash = (vert->n << 16) + (vert->t << 8) + vert->v;
-			
+
 			HASH_FIND_INT(self->cache, &hash, entry);
 
 			if(nullptr == entry) {
@@ -179,7 +179,7 @@ XprBool meshInitWithObjFile(Mesh* self, const char* path, InputStream* stream)
 	void* fp;
 	char readbuf[512];
 	char* token;
-	
+
 	ObjBuffer vbuf  = {nullptr, sizeof(XprVec3), 128, 0};
 	ObjBuffer vtbuf = {nullptr, sizeof(XprVec3), 128, 0};
 	ObjBuffer vnbuf = {nullptr, sizeof(XprVec3), 128, 0};
@@ -220,14 +220,14 @@ XprBool meshInitWithObjFile(Mesh* self, const char* path, InputStream* stream)
 			vpf = vcnt > vpf ? vcnt : vpf;
 		}
 	}
-	
+
 	stream->close(fp);
 
 	// flatten vertices
 	/*
 	meshInit(self, fbuf.cnt * vpf, fbuf.cnt * vpf);
 	self->vertexPerPatch = vpf;
-	
+
 	{
 		size_t i=0, j=0, vcnt = 0;
 		XprVec3* v = (XprVec3*)self->vertex.buffer;
@@ -258,8 +258,7 @@ XprBool meshInitWithObjFile(Mesh* self, const char* path, InputStream* stream)
 	}
 
 	meshCommit(self);
-	/**/
-	/**/
+	*/
 	// build indexed mesh
 	{
 		size_t i;
@@ -276,7 +275,7 @@ XprBool meshInitWithObjFile(Mesh* self, const char* path, InputStream* stream)
 		n = (XprVec3*)self->normal.buffer;
 		t = (XprVec2*)self->texcoord[0].buffer;
 		id = (unsigned short*)self->index.buffer;
-		
+
 		for(i = 0; i < vcache.vertexCnt; ++i) {
 
 			*v = ((XprVec3*)vbuf.data)[vcache.vertexBuf[i].v];

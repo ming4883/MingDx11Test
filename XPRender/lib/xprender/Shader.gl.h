@@ -13,7 +13,7 @@ typedef struct XprGpuShaderImpl
 {
 	XprGpuShader i;
 
-	int glName;
+	GLuint glName;
 
 } XprGpuShaderImpl;
 
@@ -31,8 +31,8 @@ typedef struct XprGpuProgramImpl
 {
 	XprGpuProgram i;
 
-	int glName;
-	int glVertexArray;
+	GLuint glName;
+	GLuint glVertexArray;
 	XprGpuProgramUniform* cache;
 	XprGpuProgramUniform* uniforms;
 

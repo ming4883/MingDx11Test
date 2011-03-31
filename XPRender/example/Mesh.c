@@ -52,7 +52,7 @@ void meshInit(Mesh* self, size_t vertexCount, size_t indexCount)
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
 		self->texcoord[i].sizeInBytes = sizeof(XprVec2) * self->vertexCount;
 		self->texcoord[i].buffer = malloc(self->texcoord[i].sizeInBytes);
-		sprintf(self->texcoord[i].shaderName, "i_texcoord%d", i);
+		sprintf(self->texcoord[i].shaderName, "i_texcoord%d", (int)i);
 	}
 
 	// hardware buffer
@@ -61,7 +61,7 @@ void meshInit(Mesh* self, size_t vertexCount, size_t indexCount)
 
 	self->impl->vertexBuffer = xprBufferAlloc();
 	xprBufferInit(self->impl->vertexBuffer, XprBufferType_Vertex, self->vertex.sizeInBytes, nullptr);
-	
+
 	self->impl->normalBuffer = xprBufferAlloc();
 	xprBufferInit(self->impl->normalBuffer, XprBufferType_Vertex, self->normal.sizeInBytes, nullptr);
 
@@ -74,7 +74,7 @@ void meshInit(Mesh* self, size_t vertexCount, size_t indexCount)
 	}
 
 	self->impl->gpuInputId = xprGenGpuInputId();
-	
+
 	self->flags |= MeshFlag_Inited;
 }
 
@@ -125,7 +125,7 @@ void meshCommit(Mesh* self)
 	commit(color);
 	for(i=0; i<MeshTrait_MaxTexcoord; ++i) {
 		xprBufferUpdate(self->impl->tcBuffer[i], 0, self->texcoord[i].sizeInBytes, self->texcoord[i].buffer);
-	}	
+	}
 
 #undef commit
 }
@@ -163,13 +163,13 @@ void meshRenderPoints(Mesh* self)
 }
 
 void meshInitWithUnitSphere(Mesh* self, size_t segmentCount)
-{	
+{
 #define PI 3.14159265358979323846f
 
 	XprVec3* pos;
 	XprVec3* nor;
 	XprVec2* uv0;
-	
+
 	unsigned short* idx;
 
 	float theta, phi;
@@ -185,7 +185,7 @@ void meshInitWithUnitSphere(Mesh* self, size_t segmentCount)
 	pos = xprBufferMap(self->impl->vertexBuffer, XprBufferMapAccess_Write);
 	nor = xprBufferMap(self->impl->normalBuffer, XprBufferMapAccess_Write);
 	uv0 = xprBufferMap(self->impl->tcBuffer[0], XprBufferMapAccess_Write);
-	
+
 	for(t=0, j=1; j<height-1; ++j)
 	{
 		for(i=0; i<width; ++i)
@@ -212,7 +212,7 @@ void meshInitWithUnitSphere(Mesh* self, size_t segmentCount)
 			idx[t++] = (j  )*width + i  ;
 			idx[t++] = (j+1)*width + i+1;
 			idx[t++] = (j  )*width + i+1;
-			
+
 			idx[t++] = (j  )*width + i  ;
 			idx[t++] = (j+1)*width + i  ;
 			idx[t++] = (j+1)*width + i+1;
@@ -228,14 +228,14 @@ void meshInitWithUnitSphere(Mesh* self, size_t segmentCount)
 		idx[t++] = (height-2)*width+1;
 		idx[t++] = (height-3)*width + i+1;
 		idx[t++] = (height-3)*width + i;
-		
+
 	}
 
 	xprBufferUnmap(self->impl->indexBuffer);
 	xprBufferUnmap(self->impl->vertexBuffer);
 	xprBufferUnmap(self->impl->normalBuffer);
 	xprBufferUnmap(self->impl->tcBuffer[0]);
-	
+
 #undef PI
 }
 
@@ -248,7 +248,7 @@ void meshInitWithQuad(Mesh* self, float width, float height, const XprVec3* offs
 
 	size_t r, c;
 	size_t stride = segmentCount+1;
-	
+
 	meshInit(self, stride * stride, (stride-1) * (stride-1) * 6);
 	self->vertexPerPatch = 3;
 
@@ -261,7 +261,7 @@ void meshInitWithQuad(Mesh* self, float width, float height, const XprVec3* offs
 	{
 		for(c=0; c<(stride-1); ++c)
 		{
-			
+
 			unsigned short p0 = (unsigned short)(r * stride + (c+1));
 			unsigned short p1 = (unsigned short)((r+1) * stride + (c+1));
 			unsigned short p2 = (unsigned short)(r * stride + c);
@@ -292,7 +292,7 @@ void meshInitWithQuad(Mesh* self, float width, float height, const XprVec3* offs
 			uv0[i].y = width * (float)c / segmentCount;
 		}
 	}
-	
+
 	xprBufferUnmap(self->impl->indexBuffer);
 	xprBufferUnmap(self->impl->vertexBuffer);
 	xprBufferUnmap(self->impl->normalBuffer);
@@ -319,7 +319,7 @@ void meshInitWithScreenQuad(Mesh* self)
 	pos[1] = xprVec3(-1,-1, 0); uv0[1] = xprVec2(0, 0);
 	pos[2] = xprVec3( 1, 1, 0); uv0[2] = xprVec2(1, 1);
 	pos[3] = xprVec3( 1,-1, 0); uv0[3] = xprVec2(1, 0);
-	
+
 	xprBufferUnmap(self->impl->indexBuffer);
 	xprBufferUnmap(self->impl->vertexBuffer);
 	xprBufferUnmap(self->impl->tcBuffer[0]);

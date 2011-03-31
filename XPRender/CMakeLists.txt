@@ -10,7 +10,6 @@ ADD_DEFINITIONS( -DGLEW_STATIC )
 
 SET( XPRENDER_COMMON
 		lib/xprender/Buffer.h
-		lib/xprender/Framework.h
 		lib/xprender/GpuFormat.h
 		lib/xprender/GpuState.h
 		lib/xprender/Mat44.c
@@ -45,7 +44,6 @@ IF( WIN32 )
 		lib/xprender/API.gl.h
 		lib/xprender/Buffer.gl.c
 		lib/xprender/Buffer.gl.h
-		lib/xprender/Framework.windows.gl.c
 		lib/xprender/GpuState.gl.c
 		lib/xprender/GpuState.gl.h
 		lib/xprender/Mat44.gl.c
@@ -87,7 +85,6 @@ ELSEIF( APPLE )
 		lib/xprender/API.gl.h
 		lib/xprender/Buffer.gl.c
 		lib/xprender/Buffer.gl.h
-		lib/xprender/Framework.ios.m
 		lib/xprender/GpuState.gl.c
 		lib/xprender/GpuState.gl.h
 		lib/xprender/Mat44.gl.c
@@ -153,90 +150,7 @@ ADD_EXECUTABLE( test_xprender
 	
 TARGET_LINK_LIBRARIES( test_xprender xprender ${PLATFORM_LIBS} )
 
-SET( EXAMPLE_COMMON 
-	example/Common.c
-	example/Common.h
-	example/Common.glsl
-	example/Stream.h
-	example/Stream.c
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Mesh.c
-	example/Mesh.obj.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
-	example/Pvr.c
-	example/Pvr.h
-	)
-	
-
-IF( WIN32 )
-	LIST( APPEND EXAMPLE_COMMON 			
-		example/Remote.impl.windows.c
-		example/Remote.impl.windows.h
-	)
-ELSEIF( APPLE )
-	LIST( APPEND EXAMPLE_COMMON 			
-		example/Remote.impl.ios.m
-		example/Remote.impl.ios.h
-	)
-ENDIF()
-
-# example_cloth_simulation
-ADD_EXECUTABLE( example_cloth_simulation ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/ClothSimulation.example.c
-	example/ClothSimulation.glsl
-	example/ShadowMap.glsl
-	example/Cloth.c
-	example/Cloth.h
-	example/Sphere.c
-	example/Sphere.h
-	)
-TARGET_LINK_LIBRARIES( example_cloth_simulation xprender ${PLATFORM_LIBS} )
-
-# example_label
-ADD_EXECUTABLE( example_label ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/Label.example.c
-	example/Label.c
-	example/Label.h
-	)
-TARGET_LINK_LIBRARIES( example_label xprender ${PLATFORM_LIBS} )
-
-# example_triangle_tessellation
-ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/TriangleTessellation.example.c
-	example/TriangleTessellation.glsl
-	)
-TARGET_LINK_LIBRARIES( example_triangle_tessellation xprender ${PLATFORM_LIBS} )
-
-# example_embedded_httpd
-ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/EmbeddedHttpd.example.c
-	)
-TARGET_LINK_LIBRARIES( example_embedded_httpd xprender ${PLATFORM_LIBS} )
-
-# example_mesh
-ADD_EXECUTABLE( example_mesh ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/Mesh.example.c
-	example/Mesh.glsl
-	)
-TARGET_LINK_LIBRARIES( example_mesh xprender ${PLATFORM_LIBS} )
-
-# example_mesh_performance
-ADD_EXECUTABLE( example_mesh_performance ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/MeshPerformance.example.c
-	example/MeshPerformance.glsl
-	)
-TARGET_LINK_LIBRARIES( example_mesh_performance xprender ${PLATFORM_LIBS} )
-
+ADD_SUBDIRECTORY( example )
 
 #-------------------------------------------------------------------------------
 # d3d9 support
@@ -249,7 +163,6 @@ SET( XPRENDER_D3D9
 	lib/xprender/API.d3d9.h
 	lib/xprender/Buffer.d3d9.c
 	lib/xprender/Buffer.d3d9.h
-	lib/xprender/Framework.windows.d3d9.c
 	lib/xprender/GpuState.d3d9.c
 	lib/xprender/GpuState.d3d9.h
 	lib/xprender/Mat44.d3d9.c
@@ -269,6 +182,9 @@ ADD_LIBRARY( xprender-d3d9
 	)
 
 SET( EXAMPLE_COMMON 
+	
+	lib/xprender/Framework.h
+	lib/xprender/Framework.windows.d3d9.c
 	example/Common.c
 	example/Common.h
 	example/Common.hlsl

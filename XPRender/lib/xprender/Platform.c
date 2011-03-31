@@ -46,8 +46,10 @@ void xprDbgStr(const char* str, ...)
 	va_list a;
 	va_start(a, str);
 
-	_vsnprintf_s(msg, _countof(msg), _TRUNCATE, str, a);
-	printf(msg);
+	vsprintf(msg, str, a);
+	printf("%s", msg);
+
+	va_end(a);
 }
 
 #endif	// XPR_WIN32
