@@ -49,11 +49,11 @@ ENDIF()
 
 LIST( SORT EXAMPLE_COMMON )
 
+SOURCE_GROUP( "common" FILES ${EXAMPLE_COMMON} )
+
 MACRO( CREATE_EXAMPLE APP_NAME SRC RES )
 
-SET( ALL_FILES ${SRC} ${RES} ${EXAMPLE_COMMON} )
-
-ADD_EXECUTABLE( ${APP_NAME} ${CONSOLE_SYSTEM} ${ALL_FILES} )
+ADD_EXECUTABLE( ${APP_NAME} ${CONSOLE_SYSTEM} ${SRC} ${RES} ${EXAMPLE_COMMON} )
 TARGET_LINK_LIBRARIES( ${APP_NAME} xprender ${PLATFORM_LIBS} )
 
 IF( APPLE )
@@ -62,8 +62,9 @@ IF( APPLE )
 ENDIF()
 
 IF( WIN32 )
-	SET( ALL_FILES ${SRC} ${RES} ${EXAMPLE_COMMON_D3D9} )
-	ADD_EXECUTABLE( ${APP_NAME}-d3d9 ${CONSOLE_SYSTEM} ${ALL_FILES} )
+	SET( RES_D3D9 ${RES} )
+	STRING( REPLACE glsl hlsl RES_D3D9 "${RES_D3D9}" )
+	ADD_EXECUTABLE( ${APP_NAME}-d3d9 ${CONSOLE_SYSTEM}  ${SRC} ${RES_D3D9} ${EXAMPLE_COMMON_D3D9} )
 	TARGET_LINK_LIBRARIES( ${APP_NAME}-d3d9 xprender-d3d9 ${PLATFORM_LIBS_D3D9} )
 ENDIF()
 
@@ -96,35 +97,24 @@ ENDIF()
 
 CREATE_EXAMPLE( example_cloth_simulation "${SRC}" "${RES}" )
 
-
-# example_label
-ADD_EXECUTABLE( example_label ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	Label.example.c
-	Label.c
-	Label.h
-	)
-TARGET_LINK_LIBRARIES( example_label xprender ${PLATFORM_LIBS} )
-
-# example_triangle_tessellation
-ADD_EXECUTABLE( example_triangle_tessellation ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	TriangleTessellation.example.c
-	TriangleTessellation.glsl
-	)
-TARGET_LINK_LIBRARIES( example_triangle_tessellation xprender ${PLATFORM_LIBS} )
-
 # example_embedded_httpd
-ADD_EXECUTABLE( example_embedded_httpd ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
+SET( SRC 
 	EmbeddedHttpd.example.c
 	)
-TARGET_LINK_LIBRARIES( example_embedded_httpd xprender ${PLATFORM_LIBS} )
+	
+IF( APPLE )
+	SET( RES
+		Example.xib
+		)
+ELSE()
+	SET( RES
+		)
+ENDIF()
+
+CREATE_EXAMPLE( example_embedded_httpd "${SRC}" "${RES}" )
 
 # example_mesh
-SET( NAME example_mesh )
 SET( SRC 
-	${EXAMPLE_COMMON}
 	Mesh.example.c
 	)
 	
@@ -134,25 +124,70 @@ IF( APPLE )
 		../media/monkey.obj
 		Example.xib
 		)
-	SET_SOURCE_FILES_PROPERTIES( ${RES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources )
 ELSE()
 	SET( RES
 		Mesh.glsl
 		)
 ENDIF()
 
-ADD_EXECUTABLE( ${NAME} ${CONSOLE_SYSTEM} ${SRC} ${RES} )
-TARGET_LINK_LIBRARIES( ${NAME} xprender ${PLATFORM_LIBS} )
-
-IF( APPLE )
-	SET_TARGET_PROPERTIES( ${NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PLIST_FILE} )
-ENDIF()
+CREATE_EXAMPLE( example_mesh "${SRC}" "${RES}" )
 
 # example_mesh_performance
-ADD_EXECUTABLE( example_mesh_performance ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
+SET( SRC 
 	MeshPerformance.example.c
-	MeshPerformance.glsl
 	)
-TARGET_LINK_LIBRARIES( example_mesh_performance xprender ${PLATFORM_LIBS} )
+	
+IF( APPLE )
+	SET( RES
+		MeshPerformance.gles
+		../media/monkey.obj
+		Example.xib
+		)
+ELSE()
+	SET( RES
+		MeshPerformance.glsl
+		)
+ENDIF()
 
+CREATE_EXAMPLE( example_mesh_performance "${SRC}" "${RES}" )
+
+IF( NOT APPLE )
+# example_label
+SET( SRC 
+	Label.example.c
+	Label.c
+	Label.h
+	)
+	
+IF( APPLE )
+	SET( RES
+		Common.gles
+		Example.xib
+		)
+ELSE()
+	SET( RES
+		Common.glsl
+		)
+ENDIF()
+
+CREATE_EXAMPLE( example_label "${SRC}" "${RES}" )
+
+# example_triangle_tessellation
+SET( SRC 
+	TriangleTessellation.example.c
+	)
+	
+IF( APPLE )
+	SET( RES
+		#TriangleTessellation.glsl
+		Example.xib
+		)
+ELSE()
+	SET( RES
+		#TriangleTessellation.glsl
+		)
+ENDIF()
+
+CREATE_EXAMPLE( example_triangle_tessellation "${SRC}" "${RES}" )
+
+ENDIF()
