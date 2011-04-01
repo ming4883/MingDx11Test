@@ -28,6 +28,11 @@ extern "C" {
 typedef struct XprAPI
 {
 	unsigned int gpuInputId;
+#if defined(XPR_APPLE_IOS)
+	GLuint defFBOName;
+	GLuint defColorBufName;
+	GLuint defDepthBufName;
+#endif
 } XprAPI;
 
 extern XprAPI xprAPI;

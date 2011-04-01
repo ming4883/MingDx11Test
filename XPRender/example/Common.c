@@ -2,77 +2,13 @@
 
 #include "../lib/glsw/glsw.h"
 
-#if defined(XPR_ANDROID)
 
-#include <android_native_app_glue.h>
-#include <android/asset_manager.h>
+void* myOpen(const char* filename);
+void myClose(void* handle);
+size_t myRead(void* buff, size_t elsize, size_t nelem, void* handle);
 
-extern struct android_app* XPR_ANDROID_APP;
-
-void* androidOpen(const char* filename)
-{
-	AAsset* asset = AAssetManager_open(XPR_ANDROID_APP->activity->assetManager, filename, AASSET_MODE_UNKNOWN);
-
-	if(nullptr == asset) {
-		xprDbgStr("failed to open asset '%s'!\n", filename);
-	}
-	return asset;
-}
-
-void androidClose(void* handle)
-{
-	AAsset_close((AAsset*)handle);
-}
-
-size_t androidRead(void* buff, size_t elsize, size_t nelem, void* handle)
-{
-	return (size_t)AAsset_read((AAsset*)handle, buff, elsize * nelem);
-}
-
-glswFileSystem myFileSystem = {androidRead, androidOpen, androidClose};
-InputStream myInputStream = {androidRead, androidOpen, androidClose};
-
-#else	// XPR_ANDROID
-
-void* myOpen(const char* filename)
-{
-	static char buf[512];
-
-	static const char* paths[] = {
-		"../../example/",
-		"../example/",
-		"../../media/",
-		"../media/",
-		"media",
-		nullptr,
-	};
-
-	FILE* fp;
-	const char** path;
-
-	if(nullptr != (fp = fopen(filename, "rb")))
-		return fp;
-
-	for(path = paths; nullptr != *path; ++path) {
-		strcpy(buf, *path);
-		if(nullptr != (fp = fopen(strcat(buf, filename), "rb")))
-			return fp;
-	}
-
-	xprDbgStr("failed to open asset '%s'!\n", filename);
-
-	return nullptr;
-}
-
-void myClose(void* handle)
-{
-	fclose((FILE*)handle);
-}
-
-glswFileSystem myFileSystem = {fread, myOpen, myClose};
-InputStream myInputStream = {fread, myOpen, myClose};
-
-#endif	// XPR_ANDROID
+glswFileSystem myFileSystem = {myRead, myOpen, myClose};
+InputStream myInputStream = {myRead, myOpen, myClose};
 
 AppContext* appAlloc()
 {

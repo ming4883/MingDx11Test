@@ -1,9 +1,9 @@
 
 SET( EXAMPLE_COMMON 
+	Common.c
 	Common.h
-	Common.glsl
-	Stream.h
 	Stream.c
+	Stream.h
 	Remote.c
 	Remote.h
 	Remote.impl.h
@@ -21,7 +21,7 @@ IF( WIN32 )
 	LIST( APPEND EXAMPLE_COMMON
 		../lib/xprender/Framework.h
 		../lib/xprender/Framework.windows.gl.c
-		Common.c
+		Common.generic.c
 		Remote.impl.windows.c
 		Remote.impl.windows.h
 	)
@@ -29,12 +29,12 @@ ELSEIF( APPLE )
 	LIST( APPEND EXAMPLE_COMMON
 		../lib/xprender/Framework.h
 		../lib/xprender/Framework.ios.m
-		Common.m
+		Common.ios.m
 		Remote.impl.ios.m
 		Remote.impl.ios.h
 	)
 	
-	set(PLIST_FILE ${CMAKE_CURRENT_LIST_DIR}/Example-Info.plist)
+	SET( PLIST_FILE ${CMAKE_CURRENT_LIST_DIR}/Example-Info.plist )
 ENDIF()
 
 # example_cloth_simulation
@@ -50,17 +50,15 @@ SET( SRC
 	
 IF( APPLE )
 	SET( RES
+		Common.gles
 		ClothSimulation.gles
 		ShadowMap.gles
 		Example.xib
 		)
-	SET_SOURCE_FILES_PROPERTIES(
-		${RES}
-		PROPERTIES
-		MACOSX_PACKAGE_LOCATION Resources
-	)
+	SET_SOURCE_FILES_PROPERTIES( ${RES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources )
 ELSE()
 	SET( RES
+		Common.glsl
 		ClothSimulation.glsl
 		ShadowMap.glsl
 		)
@@ -70,7 +68,7 @@ ADD_EXECUTABLE( ${NAME} ${CONSOLE_SYSTEM} ${SRC} ${RES} )
 TARGET_LINK_LIBRARIES( ${NAME} xprender ${PLATFORM_LIBS} )
 
 IF( APPLE )
-	SET_TARGET_PROPERTIES( ${NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PLIST_FILE})
+	SET_TARGET_PROPERTIES( ${NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PLIST_FILE} )
 ENDIF()
 
 # example_label
@@ -110,11 +108,7 @@ IF( APPLE )
 		../media/monkey.obj
 		Example.xib
 		)
-	SET_SOURCE_FILES_PROPERTIES(
-		${RES}
-		PROPERTIES
-		MACOSX_PACKAGE_LOCATION Resources
-	)
+	SET_SOURCE_FILES_PROPERTIES( ${RES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources )
 ELSE()
 	SET( RES
 		Mesh.glsl
@@ -125,7 +119,7 @@ ADD_EXECUTABLE( ${NAME} ${CONSOLE_SYSTEM} ${SRC} ${RES} )
 TARGET_LINK_LIBRARIES( ${NAME} xprender ${PLATFORM_LIBS} )
 
 IF( APPLE )
-	SET_TARGET_PROPERTIES( ${NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PLIST_FILE})
+	SET_TARGET_PROPERTIES( ${NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${PLIST_FILE} )
 ENDIF()
 
 # example_mesh_performance

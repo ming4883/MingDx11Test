@@ -19,6 +19,7 @@
     id displayLink;
     NSTimer *animationTimer;
 	EAGLContext *context;
+	CFTimeInterval lastTime;
 }
 
 @property (readonly, nonatomic, getter=isAnimating) BOOL animating;
@@ -51,9 +52,12 @@
         CAEAGLLayer *eaglLayer = (CAEAGLLayer *)self.layer;
 
         eaglLayer.opaque = TRUE;
-        eaglLayer.drawableProperties = [NSDictionary dictionaryWithObjectsAndKeys:
-                                        [NSNumber numberWithBool:FALSE], kEAGLDrawablePropertyRetainedBacking, kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
-
+        eaglLayer.drawableProperties =
+		[NSDictionary dictionaryWithObjectsAndKeys: [NSNumber numberWithBool:FALSE],
+			kEAGLDrawablePropertyRetainedBacking,
+			kEAGLColorFormatRGBA8,
+			kEAGLDrawablePropertyColorFormat,
+			nil];
 
 		context = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
 
@@ -62,6 +66,20 @@
             [self release];
             return nil;
         }
+
+		// default FBO
+		glGenFramebuffers(1, &xprAPI.defFBOName);
+		glBindFramebuffer(GL_FRAMEBUFFER, xprAPI.defFBOName);
+
+		// default Color buffer
+        glGenRenderbuffers(1, &xprAPI.defColorBufName);
+        glBindRenderbuffer(GL_RENDERBUFFER, xprAPI.defColorBufName);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, xprAPI.defColorBufName);
+
+		// default Color buffer
+        glGenRenderbuffers(1, &xprAPI.defDepthBufName);
+        glBindRenderbuffer(GL_RENDERBUFFER, xprAPI.defDepthBufName);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, xprAPI.defDepthBufName);
 
         animating = FALSE;
         displayLinkSupported = FALSE;
@@ -75,8 +93,6 @@
         NSString *currSysVer = [[UIDevice currentDevice] systemVersion];
         if ([currSysVer compare:reqSysVer options:NSNumericSearch] != NSOrderedAscending)
             displayLinkSupported = TRUE;
-
-		xprAppInitialize();
     }
 
     return self;
@@ -84,15 +100,43 @@
 
 - (void)drawView:(id)sender
 {
-    //[renderer render];
-	xprAppUpdate(0);
+
+	CFTimeInterval currTime = CFAbsoluteTimeGetCurrent();
+	CFTimeInterval deltaTime = currTime - lastTime;
+	lastTime = currTime;
+
+	xprAppUpdate((unsigned int)(deltaTime * 1000));
 	xprAppRender();
+
+	glBindRenderbuffer(GL_RENDERBUFFER, xprAPI.defColorBufName);
+    [context presentRenderbuffer:GL_RENDERBUFFER];
+
 }
 
 - (void)layoutSubviews
 {
-    //[renderer resizeFromLayer:(CAEAGLLayer*)self.layer];
-    [self drawView:nil];
+    CAEAGLLayer* glLayer = (CAEAGLLayer*)self.layer;
+
+	// color buffer storage
+	glBindRenderbuffer(GL_RENDERBUFFER, xprAPI.defColorBufName);
+    [context renderbufferStorage:GL_RENDERBUFFER fromDrawable:glLayer];
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_WIDTH, &xprAppContext.xres);
+    glGetRenderbufferParameteriv(GL_RENDERBUFFER, GL_RENDERBUFFER_HEIGHT, &xprAppContext.yres);
+
+	// depth buffer storage
+	glBindRenderbuffer(GL_RENDERBUFFER, xprAPI.defDepthBufName);
+	glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT16, xprAppContext.xres, xprAppContext.yres);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        NSLog(@"Failed to make complete framebuffer object %x", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    }
+
+	xprAppInitialize();
+
+	lastTime = CFAbsoluteTimeGetCurrent();
+
+    //[self drawView:nil];
 }
 
 - (NSInteger)animationFrameInterval
