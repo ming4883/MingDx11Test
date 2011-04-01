@@ -78,6 +78,32 @@ IF( WIN32 )
 		
 	ENDIF()
 	
+	# d3d9 only on WIN32
+	SET( PLATFORM_LIBS_D3D9 d3d9 d3dx9 winmm ws2_32 )
+
+	SET( XPRENDER_D3D9
+		${XPRENDER_COMMON}
+		lib/xprender/API.d3d9.h
+		lib/xprender/Buffer.d3d9.c
+		lib/xprender/Buffer.d3d9.h
+		lib/xprender/GpuState.d3d9.c
+		lib/xprender/GpuState.d3d9.h
+		lib/xprender/Mat44.d3d9.c
+		lib/xprender/RenderTarget.d3d9.c
+		lib/xprender/RenderTarget.d3d9.h
+		lib/xprender/Shader.d3d9.c
+		lib/xprender/Shader.d3d9.h
+		lib/xprender/Texture.d3d9.c
+		lib/xprender/Texture.d3d9.h
+		)
+	SOURCE_GROUP( "xprender" FILES ${XPRENDER_D3D9} )
+	
+	ADD_LIBRARY( xprender-d3d9
+		${GLSW}
+		${HTTPD}
+		${XPRENDER_D3D9}
+		)
+	
 ELSEIF( APPLE )
 
 	SET( XPRENDER
@@ -133,6 +159,7 @@ INCLUDE_DIRECTORIES(
 	lib/httpd
 )
 
+LIST( SORT XPRENDER )
 ADD_LIBRARY( xprender
 	${GLEW}
 	${GLSW}
@@ -140,7 +167,7 @@ ADD_LIBRARY( xprender
 	${XPRENDER}
 	)
 
-# UNIT test_xprender
+# unit testes
 IF( NOT APPLE )
 	ADD_EXECUTABLE( test_xprender
 		test/TestXPRender.c
@@ -153,103 +180,5 @@ IF( NOT APPLE )
 
 ENDIF()
 
+# examples
 ADD_SUBDIRECTORY( example )
-
-#-------------------------------------------------------------------------------
-# d3d9 support
-IF( WIN32 )
-
-SET( PLATFORM_LIBS d3d9 d3dx9 winmm ws2_32 )
-	
-SET( XPRENDER_D3D9
-	${XPRENDER_COMMON}
-	lib/xprender/API.d3d9.h
-	lib/xprender/Buffer.d3d9.c
-	lib/xprender/Buffer.d3d9.h
-	lib/xprender/GpuState.d3d9.c
-	lib/xprender/GpuState.d3d9.h
-	lib/xprender/Mat44.d3d9.c
-	lib/xprender/RenderTarget.d3d9.c
-	lib/xprender/RenderTarget.d3d9.h
-	lib/xprender/Shader.d3d9.c
-	lib/xprender/Shader.d3d9.h
-	lib/xprender/Texture.d3d9.c
-	lib/xprender/Texture.d3d9.h
-	)
-SOURCE_GROUP( "xprender" FILES ${XPRENDER_D3D9} )
-	
-ADD_LIBRARY( xprender-d3d9
-	${GLSW}
-	${HTTPD}
-	${XPRENDER_D3D9}
-	)
-
-SET( EXAMPLE_COMMON 
-	
-	lib/xprender/Framework.h
-	lib/xprender/Framework.windows.d3d9.c
-	example/Common.c
-	example/Common.h
-	example/Common.hlsl
-	example/Stream.h
-	example/Stream.c
-	example/Remote.c
-	example/Remote.h
-	example/Remote.impl.h
-	example/Remote.impl.windows.c
-	example/Remote.impl.windows.h
-	example/Mesh.c
-	example/Mesh.obj.c
-	example/Mesh.h
-	example/Material.c
-	example/Material.h
-	example/Pvr.c
-	example/Pvr.h
-	)
-
-# example_cloth_simulation
-ADD_EXECUTABLE( example_cloth_simulation-d3d9 ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/ClothSimulation.example.c
-	example/ClothSimulation.hlsl
-	example/ShadowMap.hlsl
-	example/Cloth.c
-	example/Cloth.h
-	example/Sphere.c
-	example/Sphere.h
-	)
-TARGET_LINK_LIBRARIES( example_cloth_simulation-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-# example_label
-ADD_EXECUTABLE( example_label-d3d9 ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/Label.example.c
-	example/Label.c
-	example/Label.h
-	)
-TARGET_LINK_LIBRARIES( example_label-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-# example_embedded_httpd
-ADD_EXECUTABLE( example_embedded_httpd-d3d9 ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/EmbeddedHttpd.example.c
-	)
-TARGET_LINK_LIBRARIES( example_embedded_httpd-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-# example_mesh
-ADD_EXECUTABLE( example_mesh-d3d9 ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/Mesh.example.c
-	example/Mesh.hlsl
-	)
-TARGET_LINK_LIBRARIES( example_mesh-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-# example_mesh_performance
-ADD_EXECUTABLE( example_mesh_performance-d3d9 ${CONSOLE_SYSTEM}
-	${EXAMPLE_COMMON}
-	example/MeshPerformance.example.c
-	example/MeshPerformance.hlsl
-	)
-TARGET_LINK_LIBRARIES( example_mesh_performance-d3d9 xprender-d3d9 ${PLATFORM_LIBS} )
-
-ENDIF()

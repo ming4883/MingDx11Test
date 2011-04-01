@@ -39,5 +39,5 @@ void myClose(void* handle)
 
 size_t myRead(void* buff, size_t elsize, size_t nelem, void* handle)
 {
-	return fread((FILE*)handle, buff, elsize, nelem);
+	return fread(buff, elsize, nelem, (FILE*)handle);
 }
