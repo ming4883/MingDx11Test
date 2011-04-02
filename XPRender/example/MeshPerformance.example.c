@@ -13,7 +13,7 @@ Material* mtl = nullptr;
 XprTexture* texture = nullptr;
 
 #define CNT 5
-#define BATCH_DRAW 1
+#define BATCH_DRAW 0
 
 typedef struct Settings
 {
