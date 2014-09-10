@@ -1,0 +1,22 @@
+{
+  "id":             "MDK",
+  "name":           "MDK",
+  "version":        "1.0.0",
+  "description":    "Ming's Demo Kit.",
+  "website":        "",
+  "license":        "New BSD License",
+
+  "dependencies":   [ { "id": "juce_gui_basics",   "version": "matching" }
+                    ],
+
+  "include":        "mdk.h",
+
+  "compile":        [ { "file": "mdk.cpp" } ],
+
+  "browse":         [ "/*.h", "/mdk_*.cpp" ],
+
+  "OSXFrameworks":  "",
+  "iOSFrameworks":  "",
+  "LinuxLibs":      "",
+  "mingwLibs":      ""
+}
