@@ -54,6 +54,14 @@ protected:
         errors_.clearQuick();
     }
 
+    inline void errLog (const char* errMsg)
+    {
+        if (nullptr == errMsg)
+            return;
+
+        errors_.add (String (errMsg));
+    }
+
     inline void errDump()
     {
         for (int i = 0; i < errors_.size(); ++i)

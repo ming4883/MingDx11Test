@@ -25,16 +25,49 @@ public:
     
     ~Example01()
     {
-        renderThreadStop();
     }
 
     bool demoStartup()
     {
+        Hold<ID3DBlob> vscode = this->compileShaderFromBinaryData ("Test.vs", "main", "vs_5_0");
+        Hold<ID3DBlob> pscode = this->compileShaderFromBinaryData ("Test.ps", "main", "ps_5_0");
+
+        if (vs_.set (createVertexShader (vscode)).isNull())
+            return false;
+
+        if (ps_.set (createPixelShader (pscode)).isNull())
+            return false;
+
+        D3D11_INPUT_ELEMENT_DESC idesc;
+        idesc.SemanticName = "POSITION";
+        idesc.SemanticIndex = 0;
+        idesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+        idesc.InputSlot = 0;
+        idesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+        idesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+        idesc.InstanceDataStepRate = 0;
+
+        if (il_.set (createInputLayout (&idesc, 1, vscode)).isNull())
+            return false;
+
+        XMFLOAT4 vtx[] = {
+            XMFLOAT4 ( 0.0f, 1.0f, 0.0f, 1.0f),
+            XMFLOAT4 ( 1.0f,-1.0f, 0.0f, 1.0f),
+            XMFLOAT4 (-1.0f,-1.0f, 0.0f, 1.0f),
+        };
+
+        if (vb_.set (createVertexBuffer (numElementsInArray (vtx), false, vtx)).isNull())
+            return false;
+
         return true;
     }
 
     void demoShutdown()
     {
+        vs_.set (nullptr);
+        ps_.set (nullptr);
+        il_.set (nullptr);
+        vb_.set (nullptr);
     }
 
     void demoUpdate ()
@@ -42,8 +75,27 @@ public:
         XMFLOAT4A rgba (0.25f, 0.25f, 1.0f, 1.0f);
         d3dIMContext_->OMSetRenderTargets (1, d3dBackBufRTView_, nullptr);
         d3dIMContext_->ClearRenderTargetView (d3dBackBufRTView_, (float*)&rgba);
+        d3dIMContext_->RSSetViewports (1, &getViewport (0.0f, 0.0f, 1.0f, 1.0f));
+
+        UINT stride = sizeof (XMFLOAT4);
+        UINT offset = 0;
+        
+        d3dIMContext_->IASetVertexBuffers (0, 1, vb_, &stride, &offset);
+        d3dIMContext_->IASetInputLayout (il_);
+        d3dIMContext_->IASetPrimitiveTopology (D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+        d3dIMContext_->VSSetShader (vs_, nullptr, 0);
+        d3dIMContext_->PSSetShader (ps_, nullptr, 0);
+
+        d3dIMContext_->Draw (3, 0);
+
         d3dSwapchain_->Present (0u, 0u);
     }
+
+    Hold<ID3D11VertexShader> vs_;
+    Hold<ID3D11PixelShader> ps_;
+    Hold<ID3D11InputLayout> il_;
+    Hold<ID3D11Buffer> vb_;
 };
 
 //==============================================================================

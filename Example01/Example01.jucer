@@ -6,6 +6,8 @@
   <MAINGROUP id="h1HD0p" name="Example01">
     <GROUP id="{59F3EEB3-ADF0-4AB9-8739-AF3A6E5FC0B9}" name="Source">
       <FILE id="KoYquy" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="BDJI06" name="Test.ps" compile="0" resource="1" file="Source/Test.ps"/>
+      <FILE id="F7P1Dn" name="Test.vs" compile="0" resource="1" file="Source/Test.vs"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

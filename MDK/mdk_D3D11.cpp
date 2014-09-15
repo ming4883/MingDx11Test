@@ -1,5 +1,11 @@
 #include "mdk_D3D11.h"
 
+#include <BinaryData.h>
+#include <d3dcompiler.h>
+
+#pragma comment(lib, "D3D11.lib")
+#pragma comment(lib, "D3DCompiler.lib")
+
 namespace mdk
 {
 
@@ -109,8 +115,120 @@ void D3D11Demo::d3dShutdown()
     d3dSwapchain_.set (nullptr);
 }
 
-//==============================================================================
-ID3D11InputLayout* D3D11Resource::createInputLayout (ID3D11Device* d3dDevice, const D3D11_INPUT_ELEMENT_DESC* inputElements, const size_t inputElementCount, ID3DBlob* shaderByteCode)
+void D3D11Demo::ShaderCompileDesc::reset()
+{
+    source = nullptr;
+    name = nullptr;
+    entry = nullptr;
+    target = nullptr;
+    secondaryData = nullptr;
+
+    defines = nullptr;
+    include = nullptr;
+        
+    sourceSize = 0;
+    flags1 = 0;
+    flags2 = 0;
+    secondaryDataSize = 0;
+    secondaryDataFlags = 0;
+}
+
+D3D11_VIEWPORT D3D11Demo::getViewport (float x_ratio, float y_ratio, float w_ratio, float h_ratio, float minz, float maxz)
+{
+    auto bounds = getBounds();
+    D3D11_VIEWPORT ret;
+
+    ret.Width = bounds.getWidth() * w_ratio;
+    ret.Height = bounds.getHeight() * h_ratio;
+    ret.TopLeftX = bounds.getWidth() * x_ratio;
+    ret.TopLeftY = bounds.getHeight() * y_ratio;
+    ret.MinDepth = minz;
+    ret.MaxDepth = maxz;
+    return ret;
+}
+
+D3D11Demo::ShaderCompileResult D3D11Demo::compileShader (const ShaderCompileDesc& desc)
+{
+    size_t sourceSize = desc.sourceSize;
+    if (0 == sourceSize)
+        sourceSize = strlen (desc.source);
+
+    Hold<ID3DBlob> bytecode;
+    Hold<ID3DBlob> error;
+
+    if (FAILED (D3DCompile2 (desc.source, sourceSize, desc.name, desc.defines, desc.include, desc.entry, desc.target, desc.flags1, desc.flags2, desc.secondaryDataFlags, desc.secondaryData, desc.secondaryDataSize, bytecode, error)))
+    {
+        return ShaderCompileResult (nullptr, error.drop());
+    }
+
+    return ShaderCompileResult (bytecode.drop(), error.drop());
+}
+
+ID3DBlob* D3D11Demo::compileShaderFromBinaryData (const char* id, const char* entry, const char* target)
+{
+    String fileId = String (id).replaceCharacter ('.', '_');
+    int dataSize;
+    const char* data = BinaryData::getNamedResource (fileId.toRawUTF8(), dataSize);
+
+    if (nullptr == data)
+        return nullptr;
+
+    ShaderCompileDesc desc;
+    desc.name = id;
+    desc.entry = entry;
+    desc.target = target;
+    desc.source = data;
+    desc.sourceSize = (size_t)dataSize;
+
+    ShaderCompileResult ret = compileShader (desc);
+
+    if (ret.errorMessage)
+    {
+        const char* str = (const char*)ret.errorMessage->GetBufferPointer();
+        errLog (str);
+        ret.errorMessage->Release();
+    }
+
+    return ret.byteCode;
+}
+
+ID3D11VertexShader* D3D11Demo::createVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+{
+    if (nullptr == bytecode)
+        return nullptr;
+
+    Hold<ID3D11VertexShader> shader;
+    if (failed (d3dDevice_->CreateVertexShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+        return nullptr;
+
+    return shader.drop();
+}
+
+ID3D11PixelShader* D3D11Demo::createPixelShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+{
+    if (nullptr == bytecode)
+        return nullptr;
+
+    Hold<ID3D11PixelShader> shader;
+    if (failed (d3dDevice_->CreatePixelShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+        return nullptr;
+
+    return shader.drop();
+}
+
+ID3D11GeometryShader* D3D11Demo::createGeometryShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+{
+    if (nullptr == bytecode)
+        return nullptr;
+
+    Hold<ID3D11GeometryShader> shader;
+    if (failed (d3dDevice_->CreateGeometryShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+        return nullptr;
+
+    return shader.drop();
+}
+
+ID3D11InputLayout* D3D11Demo::createInputLayout (const D3D11_INPUT_ELEMENT_DESC* inputElements, const size_t inputElementCount, ID3DBlob* shaderByteCode)
 {
 	/*
 	std::ostringstream stream;
@@ -139,7 +257,7 @@ ID3D11InputLayout* D3D11Resource::createInputLayout (ID3D11Device* d3dDevice, co
 		return nullptr;
 
 	Hold<ID3D11InputLayout> layout;
-	if (FAILED (d3dDevice->CreateInputLayout(
+	if (failed (d3dDevice_->CreateInputLayout(
 		inputElements, inputElementCount,
 		shaderByteCode->GetBufferPointer(), shaderByteCode->GetBufferSize(),
 		layout)))
@@ -148,7 +266,7 @@ ID3D11InputLayout* D3D11Resource::createInputLayout (ID3D11Device* d3dDevice, co
 	return layout.drop();
 }
 
-ID3D11Buffer* D3D11Resource::createVertexBuffer (ID3D11Device* d3dDevice, size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData)
+ID3D11Buffer* D3D11Demo::createVertexBuffer (size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData)
 {
 	D3D11_BUFFER_DESC desc;
 	desc.ByteWidth = sizeInBytes;	// size
@@ -172,13 +290,14 @@ ID3D11Buffer* D3D11Resource::createVertexBuffer (ID3D11Device* d3dDevice, size_t
 		
 	Hold<ID3D11Buffer> buffer;
 	
-	if (FAILED (d3dDevice->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
+	if (failed (d3dDevice_->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
         return nullptr;
 
 	return buffer.drop();
 }
 
-ID3D11Buffer* D3D11Resource::createIndexBuffer (ID3D11Device* d3dDevice, size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData)
+
+ID3D11Buffer* D3D11Demo::createIndexBuffer (size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData)
 {
 	D3D11_BUFFER_DESC desc;
 	desc.ByteWidth = sizeInBytes;	// size
@@ -202,13 +321,13 @@ ID3D11Buffer* D3D11Resource::createIndexBuffer (ID3D11Device* d3dDevice, size_t 
 
 	Hold<ID3D11Buffer> buffer;
 
-	if (FAILED (d3dDevice->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
+	if (failed (d3dDevice_->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
         return nullptr;
 
 	return buffer.drop();
 }
 
-ID3D11Buffer* D3D11Resource::createConstantBuffer (ID3D11Device* d3dDevice, size_t sizeInBytes)
+ID3D11Buffer* D3D11Demo::createConstantBuffer (size_t sizeInBytes)
 {
 	if(sizeInBytes % 16 != 0)
 		sizeInBytes += 16 - (sizeInBytes % 16);
@@ -222,11 +341,15 @@ ID3D11Buffer* D3D11Resource::createConstantBuffer (ID3D11Device* d3dDevice, size
 
 	Hold<ID3D11Buffer> buffer;
 	
-	if (FAILED (d3dDevice->CreateBuffer (&desc, nullptr, buffer)))
+	if (failed (d3dDevice_->CreateBuffer (&desc, nullptr, buffer)))
         return nullptr;
 
 	return buffer.drop();
 }
+
+
+
+//==============================================================================
 
 ID3D11Buffer* D3D11Resource::createStructComputeBuffer (ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, const void* initialData)
 {
