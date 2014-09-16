@@ -1,10 +1,10 @@
 #include "mdk_D3D11.h"
 
 #include <BinaryData.h>
-#include <d3dcompiler.h>
+//#include <d3dcompiler.h>
 
 #pragma comment(lib, "D3D11.lib")
-#pragma comment(lib, "D3DCompiler.lib")
+//#pragma comment(lib, "D3DCompiler.lib")
 
 namespace mdk
 {
@@ -105,6 +105,80 @@ bool D3D11Demo::d3dStartup()
     if (failed (d3dDevice_->CreateRenderTargetView (d3dBackBuf, nullptr, d3dBackBufRTView_)))
         return false;
 
+    // common sampler states
+    {
+        D3D11_SAMPLER_DESC _;
+        _.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		_.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		_.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		_.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		_.MinLOD = -FLT_MAX;
+		_.MaxLOD = FLT_MAX;
+		_.MipLODBias = 0;
+		_.MaxAnisotropy = 16;
+		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		_.BorderColor[0] = 0;
+		_.BorderColor[1] = 0;
+		_.BorderColor[2] = 0;
+		_.BorderColor[3] = 0;
+        if (d3dSampWrapLinear_.set (createSamplerState (_)).isNull ())
+            return false;
+    }
+    {
+        D3D11_SAMPLER_DESC _;
+        _.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		_.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		_.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		_.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		_.MinLOD = -FLT_MAX;
+		_.MaxLOD = FLT_MAX;
+		_.MipLODBias = 0;
+		_.MaxAnisotropy = 16;
+		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		_.BorderColor[0] = 0;
+		_.BorderColor[1] = 0;
+		_.BorderColor[2] = 0;
+		_.BorderColor[3] = 0;
+        if (d3dSampWrapPoint_.set (createSamplerState (_)).isNull ())
+            return false;
+    }
+    {
+        D3D11_SAMPLER_DESC _;
+        _.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		_.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		_.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		_.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		_.MinLOD = -FLT_MAX;
+		_.MaxLOD = FLT_MAX;
+		_.MipLODBias = 0;
+		_.MaxAnisotropy = 16;
+		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		_.BorderColor[0] = 0;
+		_.BorderColor[1] = 0;
+		_.BorderColor[2] = 0;
+		_.BorderColor[3] = 0;
+        if (d3dSampClampLinear_.set (createSamplerState (_)).isNull ())
+            return false;
+    }
+    {
+        D3D11_SAMPLER_DESC _;
+        _.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+		_.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+		_.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+		_.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+		_.MinLOD = -FLT_MAX;
+		_.MaxLOD = FLT_MAX;
+		_.MipLODBias = 0;
+		_.MaxAnisotropy = 16;
+		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		_.BorderColor[0] = 0;
+		_.BorderColor[1] = 0;
+		_.BorderColor[2] = 0;
+		_.BorderColor[3] = 0;
+        if (d3dSampClampPoint_.set (createSamplerState (_)).isNull ())
+            return false;
+    }
+
     return true;
 }
 
@@ -147,6 +221,7 @@ D3D11_VIEWPORT D3D11Demo::getViewport (float x_ratio, float y_ratio, float w_rat
     return ret;
 }
 
+#if 0
 D3D11Demo::ShaderCompileResult D3D11Demo::compileShader (const ShaderCompileDesc& desc)
 {
     size_t sourceSize = desc.sourceSize;
@@ -190,6 +265,77 @@ ID3DBlob* D3D11Demo::compileShaderFromBinaryData (const char* id, const char* en
     }
 
     return ret.byteCode;
+}
+#endif
+
+class MyD3DBlob : public ID3DBlob
+{
+public:
+    HeapBlock<uint8> data;
+    size_t size;
+    Atomic<ULONG> refCnt;
+
+    MyD3DBlob (size_t sz)
+        : data (sz)
+        , size (sz)
+        , refCnt (1u)
+    {
+    }
+
+    void copyFrom (const void* src)
+    {
+        std::memcpy (data.getData(), src, size);
+    }
+
+    STDMETHOD_ (LPVOID, GetBufferPointer) (void)
+    {
+        return data.getData();
+    }
+
+    STDMETHOD_ (SIZE_T, GetBufferSize) (void)
+    {
+        return size;
+    }
+
+    STDMETHOD (QueryInterface) (REFIID riid, void** ppvObject)
+    {
+        if (riid == __uuidof (ID3DBlob))
+        {
+            *ppvObject = this;
+            return S_OK;
+        }
+
+        return E_NOINTERFACE;
+    }
+
+    STDMETHOD_ (ULONG, AddRef) (void)
+    {
+        return ++refCnt;
+    }
+
+    STDMETHOD_ (ULONG, Release) (void)
+    {
+        ULONG ret = --refCnt;
+
+        if (ret == 0)
+            delete this;
+
+        return ret;
+    }
+};
+
+ID3DBlob* D3D11Demo::loadShaderFromBinaryData (const char* id)
+{
+    String fileId = String (id).replaceCharacter ('.', '_');
+    int dataSize;
+    const char* data = BinaryData::getNamedResource (fileId.toRawUTF8(), dataSize);
+
+    if (nullptr == data)
+        return nullptr;
+
+    MyD3DBlob* blob = new MyD3DBlob ((size_t)dataSize);
+    blob->copyFrom (data);
+    return blob;
 }
 
 ID3D11VertexShader* D3D11Demo::createVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
@@ -347,34 +493,95 @@ ID3D11Buffer* D3D11Demo::createConstantBuffer (size_t sizeInBytes)
 	return buffer.drop();
 }
 
-
-
-//==============================================================================
-
-ID3D11Buffer* D3D11Resource::createStructComputeBuffer (ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, const void* initialData)
+ID3D11Texture2D* D3D11Demo::createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData, size_t rowPitch, size_t slicePitch)
 {
-	//if(bufferSizeInBytes % 16 != 0)
-	//	bufferSizeInBytes += 16 - (bufferSizeInBytes % 16);
-	D3D11_BUFFER_DESC desc;
+    D3D11_TEXTURE2D_DESC desc;
+	zerostruct (desc);
+	desc.ArraySize = 1;
 	desc.Usage = D3D11_USAGE_DEFAULT;
-	desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = 0;
-	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	desc.ByteWidth = bufferSizeInBytes;
-	desc.StructureByteStride = structSizeInBytes;
+	desc.Format = dataFormat;
+	desc.Width = width;
+	desc.Height = height;
+	desc.MipLevels = mipLevels;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.SampleDesc.Count = 1;
 
-	D3D11_SUBRESOURCE_DATA srdata;
-	srdata.pSysMem = initialData;
+	Hold<ID3D11Texture2D> texture;
 
-	Hold<ID3D11Buffer> buffer;
+    D3D11_SUBRESOURCE_DATA srdata;
+    srdata.pSysMem = initialData;
+    srdata.SysMemPitch = rowPitch;
+    srdata.SysMemSlicePitch = slicePitch;
 	
-	if (FAILED (d3dDevice->CreateBuffer(&desc, (nullptr == initialData) ? nullptr : &srdata, buffer)))
+	if (failed (d3dDevice_->CreateTexture2D (&desc, initialData == nullptr ? nullptr : &srdata, texture)))
         return nullptr;
-
-	return buffer.drop();
+    
+	return texture.drop();
 }
 
-ID3D11Texture2D* D3D11Resource::createTexture2DRenderBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat)
+ID3D11Texture2D* D3D11Demo::createTexture2DFromBinaryData (const char* id)
+{
+    String fileId = String (id).replaceCharacter ('.', '_');
+    int dataSize;
+    const char* data = BinaryData::getNamedResource (fileId.toRawUTF8(), dataSize);
+
+    if (nullptr == data)
+        return nullptr;
+
+    juce::Image img = ImageCache::getFromMemory (data, dataSize);
+
+    if (!img.isValid())
+        return nullptr;
+
+    int w = img.getWidth();
+    int h = img.getHeight();
+
+    if ((w % 2) > 0 || (h % 2) > 0)
+    {
+        w = (w % 2) > 0 ? (w + 1) : w;
+        h = (h % 2) > 0 ? (h + 1) : h;
+        img = img.rescaled (w, h);
+    }
+
+    img = img.convertedToFormat (juce::Image::ARGB);
+
+    HeapBlock<uint8> mem (w * h * 4);
+    memset (mem.getData(), 0xff, w * h * 4);
+
+    juce::Image::BitmapData imgData (img, juce::Image::BitmapData::readOnly);
+
+    uint8* src = imgData.data;
+    uint8* dst = mem.getData();
+    size_t rowPitch = (size_t)w * 4;
+
+    for (int r = 0; r < h; ++r)
+    {
+        uint8* s = src;
+        uint8* d = dst;
+
+        for (int c = 0; c < w; ++c)
+        {
+            d[0] = s[2];
+            d[1] = s[1];
+            d[2] = s[0];
+            d[3] = s[3];
+
+            s += 4;
+            d += 4;
+        }
+        
+        src += imgData.lineStride;
+        dst += rowPitch;
+    }
+
+    Hold<ID3D11Texture2D> texture;
+    if (texture.set (createTexture2D (w, h, 1, DXGI_FORMAT_R8G8B8A8_UNORM, mem.getData(), rowPitch, h * rowPitch)).isNull())
+        return nullptr;
+
+    return texture.drop();
+}
+
+ID3D11Texture2D* D3D11Demo::createTexture2DRT (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat)
 {
 	if (-1 == rtvFormat)
         rtvFormat = dataFormat;
@@ -405,10 +612,185 @@ ID3D11Texture2D* D3D11Resource::createTexture2DRenderBuffer (ID3D11Device* d3dDe
 
 	Hold<ID3D11Texture2D> texture;
 	
-	if (FAILED (d3dDevice->CreateTexture2D (&desc, nullptr, texture)))
+	if (failed (d3dDevice_->CreateTexture2D (&desc, nullptr, texture)))
         return nullptr;
 
 	return texture.drop();
+}
+
+
+ID3D11RenderTargetView* D3D11Demo::createRenderTargetView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT rtvFormat)
+{
+	D3D11_TEXTURE2D_DESC texdesc;
+	texture->GetDesc (&texdesc);
+	
+    D3D11_RENDER_TARGET_VIEW_DESC desc;
+    zerostruct (desc);
+	if (-1 == rtvFormat)
+		desc.Format = texdesc.Format;
+	else
+		desc.Format = rtvFormat;
+
+	if (1 == texdesc.ArraySize)
+	{
+		desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+		desc.Texture2D.MipSlice = mipLevel;
+	}
+	else
+	{
+		desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
+		desc.Texture2DArray.ArraySize = texdesc.ArraySize;
+		desc.Texture2DArray.FirstArraySlice = 0;
+		desc.Texture2DArray.MipSlice = mipLevel;
+	}
+
+	Hold<ID3D11RenderTargetView> rtview;
+	
+	if (failed (d3dDevice_->CreateRenderTargetView (texture, &desc, rtview)))
+        return nullptr;
+
+	return rtview.drop();
+}
+
+ID3D11DepthStencilView* D3D11Demo::createDepthStencilView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat)
+{
+	D3D11_TEXTURE2D_DESC texdesc;
+	texture->GetDesc(&texdesc);
+	
+    D3D11_DEPTH_STENCIL_VIEW_DESC desc;
+	zerostruct (desc);
+
+	if (-1 == dsvFormat)
+		desc.Format = texdesc.Format;
+	else
+		desc.Format = dsvFormat;
+
+	if (1 == texdesc.ArraySize)
+	{
+		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		desc.Texture2D.MipSlice = mipLevel;
+	}
+	else
+	{
+		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+		desc.Texture2DArray.ArraySize = texdesc.ArraySize;
+		desc.Texture2DArray.FirstArraySlice = 0;
+		desc.Texture2DArray.MipSlice = mipLevel;
+	}
+
+	Hold<ID3D11DepthStencilView> dsview;
+	
+	if (failed (d3dDevice_->CreateDepthStencilView (texture, &desc, dsview)))
+        return nullptr;
+
+	return dsview.drop();
+}
+
+ID3D11ShaderResourceView* D3D11Demo::createShaderResourceView (ID3D11Texture2D* texture, DXGI_FORMAT srvFormat)
+{
+	D3D11_TEXTURE2D_DESC texdesc;
+	texture->GetDesc (&texdesc);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+    zerostruct (desc);
+
+	if (-1 == srvFormat)	
+		desc.Format = texdesc.Format;
+	else
+		desc.Format = srvFormat;
+
+	if (1 == texdesc.ArraySize)
+	{
+		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		desc.Texture2D.MipLevels = texdesc.MipLevels;
+		desc.Texture2D.MostDetailedMip = 0;
+	}
+	else
+	{
+		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		desc.Texture2DArray.ArraySize = texdesc.ArraySize;
+		desc.Texture2DArray.FirstArraySlice = 0;
+		desc.Texture2DArray.MipLevels = texdesc.MipLevels;
+		desc.Texture2DArray.MostDetailedMip = 0;
+	}
+
+	Hold<ID3D11ShaderResourceView> srview;
+	
+	if (failed (d3dDevice_->CreateShaderResourceView (texture, &desc, srview)))
+        return nullptr;
+
+	return srview.drop();
+}
+
+ID3D11ShaderResourceView* D3D11Demo::createShaderResourceView (ID3D11Buffer* buffer)
+{
+	D3D11_BUFFER_DESC bufdesc;
+	buffer->GetDesc (&bufdesc);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
+	zerostruct (desc);
+
+	desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	desc.BufferEx.FirstElement = 0;
+
+	if (bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS)
+	{
+		// This is a Raw Buffer
+		desc.Format = DXGI_FORMAT_R32_TYPELESS;
+		desc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
+		desc.BufferEx.NumElements = bufdesc.ByteWidth / 4;
+	}
+	else if (bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
+	{
+		// This is a Structured Buffer
+		desc.Format = DXGI_FORMAT_UNKNOWN;
+		desc.BufferEx.NumElements = bufdesc.ByteWidth / bufdesc.StructureByteStride;
+	}
+	else
+	{
+		return nullptr;
+	}
+
+	Hold<ID3D11ShaderResourceView> srview;
+	
+	if (failed (d3dDevice_->CreateShaderResourceView (buffer, &desc, srview)))
+        return nullptr;
+
+	return srview.drop();
+}
+
+ID3D11SamplerState* D3D11Demo::createSamplerState (const D3D11_SAMPLER_DESC& desc)
+{
+    Hold<ID3D11SamplerState> state;
+    if (failed (d3dDevice_->CreateSamplerState (&desc, state)))
+        return nullptr;
+
+    return state.drop();
+}
+
+//==============================================================================
+
+ID3D11Buffer* D3D11Resource::createStructComputeBuffer (ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, const void* initialData)
+{
+	//if(bufferSizeInBytes % 16 != 0)
+	//	bufferSizeInBytes += 16 - (bufferSizeInBytes % 16);
+	D3D11_BUFFER_DESC desc;
+	desc.Usage = D3D11_USAGE_DEFAULT;
+	desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+	desc.CPUAccessFlags = 0;
+	desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	desc.ByteWidth = bufferSizeInBytes;
+	desc.StructureByteStride = structSizeInBytes;
+
+	D3D11_SUBRESOURCE_DATA srdata;
+	srdata.pSysMem = initialData;
+
+	Hold<ID3D11Buffer> buffer;
+	
+	if (FAILED (d3dDevice->CreateBuffer(&desc, (nullptr == initialData) ? nullptr : &srdata, buffer)))
+        return nullptr;
+
+	return buffer.drop();
 }
 
 ID3D11Texture2D* D3D11Resource::createTexture2DArrayRenderBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t arraySize, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat)
@@ -467,146 +849,6 @@ ID3D11Texture2D* D3D11Resource::createTexture2DStagingBuffer (ID3D11Device* d3dD
         return nullptr;
 
 	return texture.drop();
-}
-
-ID3D11RenderTargetView* D3D11Resource::createRenderTargetView (ID3D11Device* d3dDevice, ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT rtvFormat)
-{
-	D3D11_TEXTURE2D_DESC texdesc;
-	texture->GetDesc (&texdesc);
-	
-    D3D11_RENDER_TARGET_VIEW_DESC desc;
-    zerostruct (desc);
-	if (-1 == rtvFormat)
-		desc.Format = texdesc.Format;
-	else
-		desc.Format = rtvFormat;
-
-	if (1 == texdesc.ArraySize)
-	{
-		desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-		desc.Texture2D.MipSlice = mipLevel;
-	}
-	else
-	{
-		desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
-		desc.Texture2DArray.ArraySize = texdesc.ArraySize;
-		desc.Texture2DArray.FirstArraySlice = 0;
-		desc.Texture2DArray.MipSlice = mipLevel;
-	}
-
-	Hold<ID3D11RenderTargetView> rtview;
-	
-	if (FAILED (d3dDevice->CreateRenderTargetView (texture, &desc, rtview)))
-        return nullptr;
-
-	return rtview.drop();
-}
-
-ID3D11DepthStencilView* D3D11Resource::createDepthStencilView (ID3D11Device* d3dDevice, ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat)
-{
-	D3D11_TEXTURE2D_DESC texdesc;
-	texture->GetDesc(&texdesc);
-	
-    D3D11_DEPTH_STENCIL_VIEW_DESC desc;
-	zerostruct (desc);
-
-	if (-1 == dsvFormat)
-		desc.Format = texdesc.Format;
-	else
-		desc.Format = dsvFormat;
-
-	if (1 == texdesc.ArraySize)
-	{
-		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-		desc.Texture2D.MipSlice = mipLevel;
-	}
-	else
-	{
-		desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-		desc.Texture2DArray.ArraySize = texdesc.ArraySize;
-		desc.Texture2DArray.FirstArraySlice = 0;
-		desc.Texture2DArray.MipSlice = mipLevel;
-	}
-
-	Hold<ID3D11DepthStencilView> dsview;
-	
-	if (FAILED (d3dDevice->CreateDepthStencilView (texture, &desc, dsview)))
-        return nullptr;
-
-	return dsview.drop();
-}
-
-ID3D11ShaderResourceView* D3D11Resource::createShaderResourceView (ID3D11Device* d3dDevice, ID3D11Texture2D* texture, DXGI_FORMAT srvFormat)
-{
-	D3D11_TEXTURE2D_DESC texdesc;
-	texture->GetDesc (&texdesc);
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-    zerostruct (desc);
-
-	if (-1 == srvFormat)	
-		desc.Format = texdesc.Format;
-	else
-		desc.Format = srvFormat;
-
-	if (1 == texdesc.ArraySize)
-	{
-		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		desc.Texture2D.MipLevels = texdesc.MipLevels;
-		desc.Texture2D.MostDetailedMip = 0;
-	}
-	else
-	{
-		desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-		desc.Texture2DArray.ArraySize = texdesc.ArraySize;
-		desc.Texture2DArray.FirstArraySlice = 0;
-		desc.Texture2DArray.MipLevels = texdesc.MipLevels;
-		desc.Texture2DArray.MostDetailedMip = 0;
-	}
-
-	Hold<ID3D11ShaderResourceView> srview;
-	
-	if (FAILED (d3dDevice->CreateShaderResourceView (texture, &desc, srview)))
-        return nullptr;
-
-	return srview.drop();
-}
-
-ID3D11ShaderResourceView* D3D11Resource::createShaderResourceView (ID3D11Device* d3dDevice, ID3D11Buffer* buffer)
-{
-	D3D11_BUFFER_DESC bufdesc;
-	buffer->GetDesc (&bufdesc);
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC desc;
-	zerostruct (desc);
-
-	desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	desc.BufferEx.FirstElement = 0;
-
-	if (bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_ALLOW_RAW_VIEWS)
-	{
-		// This is a Raw Buffer
-		desc.Format = DXGI_FORMAT_R32_TYPELESS;
-		desc.BufferEx.Flags = D3D11_BUFFEREX_SRV_FLAG_RAW;
-		desc.BufferEx.NumElements = bufdesc.ByteWidth / 4;
-	}
-	else if (bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
-	{
-		// This is a Structured Buffer
-		desc.Format = DXGI_FORMAT_UNKNOWN;
-		desc.BufferEx.NumElements = bufdesc.ByteWidth / bufdesc.StructureByteStride;
-	}
-	else
-	{
-		return nullptr;
-	}
-
-	Hold<ID3D11ShaderResourceView> srview;
-	
-	if (FAILED (d3dDevice->CreateShaderResourceView (buffer, &desc, srview)))
-        return nullptr;
-
-	return srview.drop();
 }
 
 ID3D11UnorderedAccessView* D3D11Resource::createUnorderedAccessView (ID3D11Device* d3dDevice, ID3D11Buffer* buffer)

@@ -97,6 +97,10 @@ protected:
     Hold<ID3D11DeviceContext> d3dIMContext_;
     Hold<IDXGISwapChain1> d3dSwapchain_;
     Hold<ID3D11RenderTargetView> d3dBackBufRTView_;
+    Hold<ID3D11SamplerState> d3dSampWrapLinear_;
+    Hold<ID3D11SamplerState> d3dSampWrapPoint_;
+    Hold<ID3D11SamplerState> d3dSampClampLinear_;
+    Hold<ID3D11SamplerState> d3dSampClampPoint_;
     
 protected:
     
@@ -144,9 +148,13 @@ protected:
     D3D11_VIEWPORT getViewport (float x_ratio, float y_ratio, float w_ratio, float h_ratio, float minz = 0.0f, float maxz = 1.0f);
 
     // shaders
+#if 0
     ShaderCompileResult compileShader (const ShaderCompileDesc& desc);
 
     ID3DBlob* compileShaderFromBinaryData (const char* id, const char* entry, const char* target);
+#endif
+
+    ID3DBlob* loadShaderFromBinaryData (const char* id);
 
     ID3D11VertexShader* createVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage = nullptr);
 
@@ -180,6 +188,25 @@ protected:
 
     ID3D11Buffer* createConstantBuffer (size_t sizeInBytes);
 
+    // textures
+    ID3D11Texture2D* createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData = nullptr, size_t rowPitch = 0, size_t slicePitch = 0);
+
+    ID3D11Texture2D* createTexture2DFromBinaryData (const char* id);
+
+    ID3D11Texture2D* createTexture2DRT (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
+
+    // views
+    ID3D11RenderTargetView* createRenderTargetView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
+	
+	ID3D11DepthStencilView* createDepthStencilView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat = (DXGI_FORMAT)-1);
+
+	ID3D11ShaderResourceView* createShaderResourceView (ID3D11Texture2D* texture, DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
+
+	ID3D11ShaderResourceView* createShaderResourceView (ID3D11Buffer* buffer);
+
+    // states
+    ID3D11SamplerState* createSamplerState (const D3D11_SAMPLER_DESC& desc);
+	
     // error reporting
     inline bool reportIfFailed (HRESULT hr, const char* errMsg)
     {
@@ -194,20 +221,10 @@ class D3D11Resource
 public:
     static ID3D11Buffer* createStructComputeBuffer (ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, const void* initialData = nullptr);
 
-	static ID3D11Texture2D* createTexture2DRenderBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
-	
 	static ID3D11Texture2D* createTexture2DArrayRenderBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t arraySize, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
 
 	static ID3D11Texture2D* createTexture2DStagingBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat);
 
-	static ID3D11RenderTargetView* createRenderTargetView (ID3D11Device* d3dDevice, ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
-	
-	static ID3D11DepthStencilView* createDepthStencilView (ID3D11Device* d3dDevice, ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat = (DXGI_FORMAT)-1);
-
-	static ID3D11ShaderResourceView* createShaderResourceView (ID3D11Device* d3dDevice, ID3D11Texture2D* texture, DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
-
-	static ID3D11ShaderResourceView* createShaderResourceView (ID3D11Device* d3dDevice, ID3D11Buffer* buffer);
-	
 	static ID3D11UnorderedAccessView* createUnorderedAccessView (ID3D11Device* d3dDevice, ID3D11Buffer* buffer);
 };
 
