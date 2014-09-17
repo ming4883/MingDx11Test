@@ -84,9 +84,62 @@ protected:
         }
     };
 
+    inline void timeInit()
+    {
+        timeLastFrame_ = Time::getMillisecondCounterHiRes();
+        timeDelta_= 0;
+        timeSmoothDelta_ = 0;
+        timeAccum_ = 0;
+    }
+
+    inline void timeUpdate()
+    {
+        double timeThisFrame = Time::getMillisecondCounterHiRes();
+        
+        double delta = timeThisFrame - timeLastFrame_;
+
+        if (0 == timeDelta_)
+        {
+            timeSmoothDelta_ = delta;
+        }
+        else
+        {
+            const double a0 = 0.25;
+            const double a1 = 1.0 - a0;
+            timeSmoothDelta_ = delta * a0 + timeSmoothDelta_ * a1;
+        }
+
+        timeDelta_ = delta;
+        timeAccum_ += delta;
+
+        timeLastFrame_ = timeThisFrame;
+    }
+
+    template<typename REAL = double>
+    inline REAL timeGetDeltaMS() const
+    {
+        return (REAL)timeDelta_;
+    }
+
+    template<typename REAL = double>
+    inline REAL timeGetSmoothDeltaMS() const
+    {
+        return (REAL)timeSmoothDelta_;
+    }
+    
+    template<typename REAL = double>
+    inline REAL timeGetAccumMS() const
+    {
+        return (REAL)timeAccum_;
+    }
+
 private:
     StringArray errors_;
     ScopedPointer<RenderThread> renderThread_;
+    double timeLastFrame_;
+    double timeDelta_;
+    double timeSmoothDelta_;
+    double timeAccum_;
 };
 
 class DemoWindow : public DocumentWindow

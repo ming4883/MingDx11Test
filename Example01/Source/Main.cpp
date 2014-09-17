@@ -27,6 +27,11 @@ public:
     {
     }
 
+    struct cb_align CBAppData
+    {
+        float time;
+    };
+
     bool demoStartup()
     {
         Hold<ID3DBlob> pscode = loadShaderFromBinaryData ("Test.pso");
@@ -65,6 +70,9 @@ public:
         if (sv_.set (createShaderResourceView (tx_)).isNull())
             return false;
 
+        if (cb_.set (createConstantBuffer<CBAppData>()).isNull())
+            return false;
+
         return true;
     }
 
@@ -76,12 +84,18 @@ public:
         vb_.set (nullptr);
         tx_.set (nullptr);
         sv_.set (nullptr);
+        cb_.set (nullptr);
     }
 
     void demoUpdate ()
     {
         XMFLOAT4A rgba (0.25f, 0.25f, 1.0f, 1.0f);
         D3D11_VIEWPORT vp = getViewport (0.0f, 0.0f, 1.0f, 1.0f);
+        
+        CBAppData appData;
+        appData.time = 1.0f + cosf (timeGetAccumMS<float>() / 2048.0f) * 0.5f + 0.5f;
+        updateBuffer (cb_, appData);
+        
         d3dIMContext_->OMSetRenderTargets (1, d3dBackBufRTView_, nullptr);
         d3dIMContext_->ClearRenderTargetView (d3dBackBufRTView_, (float*)&rgba);
         d3dIMContext_->RSSetViewports (1, &vp);
@@ -94,9 +108,11 @@ public:
         d3dIMContext_->IASetPrimitiveTopology (D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         d3dIMContext_->VSSetShader (vs_, nullptr, 0);
+        d3dIMContext_->VSSetConstantBuffers (0, 1, cb_);
+
         d3dIMContext_->PSSetShader (ps_, nullptr, 0);
         d3dIMContext_->PSSetShaderResources (0, 1, sv_);
-        d3dIMContext_->PSSetSamplers (0, 1, d3dSampClampPoint_);
+        d3dIMContext_->PSSetSamplers (0, 1, d3dSampWrapPoint_);
 
         d3dIMContext_->Draw (3, 0);
 
@@ -109,6 +125,7 @@ public:
     Hold<ID3D11Buffer> vb_;
     Hold<ID3D11Texture2D> tx_;
     Hold<ID3D11ShaderResourceView> sv_;
+    Hold<ID3D11Buffer> cb_;
 };
 
 //==============================================================================

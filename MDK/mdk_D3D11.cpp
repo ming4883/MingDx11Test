@@ -36,10 +36,13 @@ void D3D11Demo::paint (Graphics&)
             if (!demoStartup())
                 return;
         }
+
+        timeInit();
             
         while (!thread->threadShouldExit())
         {
             ErrorReporter r(this);
+            timeUpdate();
             demoUpdate();
             Thread::yield();
         }
@@ -491,6 +494,29 @@ ID3D11Buffer* D3D11Demo::createConstantBuffer (size_t sizeInBytes)
         return nullptr;
 
 	return buffer.drop();
+}
+
+bool D3D11Demo::updateBuffer (ID3D11Buffer* buffer, const void* data, size_t dataSize, bool dynamic)
+{
+    if (nullptr == buffer || nullptr == data)
+        return false;
+
+    if (dynamic)
+    {
+        D3D11_MAPPED_SUBRESOURCE mapped;
+	    if (failed(d3dIMContext_->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+		    return false;
+		
+	    memcpy (mapped.pData, data, dataSize);
+
+        d3dIMContext_->Unmap (buffer, 0);
+
+        return true;
+    }
+    else
+    {
+        d3dIMContext_->UpdateSubresource (buffer, 0, nullptr, data, dataSize, dataSize);
+    }
 }
 
 ID3D11Texture2D* D3D11Demo::createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData, size_t rowPitch, size_t slicePitch)

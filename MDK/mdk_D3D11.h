@@ -188,6 +188,20 @@ protected:
 
     ID3D11Buffer* createConstantBuffer (size_t sizeInBytes);
 
+    template<typename T>
+    ID3D11Buffer* createConstantBuffer()
+    {
+        return createConstantBuffer (sizeof (T));
+    }
+
+    bool updateBuffer (ID3D11Buffer* buffer, const void* data, size_t dataSize, bool dynamic);
+
+    template<typename T>
+    bool updateBuffer (ID3D11Buffer* buffer, const T& t, bool dynamic = true)
+    {
+        return updateBuffer (buffer, &t, sizeof (T), dynamic);
+    }
+
     // textures
     ID3D11Texture2D* createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData = nullptr, size_t rowPitch = 0, size_t slicePitch = 0);
 
@@ -214,7 +228,30 @@ protected:
     }
 };
 
-#define failed(x) reportIfFailed (x, #x)
+#define stringify(x) #x
+#define tostr(x) stringify(x)
+#define failed(x) reportIfFailed (x, #x "@" __FILE__ ":" tostr(__LINE__))
+
+
+/*
+    struct cb_align TestCB1
+    {
+        XMFLOAT2 a; // 0x00
+        XMFLOAT4 b; // 0x08
+    };
+    
+    struct cb_align TestCB2
+    {
+        XMFLOAT2 a; // 0x00
+        cb_nextrow
+        XMFLOAT4 b; // 0x16
+    };
+
+    see http://msdn.microsoft.com/en-us/library/windows/desktop/bb509632(v=vs.85).aspx for details
+*/
+
+#define cb_align __declspec (align(4))
+#define cb_nextrow __declspec (align(16))
 
 class D3D11Resource
 {
