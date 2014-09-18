@@ -1,5 +1,6 @@
 #include "mdk.h"
 
+#include "mdk_BabylonFile.cpp"
 #include "mdk_Demo.cpp"
 
 #if JUCE_WINDOWS

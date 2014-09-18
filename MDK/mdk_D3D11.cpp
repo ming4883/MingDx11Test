@@ -1,6 +1,5 @@
 #include "mdk_D3D11.h"
 
-#include <BinaryData.h>
 //#include <d3dcompiler.h>
 
 #pragma comment(lib, "D3D11.lib")
@@ -329,9 +328,8 @@ public:
 
 ID3DBlob* D3D11Demo::loadShaderFromBinaryData (const char* id)
 {
-    String fileId = String (id).replaceCharacter ('.', '_');
     int dataSize;
-    const char* data = BinaryData::getNamedResource (fileId.toRawUTF8(), dataSize);
+    const char* data = binDataGet (id, dataSize);
 
     if (nullptr == data)
         return nullptr;
@@ -516,6 +514,7 @@ bool D3D11Demo::updateBuffer (ID3D11Buffer* buffer, const void* data, size_t dat
     else
     {
         d3dIMContext_->UpdateSubresource (buffer, 0, nullptr, data, dataSize, dataSize);
+        return true;
     }
 }
 
@@ -547,9 +546,8 @@ ID3D11Texture2D* D3D11Demo::createTexture2D (size_t width, size_t height, size_t
 
 ID3D11Texture2D* D3D11Demo::createTexture2DFromBinaryData (const char* id)
 {
-    String fileId = String (id).replaceCharacter ('.', '_');
     int dataSize;
-    const char* data = BinaryData::getNamedResource (fileId.toRawUTF8(), dataSize);
+    const char* data = binDataGet (id, dataSize);
 
     if (nullptr == data)
         return nullptr;

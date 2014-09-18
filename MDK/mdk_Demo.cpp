@@ -1,5 +1,7 @@
 #include "mdk_Demo.h"
 
+#include <BinaryData.h>
+
 namespace mdk
 {
 
@@ -53,6 +55,22 @@ void Demo::renderThreadStop()
     }
 }
 
+const char* Demo::binDataGet (const char* id, int& size)
+{
+    String fileId = String (id).replaceCharacter ('.', '_');
+    return BinaryData::getNamedResource (fileId.toRawUTF8(), size);
+}
+
+InputStream* Demo::binDataGet (const char* id)
+{
+    int dataSize = 0;
+    const char* data = binDataGet (id, dataSize);
+
+    if (!data)
+        return nullptr;
+
+    return new MemoryInputStream (data, dataSize, false);
+}
 
 //==============================================================================
 DemoWindow::DemoWindow (Demo* demo, const String& /*cmdLine*/)

@@ -39,6 +39,10 @@ protected:
 
     void renderThreadStop();
 
+    const char* binDataGet (const char* id, int& size);
+
+    InputStream* binDataGet (const char* id);
+
     inline bool reportIfFalse (bool okay, const char* errMsg)
     {
         if (!okay)
