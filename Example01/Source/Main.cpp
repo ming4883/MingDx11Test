@@ -10,9 +10,6 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
-#include <DirectXMath.h>
-using namespace DirectX;
-
 using namespace mdk;
 
 //==============================================================================
@@ -27,20 +24,24 @@ public:
     {
     }
 
-    struct cb_align CBAppData
+    struct CBAppData
     {
         float time;
+        cb_nextrow
+        Mat44f viewprojMatrix;
     };
 
     bool demoStartup()
     {
-        Hold<ID3DBlob> pscode = loadShaderFromBinaryData ("Test.pso");
-        Hold<ID3DBlob> vscode = loadShaderFromBinaryData ("Test.vso");
+        set_app_data_dir ("Media");
 
-        if (vs_.set (createVertexShader (vscode)).isNull())
+        Hold<ID3DBlob> pscode = d3d11.loadShaderFromAppData ("Test.pso");
+        Hold<ID3DBlob> vscode = d3d11.loadShaderFromAppData ("Test.vso");
+
+        if (m_isnull (vs_.set (d3d11.createVertexShader (vscode))))
             return false;
 
-        if (ps_.set (createPixelShader (pscode)).isNull())
+        if (m_isnull (ps_.set (d3d11.createPixelShader (pscode))))
             return false;
 
         D3D11_INPUT_ELEMENT_DESC idesc;
@@ -52,25 +53,25 @@ public:
         idesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
         idesc.InstanceDataStepRate = 0;
 
-        if (il_.set (createInputLayout (&idesc, 1, vscode)).isNull())
+        if (m_isnull (il_.set (d3d11.createInputLayout (&idesc, 1, vscode))))
             return false;
 
-        XMFLOAT4 vtx[] = {
-            XMFLOAT4 ( 0.0f, 1.0f, 0.0f, 1.0f),
-            XMFLOAT4 ( 1.0f,-1.0f, 0.0f, 1.0f),
-            XMFLOAT4 (-1.0f,-1.0f, 0.0f, 1.0f),
+        Vec4f vtx[] = {
+            Vec4f ( 0.0f, 1.0f, 0.0f, 1.0f),
+            Vec4f ( 1.0f,-1.0f, 0.0f, 1.0f),
+            Vec4f (-1.0f,-1.0f, 0.0f, 1.0f),
         };
 
-        if (vb_.set (createVertexBuffer (numElementsInArray (vtx), false, vtx)).isNull())
+        if (m_isnull (vb_.set (d3d11.createVertexBuffer (sizeof (vtx), false, true, vtx))))
             return false;
 
-        if (tx_.set (createTexture2DFromBinaryData ("Test.png")).isNull())
+        if (m_isnull (tx_.set (d3d11.createTexture2DFromAppData ("Test.png"))))
             return false;
 
-        if (sv_.set (createShaderResourceView (tx_)).isNull())
+        if (m_isnull (sv_.set (d3d11.createShaderResourceView (tx_))))
             return false;
 
-        if (cb_.set (createConstantBuffer<CBAppData>()).isNull())
+        if (m_isnull (cb_.set (d3d11.createConstantBuffer<CBAppData>())))
             return false;
 
         return true;
@@ -89,36 +90,41 @@ public:
 
     void demoUpdate ()
     {
-        XMFLOAT4A rgba (0.25f, 0.25f, 1.0f, 1.0f);
+        Vec4f rgba (0.25f, 0.25f, 1.0f, 1.0f);
         D3D11_VIEWPORT vp = getViewport (0.0f, 0.0f, 1.0f, 1.0f);
+
+        cam_.transform.position = Vec3f (0, 0, 8);
+        cam_.updateD3D (getAspect());
         
         CBAppData appData;
         appData.time = 1.0f + cosf (timeGetAccumMS<float>() / 2048.0f) * 0.5f + 0.5f;
-        updateBuffer (cb_, appData);
+        Mat::mul (appData.viewprojMatrix, cam_.projectionMatrix, cam_.viewMatrix);
+        d3d11.updateBuffer (cb_, appData);
         
-        d3dIMContext_->OMSetRenderTargets (1, d3dBackBufRTView_, nullptr);
-        d3dIMContext_->ClearRenderTargetView (d3dBackBufRTView_, (float*)&rgba);
-        d3dIMContext_->RSSetViewports (1, &vp);
+        d3d11.contextIM->OMSetRenderTargets (1, d3d11.backBufRTView, nullptr);
+        d3d11.contextIM->ClearRenderTargetView (d3d11.backBufRTView, (float*)&rgba);
+        d3d11.contextIM->RSSetViewports (1, &vp);
 
-        UINT stride = sizeof (XMFLOAT4);
+        UINT stride = sizeof (Vec4f);
         UINT offset = 0;
         
-        d3dIMContext_->IASetVertexBuffers (0, 1, vb_, &stride, &offset);
-        d3dIMContext_->IASetInputLayout (il_);
-        d3dIMContext_->IASetPrimitiveTopology (D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        d3d11.contextIM->IASetVertexBuffers (0, 1, vb_, &stride, &offset);
+        d3d11.contextIM->IASetInputLayout (il_);
+        d3d11.contextIM->IASetPrimitiveTopology (D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        d3dIMContext_->VSSetShader (vs_, nullptr, 0);
-        d3dIMContext_->VSSetConstantBuffers (0, 1, cb_);
+        d3d11.contextIM->VSSetShader (vs_, nullptr, 0);
+        d3d11.contextIM->VSSetConstantBuffers (0, 1, cb_);
 
-        d3dIMContext_->PSSetShader (ps_, nullptr, 0);
-        d3dIMContext_->PSSetShaderResources (0, 1, sv_);
-        d3dIMContext_->PSSetSamplers (0, 1, d3dSampWrapPoint_);
+        d3d11.contextIM->PSSetShader (ps_, nullptr, 0);
+        d3d11.contextIM->PSSetShaderResources (0, 1, sv_);
+        d3d11.contextIM->PSSetSamplers (0, 1, d3d11.sampWrapPoint);
 
-        d3dIMContext_->Draw (3, 0);
+        d3d11.contextIM->Draw (3, 0);
 
-        d3dSwapchain_->Present (0u, 0u);
+        d3d11.swapchain->Present (0u, 0u);
     }
 
+    Camera cam_;
     Hold<ID3D11VertexShader> vs_;
     Hold<ID3D11PixelShader> ps_;
     Hold<ID3D11InputLayout> il_;

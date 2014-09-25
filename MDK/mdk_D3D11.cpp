@@ -9,56 +9,16 @@ namespace mdk
 {
 
 //==============================================================================
-D3D11Demo::D3D11Demo()
+D3D11Context::D3D11Context (Demo* demo)
+    : demo_ (demo)
 {
 }
 
-D3D11Demo::~D3D11Demo()
+D3D11Context::~D3D11Context()
 {
 }
 
-void D3D11Demo::paint (Graphics&)
-{
-    if (renderThreadExists())
-        return;
-
-    renderThreadStart ([this] (Thread* thread)
-    {
-        {
-            ErrorReporter r(this);
-            if (!d3dStartup())
-                return;
-        }
-            
-        {
-            ErrorReporter r(this);
-            if (!demoStartup())
-                return;
-        }
-
-        timeInit();
-            
-        while (!thread->threadShouldExit())
-        {
-            ErrorReporter r(this);
-            timeUpdate();
-            demoUpdate();
-            Thread::yield();
-        }
-
-        {
-            ErrorReporter r(this);
-            demoShutdown();
-        }
-
-        {
-            ErrorReporter r(this);
-            d3dShutdown();
-        }
-    });
-}
-
-bool D3D11Demo::d3dStartup()
+bool D3D11Context::startup (void* hwnd)
 {
     UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
@@ -67,19 +27,19 @@ bool D3D11Demo::d3dStartup()
         D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0,
     };
 
-    if (failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevels, numElementsInArray(featureLevels), D3D11_SDK_VERSION, d3dDevice_, &d3dFeatureLevel_, d3dIMContext_)))
+    if (m_failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevels, numElementsInArray(featureLevels), D3D11_SDK_VERSION, device, &featureLevel, contextIM)))
         return false;
     
     Hold<IDXGIDevice2> dxgiDevice;
-    if (failed (d3dDevice_.as (dxgiDevice)))
+    if (m_failed (device.as (dxgiDevice)))
         return false;
 
     Hold<IDXGIAdapter> dxgiAdapter;
-    if (failed (dxgiDevice->GetAdapter(dxgiAdapter)))
+    if (m_failed (dxgiDevice->GetAdapter(dxgiAdapter)))
         return false;
 
     Hold<IDXGIFactory2> dxgiFactory;
-    if (failed (dxgiAdapter->GetParent(__uuidof(IDXGIFactory1), dxgiFactory)))
+    if (m_failed (dxgiAdapter->GetParent(__uuidof(IDXGIFactory1), dxgiFactory)))
         return false;
 
     DXGI_SWAP_CHAIN_DESC1 desc;
@@ -97,14 +57,14 @@ bool D3D11Demo::d3dStartup()
     desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
     desc.Flags = 0;
 
-    if (failed (dxgiFactory->CreateSwapChainForHwnd (d3dDevice_, (HWND)getTopLevelComponent()->getWindowHandle(), &desc, nullptr, nullptr, d3dSwapchain_)))
+    if (m_failed (dxgiFactory->CreateSwapChainForHwnd (device, (HWND)hwnd, &desc, nullptr, nullptr, swapchain)))
         return false;
 
-    Hold<ID3D11Texture2D> d3dBackBuf;
-    if (failed (d3dSwapchain_->GetBuffer (0, __uuidof (ID3D11Texture2D), d3dBackBuf)))
+    Hold<ID3D11Texture2D> backBuf;
+    if (m_failed (swapchain->GetBuffer (0, __uuidof (ID3D11Texture2D), backBuf)))
         return false;
 
-    if (failed (d3dDevice_->CreateRenderTargetView (d3dBackBuf, nullptr, d3dBackBufRTView_)))
+    if (m_failed (device->CreateRenderTargetView (backBuf, nullptr, backBufRTView)))
         return false;
 
     // common sampler states
@@ -123,7 +83,7 @@ bool D3D11Demo::d3dStartup()
 		_.BorderColor[1] = 0;
 		_.BorderColor[2] = 0;
 		_.BorderColor[3] = 0;
-        if (d3dSampWrapLinear_.set (createSamplerState (_)).isNull ())
+        if (sampWrapLinear.set (createSamplerState (_)).isNull ())
             return false;
     }
     {
@@ -141,7 +101,7 @@ bool D3D11Demo::d3dStartup()
 		_.BorderColor[1] = 0;
 		_.BorderColor[2] = 0;
 		_.BorderColor[3] = 0;
-        if (d3dSampWrapPoint_.set (createSamplerState (_)).isNull ())
+        if (sampWrapPoint.set (createSamplerState (_)).isNull ())
             return false;
     }
     {
@@ -159,7 +119,7 @@ bool D3D11Demo::d3dStartup()
 		_.BorderColor[1] = 0;
 		_.BorderColor[2] = 0;
 		_.BorderColor[3] = 0;
-        if (d3dSampClampLinear_.set (createSamplerState (_)).isNull ())
+        if (sampClampLinear.set (createSamplerState (_)).isNull ())
             return false;
     }
     {
@@ -177,21 +137,64 @@ bool D3D11Demo::d3dStartup()
 		_.BorderColor[1] = 0;
 		_.BorderColor[2] = 0;
 		_.BorderColor[3] = 0;
-        if (d3dSampClampPoint_.set (createSamplerState (_)).isNull ())
+        if (sampClampPoint.set (createSamplerState (_)).isNull ())
             return false;
     }
 
     return true;
 }
 
-void D3D11Demo::d3dShutdown()
+void D3D11Context::shutdown()
 {
-    d3dDevice_.set (nullptr);
-    d3dIMContext_.set (nullptr);
-    d3dSwapchain_.set (nullptr);
+    device.set (nullptr);
+    contextIM.set (nullptr);
+    swapchain.set (nullptr);
+    backBufRTView.set (nullptr);
+    sampWrapLinear.set (nullptr);
+    sampWrapPoint.set (nullptr);
+    sampClampLinear.set (nullptr);
+    sampClampPoint.set (nullptr);
 }
 
-void D3D11Demo::ShaderCompileDesc::reset()
+#if 0
+
+struct ShaderCompileDesc
+{
+    const char* source; //!< the HLSL source code
+    const char* name;   //!< a name for error messages
+    const char* entry;  //!< entry function
+    const char* target; //!< e.g. "fx_4_1", "vs_3_0"
+    const char* secondaryData;
+
+    D3D_SHADER_MACRO* defines;
+    ID3DInclude* include;
+        
+    size_t sourceSize;  //!< if 0, set to strlen (source)
+    size_t flags1;
+    size_t flags2;      //!< ignored for non effect file
+    size_t secondaryDataSize;
+    size_t secondaryDataFlags;
+
+    ShaderCompileDesc()
+    {
+        reset();
+    }
+
+    void reset();
+};
+
+struct ShaderCompileResult
+{
+    ID3DBlob* byteCode;
+    ID3DBlob* errorMessage;
+
+    ShaderCompileResult (ID3DBlob* code, ID3DBlob* error)
+        : byteCode (code)
+        , errorMessage (error)
+    {
+    }
+};
+void ShaderCompileDesc::reset()
 {
     source = nullptr;
     name = nullptr;
@@ -209,22 +212,7 @@ void D3D11Demo::ShaderCompileDesc::reset()
     secondaryDataFlags = 0;
 }
 
-D3D11_VIEWPORT D3D11Demo::getViewport (float x_ratio, float y_ratio, float w_ratio, float h_ratio, float minz, float maxz)
-{
-    auto bounds = getBounds();
-    D3D11_VIEWPORT ret;
-
-    ret.Width = bounds.getWidth() * w_ratio;
-    ret.Height = bounds.getHeight() * h_ratio;
-    ret.TopLeftX = bounds.getWidth() * x_ratio;
-    ret.TopLeftY = bounds.getHeight() * y_ratio;
-    ret.MinDepth = minz;
-    ret.MaxDepth = maxz;
-    return ret;
-}
-
-#if 0
-D3D11Demo::ShaderCompileResult D3D11Demo::compileShader (const ShaderCompileDesc& desc)
+D3D11Context::ShaderCompileResult D3D11Context::compileShader (const ShaderCompileDesc& desc)
 {
     size_t sourceSize = desc.sourceSize;
     if (0 == sourceSize)
@@ -241,7 +229,7 @@ D3D11Demo::ShaderCompileResult D3D11Demo::compileShader (const ShaderCompileDesc
     return ShaderCompileResult (bytecode.drop(), error.drop());
 }
 
-ID3DBlob* D3D11Demo::compileShaderFromBinaryData (const char* id, const char* entry, const char* target)
+ID3DBlob* D3D11Context::compileShaderFromBinaryData (const char* id, const char* entry, const char* target)
 {
     String fileId = String (id).replaceCharacter ('.', '_');
     int dataSize;
@@ -326,10 +314,10 @@ public:
     }
 };
 
-ID3DBlob* D3D11Demo::loadShaderFromBinaryData (const char* id)
+ID3DBlob* D3D11Context::loadShaderFromAppData (const char* id)
 {
     int dataSize;
-    const char* data = binDataGet (id, dataSize);
+    const char* data = demo_->appDataGet (id, dataSize);
 
     if (nullptr == data)
         return nullptr;
@@ -339,72 +327,49 @@ ID3DBlob* D3D11Demo::loadShaderFromBinaryData (const char* id)
     return blob;
 }
 
-ID3D11VertexShader* D3D11Demo::createVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+ID3D11VertexShader* D3D11Context::createVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
 {
     if (nullptr == bytecode)
         return nullptr;
 
     Hold<ID3D11VertexShader> shader;
-    if (failed (d3dDevice_->CreateVertexShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+    if (m_failed (device->CreateVertexShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
         return nullptr;
 
     return shader.drop();
 }
 
-ID3D11PixelShader* D3D11Demo::createPixelShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+ID3D11PixelShader* D3D11Context::createPixelShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
 {
     if (nullptr == bytecode)
         return nullptr;
 
     Hold<ID3D11PixelShader> shader;
-    if (failed (d3dDevice_->CreatePixelShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+    if (m_failed (device->CreatePixelShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
         return nullptr;
 
     return shader.drop();
 }
 
-ID3D11GeometryShader* D3D11Demo::createGeometryShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+ID3D11GeometryShader* D3D11Context::createGeometryShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
 {
     if (nullptr == bytecode)
         return nullptr;
 
     Hold<ID3D11GeometryShader> shader;
-    if (failed (d3dDevice_->CreateGeometryShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+    if (m_failed (device->CreateGeometryShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
         return nullptr;
 
     return shader.drop();
 }
 
-ID3D11InputLayout* D3D11Demo::createInputLayout (const D3D11_INPUT_ELEMENT_DESC* inputElements, const size_t inputElementCount, ID3DBlob* shaderByteCode)
+ID3D11InputLayout* D3D11Context::createInputLayout (const D3D11_INPUT_ELEMENT_DESC* inputElements, const size_t inputElementCount, ID3DBlob* shaderByteCode)
 {
-	/*
-	std::ostringstream stream;
-
-	stream << "struct VS_INPUT {\n";
-	for(size_t i=0; i<inputElementCount; ++i)
-	{
-
-	}
-	stream << "};\n";
-	stream << "struct VS_OUTPUT { float4 vPosition : SV_POSITION; };\n";
-	stream << "VS_OUTPUT main(VS_INPUT Input) {\n";
-	stream << "VS_OUTPUT Output;\n";
-	stream << "Output.vPosition = float4(0, 0, 0, 1);\n";
-	stream << "return Output;\n";
-	stream << "};\n";
-
-	ID3DBlob* byteCode;
-	if(!Shaders::compile(stream.str().c_str(), stream.str().length(), "", "main", "vs_5_0", byteCode))
-		return false;
-		
-	return nullptr;
-	*/
-
-	if(nullptr == shaderByteCode)
+    if(nullptr == shaderByteCode)
 		return nullptr;
 
 	Hold<ID3D11InputLayout> layout;
-	if (failed (d3dDevice_->CreateInputLayout(
+	if (m_failed (device->CreateInputLayout(
 		inputElements, inputElementCount,
 		shaderByteCode->GetBufferPointer(), shaderByteCode->GetBufferSize(),
 		layout)))
@@ -413,11 +378,11 @@ ID3D11InputLayout* D3D11Demo::createInputLayout (const D3D11_INPUT_ELEMENT_DESC*
 	return layout.drop();
 }
 
-ID3D11Buffer* D3D11Demo::createVertexBuffer (size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData)
+ID3D11Buffer* D3D11Context::createVertexBuffer (size_t sizeInBytes, bool dynamic, bool immutable, const void* initialData)
 {
 	D3D11_BUFFER_DESC desc;
 	desc.ByteWidth = sizeInBytes;	// size
-	desc.StructureByteStride = stride;
+	desc.StructureByteStride = 0;   // for compute buffer only
 	desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// vertex buffer
 	desc.MiscFlags = 0;	// no misc flags
 		
@@ -428,8 +393,8 @@ ID3D11Buffer* D3D11Demo::createVertexBuffer (size_t sizeInBytes, size_t stride, 
 	}
 	else
 	{
-		desc.Usage = D3D11_USAGE_DEFAULT;	// gpu read/write
-		desc.CPUAccessFlags = 0;			// no cpu sccess
+		desc.Usage = immutable ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;	// gpu read/write
+		desc.CPUAccessFlags = 0;			                                    // no cpu sccess
 	}
 
 	D3D11_SUBRESOURCE_DATA srdara;
@@ -437,21 +402,21 @@ ID3D11Buffer* D3D11Demo::createVertexBuffer (size_t sizeInBytes, size_t stride, 
 		
 	Hold<ID3D11Buffer> buffer;
 	
-	if (failed (d3dDevice_->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
+	if (m_failed (device->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
         return nullptr;
 
 	return buffer.drop();
 }
 
 
-ID3D11Buffer* D3D11Demo::createIndexBuffer (size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData)
+ID3D11Buffer* D3D11Context::createIndexBuffer (size_t sizeInBytes, bool dynamic, bool immutable, const void* initialData)
 {
 	D3D11_BUFFER_DESC desc;
 	desc.ByteWidth = sizeInBytes;	// size
-	desc.StructureByteStride = stride;
+	desc.StructureByteStride = 0;   // for compute buffer only
 	desc.BindFlags = D3D11_BIND_INDEX_BUFFER;	// index buffer
 	desc.MiscFlags = 0;	// no misc flags
-		
+
 	if (dynamic)
 	{
 		desc.Usage = D3D11_USAGE_DYNAMIC;				// gpu read/write
@@ -459,8 +424,8 @@ ID3D11Buffer* D3D11Demo::createIndexBuffer (size_t sizeInBytes, size_t stride, b
 	}
 	else
 	{
-		desc.Usage = D3D11_USAGE_DEFAULT;	// gpu read/write
-		desc.CPUAccessFlags = 0;			// no cpu sccess
+		desc.Usage = immutable ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;	// gpu read/write
+		desc.CPUAccessFlags = 0;                                                // no cpu sccess
 	}
 
 	D3D11_SUBRESOURCE_DATA srdara;
@@ -468,13 +433,13 @@ ID3D11Buffer* D3D11Demo::createIndexBuffer (size_t sizeInBytes, size_t stride, b
 
 	Hold<ID3D11Buffer> buffer;
 
-	if (failed (d3dDevice_->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
+	if (m_failed (device->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
         return nullptr;
 
 	return buffer.drop();
 }
 
-ID3D11Buffer* D3D11Demo::createConstantBuffer (size_t sizeInBytes)
+ID3D11Buffer* D3D11Context::createConstantBuffer (size_t sizeInBytes)
 {
 	if(sizeInBytes % 16 != 0)
 		sizeInBytes += 16 - (sizeInBytes % 16);
@@ -488,13 +453,13 @@ ID3D11Buffer* D3D11Demo::createConstantBuffer (size_t sizeInBytes)
 
 	Hold<ID3D11Buffer> buffer;
 	
-	if (failed (d3dDevice_->CreateBuffer (&desc, nullptr, buffer)))
+	if (m_failed (device->CreateBuffer (&desc, nullptr, buffer)))
         return nullptr;
 
 	return buffer.drop();
 }
 
-bool D3D11Demo::updateBuffer (ID3D11Buffer* buffer, const void* data, size_t dataSize, bool dynamic)
+bool D3D11Context::updateBuffer (ID3D11Buffer* buffer, const void* data, size_t dataSize, bool dynamic)
 {
     if (nullptr == buffer || nullptr == data)
         return false;
@@ -502,23 +467,23 @@ bool D3D11Demo::updateBuffer (ID3D11Buffer* buffer, const void* data, size_t dat
     if (dynamic)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
-	    if (failed(d3dIMContext_->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+	    if (m_failed(contextIM->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
 		    return false;
 		
 	    memcpy (mapped.pData, data, dataSize);
 
-        d3dIMContext_->Unmap (buffer, 0);
+        contextIM->Unmap (buffer, 0);
 
         return true;
     }
     else
     {
-        d3dIMContext_->UpdateSubresource (buffer, 0, nullptr, data, dataSize, dataSize);
+        contextIM->UpdateSubresource (buffer, 0, nullptr, data, dataSize, dataSize);
         return true;
     }
 }
 
-ID3D11Texture2D* D3D11Demo::createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData, size_t rowPitch, size_t slicePitch)
+ID3D11Texture2D* D3D11Context::createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData, size_t rowPitch, size_t slicePitch)
 {
     D3D11_TEXTURE2D_DESC desc;
 	zerostruct (desc);
@@ -538,16 +503,16 @@ ID3D11Texture2D* D3D11Demo::createTexture2D (size_t width, size_t height, size_t
     srdata.SysMemPitch = rowPitch;
     srdata.SysMemSlicePitch = slicePitch;
 	
-	if (failed (d3dDevice_->CreateTexture2D (&desc, initialData == nullptr ? nullptr : &srdata, texture)))
+	if (m_failed (device->CreateTexture2D (&desc, initialData == nullptr ? nullptr : &srdata, texture)))
         return nullptr;
     
 	return texture.drop();
 }
 
-ID3D11Texture2D* D3D11Demo::createTexture2DFromBinaryData (const char* id)
+ID3D11Texture2D* D3D11Context::createTexture2DFromAppData (const char* id)
 {
     int dataSize;
-    const char* data = binDataGet (id, dataSize);
+    const char* data = demo_->appDataGet (id, dataSize);
 
     if (nullptr == data)
         return nullptr;
@@ -605,7 +570,7 @@ ID3D11Texture2D* D3D11Demo::createTexture2DFromBinaryData (const char* id)
     return texture.drop();
 }
 
-ID3D11Texture2D* D3D11Demo::createTexture2DRT (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat)
+ID3D11Texture2D* D3D11Context::createTexture2DRT (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat)
 {
 	if (-1 == rtvFormat)
         rtvFormat = dataFormat;
@@ -636,14 +601,13 @@ ID3D11Texture2D* D3D11Demo::createTexture2DRT (size_t width, size_t height, size
 
 	Hold<ID3D11Texture2D> texture;
 	
-	if (failed (d3dDevice_->CreateTexture2D (&desc, nullptr, texture)))
+	if (m_failed (device->CreateTexture2D (&desc, nullptr, texture)))
         return nullptr;
 
 	return texture.drop();
 }
 
-
-ID3D11RenderTargetView* D3D11Demo::createRenderTargetView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT rtvFormat)
+ID3D11RenderTargetView* D3D11Context::createRenderTargetView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT rtvFormat)
 {
 	D3D11_TEXTURE2D_DESC texdesc;
 	texture->GetDesc (&texdesc);
@@ -670,13 +634,13 @@ ID3D11RenderTargetView* D3D11Demo::createRenderTargetView (ID3D11Texture2D* text
 
 	Hold<ID3D11RenderTargetView> rtview;
 	
-	if (failed (d3dDevice_->CreateRenderTargetView (texture, &desc, rtview)))
+	if (m_failed (device->CreateRenderTargetView (texture, &desc, rtview)))
         return nullptr;
 
 	return rtview.drop();
 }
 
-ID3D11DepthStencilView* D3D11Demo::createDepthStencilView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat)
+ID3D11DepthStencilView* D3D11Context::createDepthStencilView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat)
 {
 	D3D11_TEXTURE2D_DESC texdesc;
 	texture->GetDesc(&texdesc);
@@ -704,13 +668,13 @@ ID3D11DepthStencilView* D3D11Demo::createDepthStencilView (ID3D11Texture2D* text
 
 	Hold<ID3D11DepthStencilView> dsview;
 	
-	if (failed (d3dDevice_->CreateDepthStencilView (texture, &desc, dsview)))
+	if (m_failed (device->CreateDepthStencilView (texture, &desc, dsview)))
         return nullptr;
 
 	return dsview.drop();
 }
 
-ID3D11ShaderResourceView* D3D11Demo::createShaderResourceView (ID3D11Texture2D* texture, DXGI_FORMAT srvFormat)
+ID3D11ShaderResourceView* D3D11Context::createShaderResourceView (ID3D11Texture2D* texture, DXGI_FORMAT srvFormat)
 {
 	D3D11_TEXTURE2D_DESC texdesc;
 	texture->GetDesc (&texdesc);
@@ -740,13 +704,13 @@ ID3D11ShaderResourceView* D3D11Demo::createShaderResourceView (ID3D11Texture2D* 
 
 	Hold<ID3D11ShaderResourceView> srview;
 	
-	if (failed (d3dDevice_->CreateShaderResourceView (texture, &desc, srview)))
+	if (m_failed (device->CreateShaderResourceView (texture, &desc, srview)))
         return nullptr;
 
 	return srview.drop();
 }
 
-ID3D11ShaderResourceView* D3D11Demo::createShaderResourceView (ID3D11Buffer* buffer)
+ID3D11ShaderResourceView* D3D11Context::createShaderResourceView (ID3D11Buffer* buffer)
 {
 	D3D11_BUFFER_DESC bufdesc;
 	buffer->GetDesc (&bufdesc);
@@ -777,20 +741,94 @@ ID3D11ShaderResourceView* D3D11Demo::createShaderResourceView (ID3D11Buffer* buf
 
 	Hold<ID3D11ShaderResourceView> srview;
 	
-	if (failed (d3dDevice_->CreateShaderResourceView (buffer, &desc, srview)))
+	if (m_failed (device->CreateShaderResourceView (buffer, &desc, srview)))
         return nullptr;
 
 	return srview.drop();
 }
 
-ID3D11SamplerState* D3D11Demo::createSamplerState (const D3D11_SAMPLER_DESC& desc)
+ID3D11SamplerState* D3D11Context::createSamplerState (const D3D11_SAMPLER_DESC& desc)
 {
     Hold<ID3D11SamplerState> state;
-    if (failed (d3dDevice_->CreateSamplerState (&desc, state)))
+    if (m_failed (device->CreateSamplerState (&desc, state)))
         return nullptr;
 
     return state.drop();
 }
+
+//==============================================================================
+D3D11Demo::D3D11Demo()
+    : d3d11 (this)
+{
+}
+
+D3D11Demo::~D3D11Demo()
+{
+}
+
+void D3D11Demo::paint (Graphics&)
+{
+    if (renderThreadExists())
+        return;
+
+    renderThreadStart ([this] (Thread* thread)
+    {
+        {
+            ErrorReporter r(this);
+            if (!d3d11.startup (getTopLevelComponent()->getWindowHandle()))
+                return;
+        }
+            
+        {
+            ErrorReporter r(this);
+            if (!demoStartup())
+                return;
+        }
+
+        timeInit();
+            
+        while (!thread->threadShouldExit())
+        {
+            ErrorReporter r(this);
+            timeUpdate();
+            demoUpdate();
+            Thread::yield();
+        }
+
+        {
+            ErrorReporter r(this);
+            demoShutdown();
+        }
+
+        {
+            ErrorReporter r(this);
+            d3d11.shutdown();
+        }
+    });
+}
+
+
+D3D11_VIEWPORT D3D11Demo::getViewport (float x_ratio, float y_ratio, float w_ratio, float h_ratio, float minz, float maxz)
+{
+    auto bounds = getBounds();
+    D3D11_VIEWPORT ret;
+
+    ret.Width = bounds.getWidth() * w_ratio;
+    ret.Height = bounds.getHeight() * h_ratio;
+    ret.TopLeftX = bounds.getWidth() * x_ratio;
+    ret.TopLeftY = bounds.getHeight() * y_ratio;
+    ret.MinDepth = minz;
+    ret.MaxDepth = maxz;
+    return ret;
+}
+
+float D3D11Demo::getAspect()
+{
+    auto bounds = getBounds();
+    return bounds.getWidth() / (float)bounds.getHeight();
+}
+
+
 
 //==============================================================================
 

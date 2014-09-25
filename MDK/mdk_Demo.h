@@ -4,8 +4,14 @@
 #include <AppConfig.h>
 #include <modules/juce_gui_basics/juce_gui_basics.h>
 #include <functional>
+#include "mdk_Math.h"
 
 using namespace juce;
+
+#define m_stringify(x) #x
+#define m_tostr(x) m_stringify(x)
+
+#define m_isnull(x) reportTrue (x == nullptr, __FILE__ "(" m_tostr(__LINE__) "): " #x)
 
 namespace mdk
 {
@@ -22,8 +28,21 @@ public:
     virtual void demoUpdate() = 0;
     virtual void demoShutdown() = 0;
 
+    inline bool reportTrue (bool boolVal, const char* errMsg)
+    {
+        if (true == boolVal)
+            errors_.add (String (errMsg));
+
+        return boolVal;
+    }
+
+    const char* appDataGet (const char* id, int& size);
+
+    InputStream* appDataGet (const char* id);
 
 protected:
+
+// RenderThread
     class RenderThread : public Thread
     {
     public:
@@ -39,20 +58,22 @@ protected:
 
     void renderThreadStop();
 
-    const char* binDataGet (const char* id, int& size);
-
-    InputStream* binDataGet (const char* id);
-
-    inline bool reportIfFalse (bool okay, const char* errMsg)
+// AppData
+    struct AppData
     {
-        if (!okay)
-        {
-            errors_.add (String (errMsg));
-        }
+        MemoryBlock data;
+    };
 
-        return okay;
-    }
+    typedef HashMap<int, AppData*> AppDataCache;
+    
+    String appDataDir;
 
+    AppDataCache appDataCache;
+
+    void appDataReset();
+
+
+// error report
     inline void errClear()
     {
         errors_.clearQuick();
@@ -88,6 +109,7 @@ protected:
         }
     };
 
+// Time
     inline void timeInit()
     {
         timeLastFrame_ = Time::getMillisecondCounterHiRes();
@@ -136,6 +158,29 @@ protected:
     {
         return (REAL)timeAccum_;
     }
+
+// Camera
+    class Camera
+    {
+    public:
+        struct Projection
+        {
+            float fovY;
+            float aspect;
+            float zNear;
+            float zFar;
+        };
+
+        Transform3f transform;
+        Projection projection;
+
+        Mat44f viewMatrix;          //!< update from transform
+        Mat44f projectionMatrix;    //!< update from projection
+
+        Camera();
+
+        void updateD3D (float rtAspect = 1.0f);
+    };
 
 private:
     StringArray errors_;
@@ -191,5 +236,7 @@ public:
 };
 
 } // namespace
+
+#define set_app_data_dir(folder) appDataDir = (File(__FILE__).getParentDirectory().getParentDirectory().getChildFile(folder)).getFullPathName();
 
 #endif	// MDK_DEMO_H_INCLUDED

@@ -18,12 +18,59 @@ void Demo::RenderThread::run()
 }
 
 //==============================================================================
+Demo::Camera::Camera()
+{
+    projection.aspect = 1.0f;
+    projection.fovY = Scalar<float>::rad (45.0f);
+    projection.zFar = 1025.0f;
+    projection.zNear = 1.0f;
+
+    Transform::setIdentity (transform);
+}
+
+void Demo::Camera::updateD3D (float rtAspect)
+{
+    Transform3<float> inv;
+    Transform::inverse (inv, transform);
+    Mat::fromTransform3 (viewMatrix, inv);
+
+    float fovyDiv2 = projection.fovY * 0.5f;
+    float aspect = rtAspect * projection.aspect;
+    float zn = projection.zNear;
+    float zf = projection.zFar;
+    float yscale = std::cosf (fovyDiv2) / std::sinf (fovyDiv2);
+    float xscale = yscale / aspect;
+    float zscale = 1.0f / (zn - zf);
+
+    projectionMatrix[0][0] = xscale;
+    projectionMatrix[0][1] = 0;
+    projectionMatrix[0][2] = 0;
+    projectionMatrix[0][3] = 0;
+
+    projectionMatrix[1][0] = 0;
+    projectionMatrix[1][1] = yscale;
+    projectionMatrix[1][2] = 0;
+    projectionMatrix[1][3] = 0;
+
+    projectionMatrix[2][0] = 0;
+    projectionMatrix[2][1] = 0;
+    projectionMatrix[2][2] = zf * zscale;
+    projectionMatrix[2][3] = zn * zf * zscale;
+
+    projectionMatrix[3][0] = 0;
+    projectionMatrix[3][1] = 0;
+    projectionMatrix[3][2] =-1;
+    projectionMatrix[3][3] = 0;
+}
+
+//==============================================================================
 Demo::Demo()
 {
 }
 
 Demo::~Demo()
 {
+    appDataReset();
 }
 
 bool Demo::requestShutdown()
@@ -55,16 +102,63 @@ void Demo::renderThreadStop()
     }
 }
 
-const char* Demo::binDataGet (const char* id, int& size)
+void Demo::appDataReset()
+{
+    AppDataCache::Iterator iter (appDataCache);
+
+    while (iter.next())
+        delete iter.getValue();
+    appDataCache.clear();
+}
+
+const char* Demo::appDataGet (const char* id, int& size)
 {
     String fileId = String (id).replaceCharacter ('.', '_');
+
+    int hash = fileId.hashCode();
+
+    // check for cache
+    if (appDataCache.contains(hash))
+    {
+        AppData* appData = appDataCache[hash];
+        size = appData->data.getSize();
+        return (char*)appData->data.getData();
+    }
+
+    if (appDataDir.isNotEmpty())
+    {
+        File file = File::createFileWithoutCheckingPath(appDataDir).getChildFile (id);
+        
+        if (file.existsAsFile())
+        {
+            AppData* appData = new AppData;
+            FileInputStream stream (file);
+            stream.readIntoMemoryBlock (appData->data);
+            
+            appDataCache.set (hash, appData);
+
+            size = appData->data.getSize();
+            return (char*)appData->data.getData();
+        }
+    }
+
     return BinaryData::getNamedResource (fileId.toRawUTF8(), size);
 }
 
-InputStream* Demo::binDataGet (const char* id)
+InputStream* Demo::appDataGet (const char* id)
 {
+    if (appDataDir.isNotEmpty())
+    {
+        File file = File::createFileWithoutCheckingPath(appDataDir).getChildFile (id);
+        
+        if (file.existsAsFile())
+        {
+            return new FileInputStream (file);
+        }
+    }
+
     int dataSize = 0;
-    const char* data = binDataGet (id, dataSize);
+    const char* data = appDataGet (id, dataSize);
 
     if (!data)
         return nullptr;

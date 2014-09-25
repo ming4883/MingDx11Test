@@ -4,9 +4,10 @@
 #include <AppConfig.h>
 #include <modules/juce_core/juce_core.h>
 
+#include "mdk_Math.h"
+
 namespace mdk
 {
-
 
 class BabylonFile
 {
@@ -17,6 +18,26 @@ public:
     public:
         Array<T> data;
         typedef ReferenceCountedObjectPtr<Buffer> Ptr;
+
+        inline int sizeInBytes() const
+        {
+            return data.size() * sizeof (T);
+        }
+
+        inline int size() const
+        {
+            return data.size();
+        }
+
+        inline T* getPtr()
+        {
+            return data.begin();
+        }
+
+        inline const T* getPtr() const
+        {
+            return data.begin();
+        }
     };
 
     typedef Buffer<float> BufferF;
@@ -34,18 +55,19 @@ public:
         BufferF::Ptr uvs2;
         BufferF::Ptr colors;
 
-        float pivotMatrix[16];
-        float position[3];
-        float rotation[3];
-        float scaling[3];
+        Mat44f pivotMatrix;
+        Transform3f local;
+        Transform3f world; //!< derived from local and parent's local
 
         String name;
         String id;
         String parentId;
+        String materialId;
     };
 
     class Texture
     {
+    public:
         String name;
         int coordIndex;
         float uOffset;
@@ -55,8 +77,8 @@ public:
         float uAng;
         float vAng;
         float wAng;
-        float uWrap;
-        float vWrap;
+        bool uWrap;
+        bool vWrap;
     };
 
     class Material
@@ -65,17 +87,25 @@ public:
         String name;
         String id;
 
-        float ambient[3];
-        float diffuse[3];
-        float specular[3];
-        float emissive[3];
+        Vec3f ambient;
+        Vec3f diffuse;
+        Vec3f specular;
+        Vec3f emissive;
         float specularPower;
         float alpha;
         bool backFaceCulling;
-        Texture textureAmbient;
-        Texture textureDiffuse;
-        Texture textureSpecular;
-        Texture textureEmissive;
+        ScopedPointer<Texture> textureAmbient;
+        ScopedPointer<Texture> textureDiffuse;
+        ScopedPointer<Texture> textureSpecular;
+        ScopedPointer<Texture> textureEmissive;
+    };
+
+    class Adapter
+    {
+    public:
+        virtual ~Adapter() {}
+
+        virtual void adopt (Mesh* mesh, Material* material, int drawStart, int drawCnt) = 0;
     };
 
 protected:
@@ -84,7 +114,7 @@ protected:
 
     bool importMaterials (const var& document);
     void importMaterial (const var& _);
-    void importTexture (const var& _);
+    Texture* importTexture (const var& _);
 
 public:
     OwnedArray<Mesh> meshes;
@@ -94,6 +124,11 @@ public:
     ~BabylonFile();
 
     bool read (InputStream* stream);
+    void adopt (Adapter* adapter);
+
+protected:
+    Mesh* getMesh (String id);
+    Material* getMaterial (String id);
 };
 
 } // namespace

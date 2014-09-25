@@ -12,6 +12,7 @@ struct ps_in
 cbuffer AppData : register (b0)
 {
 	float time;
+    float4x4 viewprojMatrix;
 };
 
 #if VERTEX_SHADER
@@ -20,7 +21,7 @@ ps_in main (vs_in input)
 {
 	ps_in output;
 	
-	output.position = input.position;
+	output.position = mul (input.position, viewprojMatrix);
 	output.texcoord.xy = input.position.xy * float2 (time,-time);
 	output.texcoord.zw = float2 (0.0, 1.0);
 	

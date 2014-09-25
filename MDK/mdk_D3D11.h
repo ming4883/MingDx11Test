@@ -3,8 +3,30 @@
 
 #include "mdk_Demo.h"
 
+#pragma warning(disable:4324)
+
 #include <dxgi.h>
 #include <d3d11_1.h>
+
+#define m_failed(x) reportFailed (x, __FILE__ "(" m_tostr(__LINE__) "): " #x)
+
+/*
+    struct TestCB1
+    {
+        XMFLOAT2 a; // 0x00
+        XMFLOAT4 b; // 0x08
+    };
+    
+    struct cb_align TestCB2
+    {
+        XMFLOAT2 a; // 0x00
+        cb_nextrow
+        XMFLOAT4 b; // 0x16
+    };
+
+    see http://msdn.microsoft.com/en-us/library/windows/desktop/bb509632(v=vs.85).aspx for details
+*/
+#define cb_nextrow __declspec (align(16))
 
 namespace mdk
 {
@@ -50,6 +72,16 @@ public:
         return nullptr == ptr_;
     }
 
+    bool operator == (const T* raw) const
+    {
+        return ptr_ == raw;
+    }
+
+    bool operator != (const T* raw) const
+    {
+        return ptr_ != raw;
+    }
+
     T* operator -> ()
     {
         return ptr_;
@@ -83,78 +115,30 @@ public:
     }
 };
 
-class D3D11Demo : public Demo
+class D3D11Context
 {
+    Demo* demo_;
+
 public:
-    D3D11Demo();
-    virtual ~D3D11Demo();
-
-    void paint (Graphics&) override;
-
-protected:
-    D3D_FEATURE_LEVEL d3dFeatureLevel_;
-    Hold<ID3D11Device> d3dDevice_;
-    Hold<ID3D11DeviceContext> d3dIMContext_;
-    Hold<IDXGISwapChain1> d3dSwapchain_;
-    Hold<ID3D11RenderTargetView> d3dBackBufRTView_;
-    Hold<ID3D11SamplerState> d3dSampWrapLinear_;
-    Hold<ID3D11SamplerState> d3dSampWrapPoint_;
-    Hold<ID3D11SamplerState> d3dSampClampLinear_;
-    Hold<ID3D11SamplerState> d3dSampClampPoint_;
+    D3D_FEATURE_LEVEL featureLevel;
+    Hold<ID3D11Device> device;
+    Hold<ID3D11DeviceContext> contextIM;
+    Hold<IDXGISwapChain1> swapchain;
+    Hold<ID3D11RenderTargetView> backBufRTView;
+    Hold<ID3D11SamplerState> sampWrapLinear;
+    Hold<ID3D11SamplerState> sampWrapPoint;
+    Hold<ID3D11SamplerState> sampClampLinear;
+    Hold<ID3D11SamplerState> sampClampPoint;
     
-protected:
-    
-    struct ShaderCompileDesc
-    {
-        const char* source; //!< the HLSL source code
-        const char* name;   //!< a name for error messages
-        const char* entry;  //!< entry function
-        const char* target; //!< e.g. "fx_4_1", "vs_3_0"
-        const char* secondaryData;
+public:
+    D3D11Context (Demo* demo);
+    ~D3D11Context();
 
-        D3D_SHADER_MACRO* defines;
-        ID3DInclude* include;
-        
-        size_t sourceSize;  //!< if 0, set to strlen (source)
-        size_t flags1;
-        size_t flags2;      //!< ignored for non effect file
-        size_t secondaryDataSize;
-        size_t secondaryDataFlags;
-
-        ShaderCompileDesc()
-        {
-            reset();
-        }
-
-        void reset();
-    };
-
-    struct ShaderCompileResult
-    {
-        ID3DBlob* byteCode;
-        ID3DBlob* errorMessage;
-
-        ShaderCompileResult (ID3DBlob* code, ID3DBlob* error)
-            : byteCode (code)
-            , errorMessage (error)
-        {
-        }
-    };
-
-    bool d3dStartup();
-    void d3dShutdown();
-
-    // render targets
-    D3D11_VIEWPORT getViewport (float x_ratio, float y_ratio, float w_ratio, float h_ratio, float minz = 0.0f, float maxz = 1.0f);
+    bool startup (void* hwnd);
+    void shutdown();
 
     // shaders
-#if 0
-    ShaderCompileResult compileShader (const ShaderCompileDesc& desc);
-
-    ID3DBlob* compileShaderFromBinaryData (const char* id, const char* entry, const char* target);
-#endif
-
-    ID3DBlob* loadShaderFromBinaryData (const char* id);
+    ID3DBlob* loadShaderFromAppData (const char* id);
 
     ID3D11VertexShader* createVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage = nullptr);
 
@@ -170,21 +154,9 @@ protected:
         return createInputLayout (inputElements.begin(), (size_t)inputElements.size(), shaderByteCode);
     }
 
-	ID3D11Buffer* createVertexBuffer (size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData = nullptr);
+	ID3D11Buffer* createVertexBuffer (size_t sizeInBytes, bool dynamic, bool immutable, const void* initialData = nullptr);
 
-    template<typename T>
-    ID3D11Buffer* createVertexBuffer (size_t numOfElems, bool dynamic, const T* initialData = nullptr)
-    {
-        return createVertexBuffer (numOfElems * sizeof (T), sizeof (T), dynamic, initialData);
-    }
-
-    ID3D11Buffer* createIndexBuffer (size_t sizeInBytes, size_t stride, bool dynamic, const void* initialData = nullptr);
-
-    template<typename T>
-    ID3D11Buffer* createIndexBuffer (size_t numOfElems, bool dynamic, const T* initialData = nullptr)
-    {
-        return createIndexBuffer (numOfElems * sizeof (T), sizeof (T), dynamic, initialData);
-    }
+    ID3D11Buffer* createIndexBuffer (size_t sizeInBytes, bool dynamic, bool immutable, const void* initialData = nullptr);
 
     ID3D11Buffer* createConstantBuffer (size_t sizeInBytes);
 
@@ -205,7 +177,7 @@ protected:
     // textures
     ID3D11Texture2D* createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData = nullptr, size_t rowPitch = 0, size_t slicePitch = 0);
 
-    ID3D11Texture2D* createTexture2DFromBinaryData (const char* id);
+    ID3D11Texture2D* createTexture2DFromAppData (const char* id);
 
     ID3D11Texture2D* createTexture2DRT (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
 
@@ -222,36 +194,28 @@ protected:
     ID3D11SamplerState* createSamplerState (const D3D11_SAMPLER_DESC& desc);
 	
     // error reporting
-    inline bool reportIfFailed (HRESULT hr, const char* errMsg)
+    inline bool reportFailed (HRESULT hr, const char* errMsg)
     {
-        return !reportIfFalse (SUCCEEDED (hr), errMsg);
+        return demo_->reportTrue (FAILED (hr), errMsg);
     }
 };
 
-#define stringify(x) #x
-#define tostr(x) stringify(x)
-#define failed(x) reportIfFailed (x, #x "@" __FILE__ ":" tostr(__LINE__))
+class D3D11Demo : public Demo
+{
+public:
+    D3D11Demo();
+    virtual ~D3D11Demo();
 
+    void paint (Graphics&) override;
 
-/*
-    struct cb_align TestCB1
-    {
-        XMFLOAT2 a; // 0x00
-        XMFLOAT4 b; // 0x08
-    };
+protected:
+    D3D11Context d3d11;
     
-    struct cb_align TestCB2
-    {
-        XMFLOAT2 a; // 0x00
-        cb_nextrow
-        XMFLOAT4 b; // 0x16
-    };
-
-    see http://msdn.microsoft.com/en-us/library/windows/desktop/bb509632(v=vs.85).aspx for details
-*/
-
-#define cb_align __declspec (align(4))
-#define cb_nextrow __declspec (align(16))
+protected:
+    // render targets
+    D3D11_VIEWPORT getViewport (float x_ratio, float y_ratio, float w_ratio, float h_ratio, float minz = 0.0f, float maxz = 1.0f);
+    float getAspect();
+};
 
 class D3D11Resource
 {
