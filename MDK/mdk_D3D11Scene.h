@@ -7,9 +7,25 @@
 namespace mdk
 {
 
+class D3D11DrawUnit;
+class D3D11Scene;
+
+class D3D11Material
+{
+public:
+    virtual ~D3D11Material() {}
+    virtual void prepare (ID3D11DeviceContext* context, D3D11Scene* scene, D3D11DrawUnit* unit) = 0;
+};
+
 class D3D11DrawUnit
 {
 public:
+    
+    enum
+    {
+        cNumOfVBs = 5
+    };
+    
     Hold<ID3D11Buffer> indexBuffer;
     Hold<ID3D11Buffer> positionBuffer;
     Hold<ID3D11Buffer> normalBuffer;
@@ -18,11 +34,15 @@ public:
     Hold<ID3D11Buffer> colorBuffer;
     Hold<ID3D11InputLayout> inputLayout;
 
-    Hold<ID3D11VertexShader> vertexShader;
-    Hold<ID3D11PixelShader> pixelShader;
+    ScopedPointer<D3D11Material> material;
 
-    Hold<ID3D11BlendState> blendState;
-    Hold<ID3D11DepthStencilState> depthState;
+    ID3D11Buffer* vbBindings[cNumOfVBs];
+    UINT vbOffsets[cNumOfVBs];
+    UINT vbStrides[cNumOfVBs];
+    UINT vbCount;
+    UINT vertexCount;
+    UINT indexCount;
+    D3D11_PRIMITIVE_TOPOLOGY topology;
 
     Mat44f pivotMatrix;
     Mat44f worldMatrix;
@@ -31,10 +51,34 @@ public:
 class D3D11Scene
 {
 public:
+    cbuffer CBSceneData
+    {
+	    Vec4f scnAnimationTime;
+	    Vec4f scnViewPos;
+	    Mat44f scnViewProjMatrix;
+    };
+
+    cbuffer CBObjectData
+    {
+	    Vec4f objAnimationTime;
+	    Mat44f objWorldMatrix;
+	    Mat44f objNormalMatrix;
+	    Mat44f objWorldViewProjMatrix;
+    };
+
+    CBSceneData sceneData;
+    Hold<ID3D11Buffer> cbSceneData;
     OwnedArray<D3D11DrawUnit> drawUnits;
 
+    D3D11Scene (D3D11Context& d3d11);
+
+    void update (D3D11Context& d3d11, Demo::Camera& camera, float deltaTime);
+
     D3D11DrawUnit* add();
+
+    void drawAll (ID3D11DeviceContext* context);
 };
+
 
 class D3D11BabylonFileAdaptor : public BabylonFile::Adapter
 {
@@ -47,7 +91,10 @@ public:
 
     D3D11BabylonFileAdaptor (D3D11Context& d3d11, D3D11Scene& scene);
 
-    void adopt (BabylonFile::Mesh* mesh, BabylonFile::Material* material, int drawStart, int drawCnt) override;
+    void adopt (BabylonFile::Mesh* mesh, BabylonFile::Material* material) override;
+
+    virtual D3D11Material* adopt (BabylonFile::Material* material) = 0;
+    virtual ID3D11InputLayout* createInputLayout (const Array<D3D11_INPUT_ELEMENT_DESC>& inputElements) = 0;
 };
 
 } // namespace

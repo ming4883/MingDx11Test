@@ -36,9 +36,36 @@ public:
         return boolVal;
     }
 
+    void appDataAddDir (File dir);
+
     const char* appDataGet (const char* id, int& size);
 
     InputStream* appDataGet (const char* id);
+
+public:
+    
+// Camera
+    class Camera
+    {
+    public:
+        struct Projection
+        {
+            float fovY;
+            float aspect;
+            float zNear;
+            float zFar;
+        };
+
+        Transform3f transform;
+        Projection projection;
+
+        Mat44f viewMatrix;          //!< update from transform
+        Mat44f projectionMatrix;    //!< update from projection
+
+        Camera();
+
+        void updateD3D (float rtAspect = 1.0f);
+    };
 
 protected:
 
@@ -66,7 +93,7 @@ protected:
 
     typedef HashMap<int, AppData*> AppDataCache;
     
-    String appDataDir;
+    StringArray appDataDirs;
 
     AppDataCache appDataCache;
 
@@ -159,29 +186,6 @@ protected:
         return (REAL)timeAccum_;
     }
 
-// Camera
-    class Camera
-    {
-    public:
-        struct Projection
-        {
-            float fovY;
-            float aspect;
-            float zNear;
-            float zFar;
-        };
-
-        Transform3f transform;
-        Projection projection;
-
-        Mat44f viewMatrix;          //!< update from transform
-        Mat44f projectionMatrix;    //!< update from projection
-
-        Camera();
-
-        void updateD3D (float rtAspect = 1.0f);
-    };
-
 private:
     StringArray errors_;
     ScopedPointer<RenderThread> renderThread_;
@@ -237,6 +241,6 @@ public:
 
 } // namespace
 
-#define set_app_data_dir(folder) appDataDir = (File(__FILE__).getParentDirectory().getParentDirectory().getChildFile(folder)).getFullPathName();
+#define m_dir_of_cpp() File(__FILE__).getParentDirectory()
 
 #endif	// MDK_DEMO_H_INCLUDED

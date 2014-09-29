@@ -22,6 +22,10 @@ bool D3D11Context::startup (void* hwnd)
 {
     UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
+#ifdef _DEBUG
+    flags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
     D3D_FEATURE_LEVEL featureLevels[] = 
     {
         D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0,
@@ -67,77 +71,110 @@ bool D3D11Context::startup (void* hwnd)
     if (m_failed (device->CreateRenderTargetView (backBuf, nullptr, backBufRTView)))
         return false;
 
+    RECT rect;
+    ::GetClientRect ((HWND)hwnd, &rect);
+    if (m_isnull (depthBuf.set ( createTexture2DRT (rect.right - rect.left, rect.bottom - rect.top, 1, DXGI_FORMAT_R32_TYPELESS, DXGI_FORMAT_D32_FLOAT))))
+        return false;
+
+    if (m_isnull (depthBufDSView.set (createDepthStencilView (depthBuf, 0, DXGI_FORMAT_D32_FLOAT))))
+        return false;
+
+    if (m_isnull (depthBufSRView.set (createShaderResourceView (depthBuf, DXGI_FORMAT_R32_FLOAT))))
+        return false;
+
     // common sampler states
     {
-        D3D11_SAMPLER_DESC _;
+        D3D11_SAMPLER_DESC _ = CD3D11_SAMPLER_DESC (D3D11_DEFAULT);
         _.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		_.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		_.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		_.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		_.MinLOD = -FLT_MAX;
-		_.MaxLOD = FLT_MAX;
-		_.MipLODBias = 0;
-		_.MaxAnisotropy = 16;
-		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		_.BorderColor[0] = 0;
-		_.BorderColor[1] = 0;
-		_.BorderColor[2] = 0;
-		_.BorderColor[3] = 0;
-        if (sampWrapLinear.set (createSamplerState (_)).isNull ())
+        if (m_isnull (sampWrapLinear.set (createSamplerState (_))))
             return false;
     }
     {
-        D3D11_SAMPLER_DESC _;
+        D3D11_SAMPLER_DESC _ = CD3D11_SAMPLER_DESC (D3D11_DEFAULT);
         _.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		_.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		_.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		_.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		_.MinLOD = -FLT_MAX;
-		_.MaxLOD = FLT_MAX;
-		_.MipLODBias = 0;
-		_.MaxAnisotropy = 16;
-		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		_.BorderColor[0] = 0;
-		_.BorderColor[1] = 0;
-		_.BorderColor[2] = 0;
-		_.BorderColor[3] = 0;
-        if (sampWrapPoint.set (createSamplerState (_)).isNull ())
+        if (m_isnull (sampWrapPoint.set (createSamplerState (_))))
             return false;
     }
     {
-        D3D11_SAMPLER_DESC _;
+        D3D11_SAMPLER_DESC _ = CD3D11_SAMPLER_DESC (D3D11_DEFAULT);
         _.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		_.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		_.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		_.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		_.MinLOD = -FLT_MAX;
-		_.MaxLOD = FLT_MAX;
-		_.MipLODBias = 0;
-		_.MaxAnisotropy = 16;
-		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		_.BorderColor[0] = 0;
-		_.BorderColor[1] = 0;
-		_.BorderColor[2] = 0;
-		_.BorderColor[3] = 0;
-        if (sampClampLinear.set (createSamplerState (_)).isNull ())
+        if (m_isnull (sampClampLinear.set (createSamplerState (_))))
             return false;
     }
     {
-        D3D11_SAMPLER_DESC _;
+        D3D11_SAMPLER_DESC _ = CD3D11_SAMPLER_DESC (D3D11_DEFAULT);
         _.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		_.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
 		_.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
 		_.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-		_.MinLOD = -FLT_MAX;
-		_.MaxLOD = FLT_MAX;
-		_.MipLODBias = 0;
-		_.MaxAnisotropy = 16;
-		_.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		_.BorderColor[0] = 0;
-		_.BorderColor[1] = 0;
-		_.BorderColor[2] = 0;
-		_.BorderColor[3] = 0;
-        if (sampClampPoint.set (createSamplerState (_)).isNull ())
+        if (m_isnull (sampClampPoint.set (createSamplerState (_))))
+            return false;
+    }
+
+    // common rasterizer state
+    {
+        D3D11_RASTERIZER_DESC _ = CD3D11_RASTERIZER_DESC (D3D11_DEFAULT);
+        _.CullMode = D3D11_CULL_NONE;
+        _.FrontCounterClockwise = FALSE;
+        if (m_isnull (rastCullNone.set (createRasterizerState (_))))
+            return false;
+    }
+
+    {
+        D3D11_RASTERIZER_DESC _ = CD3D11_RASTERIZER_DESC (D3D11_DEFAULT);
+        _.CullMode = D3D11_CULL_FRONT;
+        _.FrontCounterClockwise = FALSE;
+        if (m_isnull (rastCullFront.set (createRasterizerState (_))))
+            return false;
+    }
+
+    {
+        D3D11_RASTERIZER_DESC _ = CD3D11_RASTERIZER_DESC (D3D11_DEFAULT);
+        _.CullMode = D3D11_CULL_BACK;
+        _.FrontCounterClockwise = FALSE;
+        if (m_isnull (rastCullBack.set (createRasterizerState (_))))
+            return false;
+    }
+
+    // common depth stencil state
+    {
+        D3D11_DEPTH_STENCIL_DESC _ = CD3D11_DEPTH_STENCIL_DESC (D3D11_DEFAULT);
+        _.DepthEnable = TRUE;
+        _.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        if (m_isnull (depthTestOnWriteOn.set (createDepthStencilState (_))))
+            return false;
+    }
+
+    {
+        D3D11_DEPTH_STENCIL_DESC _ = CD3D11_DEPTH_STENCIL_DESC (D3D11_DEFAULT);
+        _.DepthEnable = TRUE;
+        _.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        if (m_isnull (depthTestOnWriteOff.set (createDepthStencilState (_))))
+            return false;
+    }
+
+    {
+        D3D11_DEPTH_STENCIL_DESC _ = CD3D11_DEPTH_STENCIL_DESC (D3D11_DEFAULT);
+        _.DepthEnable = FALSE;
+        _.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+        if (m_isnull (depthTestOffWriteOn.set (createDepthStencilState (_))))
+            return false;
+    }
+
+    {
+        D3D11_DEPTH_STENCIL_DESC _ = CD3D11_DEPTH_STENCIL_DESC (D3D11_DEFAULT);
+        _.DepthEnable = FALSE;
+        _.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+        if (m_isnull (depthTestOffWriteOff.set (createDepthStencilState (_))))
             return false;
     }
 
@@ -150,10 +187,24 @@ void D3D11Context::shutdown()
     contextIM.set (nullptr);
     swapchain.set (nullptr);
     backBufRTView.set (nullptr);
+
+    depthBuf.set (nullptr);
+    depthBufDSView.set (nullptr);
+    depthBufSRView.set (nullptr);
+
     sampWrapLinear.set (nullptr);
     sampWrapPoint.set (nullptr);
     sampClampLinear.set (nullptr);
     sampClampPoint.set (nullptr);
+
+    rastCullNone.set (nullptr);
+    rastCullFront.set (nullptr);
+    rastCullBack.set (nullptr);
+
+    depthTestOnWriteOn.set (nullptr);
+    depthTestOnWriteOff.set (nullptr);
+    depthTestOffWriteOn.set (nullptr);
+    depthTestOffWriteOff.set (nullptr);
 }
 
 #if 0
@@ -483,6 +534,30 @@ bool D3D11Context::updateBuffer (ID3D11Buffer* buffer, const void* data, size_t 
     }
 }
 
+bool D3D11Context::updateBuffer (ID3D11DeviceContext* context, ID3D11Buffer* buffer, const void* data, size_t dataSize, bool dynamic)
+{
+    if (nullptr == context || nullptr == buffer || nullptr == data)
+        return false;
+
+    if (dynamic)
+    {
+        D3D11_MAPPED_SUBRESOURCE mapped;
+	    if (FAILED(context->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+		    return false;
+		
+	    memcpy (mapped.pData, data, dataSize);
+
+        context->Unmap (buffer, 0);
+
+        return true;
+    }
+    else
+    {
+        context->UpdateSubresource (buffer, 0, nullptr, data, dataSize, dataSize);
+        return true;
+    }
+}
+
 ID3D11Texture2D* D3D11Context::createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData, size_t rowPitch, size_t slicePitch)
 {
     D3D11_TEXTURE2D_DESC desc;
@@ -756,6 +831,23 @@ ID3D11SamplerState* D3D11Context::createSamplerState (const D3D11_SAMPLER_DESC& 
     return state.drop();
 }
 
+ID3D11RasterizerState* D3D11Context::createRasterizerState (const D3D11_RASTERIZER_DESC& desc)
+{
+    Hold<ID3D11RasterizerState> state;
+    if (m_failed (device->CreateRasterizerState (&desc, state)))
+        return nullptr;
+
+    return state.drop();
+}
+
+ID3D11DepthStencilState* D3D11Context::createDepthStencilState (const D3D11_DEPTH_STENCIL_DESC& desc)
+{
+    Hold<ID3D11DepthStencilState> state;
+    if (m_failed (device->CreateDepthStencilState (&desc, state)))
+        return nullptr;
+
+    return state.drop();
+}
 //==============================================================================
 D3D11Demo::D3D11Demo()
     : d3d11 (this)

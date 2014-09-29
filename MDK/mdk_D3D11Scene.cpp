@@ -4,11 +4,52 @@
 namespace mdk
 {
 
+D3D11Scene::D3D11Scene (D3D11Context& d3d11)
+{
+    cbSceneData.set (d3d11.createConstantBuffer<CBSceneData>());
+    zerostruct (sceneData);
+}
+
+void D3D11Scene::update (D3D11Context& d3d11, Demo::Camera& camera, float deltaTime)
+{   
+    sceneData.scnAnimationTime.x += deltaTime;
+    sceneData.scnViewPos = Vec4f (camera.transform.position, 1.0f);
+    Mat::mul (sceneData.scnViewProjMatrix, camera.projectionMatrix, camera.viewMatrix);
+    d3d11.updateBuffer (cbSceneData, sceneData);
+}
+
 D3D11DrawUnit* D3D11Scene::add()
 {
     D3D11DrawUnit* unit = new D3D11DrawUnit;
     drawUnits.add (unit);
     return unit;
+}
+
+void D3D11Scene::drawAll (ID3D11DeviceContext* context)
+{
+    D3D11DrawUnit** beg = drawUnits.begin();
+    D3D11DrawUnit** end = drawUnits.end();
+
+    for (D3D11DrawUnit** itr = beg; itr != end; ++itr)
+    {
+        D3D11DrawUnit* cur = *itr;
+
+        cur->material->prepare (context, this, cur);
+
+        context->IASetVertexBuffers (0, cur->vbCount, cur->vbBindings, cur->vbStrides, cur->vbOffsets);
+        context->IASetInputLayout (cur->inputLayout);
+        context->IASetPrimitiveTopology (cur->topology);
+
+        if (cur->indexBuffer != nullptr)
+        {
+            context->IASetIndexBuffer (cur->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+            context->DrawIndexed (cur->indexCount, 0, 0);
+        }
+        else
+        {
+            context->Draw (cur->vertexCount, 0);
+        }
+    }
 }
 
 D3D11BabylonFileAdaptor::D3D11BabylonFileAdaptor (D3D11Context& d3d11, D3D11Scene& scene)
@@ -17,26 +58,40 @@ D3D11BabylonFileAdaptor::D3D11BabylonFileAdaptor (D3D11Context& d3d11, D3D11Scen
 {
 }
 
-void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Material* material, int drawStart, int drawCnt)
+void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Material* material)
 {
     if (nullptr == mesh->positions)
         return;
 
     D3D11DrawUnit* unit = scene.add();
 
+    unit->material = adopt (material);
     unit->pivotMatrix = mesh->pivotMatrix;
     Mat::fromTransform3 (unit->worldMatrix, mesh->world);
+
+    // topology information
+    unit->topology =  D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    unit->indexCount = 0;
+    unit->vertexCount = mesh->positions->size() / 3;
 
     // index
     if (mesh->indices)
     {
         auto buff = mesh->indices;
-        unit->indexBuffer.set (d3d11.createIndexBuffer ((size_t)buff->size(), false, true, buff->getPtr()));
+        unit->indexBuffer.set (d3d11.createIndexBuffer ((size_t)buff->sizeInBytes(), false, true, buff->getPtr()));
+        unit->indexCount = buff->size();
     }
 
     Array<D3D11_INPUT_ELEMENT_DESC> iDesc;
 
-    // position
+    ID3D11Buffer** vbBinding = unit->vbBindings;
+    UINT* vbOffset = unit->vbOffsets;
+    UINT* vbStride = unit->vbStrides;
+
+    zerostruct (unit->vbBindings);
+    zerostruct (unit->vbOffsets);
+    
+    // positions
     {
         D3D11_INPUT_ELEMENT_DESC _;
         _.SemanticName = "POSITION";
@@ -50,7 +105,10 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
         iDesc.add (_);
 
         auto buff = mesh->positions;
-        unit->positionBuffer.set (d3d11.createVertexBuffer ((size_t)buff->size(), false, true, buff->getPtr()));
+        unit->positionBuffer.set (d3d11.createVertexBuffer ((size_t)buff->sizeInBytes(), false, true, buff->getPtr()));
+        *vbBinding++ = unit->positionBuffer;
+        *vbOffset++ = 0;
+        *vbStride++ = sizeof (float) * 3;
     }
 
     if (mesh->normals)
@@ -67,7 +125,10 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
         iDesc.add (_);
 
         auto buff = mesh->normals;
-        unit->normalBuffer.set (d3d11.createVertexBuffer ((size_t)buff->size(), false, true, buff->getPtr()));
+        unit->normalBuffer.set (d3d11.createVertexBuffer ((size_t)buff->sizeInBytes(), false, true, buff->getPtr()));
+        *vbBinding++ = unit->normalBuffer;
+        *vbOffset++ = 0;
+        *vbStride++ = sizeof (float) * 3;
     }
 
     if (mesh->uvs)
@@ -84,7 +145,10 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
         iDesc.add (_);
 
         auto buff = mesh->uvs;
-        unit->uvBuffer.set (d3d11.createVertexBuffer ((size_t)buff->size(), false, true, buff->getPtr()));
+        unit->uvBuffer.set (d3d11.createVertexBuffer ((size_t)buff->sizeInBytes(), false, true, buff->getPtr()));
+        *vbBinding++ = unit->uvBuffer;
+        *vbOffset++ = 0;
+        *vbStride++ = sizeof (float) * 2;
     }
 
     if (mesh->uvs2)
@@ -101,7 +165,10 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
         iDesc.add (_);
 
         auto buff = mesh->uvs2;
-        unit->uv2Buffer.set (d3d11.createVertexBuffer ((size_t)buff->size(), false, true, buff->getPtr()));
+        unit->uv2Buffer.set (d3d11.createVertexBuffer ((size_t)buff->sizeInBytes(), false, true, buff->getPtr()));
+        *vbBinding++ = unit->uv2Buffer;
+        *vbOffset++ = 0;
+        *vbStride++ = sizeof (float) * 2;
     }
 
     if (mesh->colors)
@@ -118,8 +185,15 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
         iDesc.add (_);
 
         auto buff = mesh->colors;
-        unit->colorBuffer.set (d3d11.createVertexBuffer ((size_t)buff->size(), false, true, buff->getPtr()));
+        unit->colorBuffer.set (d3d11.createVertexBuffer ((size_t)buff->sizeInBytes(), false, true, buff->getPtr()));
+        *vbBinding++ = unit->colorBuffer;
+        *vbOffset++ = 0;
+        *vbStride++ = sizeof (float) * 4;
     }
+
+    unit->vbCount = (UINT)iDesc.size();
+
+    unit->inputLayout.set (createInputLayout (iDesc));
 }
 
 } // namespace

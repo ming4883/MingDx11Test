@@ -5,9 +5,7 @@
               jucerVersion="3.1.0">
   <MAINGROUP id="h1HD0p" name="Example02">
     <GROUP id="{6DD3D608-5753-701D-DB0B-C2454BCBF373}" name="Media">
-      <FILE id="LDhx3y" name="CompileShaders.bat" compile="0" resource="1"
-            file="Media/CompileShaders.bat"/>
-      <FILE id="B2yN6x" name="Rabbit.babylon" compile="0" resource="1" file="Media/Rabbit.babylon"/>
+      <FILE id="tn1sIT" name="Boxes.babylon" compile="0" resource="1" file="Media/Boxes.babylon"/>
       <FILE id="IvI8TE" name="Test.png" compile="0" resource="1" file="Media/Test.png"/>
       <FILE id="sktjcE" name="Test.pso" compile="0" resource="1" file="Media/Test.pso"/>
       <FILE id="svRjDU" name="Test.vso" compile="0" resource="1" file="Media/Test.vso"/>

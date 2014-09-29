@@ -24,16 +24,16 @@ public:
     {
     }
 
-    struct CBAppData
+    cbuffer CBAppData
     {
         float time;
-        cb_nextrow
+        cbuffer_nextrow
         Mat44f viewprojMatrix;
     };
 
     bool demoStartup()
     {
-        set_app_data_dir ("Media");
+        appDataAddDir (m_dir_of_cpp().getSiblingFile ("Media"));
 
         Hold<ID3DBlob> pscode = d3d11.loadShaderFromAppData ("Test.pso");
         Hold<ID3DBlob> vscode = d3d11.loadShaderFromAppData ("Test.vso");

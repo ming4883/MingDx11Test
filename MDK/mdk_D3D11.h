@@ -26,7 +26,8 @@
 
     see http://msdn.microsoft.com/en-us/library/windows/desktop/bb509632(v=vs.85).aspx for details
 */
-#define cb_nextrow __declspec (align(16))
+#define cbuffer struct
+#define cbuffer_nextrow __declspec (align(16))
 
 namespace mdk
 {
@@ -51,12 +52,15 @@ public:
             ptr_->Release();
     }
 
-    Hold& set (T* ptr)
+    Hold& set (T* ptr, bool addRef = false)
     {
         if (ptr_)
             ptr_->Release();
 
         ptr_ = ptr;
+
+        if (addRef)
+            ptr_->AddRef();
         return *this;
     }
 
@@ -125,10 +129,23 @@ public:
     Hold<ID3D11DeviceContext> contextIM;
     Hold<IDXGISwapChain1> swapchain;
     Hold<ID3D11RenderTargetView> backBufRTView;
+    Hold<ID3D11Texture2D> depthBuf;
+    Hold<ID3D11DepthStencilView> depthBufDSView;
+    Hold<ID3D11ShaderResourceView> depthBufSRView;
+
     Hold<ID3D11SamplerState> sampWrapLinear;
     Hold<ID3D11SamplerState> sampWrapPoint;
     Hold<ID3D11SamplerState> sampClampLinear;
     Hold<ID3D11SamplerState> sampClampPoint;
+    
+    Hold<ID3D11RasterizerState> rastCullNone;
+    Hold<ID3D11RasterizerState> rastCullFront;
+    Hold<ID3D11RasterizerState> rastCullBack;
+    
+    Hold<ID3D11DepthStencilState> depthTestOnWriteOn;
+    Hold<ID3D11DepthStencilState> depthTestOnWriteOff;
+    Hold<ID3D11DepthStencilState> depthTestOffWriteOn;
+    Hold<ID3D11DepthStencilState> depthTestOffWriteOff;
     
 public:
     D3D11Context (Demo* demo);
@@ -174,6 +191,14 @@ public:
         return updateBuffer (buffer, &t, sizeof (T), dynamic);
     }
 
+    static bool updateBuffer (ID3D11DeviceContext* context, ID3D11Buffer* buffer, const void* data, size_t dataSize, bool dynamic);
+
+    template<typename T>
+    static bool updateBuffer (ID3D11DeviceContext* context, ID3D11Buffer* buffer, const T& t, bool dynamic = true)
+    {
+        return updateBuffer (context, buffer, &t, sizeof (T), dynamic);
+    }
+
     // textures
     ID3D11Texture2D* createTexture2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData = nullptr, size_t rowPitch = 0, size_t slicePitch = 0);
 
@@ -192,11 +217,20 @@ public:
 
     // states
     ID3D11SamplerState* createSamplerState (const D3D11_SAMPLER_DESC& desc);
+
+    ID3D11RasterizerState* createRasterizerState (const D3D11_RASTERIZER_DESC& desc);
+
+    ID3D11DepthStencilState* createDepthStencilState (const D3D11_DEPTH_STENCIL_DESC& desc);
 	
     // error reporting
     inline bool reportFailed (HRESULT hr, const char* errMsg)
     {
         return demo_->reportTrue (FAILED (hr), errMsg);
+    }
+
+    inline bool reportTrue (bool boolVal, const char* errMsg)
+    {
+        return demo_->reportTrue (boolVal, errMsg);
     }
 };
 

@@ -102,6 +102,14 @@ void Demo::renderThreadStop()
     }
 }
 
+void Demo::appDataAddDir (File dir)
+{
+    if (!dir.isDirectory())
+        return;
+
+    appDataDirs.insert (0, dir.getFullPathName());
+}
+
 void Demo::appDataReset()
 {
     AppDataCache::Iterator iter (appDataCache);
@@ -125,9 +133,11 @@ const char* Demo::appDataGet (const char* id, int& size)
         return (char*)appData->data.getData();
     }
 
-    if (appDataDir.isNotEmpty())
+    String* dirBeg = appDataDirs.begin();
+    String* dirEnd = appDataDirs.end();
+    for (String* dirItr = dirBeg; dirItr != dirEnd; ++dirItr)
     {
-        File file = File::createFileWithoutCheckingPath(appDataDir).getChildFile (id);
+        File file = File::createFileWithoutCheckingPath(*dirItr).getChildFile (id);
         
         if (file.existsAsFile())
         {
@@ -147,9 +157,11 @@ const char* Demo::appDataGet (const char* id, int& size)
 
 InputStream* Demo::appDataGet (const char* id)
 {
-    if (appDataDir.isNotEmpty())
+    String* dirBeg = appDataDirs.begin();
+    String* dirEnd = appDataDirs.end();
+    for (String* dirItr = dirBeg; dirItr != dirEnd; ++dirItr)
     {
-        File file = File::createFileWithoutCheckingPath(appDataDir).getChildFile (id);
+        File file = File::createFileWithoutCheckingPath(*dirItr).getChildFile (id);
         
         if (file.existsAsFile())
         {

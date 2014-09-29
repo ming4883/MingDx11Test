@@ -105,7 +105,7 @@ public:
     public:
         virtual ~Adapter() {}
 
-        virtual void adopt (Mesh* mesh, Material* material, int drawStart, int drawCnt) = 0;
+        virtual void adopt (Mesh* mesh, Material* material) = 0;
     };
 
 protected:

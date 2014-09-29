@@ -323,15 +323,7 @@ void BabylonFile::adopt (Adapter* adapter)
         Mesh* mesh = *meshItr;
         Material* mtl = getMaterial (mesh->materialId);
 
-        int drawStart = 0;
-        int drawCnt = 0;
-
-        if (mesh->indices != nullptr)
-            drawCnt = mesh->indices->data.size();
-        else
-            drawCnt = mesh->positions->data.size();
-
-        adapter->adopt (mesh, mtl, drawStart, drawCnt);
+        adapter->adopt (mesh, mtl);
     }
 }
 

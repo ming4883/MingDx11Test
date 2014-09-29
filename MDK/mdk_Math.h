@@ -64,12 +64,12 @@ struct Vec3
         static_assert (sizeof (Vec3<REAL>) == sizeof (REAL) * 3, "Invalid Vec3 size");
     }
 
-    Vec3 (REAL x, REAL y, REAL z)
+    explicit Vec3 (REAL x, REAL y, REAL z)
         : x (x), y (y), z(z)
     {
     }
 
-    Vec3 (const REAL* xyz)
+    explicit Vec3 (const REAL* xyz)
         : x(xyz[0]), y (xyz[1]), z (xyz[2])
     {
     }
@@ -97,12 +97,17 @@ struct Vec4
         static_assert (sizeof (Vec4<REAL>) == sizeof (REAL) * 4, "Invalid Vec4 size");
     }
 
-    Vec4 (REAL x, REAL y, REAL z, REAL w)
-        : x (x), y (y), z(z), w(w)
+    explicit Vec4 (REAL x, REAL y, REAL z, REAL w)
+        : x (x), y (y), z (z), w (w)
     {
     }
 
-    Vec4 (const REAL* xyzw)
+    explicit Vec4 (Vec3<REAL> xyz, REAL w)
+        : x (xyz.x), y (xyz.y), z (xyz.z), w (w)
+    {
+    }
+
+    explicit Vec4 (const REAL* xyzw)
         : x(xyzw[0]), y (xyzw[1]), z (xyzw[2]), w (xyzw[3])
     {
     }
@@ -156,7 +161,7 @@ struct Mat44
         static_assert (sizeof (Mat44<REAL>) == sizeof (REAL) * 16, "Invalid Mat44 size");
     }
 
-    Mat44 (REAL all)
+    explicit Mat44 (REAL all)
     {
         m[M00] = all; m[M01] = all; m[M02] = all; m[M03] = all;
         m[M10] = all; m[M11] = all; m[M12] = all; m[M13] = all;
@@ -164,7 +169,7 @@ struct Mat44
         m[M30] = all; m[M31] = all; m[M32] = all; m[M33] = all;
     }
 
-    Mat44 (const REAL* m44)
+    explicit Mat44 (const REAL* m44)
     {
         m[M00] = m44[M00]; m[M01] = m44[M01]; m[M02] = m44[M02]; m[M03] = m44[M03];
         m[M10] = m44[M10]; m[M11] = m44[M11]; m[M12] = m44[M12]; m[M13] = m44[M13];
@@ -172,7 +177,7 @@ struct Mat44
         m[M30] = m44[M30]; m[M31] = m44[M31]; m[M32] = m44[M32]; m[M33] = m44[M33];
     }
 
-    Mat44 (
+    explicit Mat44 (
         REAL _00, REAL _01, REAL _02, REAL _03,
         REAL _10, REAL _11, REAL _12, REAL _13,
         REAL _20, REAL _21, REAL _22, REAL _23,
