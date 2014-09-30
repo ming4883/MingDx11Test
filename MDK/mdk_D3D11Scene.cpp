@@ -5,9 +5,21 @@ namespace mdk
 {
 
 D3D11Scene::D3D11Scene (D3D11Context& d3d11)
+    : drawUnitPool (256, 1024)
 {
     cbSceneData.set (d3d11.createConstantBuffer<CBSceneData>());
     zerostruct (sceneData);
+}
+
+D3D11Scene::~D3D11Scene()
+{
+    D3D11DrawUnit** beg = drawUnits.begin();
+    D3D11DrawUnit** end = drawUnits.end();
+
+    for (D3D11DrawUnit** itr = beg; itr != end; ++itr)
+    {
+        (*itr)->~D3D11DrawUnit();
+    }
 }
 
 void D3D11Scene::update (D3D11Context& d3d11, Demo::Camera& camera, float deltaTime)
@@ -20,7 +32,7 @@ void D3D11Scene::update (D3D11Context& d3d11, Demo::Camera& camera, float deltaT
 
 D3D11DrawUnit* D3D11Scene::add()
 {
-    D3D11DrawUnit* unit = new D3D11DrawUnit;
+    D3D11DrawUnit* unit = new (drawUnitPool.allocate()) D3D11DrawUnit;
     drawUnits.add (unit);
     return unit;
 }

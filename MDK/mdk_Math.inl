@@ -402,6 +402,27 @@ void Mat::fromTransform3 (Mat44<REAL>& dst, const Transform3<REAL>& src)
     dst[2][3] = src.position.z;
 }
 
+// Mat::transpose
+template<typename REAL>
+void Mat::transpose (Mat44<REAL>& dst, const Mat44<REAL>& m)
+{
+    Vec4<REAL> a[4] = {m[0], m[1], m[2], m[3]};
+
+    dst.m00 = a[0][0]; dst.m10 = a[0][1]; dst.m20 = a[0][2]; dst.m30 = a[0][3];
+    dst.m01 = a[1][0]; dst.m11 = a[1][1]; dst.m21 = a[1][2]; dst.m31 = a[1][3];
+    dst.m02 = a[2][0]; dst.m12 = a[2][1]; dst.m22 = a[2][2]; dst.m32 = a[2][3];
+    dst.m03 = a[3][0]; dst.m13 = a[3][1]; dst.m23 = a[3][2]; dst.m33 = a[3][3];
+}
+
+template<typename REAL>
+void Mat::transpose (Mat44<REAL>* dst, const Mat44<REAL>* m, size_t cnt)
+{
+    for (size_t i = 0; i < cnt; ++i)
+    {
+        transpose (dst[i], m[i]);
+    }
+}
+
 // Mat::mul
 template<typename REAL>
 void Mat::mul (Mat44<REAL>& dst, const Mat44<REAL>& a, const Mat44<REAL>& b)

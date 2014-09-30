@@ -336,6 +336,14 @@ struct Mat
     template<typename REAL>
     static inline void fromQuat (Mat44<REAL>* dst, const Vec4<REAL>* q, size_t cnt);
 
+    // dst[i][j] = m[j][i]
+    template<typename REAL>
+    static inline void transpose (Mat44<REAL>& dst, const Mat44<REAL>& m);
+
+    template<typename REAL>
+    static inline void transpose (Mat44<REAL>* dst, const Mat44<REAL>* m, size_t cnt);
+
+
     // dst = a * b
     template<typename REAL>
     static inline void mul (Mat44<REAL>& dst, const Mat44<REAL>& a, const Mat44<REAL>& b);

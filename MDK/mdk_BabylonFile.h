@@ -45,6 +45,11 @@ public:
 
     class Var;
 
+    class SubMesh
+    {
+    public:
+    };
+
     class Mesh
     {
     public:

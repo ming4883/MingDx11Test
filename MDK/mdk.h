@@ -4,6 +4,7 @@
 #include "mdk_Demo.h"
 #include "mdk_BabylonFile.h"
 #include "mdk_Math.h"
+#include "mdk_Pool.h"
 
 #if JUCE_WINDOWS
 #include "mdk_D3D11.h"

@@ -20,7 +20,6 @@ public:
 class D3D11DrawUnit
 {
 public:
-    
     enum
     {
         cNumOfVBs = 5
@@ -66,11 +65,18 @@ public:
 	    Mat44f objWorldViewProjMatrix;
     };
 
+    typedef ObjectPool< ObjectPoolTraitsDefault<D3D11DrawUnit> > DrawUnitPool;
+
+public:
+    DrawUnitPool drawUnitPool;
+
     CBSceneData sceneData;
     Hold<ID3D11Buffer> cbSceneData;
-    OwnedArray<D3D11DrawUnit> drawUnits;
+    Array<D3D11DrawUnit*> drawUnits;
 
+public:
     D3D11Scene (D3D11Context& d3d11);
+    ~D3D11Scene();
 
     void update (D3D11Context& d3d11, Demo::Camera& camera, float deltaTime);
 
