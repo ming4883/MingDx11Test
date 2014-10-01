@@ -20,11 +20,14 @@ public:
 class D3D11DrawUnit
 {
 public:
+    typedef LinkedListPointer<D3D11DrawUnit> ListPtr;
+    friend class ListPtr;
+    friend class D3D11Scene;
     enum
     {
         cNumOfVBs = 5
     };
-    
+
     Hold<ID3D11Buffer> indexBuffer;
     Hold<ID3D11Buffer> positionBuffer;
     Hold<ID3D11Buffer> normalBuffer;
@@ -45,6 +48,9 @@ public:
 
     Mat44f pivotMatrix;
     Mat44f worldMatrix;
+
+private:
+    ListPtr nextListItem;
 };
 
 class D3D11Scene
@@ -72,7 +78,7 @@ public:
 
     CBSceneData sceneData;
     Hold<ID3D11Buffer> cbSceneData;
-    Array<D3D11DrawUnit*> drawUnits;
+    D3D11DrawUnit::ListPtr drawUnits;
 
 public:
     D3D11Scene (D3D11Context& d3d11);

@@ -13,12 +13,13 @@ D3D11Scene::D3D11Scene (D3D11Context& d3d11)
 
 D3D11Scene::~D3D11Scene()
 {
-    D3D11DrawUnit** beg = drawUnits.begin();
-    D3D11DrawUnit** end = drawUnits.end();
+    D3D11DrawUnit* itr = drawUnits;
 
-    for (D3D11DrawUnit** itr = beg; itr != end; ++itr)
+    while (itr != nullptr)
     {
-        (*itr)->~D3D11DrawUnit();
+        D3D11DrawUnit* next = itr->nextListItem;
+        itr->~D3D11DrawUnit();
+        itr = next;
     }
 }
 
@@ -33,18 +34,15 @@ void D3D11Scene::update (D3D11Context& d3d11, Demo::Camera& camera, float deltaT
 D3D11DrawUnit* D3D11Scene::add()
 {
     D3D11DrawUnit* unit = new (drawUnitPool.allocate()) D3D11DrawUnit;
-    drawUnits.add (unit);
+    drawUnits.append (unit);
     return unit;
 }
 
 void D3D11Scene::drawAll (ID3D11DeviceContext* context)
 {
-    D3D11DrawUnit** beg = drawUnits.begin();
-    D3D11DrawUnit** end = drawUnits.end();
-
-    for (D3D11DrawUnit** itr = beg; itr != end; ++itr)
+    for (D3D11DrawUnit* itr = drawUnits; itr != nullptr; itr = itr->nextListItem)
     {
-        D3D11DrawUnit* cur = *itr;
+        D3D11DrawUnit* cur = itr;
 
         cur->material->prepare (context, this, cur);
 
