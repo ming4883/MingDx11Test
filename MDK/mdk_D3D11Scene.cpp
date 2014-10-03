@@ -4,6 +4,34 @@
 namespace mdk
 {
 
+D3D11ShaderResources::D3D11ShaderResources(D3D11ShaderResourcePool& pool)
+    : resourcePool (pool)
+{
+
+}
+
+D3D11ShaderResources::~D3D11ShaderResources()
+{
+    D3D11ShaderResource* itr = resources;
+
+    while (itr)
+    {
+        D3D11ShaderResource* next = itr->nextListItem;
+
+        m_del_with_pool (resourcePool, itr);
+
+        itr = next;
+    }
+}
+
+void D3D11ShaderResources::add (ID3D11Resource* object, ID3D11ShaderResourceView* objectSRView, UINT slot)
+{
+    D3D11ShaderResource* res = m_new_with_pool (resourcePool, D3D11ShaderResource);
+    res->object.set (object);
+    res->objectSRView.set (objectSRView);
+    res->slot = slot;
+}
+
 D3D11Scene::D3D11Scene (D3D11Context& d3d11)
     : drawUnitPool (256, 1024)
 {
@@ -18,7 +46,7 @@ D3D11Scene::~D3D11Scene()
     while (itr != nullptr)
     {
         D3D11DrawUnit* next = itr->nextListItem;
-        itr->~D3D11DrawUnit();
+        m_del_with_pool (drawUnitPool, itr);
         itr = next;
     }
 }
@@ -33,7 +61,7 @@ void D3D11Scene::update (D3D11Context& d3d11, Demo::Camera& camera, float deltaT
 
 D3D11DrawUnit* D3D11Scene::add()
 {
-    D3D11DrawUnit* unit = new (drawUnitPool.allocate()) D3D11DrawUnit;
+    D3D11DrawUnit* unit = m_new_with_pool (drawUnitPool, D3D11DrawUnit);
     drawUnits.append (unit);
     return unit;
 }

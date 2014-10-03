@@ -80,8 +80,20 @@ private:
 
 };
 
-}   // namespace
+} // namespace
+
+#define m_new_with_pool(pool, type) new (pool.allocate())type
+
+template<typename POOL, typename TYPE>
+void m_del_with_pool(POOL& pool, TYPE* ptr)
+{
+    if (nullptr == ptr)
+        return;
+
+    ptr->~TYPE();
+    pool.release(ptr);
+}
 
 #include "mdk_Pool.inl"
 
-#endif	// MDK_POOL_H_INCLUDED
+#endif // MDK_POOL_H_INCLUDED

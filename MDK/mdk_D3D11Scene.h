@@ -10,6 +10,35 @@ namespace mdk
 class D3D11DrawUnit;
 class D3D11Scene;
 
+
+struct D3D11ShaderResource
+{
+    typedef LinkedListPointer<D3D11ShaderResource> ListPtr;
+    ListPtr nextListItem;
+
+    Hold<ID3D11Resource> object;
+    Hold<ID3D11ShaderResourceView> objectSRView;
+    UINT slot;
+};
+
+typedef ObjectPool< ObjectPoolTraitsDefault<D3D11ShaderResource> > D3D11ShaderResourcePool;
+
+class D3D11ShaderResources
+{
+    D3D11ShaderResources (const D3D11ShaderResources&);
+    void operator = (const D3D11ShaderResources&);
+
+public:
+    D3D11ShaderResourcePool& resourcePool;
+
+    D3D11ShaderResource::ListPtr resources;
+
+    D3D11ShaderResources(D3D11ShaderResourcePool& pool);
+    ~D3D11ShaderResources();
+
+    void add (ID3D11Resource* object, ID3D11ShaderResourceView* objectSRView, UINT slot);
+};
+
 class D3D11Material
 {
 public:
@@ -58,17 +87,17 @@ class D3D11Scene
 public:
     cbuffer CBSceneData
     {
-	    Vec4f scnAnimationTime;
-	    Vec4f scnViewPos;
-	    Mat44f scnViewProjMatrix;
+        Vec4f scnAnimationTime;
+        Vec4f scnViewPos;
+        Mat44f scnViewProjMatrix;
     };
 
     cbuffer CBObjectData
     {
-	    Vec4f objAnimationTime;
-	    Mat44f objWorldMatrix;
-	    Mat44f objNormalMatrix;
-	    Mat44f objWorldViewProjMatrix;
+        Vec4f objAnimationTime;
+        Mat44f objWorldMatrix;
+        Mat44f objNormalMatrix;
+        Mat44f objWorldViewProjMatrix;
     };
 
     typedef ObjectPool< ObjectPoolTraitsDefault<D3D11DrawUnit> > DrawUnitPool;
@@ -111,4 +140,4 @@ public:
 
 } // namespace
 
-#endif	// MDK_D3D11SCENE_H_INCLUDED
+#endif // MDK_D3D11SCENE_H_INCLUDED

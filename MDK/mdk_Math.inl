@@ -115,7 +115,7 @@ Vec4<REAL> Vec::mul (Vec4<REAL> a, REAL b)
     dst.z = a.z * b;
     dst.w = a.w * b;
 
-    return ret;
+    return dst;
 }
 
 template<typename REAL>
@@ -248,6 +248,20 @@ void Vec::reciprocal (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt)
     }
 }
 
+// Vec::isNearZero
+template<typename REAL>
+bool Vec::isNearZero (Vec3<REAL> v)
+{
+    REAL sqLen = dot (v, v);
+    return fabsf ((float)sqLen) < 1e-6f;
+}
+
+template<typename REAL>
+bool Vec::isNearZero (Vec4<REAL> v)
+{
+    REAL sqLen = dot (v, v);
+    return std::fabsf ((float)sqLen) < 1e-6f;
+}
 
 // Vec::neg
 template<typename REAL>
@@ -286,6 +300,43 @@ void Vec::neg (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt)
     for (size_t i = 0; i < cnt; ++i)
     {
         dst[i] = neg (v[i]);
+    }
+}
+
+// Vec::normalize
+template<typename REAL>
+Vec3<REAL> Vec::normalize (Vec3<REAL> v)
+{
+    REAL len = v.x * v.x + v.y * v.y + v.z * v.z;
+    len = (REAL)1.0f / ((REAL)std::sqrtf (len + (REAL)1e-12f)); // adding a epsilon to avoid sqrt (0)
+
+    return Vec::mul (v, len);
+}
+
+template<typename REAL>
+void Vec::normalize (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt)
+{
+    for (size_t i = 0; i < cnt; ++i)
+    {
+        dst[i] = normalize (v[i]);
+    }
+}
+
+template<typename REAL>
+Vec4<REAL> Vec::normalize (Vec4<REAL> v)
+{
+    REAL len = v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w;
+    len = (REAL)1.0f / ((REAL)std::sqrtf (len + (REAL)1e-12f)); // adding a epsilon to avoid sqrt (0)
+
+    return Vec::mul (v, len);
+}
+
+template<typename REAL>
+void Vec::normalize (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt)
+{
+    for (size_t i = 0; i < cnt; ++i)
+    {
+        dst[i] = normalize (v[i]);
     }
 }
 
@@ -486,18 +537,14 @@ void Quat::setIdentity (Vec4<REAL>& q)
 }
 
 template<typename REAL>
-Vec4<REAL> Quat::fromRotation (Vec3<REAL> rotationInRad)
+Vec4<REAL> Quat::fromXYZRotation (Vec3<REAL> rotationInRad)
 {
     REAL sx, cx, sy, cy, sz, cz;
     REAL sxcy, cxcy, sxsy, cxsy;
 
-    REAL halfx = rotationInRad.x * -0.5f;
-    REAL halfy = rotationInRad.y * -0.5f;
-    REAL halfz = rotationInRad.z * -0.5f;
-
-    sx = (REAL)sinf (halfx); cx = (REAL)cosf (halfx);
-    sy = (REAL)sinf (halfy); cy = (REAL)cosf (halfy);
-    sz = (REAL)sinf (halfz); cz = (REAL)cosf (halfz);
+    Scalar<REAL>::calcSinCos (sx, cx, rotationInRad.x * -0.5f);
+    Scalar<REAL>::calcSinCos (sy, cy, rotationInRad.y * -0.5f);
+    Scalar<REAL>::calcSinCos (sz, cz, rotationInRad.z * -0.5f);
 
     sxcy = sx * cy;
     cxcy = cx * cy;
@@ -509,6 +556,63 @@ Vec4<REAL> Quat::fromRotation (Vec3<REAL> rotationInRad)
     dst.y = -cxsy * cz - sxcy * sz;
     dst.z =  sxsy * cz - cxcy * sz;
     dst.w =  cxcy * cz + sxsy * sz;
+
+    return dst;
+}
+
+template<typename REAL>
+Vec4<REAL> Quat::fromUnitAxisAngle (Vec3<REAL> axis, REAL angleInRad)
+{
+    REAL sinVal, cosVal;
+    Scalar<REAL>::calcSinCos (sinVal, cosVal, (REAL)(angleInRad * 0.5f));
+
+    Vec4<REAL> dst (Vec::mul (axis, sinVal), cosVal);
+    return dst;
+}
+
+template<typename REAL>
+Vec4<REAL> Quat::fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd)
+{
+    Vec4<REAL> dst;
+
+    REAL d = Vec::dot (dirBeg, dirEnd);
+
+    if (d >= (REAL)1.0f)
+    {
+        // If d == 1, vectors are the same
+        Quat::setIdentity (dst);
+    }
+    if (d < (REAL)(1e-6f - 1.0f))
+    {
+        // dirEnd is almost equals to -dirBeg, pick an axis and make a 180 degree rotation
+        Vec3<REAL> axis = Vec::cross (Vec3<REAL> (0, 1, 0), dirBeg);
+        if (Vec::isNearZero (axis)) 
+        {
+            // pick another if colinear
+            axis = Vec::cross (Vec3<REAL> (0, 0, 1), dirBeg);
+        }
+
+        dst = Quat::fromUnitAxisAngle (Vec::normalize (axis), Scalar<REAL>::cPI());
+    }
+    else
+    {
+        REAL s = (REAL)std::sqrtf ((float)(1 + d) * 2);
+        REAL invs = 1 / s;
+
+        Vec3<REAL> c = Vec::cross (dirBeg, dirEnd);
+
+        dst.x = c.x * invs;
+        dst.y = c.y * invs;
+        dst.z = c.z * invs;
+        dst.w = (REAL)(s * 0.5f);
+
+        float norm = (float)Vec::dot (dst, dst);
+
+        if (std::fabsf (norm - 1.0f) > 1e-6f)
+        {
+            dst = Vec::mul (dst, (REAL)(1.0f / std::sqrtf (norm)));
+        }
+    }
 
     return dst;
 }
@@ -596,6 +700,17 @@ void Transform::setIdentity (Transform3<REAL>& dst)
     dst.scaling = Vec3<REAL> ((REAL)1.0f, (REAL)1.0f, (REAL)1.0f);
     dst.position = Vec3<REAL> ((REAL)0.0f, (REAL)0.0f, (REAL)0.0f);
     Quat::setIdentity<REAL> (dst.rotation);
+}
+
+template<typename REAL>
+void Transform::fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt)
+{
+    Vec4<REAL> q;
+
+    // Copy, since cannot modify local
+    dst.rotation = Quat::fromDirs (Vec3<REAL> ((REAL)0.0f, (REAL)0.0f, (REAL)-1.0f), Vec::normalize(Vec::sub (lookAt, eyeAt)));
+    dst.scaling = Vec3<REAL> ((REAL)1.0f, (REAL)1.0f, (REAL)1.0f);
+    dst.position = eyeAt;
 }
 
 template<typename REAL>

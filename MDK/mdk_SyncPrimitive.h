@@ -129,4 +129,4 @@ public:
 }   // namespace
 
 
-#endif	// MCD_SYNCPRIMITIVE_H_INCLUDED
+#endif // MCD_SYNCPRIMITIVE_H_INCLUDED

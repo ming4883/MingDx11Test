@@ -50,6 +50,13 @@ struct Scalar
     {
         return (valueInRad * 180.0f) * c1divPI();
     }
+
+    static inline void calcSinCos (REAL& retSin, REAL& retCos, REAL angleInRad)
+    {
+        float a = (float)angleInRad;
+        retSin = (REAL) sinf (a);
+        retCos = (REAL) cosf (a);
+    }
 };
 
 /*! Simply a 3d vector.
@@ -300,6 +307,13 @@ struct Vec
     template<typename REAL>
     static inline void reciprocal (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt);
 
+    //! isNear (0, dot (v, v))
+    template<typename REAL>
+    static inline bool isNearZero (Vec3<REAL> v);
+
+    template<typename REAL>
+    static inline bool isNearZero (Vec4<REAL> v);
+
     //! dst[i] = -v[i]
     template<typename REAL>
     static inline Vec3<REAL> neg (Vec3<REAL> v);
@@ -312,6 +326,19 @@ struct Vec
 
     template<typename REAL>
     static inline void neg (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt);
+
+    //! dst = v / |v|
+    template<typename REAL>
+    static inline Vec3<REAL> normalize (Vec3<REAL> v);
+
+    template<typename REAL>
+    static inline void normalize (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt);
+
+    template<typename REAL>
+    static inline Vec4<REAL> normalize (Vec4<REAL> v);
+
+    template<typename REAL>
+    static inline void normalize (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt);
 
     //! dst[i] = crossProduct (a[i], b[i])
     template<typename REAL>
@@ -357,9 +384,17 @@ struct Quat
     template<typename REAL>
     static inline void setIdentity (Vec4<REAL>& q);
 
-    //! construct a quaternion from xyz rotation
+    //! construct a quaternion from xyz rotation (in radian).
     template<typename REAL>
-    static inline Vec4<REAL> fromRotation (Vec3<REAL> rotationInRad);
+    static inline Vec4<REAL> fromXYZRotation (Vec3<REAL> rotationInRad);
+
+    //! construct a quaternion from a normalized axis and an angle (in radian).
+    template<typename REAL>
+    static inline Vec4<REAL> fromUnitAxisAngle (Vec3<REAL> axis, REAL angleInRad);
+
+    //! construct a quaternion which transform dirBeg to dirEnd.
+    template<typename REAL>
+    static inline Vec4<REAL> fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd);
 
     //! dst = a * b
     template<typename REAL>
@@ -389,10 +424,14 @@ struct Transform
     static inline void setIdentity (Transform3<REAL>& dst);
 
     template<typename REAL>
+    static inline void fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt);
+    
+    template<typename REAL>
     static inline void inverse (Transform3<REAL>& dst, const Transform3<REAL>& src);
 
     template<typename REAL>
     static inline void derive (Transform3<REAL>& dst, const Transform3<REAL>& parent, const Transform3<REAL>& child);
+
 };
 
 typedef Vec3<float> Vec3f;
@@ -409,4 +448,4 @@ typedef Transform3<float> Transform3f;
 
 #pragma warning(pop)
 
-#endif	// MDK_MATH_H_INCLUDED
+#endif // MDK_MATH_H_INCLUDED

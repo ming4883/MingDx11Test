@@ -31,6 +31,16 @@ public:
         Hold<ID3D11PixelShader> ps;
         Hold<ID3D11Buffer> cbSceneData;
         Hold<ID3D11Buffer> cbObjectData;
+        D3D11ShaderResourcePool shaderResPool;
+        D3D11ShaderResources vsResources;
+        D3D11ShaderResources psResources;
+
+        MyMaterial()
+            : shaderResPool (16u, 16u)
+            , vsResources (shaderResPool)
+            , psResources (shaderResPool)
+        {
+        }
 
         void prepare (ID3D11DeviceContext* context, D3D11Scene* scene, D3D11DrawUnit* unit) override
         {
@@ -124,7 +134,12 @@ public:
         D3D11_VIEWPORT vp = getViewport (0.0f, 0.0f, 1.0f, 1.0f);
 
         // update
-        cam_.transform.position = Vec3f (0, 30, 100);
+        float sinTime, cosTime;
+        Scalar<float>::calcSinCos (sinTime, cosTime, timeGetAccumMS<float>() / 4096.0f);
+        float x = 200 * sinTime;
+        float z = 200 * cosTime;
+
+        Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 0, 0));
         cam_.updateD3D (getAspect());
         scene_->update (d3d11, cam_, timeGetDeltaMS<float>() / 1000.0f);
 

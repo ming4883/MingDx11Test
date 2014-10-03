@@ -34,11 +34,13 @@ void Demo::Camera::updateD3D (float rtAspect)
     Transform::inverse (inv, transform);
     Mat::fromTransform3 (viewMatrix, inv);
 
-    float fovyDiv2 = projection.fovY * 0.5f;
     float aspect = rtAspect * projection.aspect;
     float zn = projection.zNear;
     float zf = projection.zFar;
-    float yscale = std::cosf (fovyDiv2) / std::sinf (fovyDiv2);
+    float sinFov, cosFov;
+    Scalar<float>::calcSinCos (sinFov, cosFov, projection.fovY * 0.5f);
+    
+    float yscale = cosFov / sinFov;
     float xscale = yscale / aspect;
     float zscale = 1.0f / (zn - zf);
 

@@ -166,7 +166,7 @@ void BabylonFile::importMesh (const var& _)
         float def[3] = {0.0f, 0.0f, 0.0f};
         Vec3f rotation;
         if (Var::toVector (rotation, _, id_rotation, def))
-            mesh->local.rotation = Quat::fromRotation (rotation);
+            mesh->local.rotation = Quat::fromXYZRotation (rotation);
     }
 
     {
