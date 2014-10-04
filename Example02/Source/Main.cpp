@@ -135,11 +135,11 @@ public:
 
         // update
         float sinTime, cosTime;
-        Scalar<float>::calcSinCos (sinTime, cosTime, timeGetAccumMS<float>() / 4096.0f);
+        Scalar::calcSinCos<float> (sinTime, cosTime, timeGetAccumMS<float>() / 4096.0f);
         float x = 200 * sinTime;
         float z = 200 * cosTime;
 
-        Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 0, 0));
+        Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 0, 0), Vec3f (0, 1, 0));
         cam_.updateD3D (getAspect());
         scene_->update (d3d11, cam_, timeGetDeltaMS<float>() / 1000.0f);
 

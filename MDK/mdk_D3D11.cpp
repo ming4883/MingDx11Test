@@ -32,8 +32,11 @@ bool D3D11Context::startup (void* hwnd)
     };
 
     if (m_failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevels, numElementsInArray(featureLevels), D3D11_SDK_VERSION, device, &featureLevel, contextIM)))
-        return false;
-    
+    {
+        if (m_failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_WARP, nullptr, flags, featureLevels, numElementsInArray(featureLevels), D3D11_SDK_VERSION, device, &featureLevel, contextIM)))
+            return false;
+    }
+
     Hold<IDXGIDevice2> dxgiDevice;
     if (m_failed (device.as (dxgiDevice)))
         return false;

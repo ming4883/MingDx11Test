@@ -542,9 +542,9 @@ Vec4<REAL> Quat::fromXYZRotation (Vec3<REAL> rotationInRad)
     REAL sx, cx, sy, cy, sz, cz;
     REAL sxcy, cxcy, sxsy, cxsy;
 
-    Scalar<REAL>::calcSinCos (sx, cx, rotationInRad.x * -0.5f);
-    Scalar<REAL>::calcSinCos (sy, cy, rotationInRad.y * -0.5f);
-    Scalar<REAL>::calcSinCos (sz, cz, rotationInRad.z * -0.5f);
+    Scalar::calcSinCos<REAL> (sx, cx, rotationInRad.x * -0.5f);
+    Scalar::calcSinCos<REAL> (sy, cy, rotationInRad.y * -0.5f);
+    Scalar::calcSinCos<REAL> (sz, cz, rotationInRad.z * -0.5f);
 
     sxcy = sx * cy;
     cxcy = cx * cy;
@@ -564,7 +564,7 @@ template<typename REAL>
 Vec4<REAL> Quat::fromUnitAxisAngle (Vec3<REAL> axis, REAL angleInRad)
 {
     REAL sinVal, cosVal;
-    Scalar<REAL>::calcSinCos (sinVal, cosVal, (REAL)(angleInRad * 0.5f));
+    Scalar::calcSinCos<REAL> (sinVal, cosVal, (REAL)(angleInRad * 0.5f));
 
     Vec4<REAL> dst (Vec::mul (axis, sinVal), cosVal);
     return dst;
@@ -592,7 +592,7 @@ Vec4<REAL> Quat::fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd)
             axis = Vec::cross (Vec3<REAL> (0, 0, 1), dirBeg);
         }
 
-        dst = Quat::fromUnitAxisAngle (Vec::normalize (axis), Scalar<REAL>::cPI());
+        dst = Quat::fromUnitAxisAngle (Vec::normalize (axis), Scalar::cPI<REAL>());
     }
     else
     {
@@ -613,6 +613,22 @@ Vec4<REAL> Quat::fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd)
             dst = Vec::mul (dst, (REAL)(1.0f / std::sqrtf (norm)));
         }
     }
+
+    return dst;
+}
+
+template<typename REAL>
+Vec4<REAL> Quat::fromMatrix (const Mat44<REAL>& m)
+{
+    Vec4<REAL> dst;
+    dst.x = (REAL)std::sqrt (std::max (0.0f, 1.0f + m.m00 - m.m11 - m.m22)) * REAL (0.5f);
+    dst.y = (REAL)std::sqrt (std::max (0.0f, 1.0f - m.m00 + m.m11 - m.m22)) * REAL (0.5f);
+    dst.z = (REAL)std::sqrt (std::max (0.0f, 1.0f - m.m00 - m.m11 + m.m22)) * REAL (0.5f);
+    dst.w = (REAL)std::sqrt (std::max (0.0f, 1.0f + m.m00 + m.m11 + m.m22)) * REAL (0.5f);
+
+    dst.x = std::copysign (dst.x, m.m21 - m.m12);
+    dst.y = std::copysign (dst.y, m.m02 - m.m20);
+    dst.z = std::copysign (dst.z, m.m10 - m.m01);
 
     return dst;
 }
@@ -703,12 +719,31 @@ void Transform::setIdentity (Transform3<REAL>& dst)
 }
 
 template<typename REAL>
-void Transform::fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt)
+void Transform::fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt, const Vec3<REAL>& unitRefUp)
 {
     Vec4<REAL> q;
 
+    Vec3<REAL> w = Vec::normalize (Vec::sub (eyeAt, lookAt));
+    Vec3<REAL> u = Vec::normalize (Vec::cross (unitRefUp, w));
+    Vec3<REAL> v = Vec::cross (w, u);
+
+    Mat44<REAL> mrot;
+    Mat::setIdentity (mrot);
+    mrot.m00 = u.x;
+    mrot.m10 = u.y;
+    mrot.m20 = u.z;
+
+    mrot.m01 = v.x;
+    mrot.m11 = v.y;
+    mrot.m21 = v.z;
+
+    mrot.m02 = w.x;
+    mrot.m12 = w.y;
+    mrot.m22 = w.z;
+
     // Copy, since cannot modify local
-    dst.rotation = Quat::fromDirs (Vec3<REAL> ((REAL)0.0f, (REAL)0.0f, (REAL)-1.0f), Vec::normalize(Vec::sub (lookAt, eyeAt)));
+    dst.rotation = Quat::fromMatrix (mrot);
+    //dst.rotation = Quat::fromDirs (Vec3<REAL> ((REAL)0.0f, (REAL)0.0f, (REAL)-1.0f), Vec::normalize(Vec::sub (lookAt, eyeAt)));
     dst.scaling = Vec3<REAL> ((REAL)1.0f, (REAL)1.0f, (REAL)1.0f);
     dst.position = eyeAt;
 }

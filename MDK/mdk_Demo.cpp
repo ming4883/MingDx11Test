@@ -21,7 +21,7 @@ void Demo::RenderThread::run()
 Demo::Camera::Camera()
 {
     projection.aspect = 1.0f;
-    projection.fovY = Scalar<float>::rad (45.0f);
+    projection.fovY = Scalar::rad<float> (45.0f);
     projection.zFar = 1025.0f;
     projection.zNear = 1.0f;
 
@@ -38,7 +38,7 @@ void Demo::Camera::updateD3D (float rtAspect)
     float zn = projection.zNear;
     float zf = projection.zFar;
     float sinFov, cosFov;
-    Scalar<float>::calcSinCos (sinFov, cosFov, projection.fovY * 0.5f);
+    Scalar::calcSinCos<float> (sinFov, cosFov, projection.fovY * 0.5f);
     
     float yscale = cosFov / sinFov;
     float xscale = yscale / aspect;

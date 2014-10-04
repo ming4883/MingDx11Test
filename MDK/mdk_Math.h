@@ -13,44 +13,57 @@
 namespace mdk
 {
 
-template<typename REAL>
 struct Scalar
 {
+    template<typename REAL>
     static inline REAL cPI()
     {
         return (REAL)3.141592654f;
     }
+
+    template<typename REAL>
     static inline REAL c2PI()
     {
         return (REAL)6.283185307f;
     }
+
+    template<typename REAL>
     static inline REAL cPIdiv2()
     {
         return (REAL)1.570796327f;
     }
+
+    template<typename REAL>
     static inline REAL cPIdiv4()
     {
         return (REAL)0.785398163f;
     }
+
+    template<typename REAL>
     static inline REAL c1divPI()
     {
         return (REAL)0.318309886f;
     }
+
+    template<typename REAL>
     static inline REAL c1div2PI()
     {
         return (REAL)0.159154943f;
     }
 
+    template<typename REAL>
     static inline REAL rad (REAL valueInDeg)
     {
-        return (valueInDeg * cPI()) / (REAL)180.0f;
+        return (valueInDeg * cPI<REAL>()) / (REAL)180.0f;
     }
 
+    template<typename REAL>
     static inline REAL deg (REAL valueInRad)
     {
-        return (valueInRad * 180.0f) * c1divPI();
+        return (valueInRad * 180.0f) * c1divPI<REAL>();
     }
 
+    template<typename REAL>
     static inline void calcSinCos (REAL& retSin, REAL& retCos, REAL angleInRad)
     {
         float a = (float)angleInRad;
@@ -396,6 +409,10 @@ struct Quat
     template<typename REAL>
     static inline Vec4<REAL> fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd);
 
+    //! construct a quaternion from the rotation part of a matrix.
+    template<typename REAL>
+    static inline Vec4<REAL> fromMatrix (const Mat44<REAL>& m);
+
     //! dst = a * b
     template<typename REAL>
     static inline Vec4<REAL> mul (Vec4<REAL> a, Vec4<REAL> b);
@@ -424,7 +441,7 @@ struct Transform
     static inline void setIdentity (Transform3<REAL>& dst);
 
     template<typename REAL>
-    static inline void fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt);
+    static inline void fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt, const Vec3<REAL>& unitRefUp);
     
     template<typename REAL>
     static inline void inverse (Transform3<REAL>& dst, const Transform3<REAL>& src);
