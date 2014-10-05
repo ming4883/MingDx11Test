@@ -62,6 +62,24 @@ public:
 
             context->PSSetShader (ps, nullptr, 0);
             context->PSSetConstantBuffers (0, numElementsInArray (cb), cb);
+
+            D3D11ShaderResource* itr;
+
+            itr = vsResources.list;
+
+            while (itr)
+            {
+                context->VSSetShaderResources (itr->slot, 1, itr->objectSRView);
+                itr = itr->nextListItem;
+            }
+
+            itr = psResources.list;
+
+            while (itr)
+            {
+                context->PSSetShaderResources (itr->slot, 1, itr->objectSRView);
+                itr = itr->nextListItem;
+            }
         }
     };
 
@@ -86,12 +104,25 @@ public:
 
         D3D11Material* adopt (BabylonFile::Material* material)
         {
-            (void)material;
             MyMaterial* mtl = new MyMaterial;
             mtl->vs.set (vs, true);
             mtl->ps.set (ps, true);
             mtl->cbSceneData.set (scene.cbSceneData, true);
             mtl->cbObjectData.set (d3d11.createConstantBuffer<D3D11Scene::CBObjectData>());
+
+            if (material && material->textureDiffuse)
+            {
+                const char* file = material->textureDiffuse->name.toRawUTF8();
+
+                Hold<ID3D11Texture2D> d3dtex;
+                Hold<ID3D11ShaderResourceView> srview;
+
+                d3dtex.set (d3d11.createTexture2DFromAppData (file));
+
+                srview.set (d3d11.createShaderResourceView (d3dtex));
+
+                mtl->psResources.add (d3dtex.drop(), srview.drop(), 0);
+            }
 
             return mtl;
         }
@@ -108,7 +139,7 @@ public:
 
         scene_ = new D3D11Scene (d3d11);
 
-        ScopedPointer<InputStream> stream = appDataGet ("Boxes.babylon");
+        ScopedPointer<InputStream> stream = appDataGet ("Rabbit.babylon");
 
         if (m_isnull (stream))
             return false;
@@ -144,7 +175,7 @@ public:
         scene_->update (d3d11, cam_, timeGetDeltaMS<float>() / 1000.0f);
 
         // render
-        d3d11.contextIM->ClearRenderTargetView (d3d11.backBufRTView, (const float*)Vec4f (0.25f, 0.25f, 1.0f, 1.0f));
+        d3d11.contextIM->ClearRenderTargetView (d3d11.backBufRTView, (const float*)Vec4f (0.25f, 0.25f, 0.25f, 1.0f));
         d3d11.contextIM->ClearDepthStencilView (d3d11.depthBufDSView, D3D11_CLEAR_DEPTH, 1.0f, 0);
         
         d3d11.contextIM->OMSetRenderTargets (1, d3d11.backBufRTView, d3d11.depthBufDSView);

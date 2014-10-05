@@ -12,7 +12,7 @@ D3D11ShaderResources::D3D11ShaderResources(D3D11ShaderResourcePool& pool)
 
 D3D11ShaderResources::~D3D11ShaderResources()
 {
-    D3D11ShaderResource* itr = resources;
+    D3D11ShaderResource* itr = list;
 
     while (itr)
     {
@@ -30,6 +30,8 @@ void D3D11ShaderResources::add (ID3D11Resource* object, ID3D11ShaderResourceView
     res->object.set (object);
     res->objectSRView.set (objectSRView);
     res->slot = slot;
+
+    list.append (res);
 }
 
 D3D11Scene::D3D11Scene (D3D11Context& d3d11)
@@ -183,6 +185,12 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
         iDesc.add (_);
 
         auto buff = mesh->uvs;
+        float* buffPtr = buff->getPtr();
+        for (int i = 1; i < buff->data.size(); i += 2)
+        {
+            buffPtr[i] = 1.0f - buffPtr[i];
+        }
+
         unit->uvBuffer.set (d3d11.createVertexBuffer ((size_t)buff->sizeInBytes(), false, true, buff->getPtr()));
         *vbBinding++ = unit->uvBuffer;
         *vbOffset++ = 0;

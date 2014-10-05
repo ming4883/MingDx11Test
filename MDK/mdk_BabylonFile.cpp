@@ -246,6 +246,10 @@ void BabylonFile::importMaterial (const var& _)
     decl_id (emissiveTexture);
 
     ScopedPointer<Material> mtl = new Material;
+
+    mtl->name = _.getProperty (id_name, "").toString();
+    mtl->id = _.getProperty (id_id, "").toString();
+
     {
         float def[3] = {1.0f, 1.0f, 1.0f};
         Var::toVector (mtl->ambient, _, id_ambient, def);

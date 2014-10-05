@@ -31,7 +31,7 @@ class D3D11ShaderResources
 public:
     D3D11ShaderResourcePool& resourcePool;
 
-    D3D11ShaderResource::ListPtr resources;
+    D3D11ShaderResource::ListPtr list;
 
     D3D11ShaderResources(D3D11ShaderResourcePool& pool);
     ~D3D11ShaderResources();
