@@ -13,14 +13,14 @@
 using namespace mdk;
 
 //==============================================================================
-class Example02 : public D3D11Demo
+class TheDemo : public D3D11Demo
 {
 public:
-    Example02()
+    TheDemo()
     {
     }
     
-    ~Example02()
+    ~TheDemo()
     {
     }
 
@@ -231,7 +231,7 @@ public:
 };
 
 //==============================================================================
-class Example02Application  : public DemoApplication<Example02>
+class TheDemoApplication  : public DemoApplication<TheDemo>
 {
 public:
     const String getApplicationName() override       { return ProjectInfo::projectName; }
@@ -241,4 +241,4 @@ public:
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (Example02Application)
+START_JUCE_APPLICATION (TheDemoApplication)

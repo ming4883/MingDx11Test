@@ -13,14 +13,14 @@
 using namespace mdk;
 
 //==============================================================================
-class Example01 : public D3D11Demo
+class TheDemo : public D3D11Demo
 {
 public:
-    Example01()
+    TheDemo()
     {
     }
     
-    ~Example01()
+    ~TheDemo()
     {
     }
 
@@ -104,6 +104,7 @@ public:
         d3d11.contextIM->OMSetRenderTargets (1, d3d11.backBufRTView, nullptr);
         d3d11.contextIM->ClearRenderTargetView (d3d11.backBufRTView, (float*)&rgba);
         d3d11.contextIM->RSSetViewports (1, &vp);
+        d3d11.contextIM->RSSetState (d3d11.rastCCWCullBack);
 
         UINT stride = sizeof (Vec4f);
         UINT offset = 0;
@@ -135,7 +136,7 @@ public:
 };
 
 //==============================================================================
-class Example01Application  : public DemoApplication<Example01>
+class TheDemoApplication  : public DemoApplication<TheDemo>
 {
 public:
     const String getApplicationName() override       { return ProjectInfo::projectName; }
@@ -145,4 +146,4 @@ public:
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (Example01Application)
+START_JUCE_APPLICATION (TheDemoApplication)
