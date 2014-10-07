@@ -41,7 +41,7 @@ public:
     bool releaseSafe (Object* content);
 
 private:
-    enum { ConstItemSize = ((sizeof (Object) + sizeof (void*)-1) / sizeof (void*)) * sizeof (void*) };
+    enum { cItemSize = ((sizeof (Object) + sizeof (void*)-1) / sizeof (void*)) * sizeof (void*) };
 
     class _Node
     {

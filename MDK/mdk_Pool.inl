@@ -8,7 +8,7 @@ ObjectPool<TRAITS>::_Node::_Node (Allocator& allocator, size_t capacity)
 {
     jassert (capacity >= 1 && "capacity must be at least 1.");
 
-    _memory = _allocator.malloc (ConstItemSize * capacity);
+    _memory = _allocator.malloc (cItemSize * capacity);
     if (_memory == nullptr)
         throw std::bad_alloc();
 
@@ -90,7 +90,7 @@ typename ObjectPool<TRAITS>::Object* ObjectPool<TRAITS>::allocate()
         _allocateNewNode();
 
     char* address = (char*)_nodeMemory;
-    address += _countInNode * ConstItemSize;
+    address += _countInNode * cItemSize;
 
     Object* result = (Object*)address;
  

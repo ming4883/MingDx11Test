@@ -136,7 +136,7 @@ bool D3D11Context::startup (void* hwnd)
         D3D11_RASTERIZER_DESC _ = CD3D11_RASTERIZER_DESC (D3D11_DEFAULT);
         _.CullMode = D3D11_CULL_FRONT;
         _.FrontCounterClockwise = FALSE;
-        if (m_isnull (rastCullFront.set (createRasterizerState (_))))
+        if (m_isnull (rastCWCullFront.set (createRasterizerState (_))))
             return false;
     }
 
@@ -144,7 +144,23 @@ bool D3D11Context::startup (void* hwnd)
         D3D11_RASTERIZER_DESC _ = CD3D11_RASTERIZER_DESC (D3D11_DEFAULT);
         _.CullMode = D3D11_CULL_BACK;
         _.FrontCounterClockwise = FALSE;
-        if (m_isnull (rastCullBack.set (createRasterizerState (_))))
+        if (m_isnull (rastCWCullBack.set (createRasterizerState (_))))
+            return false;
+    }
+
+    {
+        D3D11_RASTERIZER_DESC _ = CD3D11_RASTERIZER_DESC (D3D11_DEFAULT);
+        _.CullMode = D3D11_CULL_FRONT;
+        _.FrontCounterClockwise = TRUE;
+        if (m_isnull (rastCCWCullFront.set (createRasterizerState (_))))
+            return false;
+    }
+
+    {
+        D3D11_RASTERIZER_DESC _ = CD3D11_RASTERIZER_DESC (D3D11_DEFAULT);
+        _.CullMode = D3D11_CULL_BACK;
+        _.FrontCounterClockwise = TRUE;
+        if (m_isnull (rastCCWCullBack.set (createRasterizerState (_))))
             return false;
     }
 
@@ -201,8 +217,10 @@ void D3D11Context::shutdown()
     sampClampPoint.set (nullptr);
 
     rastCullNone.set (nullptr);
-    rastCullFront.set (nullptr);
-    rastCullBack.set (nullptr);
+    rastCWCullFront.set (nullptr);
+    rastCWCullBack.set (nullptr);
+    rastCCWCullFront.set (nullptr);
+    rastCCWCullBack.set (nullptr);
 
     depthTestOnWriteOn.set (nullptr);
     depthTestOnWriteOff.set (nullptr);

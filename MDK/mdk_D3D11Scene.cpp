@@ -4,29 +4,30 @@
 namespace mdk
 {
 
-D3D11ShaderResources::D3D11ShaderResources(D3D11ShaderResourcePool& pool)
-    : resourcePool (pool)
+/**/
+D3D11SRBindings::D3D11SRBindings(D3D11SRBindingPool& pool)
+    : pool_ (pool)
 {
 
 }
 
-D3D11ShaderResources::~D3D11ShaderResources()
+D3D11SRBindings::~D3D11SRBindings()
 {
-    D3D11ShaderResource* itr = list;
+    D3D11SRBinding* itr = list;
 
     while (itr)
     {
-        D3D11ShaderResource* next = itr->nextListItem;
+        D3D11SRBinding* next = itr->nextListItem;
 
-        m_del_with_pool (resourcePool, itr);
+        m_del_with_pool (pool_, itr);
 
         itr = next;
     }
 }
 
-void D3D11ShaderResources::add (ID3D11Resource* object, ID3D11ShaderResourceView* objectSRView, UINT slot)
+void D3D11SRBindings::add (ID3D11Resource* object, ID3D11ShaderResourceView* objectSRView, UINT slot)
 {
-    D3D11ShaderResource* res = m_new_with_pool (resourcePool, D3D11ShaderResource);
+    D3D11SRBinding* res = m_new_with_pool (pool_, D3D11SRBinding);
     res->object.set (object);
     res->objectSRView.set (objectSRView);
     res->slot = slot;
@@ -34,6 +35,37 @@ void D3D11ShaderResources::add (ID3D11Resource* object, ID3D11ShaderResourceView
     list.append (res);
 }
 
+/**/
+D3D11SampBindings::D3D11SampBindings(D3D11SampBindingPool& pool)
+    : pool_ (pool)
+{
+
+}
+
+D3D11SampBindings::~D3D11SampBindings()
+{
+    D3D11SampBinding* itr = list;
+
+    while (itr)
+    {
+        D3D11SampBinding* next = itr->nextListItem;
+
+        m_del_with_pool (pool_, itr);
+
+        itr = next;
+    }
+}
+
+void D3D11SampBindings::add (ID3D11SamplerState* sampler, UINT slot)
+{
+    D3D11SampBinding* res = m_new_with_pool (pool_, D3D11SampBinding);
+    res->sampler.set (sampler);
+    res->slot = slot;
+
+    list.append (res);
+}
+
+/**/
 D3D11Scene::D3D11Scene (D3D11Context& d3d11)
     : drawUnitPool (256, 1024)
 {

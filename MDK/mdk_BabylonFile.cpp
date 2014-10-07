@@ -14,6 +14,24 @@ public:
     }
 
     template<typename T>
+    static inline int toBuffer (Buffer<T>& ret, const var& arr)
+    {
+        if (isNull (arr) || !arr.isArray())
+            return 0;
+
+        for (int i = 0; i < arr.size(); ++i)
+            ret.data.add ((T)arr[i]);
+
+        return arr.size();
+    }
+
+    template<typename T>
+    static inline int toBuffer (Buffer<T>& ret, const var& src, const Identifier& id)
+    {
+        return toBuffer<T> (ret, src.getProperty (id, var::null));
+    }
+
+    template<typename T>
     static inline typename Buffer<T>::Ptr toBuffer (const var& arr)
     {
         typename Buffer<T>::Ptr ret;
@@ -32,6 +50,7 @@ public:
     {
         return toBuffer<T> (src.getProperty (id, var::null));
     }
+
 
     template<typename T, int N>
     static inline bool toVector (T* dst, const var& src, T* defaultVals)
@@ -149,6 +168,8 @@ void BabylonFile::importMesh (const var& _)
     decl_id (uvs);
     decl_id (uvs2);
     decl_id (colors);
+
+    decl_id (animations);
     
     ScopedPointer<Mesh> mesh = new Mesh;
 
@@ -195,6 +216,16 @@ void BabylonFile::importMesh (const var& _)
     mesh->uvs       = Var::toBuffer<float> (_, id_uvs);
     mesh->uvs2      = Var::toBuffer<float> (_, id_uvs2);
     mesh->colors    = Var::toBuffer<float> (_, id_colors);
+
+    // animations
+    var anims = _.getProperty (id_animations, var::null);
+
+    for (int i = 0; i < anims.size(); ++i)
+    {
+        Animation* anim = importAnimation (anims[i]);
+        if (anim)
+            mesh->animations.add (anim);
+    }
 
     // compute transform
     Mesh* parent = getMesh (mesh->parentId);
@@ -315,6 +346,41 @@ BabylonFile::Texture* BabylonFile::importTexture (const var& _)
     Var::toScalar (tex->coordIndex, _, id_coordinatesIndex, 0);
 
     return tex.release();
+}
+
+BabylonFile::Animation* BabylonFile::importAnimation (const var& _)
+{
+    decl_id (name);
+    decl_id (dataType);
+    decl_id (framePerSecond);
+    decl_id (keys);
+    decl_id (frame);
+    decl_id (values);
+
+    var keys = _.getProperty (id_keys, var::null);
+
+    if (Var::isNull (keys))
+        return nullptr;
+
+    ScopedPointer<Animation> anim = new Animation;
+
+    anim->name = _.getProperty (id_name, var::null);
+
+    Var::toScalar (anim->dataType, _, id_dataType, 0);
+    Var::toScalar (anim->framePerSecond, _, id_framePerSecond, 30);
+
+    int frame;
+
+    for (int i = 0; i < keys.size(); ++i)
+    {
+        var key = keys[i];
+
+        Var::toScalar (frame, key, id_frame, 0);
+        Var::toBuffer (anim->keyValues, key, id_values);
+        anim->keyTimes.data.add (frame);
+    }
+
+    return anim.release();
 }
 
 void BabylonFile::adopt (Adapter* adapter)

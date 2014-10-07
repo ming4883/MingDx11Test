@@ -59,8 +59,9 @@ public:
         Transform3f transform;
         Projection projection;
 
-        Mat44f viewMatrix;          //!< update from transform
-        Mat44f projectionMatrix;    //!< update from projection
+        Mat44f viewMatrix;              //!< derived from transform
+        Mat44f projectionMatrix;        //!< derived from projection
+        Mat44f projectionviewMatrix;    //!< derived from viewMatrix and viewprojectionMatrix
 
         Camera();
 

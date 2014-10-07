@@ -31,53 +31,78 @@ public:
         Hold<ID3D11PixelShader> ps;
         Hold<ID3D11Buffer> cbSceneData;
         Hold<ID3D11Buffer> cbObjectData;
-        D3D11ShaderResourcePool shaderResPool;
-        D3D11ShaderResources vsResources;
-        D3D11ShaderResources psResources;
+
+        D3D11SRBindingPool srBindingPool;
+        D3D11SRBindings srBindings;
+
+        D3D11SampBindingPool sampBindingPool;
+        D3D11SampBindings sampBindings;
 
         MyMaterial()
-            : shaderResPool (16u, 16u)
-            , vsResources (shaderResPool)
-            , psResources (shaderResPool)
+            : srBindingPool (16u, 16u)
+            , srBindings (srBindingPool)
+            , sampBindingPool (16u, 16u)
+            , sampBindings (sampBindingPool)
         {
         }
 
+        struct SRVBindings
+        {
+            enum {cCount = 8};
+            ID3D11ShaderResourceView* srviews[cCount];
+
+        };
+
         void prepare (ID3D11DeviceContext* context, D3D11Scene* scene, D3D11DrawUnit* unit) override
+        {
+            D3D11Scene::CBObjectData objData;
+            objData.objAnimationTime.x = 0;
+            Mat::mul (objData.objWorldMatrix, unit->worldMatrix, unit->pivotMatrix);
+
+            objData.objNormalMatrix = objData.objWorldMatrix;
+            Mat::mul (objData.objWorldViewProjMatrix, scene->sceneData.scnViewProjMatrix, objData.objWorldMatrix);
+            
+            D3D11Context::updateBuffer (context, cbObjectData, objData);
+
+            context->VSSetShader (vs, nullptr, 0);
+            context->PSSetShader (ps, nullptr, 0);
+
+            bindShaderConstants (context);
+            bindShaderResources (context);
+            bindShaderSamplers (context);
+        }
+
+        inline void bindShaderConstants (ID3D11DeviceContext* context)
         {
             ID3D11Buffer* cb[] = {
                 cbSceneData,
                 cbObjectData,
             };
 
-            D3D11Scene::CBObjectData objData;
-            objData.objAnimationTime.x = 0;
-            Mat::mul (objData.objWorldMatrix, unit->worldMatrix, unit->pivotMatrix);
-            objData.objNormalMatrix = objData.objWorldMatrix;
-            Mat::mul (objData.objWorldViewProjMatrix, scene->sceneData.scnViewProjMatrix, objData.objWorldMatrix);
-
-            D3D11Context::updateBuffer (context, cbObjectData, objData);
-            
-            context->VSSetShader (vs, nullptr, 0);
             context->VSSetConstantBuffers (0, numElementsInArray (cb), cb);
-
-            context->PSSetShader (ps, nullptr, 0);
             context->PSSetConstantBuffers (0, numElementsInArray (cb), cb);
+        }
 
-            D3D11ShaderResource* itr;
-
-            itr = vsResources.list;
+        inline void bindShaderResources (ID3D11DeviceContext* context)
+        {
+            D3D11SRBinding* itr = srBindings.list;
 
             while (itr)
             {
                 context->VSSetShaderResources (itr->slot, 1, itr->objectSRView);
+                context->PSSetShaderResources (itr->slot, 1, itr->objectSRView);
                 itr = itr->nextListItem;
             }
+        }
 
-            itr = psResources.list;
+        inline void bindShaderSamplers (ID3D11DeviceContext* context)
+        {
+            D3D11SampBinding* itr = sampBindings.list;
 
             while (itr)
             {
-                context->PSSetShaderResources (itr->slot, 1, itr->objectSRView);
+                context->VSSetSamplers (itr->slot, 1, itr->sampler);
+                context->PSSetSamplers (itr->slot, 1, itr->sampler);
                 itr = itr->nextListItem;
             }
         }
@@ -112,7 +137,8 @@ public:
 
             if (material && material->textureDiffuse)
             {
-                const char* file = material->textureDiffuse->name.toRawUTF8();
+                BabylonFile::Texture* tex = material->textureDiffuse;
+                const char* file = tex->name.toRawUTF8();
 
                 Hold<ID3D11Texture2D> d3dtex;
                 Hold<ID3D11ShaderResourceView> srview;
@@ -121,7 +147,15 @@ public:
 
                 srview.set (d3d11.createShaderResourceView (d3dtex));
 
-                mtl->psResources.add (d3dtex.drop(), srview.drop(), 0);
+                mtl->srBindings.add (d3dtex.drop(), srview.drop(), 0);
+
+                D3D11_SAMPLER_DESC desc = CD3D11_SAMPLER_DESC (D3D11_DEFAULT);
+                desc.AddressU = tex->uWrap ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
+                desc.AddressV = tex->vWrap ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
+                desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+
+                ID3D11SamplerState* samp = d3d11.createSamplerState (desc);
+                mtl->sampBindings.add (samp, 0);
             }
 
             return mtl;
@@ -139,7 +173,8 @@ public:
 
         scene_ = new D3D11Scene (d3d11);
 
-        ScopedPointer<InputStream> stream = appDataGet ("Rabbit.babylon");
+        ScopedPointer<InputStream> stream = appDataGet ("Boxes.babylon");
+        //ScopedPointer<InputStream> stream = appDataGet ("SponzaSimple.babylon");
 
         if (m_isnull (stream))
             return false;
@@ -170,7 +205,8 @@ public:
         float x = 200 * sinTime;
         float z = 200 * cosTime;
 
-        Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 0, 0), Vec3f (0, 1, 0));
+        Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 50, 0), Vec3f (0, 1, 0));
+        cam_.projection.zFar = 2048.0f;
         cam_.updateD3D (getAspect());
         scene_->update (d3d11, cam_, timeGetDeltaMS<float>() / 1000.0f);
 
@@ -182,7 +218,7 @@ public:
         d3d11.contextIM->OMSetDepthStencilState (d3d11.depthTestOnWriteOn, 0);
         
         d3d11.contextIM->RSSetViewports (1, &vp);
-        d3d11.contextIM->RSSetState (d3d11.rastCullBack);
+        d3d11.contextIM->RSSetState (d3d11.rastCCWCullBack);
         
         scene_->drawAll (d3d11.contextIM);
 

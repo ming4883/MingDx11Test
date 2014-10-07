@@ -359,6 +359,13 @@ struct Vec
     
     template<typename REAL>
     static inline void cross (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt);
+
+    //! dst[i] = a[i] * (1 - t) + b[i] * t
+    template<typename REAL>
+    static inline Vec3<REAL> lerp (Vec3<REAL> a, Vec3<REAL> b, REAL t);
+
+    template<typename REAL>
+    static inline Vec4<REAL> lerp (Vec4<REAL> a, Vec4<REAL> b, REAL t);
 };
 
 struct Mat
@@ -382,7 +389,6 @@ struct Mat
 
     template<typename REAL>
     static inline void transpose (Mat44<REAL>* dst, const Mat44<REAL>* m, size_t cnt);
-
 
     // dst = a * b
     template<typename REAL>

@@ -74,10 +74,16 @@ float4 main (ps_in input) : SV_TARGET
     float3 viewDir = normalize (scnViewPos.xyz - input.position);
     float ndotv = dot (viewDir, normalize (input.normal));
     ndotv = clamp (ndotv, 0.0, 1.0);
-    ndotv = lerp (ndotv, 1.0, 0.75);
+    ndotv = lerp (1.0, ndotv, 0.5);
 
-    float4 texClr = uTex.Sample (uSam, input.texcoord.xy);
+    float w, h;
+    uTex.GetDimensions (w, h);
+
+    float2 uv = frac (input.texcoord.xy);
+
+    float4 texClr = uTex.Load (int3 (w * uv.x, h * uv.y, 0));
     texClr.xyz *= ndotv;
+
 
     return texClr;
 }

@@ -44,7 +44,7 @@ void Demo::Camera::updateD3D (float rtAspect)
     float xscale = yscale / aspect;
     float zscale = 1.0f / (zn - zf);
 
-    projectionMatrix[0][0] = xscale;
+    projectionMatrix[0][0] = -xscale;
     projectionMatrix[0][1] = 0;
     projectionMatrix[0][2] = 0;
     projectionMatrix[0][3] = 0;
@@ -63,11 +63,14 @@ void Demo::Camera::updateD3D (float rtAspect)
     projectionMatrix[3][1] = 0;
     projectionMatrix[3][2] =-1;
     projectionMatrix[3][3] = 0;
+
+    Mat::mul (projectionviewMatrix, projectionMatrix, viewMatrix);
 }
 
 //==============================================================================
 Demo::Demo()
 {
+    appDataAddDir (m_dir_of_cpp().getChildFile ("Media"));
 }
 
 Demo::~Demo()

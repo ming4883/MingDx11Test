@@ -139,8 +139,10 @@ public:
     Hold<ID3D11SamplerState> sampClampPoint;
     
     Hold<ID3D11RasterizerState> rastCullNone;
-    Hold<ID3D11RasterizerState> rastCullFront;
-    Hold<ID3D11RasterizerState> rastCullBack;
+    Hold<ID3D11RasterizerState> rastCWCullFront;
+    Hold<ID3D11RasterizerState> rastCWCullBack;
+    Hold<ID3D11RasterizerState> rastCCWCullFront;
+    Hold<ID3D11RasterizerState> rastCCWCullBack;
     
     Hold<ID3D11DepthStencilState> depthTestOnWriteOn;
     Hold<ID3D11DepthStencilState> depthTestOnWriteOff;

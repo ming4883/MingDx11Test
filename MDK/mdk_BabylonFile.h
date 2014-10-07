@@ -45,6 +45,16 @@ public:
 
     class Var;
 
+    class Animation
+    {
+    public:
+        String name;
+        int dataType;
+        int framePerSecond;
+        BufferI32 keyTimes;
+        BufferF keyValues;
+    };
+
     class SubMesh
     {
     public:
@@ -68,6 +78,8 @@ public:
         String id;
         String parentId;
         String materialId;
+
+        juce::OwnedArray<Animation> animations;
     };
 
     class Texture
@@ -105,6 +117,7 @@ public:
         ScopedPointer<Texture> textureEmissive;
     };
 
+
     class Adapter
     {
     public:
@@ -120,6 +133,7 @@ protected:
     bool importMaterials (const var& document);
     void importMaterial (const var& _);
     Texture* importTexture (const var& _);
+    Animation* importAnimation (const var& _);
 
 public:
     OwnedArray<Mesh> meshes;

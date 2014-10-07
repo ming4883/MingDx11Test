@@ -10,10 +10,11 @@ namespace mdk
 class D3D11DrawUnit;
 class D3D11Scene;
 
-
-struct D3D11ShaderResource
+/* Binding of shader resources
+ */
+struct D3D11SRBinding
 {
-    typedef LinkedListPointer<D3D11ShaderResource> ListPtr;
+    typedef LinkedListPointer<D3D11SRBinding> ListPtr;
     ListPtr nextListItem;
 
     Hold<ID3D11Resource> object;
@@ -21,24 +22,55 @@ struct D3D11ShaderResource
     UINT slot;
 };
 
-typedef ObjectPool< ObjectPoolTraitsDefault<D3D11ShaderResource> > D3D11ShaderResourcePool;
+typedef ObjectPool< ObjectPoolTraitsDefault<D3D11SRBinding> > D3D11SRBindingPool;
 
-class D3D11ShaderResources
+class D3D11SRBindings
 {
-    D3D11ShaderResources (const D3D11ShaderResources&);
-    void operator = (const D3D11ShaderResources&);
+    D3D11SRBindings (const D3D11SRBindings&);
+    void operator = (const D3D11SRBindings&);
+
+    D3D11SRBindingPool& pool_;
 
 public:
-    D3D11ShaderResourcePool& resourcePool;
+    D3D11SRBinding::ListPtr list;
 
-    D3D11ShaderResource::ListPtr list;
-
-    D3D11ShaderResources(D3D11ShaderResourcePool& pool);
-    ~D3D11ShaderResources();
+    D3D11SRBindings(D3D11SRBindingPool& pool);
+    ~D3D11SRBindings();
 
     void add (ID3D11Resource* object, ID3D11ShaderResourceView* objectSRView, UINT slot);
 };
 
+/* Binding of samplers.
+ */
+struct D3D11SampBinding
+{
+    typedef LinkedListPointer<D3D11SampBinding> ListPtr;
+    ListPtr nextListItem;
+
+    Hold<ID3D11SamplerState> sampler;
+    UINT slot;
+};
+
+typedef ObjectPool< ObjectPoolTraitsDefault<D3D11SampBinding> > D3D11SampBindingPool;
+
+class D3D11SampBindings
+{
+    D3D11SampBindings (const D3D11SampBindings&);
+    void operator = (const D3D11SampBindings&);
+
+    D3D11SampBindingPool& pool_;
+
+public:
+    D3D11SampBinding::ListPtr list;
+
+    D3D11SampBindings(D3D11SampBindingPool& pool);
+    ~D3D11SampBindings();
+
+    void add (ID3D11SamplerState* sampler, UINT slot);
+};
+
+/* Interface of material
+ */
 class D3D11Material
 {
 public:

@@ -362,6 +362,29 @@ void Vec::cross (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size
 }
 
 
+template<typename REAL>
+Vec3<REAL> Vec::lerp (Vec3<REAL> a, Vec3<REAL> b, REAL t)
+{
+    Vec3<REAL> dst;
+    dst.x = (b.x - a.x) * t + a.x;
+    dst.y = (b.y - a.y) * t + a.y;
+    dst.z = (b.z - a.z) * t + a.z;
+
+    return dst;
+}
+
+template<typename REAL>
+Vec4<REAL> Vec::lerp (Vec4<REAL> a, Vec4<REAL> b, REAL t)
+{
+    Vec4<REAL> dst;
+    dst.x = (b.x - a.x) * t + a.x;
+    dst.y = (b.y - a.y) * t + a.y;
+    dst.z = (b.z - a.z) * t + a.z;
+    dst.w = (b.w - a.w) * t + a.w;
+
+    return dst;
+}
+
 //==============================================================================
 template<typename REAL>
 void Mat::setIdentity (Mat44<REAL>& m)
