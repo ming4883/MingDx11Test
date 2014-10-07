@@ -78,6 +78,33 @@ public:
     virtual void prepare (ID3D11DeviceContext* context, D3D11Scene* scene, D3D11DrawUnit* unit) = 0;
 };
 
+/* Typical material used in D3D11Scene
+ */
+class D3D11SceneMaterial : public D3D11Material
+{
+public:
+    Hold<ID3D11VertexShader> vs;
+    Hold<ID3D11PixelShader> ps;
+    Hold<ID3D11Buffer> cbSceneData;
+    Hold<ID3D11Buffer> cbObjectData;
+
+    D3D11SRBindingPool srBindingPool;
+    D3D11SRBindings srBindings;
+
+    D3D11SampBindingPool sampBindingPool;
+    D3D11SampBindings sampBindings;
+
+    D3D11SceneMaterial();
+
+    void prepare (ID3D11DeviceContext* context, D3D11Scene* scene, D3D11DrawUnit* unit) override;
+
+    void bindShaderConstants (ID3D11DeviceContext* context);
+
+    void bindShaderResources (ID3D11DeviceContext* context);
+
+    void bindShaderSamplers (ID3D11DeviceContext* context);
+};
+
 class D3D11DrawUnit
 {
 public:

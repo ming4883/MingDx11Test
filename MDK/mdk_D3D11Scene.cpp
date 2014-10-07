@@ -66,6 +66,69 @@ void D3D11SampBindings::add (ID3D11SamplerState* sampler, UINT slot)
 }
 
 /**/
+D3D11SceneMaterial::D3D11SceneMaterial()
+    : srBindingPool (16u, 16u)
+    , srBindings (srBindingPool)
+    , sampBindingPool (16u, 16u)
+    , sampBindings (sampBindingPool)
+{
+}
+
+void D3D11SceneMaterial::prepare (ID3D11DeviceContext* context, D3D11Scene* scene, D3D11DrawUnit* unit)
+{
+    D3D11Scene::CBObjectData objData;
+    objData.objAnimationTime.x = 0;
+    Mat::mul (objData.objWorldMatrix, unit->worldMatrix, unit->pivotMatrix);
+
+    objData.objNormalMatrix = objData.objWorldMatrix;
+    Mat::mul (objData.objWorldViewProjMatrix, scene->sceneData.scnViewProjMatrix, objData.objWorldMatrix);
+            
+    D3D11Context::updateBuffer (context, cbObjectData, objData);
+
+    context->VSSetShader (vs, nullptr, 0);
+    context->PSSetShader (ps, nullptr, 0);
+
+    bindShaderConstants (context);
+    bindShaderResources (context);
+    bindShaderSamplers (context);
+}
+
+void D3D11SceneMaterial::bindShaderConstants (ID3D11DeviceContext* context)
+{
+    ID3D11Buffer* cb[] = {
+        cbSceneData,
+        cbObjectData,
+    };
+
+    context->VSSetConstantBuffers (0, numElementsInArray (cb), cb);
+    context->PSSetConstantBuffers (0, numElementsInArray (cb), cb);
+}
+
+void D3D11SceneMaterial::bindShaderResources (ID3D11DeviceContext* context)
+{
+    D3D11SRBinding* itr = srBindings.list;
+
+    while (itr)
+    {
+        context->VSSetShaderResources (itr->slot, 1, itr->objectSRView);
+        context->PSSetShaderResources (itr->slot, 1, itr->objectSRView);
+        itr = itr->nextListItem;
+    }
+}
+
+void D3D11SceneMaterial::bindShaderSamplers (ID3D11DeviceContext* context)
+{
+    D3D11SampBinding* itr = sampBindings.list;
+
+    while (itr)
+    {
+        context->VSSetSamplers (itr->slot, 1, itr->sampler);
+        context->PSSetSamplers (itr->slot, 1, itr->sampler);
+        itr = itr->nextListItem;
+    }
+}
+
+/**/
 D3D11Scene::D3D11Scene (D3D11Context& d3d11)
     : drawUnitPool (256, 1024)
 {

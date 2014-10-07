@@ -24,90 +24,6 @@ public:
     {
     }
 
-    class MyMaterial : public D3D11Material
-    {
-    public:
-        Hold<ID3D11VertexShader> vs;
-        Hold<ID3D11PixelShader> ps;
-        Hold<ID3D11Buffer> cbSceneData;
-        Hold<ID3D11Buffer> cbObjectData;
-
-        D3D11SRBindingPool srBindingPool;
-        D3D11SRBindings srBindings;
-
-        D3D11SampBindingPool sampBindingPool;
-        D3D11SampBindings sampBindings;
-
-        MyMaterial()
-            : srBindingPool (16u, 16u)
-            , srBindings (srBindingPool)
-            , sampBindingPool (16u, 16u)
-            , sampBindings (sampBindingPool)
-        {
-        }
-
-        struct SRVBindings
-        {
-            enum {cCount = 8};
-            ID3D11ShaderResourceView* srviews[cCount];
-
-        };
-
-        void prepare (ID3D11DeviceContext* context, D3D11Scene* scene, D3D11DrawUnit* unit) override
-        {
-            D3D11Scene::CBObjectData objData;
-            objData.objAnimationTime.x = 0;
-            Mat::mul (objData.objWorldMatrix, unit->worldMatrix, unit->pivotMatrix);
-
-            objData.objNormalMatrix = objData.objWorldMatrix;
-            Mat::mul (objData.objWorldViewProjMatrix, scene->sceneData.scnViewProjMatrix, objData.objWorldMatrix);
-            
-            D3D11Context::updateBuffer (context, cbObjectData, objData);
-
-            context->VSSetShader (vs, nullptr, 0);
-            context->PSSetShader (ps, nullptr, 0);
-
-            bindShaderConstants (context);
-            bindShaderResources (context);
-            bindShaderSamplers (context);
-        }
-
-        inline void bindShaderConstants (ID3D11DeviceContext* context)
-        {
-            ID3D11Buffer* cb[] = {
-                cbSceneData,
-                cbObjectData,
-            };
-
-            context->VSSetConstantBuffers (0, numElementsInArray (cb), cb);
-            context->PSSetConstantBuffers (0, numElementsInArray (cb), cb);
-        }
-
-        inline void bindShaderResources (ID3D11DeviceContext* context)
-        {
-            D3D11SRBinding* itr = srBindings.list;
-
-            while (itr)
-            {
-                context->VSSetShaderResources (itr->slot, 1, itr->objectSRView);
-                context->PSSetShaderResources (itr->slot, 1, itr->objectSRView);
-                itr = itr->nextListItem;
-            }
-        }
-
-        inline void bindShaderSamplers (ID3D11DeviceContext* context)
-        {
-            D3D11SampBinding* itr = sampBindings.list;
-
-            while (itr)
-            {
-                context->VSSetSamplers (itr->slot, 1, itr->sampler);
-                context->PSSetSamplers (itr->slot, 1, itr->sampler);
-                itr = itr->nextListItem;
-            }
-        }
-    };
-
     class MyBabylonFileAdaptor : public D3D11BabylonFileAdaptor
     {
     public:
@@ -129,7 +45,7 @@ public:
 
         D3D11Material* adopt (BabylonFile::Material* material)
         {
-            MyMaterial* mtl = new MyMaterial;
+            D3D11SceneMaterial* mtl = new D3D11SceneMaterial;
             mtl->vs.set (vs, true);
             mtl->ps.set (ps, true);
             mtl->cbSceneData.set (scene.cbSceneData, true);
