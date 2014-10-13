@@ -337,4 +337,26 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
     unit->inputLayout.set (createInputLayout (iDesc));
 }
 
+void D3D11BabylonFileAdaptor::adoptTexture (D3D11SRBindings& srBindings, D3D11SampBindings& sampBindings, BabylonFile::Texture* texture, uint32 slot)
+{
+    const char* file = texture->name.toRawUTF8();
+
+    Hold<ID3D11Texture2D> d3dtex;
+    Hold<ID3D11ShaderResourceView> srview;
+
+    d3dtex.set (d3d11.createTexture2DFromAppData (file));
+
+    srview.set (d3d11.createShaderResourceView (d3dtex));
+
+    srBindings.add (d3dtex.drop(), srview.drop(), slot);
+
+    D3D11_SAMPLER_DESC desc = CD3D11_SAMPLER_DESC (D3D11_DEFAULT);
+    desc.AddressU = texture->uWrap ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
+    desc.AddressV = texture->vWrap ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
+    desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+
+    ID3D11SamplerState* samp = d3d11.createSamplerState (desc);
+    sampBindings.add (samp, slot);
+}
+
 } // namespace

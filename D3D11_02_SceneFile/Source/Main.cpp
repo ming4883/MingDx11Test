@@ -53,25 +53,7 @@ public:
 
             if (material && material->textureDiffuse)
             {
-                BabylonFile::Texture* tex = material->textureDiffuse;
-                const char* file = tex->name.toRawUTF8();
-
-                Hold<ID3D11Texture2D> d3dtex;
-                Hold<ID3D11ShaderResourceView> srview;
-
-                d3dtex.set (d3d11.createTexture2DFromAppData (file));
-
-                srview.set (d3d11.createShaderResourceView (d3dtex));
-
-                mtl->srBindings.add (d3dtex.drop(), srview.drop(), 0);
-
-                D3D11_SAMPLER_DESC desc = CD3D11_SAMPLER_DESC (D3D11_DEFAULT);
-                desc.AddressU = tex->uWrap ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
-                desc.AddressV = tex->vWrap ? D3D11_TEXTURE_ADDRESS_WRAP : D3D11_TEXTURE_ADDRESS_CLAMP;
-                desc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
-
-                ID3D11SamplerState* samp = d3d11.createSamplerState (desc);
-                mtl->sampBindings.add (samp, 0);
+                adoptTexture (mtl->srBindings, mtl->sampBindings, material->textureDiffuse, 0);
             }
 
             return mtl;

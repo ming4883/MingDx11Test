@@ -195,6 +195,9 @@ public:
 
     virtual D3D11Material* adopt (BabylonFile::Material* material) = 0;
     virtual ID3D11InputLayout* createInputLayout (const Array<D3D11_INPUT_ELEMENT_DESC>& inputElements) = 0;
+
+protected:
+    void adoptTexture (D3D11SRBindings& srBindings, D3D11SampBindings& sampBindings, BabylonFile::Texture* texture, uint32 slot);
 };
 
 } // namespace
