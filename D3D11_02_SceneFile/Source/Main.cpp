@@ -67,6 +67,8 @@ public:
 
     bool demoStartup()
     {
+        setupMouseListener();
+
         appDataAddDir (m_dir_of_cpp().getSiblingFile ("Media"));
 
         scene_ = new D3D11Scene (d3d11);
@@ -122,6 +124,49 @@ public:
 
         d3d11.swapchain->Present (0u, 0u);
     }
+
+    void setupMouseListener()
+    {
+        MessageManagerLock lock;
+        FPSCameraControl* listener = new FPSCameraControl (cam_);
+        addMouseListener (listener, false);
+    }
+
+    class FPSCameraControl : public MouseListener
+    {
+    public:
+        Camera& camera;
+        bool active;
+        Transform3f startTransform;
+
+        FPSCameraControl (Camera& camera)
+            : camera (camera), active (true)
+        {
+        }
+
+        void mouseDrag (const MouseEvent& event) override
+        {
+            if (!event.mouseWasClicked())
+                return;
+
+            String str;
+            str << event.getDistanceFromDragStartX() << ", " << event.getDistanceFromDragStartY();
+
+            Logger::outputDebugString (str);
+        }
+
+        void mouseDown (const MouseEvent& event) override
+        {
+            if (!active)
+                return;
+
+            startTransform = camera.transform;
+        }
+
+        void mouseUp (const MouseEvent& event) override
+        {
+        }
+    };
 
     Hold<ID3D11Buffer> cbFrameData_;
     ScopedPointer<D3D11Scene> scene_;

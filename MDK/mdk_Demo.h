@@ -43,6 +43,42 @@ public:
     InputStream* appDataGet (const char* id);
 
 public:
+
+// Mouse
+    class MouseListenerWithCallback : public MouseListener
+    {
+    public:
+        typedef std::function<void (const MouseEvent& )> MouseCallback;
+
+        MouseCallback onMouseMove;
+        MouseCallback onMouseDown;
+        MouseCallback onMouseUp;
+        MouseCallback onMouseDrag;
+        
+        void mouseMove (const MouseEvent& event) override
+        {
+            if (onMouseMove)
+                onMouseMove (event);
+        }
+
+        void mouseDown (const MouseEvent& event) override
+        {
+            if (onMouseDown)
+                onMouseDown (event);
+        }
+    
+        void mouseDrag (const MouseEvent& event) override
+        {
+            if (onMouseDrag)
+                onMouseDrag (event);
+        }
+    
+        void mouseUp (const MouseEvent& event) override
+        {
+            if (onMouseUp)
+                onMouseUp (event);
+        }
+    };
     
 // Camera
     class Camera

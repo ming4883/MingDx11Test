@@ -223,7 +223,7 @@ public:
     ID3D11RasterizerState* createRasterizerState (const D3D11_RASTERIZER_DESC& desc);
 
     ID3D11DepthStencilState* createDepthStencilState (const D3D11_DEPTH_STENCIL_DESC& desc);
-	
+
     // error reporting
     inline bool reportFailed (HRESULT hr, const char* errMsg)
     {
