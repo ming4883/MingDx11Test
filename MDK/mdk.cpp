@@ -4,6 +4,8 @@
 #include "mdk_Demo.cpp"
 #include "mdk_Math.cpp"
 
+#include "mdk_Persistable.cpp"
+
 #if JUCE_WINDOWS
 #include "mdk_D3D11.cpp"
 #include "mdk_D3D11Scene.cpp"
