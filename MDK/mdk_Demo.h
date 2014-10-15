@@ -5,6 +5,7 @@
 #include <modules/juce_gui_basics/juce_gui_basics.h>
 #include <functional>
 #include "mdk_Math.h"
+#include "mdk_SyncPrimitive.h"
 
 using namespace juce;
 
@@ -12,6 +13,12 @@ using namespace juce;
 #define m_tostr(x) m_stringify(x)
 
 #define m_isnull(x) reportTrue (x == nullptr, __FILE__ "(" m_tostr(__LINE__) "): " #x)
+
+#define m_log_begin() { juce::String _; _
+#define m_log_end() ""; juce::Logger::writeToLog (_); }
+
+#define m_dprint_begin() { juce::String _; _
+#define m_dprint_end() ""; juce::Logger::outputDebugString (_); }
 
 namespace mdk
 {
@@ -92,8 +99,8 @@ public:
             float zFar;
         };
 
-        Transform3f transform;
-        Projection projection;
+        Synced<Transform3f> transform;
+        Synced<Projection> projection;
 
         Mat44f viewMatrix;              //!< derived from transform
         Mat44f projectionMatrix;        //!< derived from projection

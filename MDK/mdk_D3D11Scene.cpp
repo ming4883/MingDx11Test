@@ -151,7 +151,7 @@ D3D11Scene::~D3D11Scene()
 void D3D11Scene::update (D3D11Context& d3d11, Demo::Camera& camera, float deltaTime)
 {   
     sceneData.scnAnimationTime.x += deltaTime;
-    sceneData.scnViewPos = Vec4f (camera.transform.position, 1.0f);
+    sceneData.scnViewPos = Vec4f (camera.transform.fetch().position, 1.0f);
     Mat::mul (sceneData.scnViewProjMatrix, camera.projectionMatrix, camera.viewMatrix);
     d3d11.updateBuffer (cbSceneData, sceneData);
 }

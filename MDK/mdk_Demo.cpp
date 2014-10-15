@@ -20,25 +20,32 @@ void Demo::RenderThread::run()
 //==============================================================================
 Demo::Camera::Camera()
 {
-    projection.aspect = 1.0f;
-    projection.fovY = Scalar::rad<float> (45.0f);
-    projection.zFar = 1025.0f;
-    projection.zNear = 1.0f;
+    Transform3f tran;
+    Transform::setIdentity (tran);
+    transform.commit (tran);
 
-    Transform::setIdentity (transform);
+    Projection proj;
+    proj.aspect = 1.0f;
+    proj.fovY = Scalar::rad<float> (45.0f);
+    proj.zFar = 1025.0f;
+    proj.zNear = 1.0f;
+    projection.commit (proj);
 }
 
 void Demo::Camera::updateD3D (float rtAspect)
 {
-    Transform3<float> inv;
-    Transform::inverse (inv, transform);
+    Transform3f tran = transform.fetch();
+    Projection proj = projection.fetch();
+
+    Transform3f inv;
+    Transform::inverse (inv, tran);
     Mat::fromTransform3 (viewMatrix, inv);
 
-    float aspect = rtAspect * projection.aspect;
-    float zn = projection.zNear;
-    float zf = projection.zFar;
+    float aspect = rtAspect * proj.aspect;
+    float zn = proj.zNear;
+    float zf = proj.zFar;
     float sinFov, cosFov;
-    Scalar::calcSinCos<float> (sinFov, cosFov, projection.fovY * 0.5f);
+    Scalar::calcSinCos<float> (sinFov, cosFov, proj.fovY * 0.5f);
     
     float yscale = cosFov / sinFov;
     float xscale = yscale / aspect;

@@ -1,6 +1,7 @@
 #ifndef MCD_SYNCPRIMITIVE_H_INCLUDED
 #define MCD_SYNCPRIMITIVE_H_INCLUDED
 
+#include <AppConfig.h>
 #include <modules/juce_core/juce_core.h>
 
 namespace mdk
@@ -75,7 +76,7 @@ private:
     {
         while (tryLock())
         {
-            Thread::yield();
+            juce::Thread::yield();
         }
     }
 
@@ -124,6 +125,30 @@ public:
     {
         sync_.unlockWriter();
     }
+};
+
+template<typename T>
+class Synced
+{
+public:
+    T fetch()
+    {
+        RSync rsync (sync);
+        return value;
+    }
+
+    void commit (const T& t)
+    {
+        WSync wsync (sync);
+        value = t;
+    }
+
+private:
+    typedef SyncWithAtomic Sync;
+    typedef ScopedSyncRead<Sync> RSync;
+    typedef ScopedSyncWrite<Sync> WSync;
+    Sync sync;
+    T value;
 };
 
 }   // namespace

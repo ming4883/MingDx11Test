@@ -86,6 +86,17 @@ public:
         
         file.adopt (&adapter);
 
+        Camera::Projection proj = cam_.projection.fetch();
+        proj.zFar = 2048.0f;
+
+        Transform3f tran = cam_.transform.fetch();
+        tran.position = Vec3f (0, 100, 200);
+
+        cam_.projection.commit (proj);
+        cam_.transform.commit (tran);
+
+        //Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 50, 0), Vec3f (0, 1, 0));
+
         return true;
     }
 
@@ -100,13 +111,16 @@ public:
         D3D11_VIEWPORT vp = getViewport (0.0f, 0.0f, 1.0f, 1.0f);
 
         // update
+#if 0
         float sinTime, cosTime;
         Scalar::calcSinCos<float> (sinTime, cosTime, timeGetAccumMS<float>() / 4096.0f);
         float x = 200 * sinTime;
         float z = 200 * cosTime;
 
         Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 50, 0), Vec3f (0, 1, 0));
-        cam_.projection.zFar = 2048.0f;
+#endif
+        ScopedSyncWrite<SyncWithAtomic> lock (fpsCamControl_->sync);
+
         cam_.updateD3D (getAspect());
         scene_->update (d3d11, cam_, timeGetDeltaMS<float>() / 1000.0f);
 
@@ -128,48 +142,86 @@ public:
     void setupMouseListener()
     {
         MessageManagerLock lock;
-        FPSCameraControl* listener = new FPSCameraControl (cam_);
-        addMouseListener (listener, false);
+        fpsCamControl_ = new FPSCameraControl (cam_);
+        addMouseListener (fpsCamControl_, false);
     }
 
     class FPSCameraControl : public MouseListener
     {
+    private:
+        FPSCameraControl (const FPSCameraControl&);
+        void operator = (const FPSCameraControl&);
     public:
+        
+        enum State
+        {
+            stateIdle,
+            stateDrag,
+        };
+
         Camera& camera;
         bool active;
+        State state;
         Transform3f startTransform;
+        Point<float> startPoint;
+        SyncWithAtomic sync;
 
         FPSCameraControl (Camera& camera)
-            : camera (camera), active (true)
+            : camera (camera), active (true), state (stateIdle)
         {
         }
 
-        void mouseDrag (const MouseEvent& event) override
+        void mouseDrag (const MouseEvent& evt) override
         {
-            if (!event.mouseWasClicked())
+            (void)evt;
+            if (state != stateDrag)
                 return;
 
-            String str;
-            str << event.getDistanceFromDragStartX() << ", " << event.getDistanceFromDragStartY();
+            ScopedSyncWrite<SyncWithAtomic> lock (sync);
 
-            Logger::outputDebugString (str);
+            Point<float> delta = evt.position - startPoint;
+
+            //m_dprint_begin() << delta.getX() << ", " << delta.getY() << m_dprint_end();
+
+            delta.getX();
+            delta.getY();
+            Vec3f rot;
+            rot.x = (delta.getY() /-512.0f) * Scalar::cPI<float>();
+            rot.y = (delta.getX() / 512.0f) * Scalar::cPI<float>();
+
+            Vec4f q = Quat::fromXYZRotation (rot);
+
+            Transform3f tran = camera.transform.fetch();
+            tran.rotation = Quat::mul (startTransform.rotation, q);
+            camera.transform.commit (tran);
+
+            //Logger::outputDebugString (str);
         }
 
-        void mouseDown (const MouseEvent& event) override
+        void mouseDown (const MouseEvent& evt) override
         {
+            (void)evt;
             if (!active)
                 return;
 
-            startTransform = camera.transform;
+            startTransform = camera.transform.fetch();
+            startPoint = evt.position;
+
+            state = stateDrag;
+            m_dprint_begin() << "start dragging..." << m_dprint_end();
         }
 
-        void mouseUp (const MouseEvent& event) override
+        void mouseUp (const MouseEvent& evt) override
         {
+            (void)evt;
+            state = stateIdle;
+            m_dprint_begin() << "stop dragging..." << m_dprint_end();
         }
     };
 
     Hold<ID3D11Buffer> cbFrameData_;
     ScopedPointer<D3D11Scene> scene_;
+    ScopedPointer<FPSCameraControl> fpsCamControl_;
     Camera cam_;
 };
 
