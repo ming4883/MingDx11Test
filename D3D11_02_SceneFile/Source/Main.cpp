@@ -94,7 +94,7 @@ public:
 
         cam_.projection.commit (proj);
         cam_.transform.commit (tran);
-
+        fpsCamControl_->syncWithCamera();
         //Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 50, 0), Vec3f (0, 1, 0));
 
         return true;
@@ -119,7 +119,7 @@ public:
 
         Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 50, 0), Vec3f (0, 1, 0));
 #endif
-        ScopedSyncWrite<SyncWithAtomic> lock (fpsCamControl_->sync);
+        //ScopedSyncWrite<SyncWithAtomic> lock (fpsCamControl_->sync);
 
         cam_.updateD3D (getAspect());
         scene_->update (d3d11, cam_, timeGetDeltaMS<float>() / 1000.0f);
@@ -142,7 +142,7 @@ public:
     void setupMouseListener()
     {
         MessageManagerLock lock;
-        fpsCamControl_ = new FPSCameraControl (cam_);
+        fpsCamControl_ = new FPSCameraControl (threadPool, cam_);
         addMouseListener (fpsCamControl_, false);
     }
 
@@ -156,46 +156,79 @@ public:
         enum State
         {
             stateIdle,
-            stateDrag,
+            stateLooking,
+            stateMoveBegin,
+            stateMoving,
         };
 
+        ThreadPool& threadPool;
         Camera& camera;
         bool active;
-        State state;
+        Atomic<State> state;
+        Transform3f transform;
         Transform3f startTransform;
         Point<float> startPoint;
-        SyncWithAtomic sync;
-
-        FPSCameraControl (Camera& camera)
-            : camera (camera), active (true), state (stateIdle)
+        Point<float> moveDir;
+        float startTime;
+        ScopedPointer<JobWithCallback> job;
+        
+        FPSCameraControl (ThreadPool& threadPool, Camera& camera)
+            : threadPool (threadPool), camera (camera), active (true), state (stateIdle)
         {
+            syncWithCamera();
+
+            job = new JobWithCallback("mdkFPSCameraControl", [this](ThreadPoolJob* self)
+            {
+                (void)self;
+
+                Vec3f dir = Quat::transform (transform.rotation, Vec3f (-moveDir.x, 0, moveDir.y));
+
+                float currTime = (float)Time::getMillisecondCounterHiRes();
+
+                dir = Vec::mul (dir, (currTime - startTime) / 2048.0f);
+
+                transform.position = Vec::add (startTransform.position, dir);
+                this->camera.transform.commit (transform);
+
+                return (state.get() == stateMoveBegin || state.get() == stateMoving) ? ThreadPoolJob::jobNeedsRunningAgain : ThreadPoolJob::jobHasFinished;
+            });
+        }
+
+        void syncWithCamera()
+        {
+            transform = camera.transform.fetch();
         }
 
         void mouseDrag (const MouseEvent& evt) override
         {
             (void)evt;
-            if (state != stateDrag)
-                return;
+            if (state.get() == stateLooking)
+            {
+                Point<float> delta = evt.position - startPoint;
 
-            ScopedSyncWrite<SyncWithAtomic> lock (sync);
+                Vec3f rot;
+                rot.x = (delta.getY() /-512.0f) * Scalar::cPI<float>();
+                rot.y = (delta.getX() / 512.0f) * Scalar::cPI<float>();
 
-            Point<float> delta = evt.position - startPoint;
+                Vec4f q = Quat::fromXYZRotation (rot);
 
-            //m_dprint_begin() << delta.getX() << ", " << delta.getY() << m_dprint_end();
+                transform.rotation = Quat::mul (startTransform.rotation, q);
 
-            delta.getX();
-            delta.getY();
-            Vec3f rot;
-            rot.x = (delta.getY() /-512.0f) * Scalar::cPI<float>();
-            rot.y = (delta.getX() / 512.0f) * Scalar::cPI<float>();
+                Vec3f dir = Quat::transform (transform.rotation, Vec3f (0, 0, -1));
+                Transform::fromLookAt (transform, transform.position, Vec::add (transform.position, dir), Vec3f (0, 1, 0));
 
-            Vec4f q = Quat::fromXYZRotation (rot);
+                camera.transform.commit (transform);
+            }
+            else if (state.get() == stateMoveBegin)
+            {
+                float currTime = (float)Time::getMillisecondCounterHiRes();
 
-            Transform3f tran = camera.transform.fetch();
-            tran.rotation = Quat::mul (startTransform.rotation, q);
-            camera.transform.commit (tran);
-
-            //Logger::outputDebugString (str);
+                if ((currTime - startTime) > 100.0f)
+                {
+                    moveDir = (evt.position - startPoint) * 2.0f;
+                    state.set (stateMoving);
+                }
+            }
         }
 
         void mouseDown (const MouseEvent& evt) override
@@ -204,18 +237,29 @@ public:
             if (!active)
                 return;
 
-            startTransform = camera.transform.fetch();
+            startTransform = transform;
             startPoint = evt.position;
+            startTime = (float)Time::getMillisecondCounterHiRes();
 
-            state = stateDrag;
-            m_dprint_begin() << "start dragging..." << m_dprint_end();
+            if (evt.mods.isLeftButtonDown())
+            {
+                state.set (stateLooking);
+            }
+            else if (evt.mods.isRightButtonDown())
+            {
+                moveDir = Point<float> (0, 0);
+                state.set (stateMoveBegin);
+                threadPool.addJob (job, false);
+            }
+            
+            //m_dprint_begin() << "start dragging..." << m_dprint_end();
         }
 
         void mouseUp (const MouseEvent& evt) override
         {
             (void)evt;
-            state = stateIdle;
-            m_dprint_begin() << "stop dragging..." << m_dprint_end();
+            state.set (stateIdle);
+            //m_dprint_begin() << "stop dragging..." << m_dprint_end();
         }
     };
 

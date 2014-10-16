@@ -1,11 +1,48 @@
-#ifndef MCD_SYNCPRIMITIVE_H_INCLUDED
-#define MCD_SYNCPRIMITIVE_H_INCLUDED
+#ifndef MCD_THREADING_H_INCLUDED
+#define MCD_THREADING_H_INCLUDED
 
 #include <AppConfig.h>
 #include <modules/juce_core/juce_core.h>
 
 namespace mdk
 {
+
+class ThreadWithCallback : public juce::Thread
+{
+public:
+    typedef std::function<void (Thread*)> Function;
+    Function func;
+
+public:
+    ThreadWithCallback (const juce::String& threadName, Function f)
+        : Thread (threadName)
+        , func (f)
+    {
+    }
+
+    void run() override
+    {
+        func (this);
+    }
+};
+
+class JobWithCallback : public juce::ThreadPoolJob
+{
+public:
+    typedef std::function<JobStatus (ThreadPoolJob*)> Function;
+    Function func;
+
+    JobWithCallback (const juce::String& jobName, Function f)
+        : ThreadPoolJob (jobName)
+        , func (f)
+    {
+    }
+
+    JobStatus runJob() override
+    {
+        return func (this);
+    }
+};
 
 class SyncWithNull
 {
@@ -154,4 +191,4 @@ private:
 }   // namespace
 
 
-#endif // MCD_SYNCPRIMITIVE_H_INCLUDED
+#endif // MCD_THREADING_H_INCLUDED

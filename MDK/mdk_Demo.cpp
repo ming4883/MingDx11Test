@@ -6,18 +6,6 @@ namespace mdk
 {
 
 //==============================================================================
-Demo::RenderThread::RenderThread(Function f)
-    : Thread ("Render")
-    , func (f)
-{
-}
-
-void Demo::RenderThread::run()
-{
-    func (this);
-}
-
-//==============================================================================
 Demo::Camera::Camera()
 {
     Transform3f tran;
@@ -76,6 +64,7 @@ void Demo::Camera::updateD3D (float rtAspect)
 
 //==============================================================================
 Demo::Demo()
+    : threadPool (1)
 {
     appDataAddDir (m_dir_of_cpp().getChildFile ("Media"));
 }
@@ -96,11 +85,11 @@ bool Demo::renderThreadExists() const
     return renderThread_ != nullptr;
 }
 
-void Demo::renderThreadStart (RenderThread::Function f)
+void Demo::renderThreadStart (ThreadWithCallback::Function f)
 {
     jassert (nullptr == renderThread_);
 
-    renderThread_ = new RenderThread (f);
+    renderThread_ = new ThreadWithCallback ("mdkRender", f);
     renderThread_->startThread();
 }
 

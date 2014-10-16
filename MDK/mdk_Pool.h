@@ -2,7 +2,7 @@
 #define MDK_POOL_H_INCLUDED
 
 #include "mdk_Allocator.h"
-#include "mdk_SyncPrimitive.h"
+#include "mdk_Threading.h"
 
 namespace mdk
 {

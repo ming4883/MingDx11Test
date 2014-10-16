@@ -173,7 +173,7 @@ public:
         return createInputLayout (inputElements.begin(), (size_t)inputElements.size(), shaderByteCode);
     }
 
-	ID3D11Buffer* createVertexBuffer (size_t sizeInBytes, bool dynamic, bool immutable, const void* initialData = nullptr);
+    ID3D11Buffer* createVertexBuffer (size_t sizeInBytes, bool dynamic, bool immutable, const void* initialData = nullptr);
 
     ID3D11Buffer* createIndexBuffer (size_t sizeInBytes, bool dynamic, bool immutable, const void* initialData = nullptr);
 

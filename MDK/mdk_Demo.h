@@ -5,7 +5,7 @@
 #include <modules/juce_gui_basics/juce_gui_basics.h>
 #include <functional>
 #include "mdk_Math.h"
-#include "mdk_SyncPrimitive.h"
+#include "mdk_Threading.h"
 
 using namespace juce;
 
@@ -114,18 +114,9 @@ public:
 protected:
 
 // RenderThread
-    class RenderThread : public Thread
-    {
-    public:
-        typedef std::function<void (Thread*)> Function;
-        Function func;
-        RenderThread (Function f);
-        void run() override;
-    };
-
     bool renderThreadExists() const;
 
-    void renderThreadStart (RenderThread::Function f);
+    void renderThreadStart (ThreadWithCallback::Function f);
 
     void renderThreadStop();
 
@@ -230,9 +221,12 @@ protected:
         return (REAL)timeAccum_;
     }
 
+// Job
+    ThreadPool threadPool;
+
 private:
     StringArray errors_;
-    ScopedPointer<RenderThread> renderThread_;
+    ScopedPointer<ThreadWithCallback> renderThread_;
     double timeLastFrame_;
     double timeDelta_;
     double timeSmoothDelta_;
