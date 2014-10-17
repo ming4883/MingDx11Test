@@ -64,6 +64,18 @@ struct Scalar
     }
 
     template<typename REAL>
+    static inline REAL sign (REAL value)
+    {
+        return (REAL)(value > -1e-6 ? 1 : -1);
+    }
+
+    template<typename REAL>
+    static inline REAL abs (REAL value)
+    {
+        return (REAL)fabsf ((float)value);
+    }
+
+    template<typename REAL>
     static inline void calcSinCos (REAL& retSin, REAL& retCos, REAL angleInRad)
     {
         float a = (float)angleInRad;
@@ -319,6 +331,13 @@ struct Vec
 
     template<typename REAL>
     static inline void reciprocal (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt);
+
+    // length
+    template<typename REAL>
+    static inline REAL length (Vec3<REAL> v);
+
+    template<typename REAL>
+    static inline REAL length (Vec4<REAL> v);
 
     //! isNear (0, dot (v, v))
     template<typename REAL>

@@ -248,19 +248,32 @@ void Vec::reciprocal (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt)
     }
 }
 
+// Vec::length
+template<typename REAL>
+REAL Vec::length (Vec3<REAL> v)
+{
+    return (REAL)sqrtf ((float)dot (v, v));
+}
+
+template<typename REAL>
+REAL Vec::length (Vec4<REAL> v)
+{
+    return (REAL)sqrtf ((float)dot (v, v));
+}
+
 // Vec::isNearZero
 template<typename REAL>
 bool Vec::isNearZero (Vec3<REAL> v)
 {
     REAL sqLen = dot (v, v);
-    return fabsf ((float)sqLen) < 1e-6f;
+    return Scalar::abs ((float)sqLen) < 1e-6f;
 }
 
 template<typename REAL>
 bool Vec::isNearZero (Vec4<REAL> v)
 {
     REAL sqLen = dot (v, v);
-    return std::fabsf ((float)sqLen) < 1e-6f;
+    return Scalar::abs ((float)sqLen) < 1e-6f;
 }
 
 // Vec::neg

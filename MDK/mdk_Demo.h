@@ -108,7 +108,46 @@ public:
 
         Camera();
 
-        void updateD3D (float rtAspect = 1.0f);
+        void updateForD3D (float rtAspect = 1.0f);
+    };
+
+    //! A First Per Shooter camera control
+    class FPSCameraControl : public MouseListener
+    {
+    private:
+        FPSCameraControl (const FPSCameraControl&);
+        void operator = (const FPSCameraControl&);
+    public:
+        
+        enum State
+        {
+            stateIdle,
+            stateLooking,
+            stateMoving,
+            stateMoveHori,
+            stateMoveVert,
+        };
+
+        ThreadPool& threadPool;
+        Camera& camera;
+        bool active;
+        Atomic<State> state;
+        Transform3f transform;
+        Transform3f startTransform;
+        Point<float> startPoint;
+        float startTime;
+        Vec3f moveDir;
+        ScopedPointer<JobWithCallback> job;
+        
+        FPSCameraControl (ThreadPool& threadPool, Camera& camera);
+
+        void syncWithCamera();
+
+        void mouseDrag (const MouseEvent& evt) override;
+
+        void mouseDown (const MouseEvent& evt) override;
+
+        void mouseUp (const MouseEvent& evt) override;
     };
 
 protected:

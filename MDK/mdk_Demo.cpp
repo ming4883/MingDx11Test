@@ -6,6 +6,124 @@ namespace mdk
 {
 
 //==============================================================================
+Demo::FPSCameraControl::FPSCameraControl (ThreadPool& threadPool, Camera& camera)
+    : threadPool (threadPool), camera (camera), active (true), state (stateIdle)
+{
+    syncWithCamera();
+
+    job = new JobWithCallback("mdkFPSCameraControl", [this](ThreadPoolJob* self)
+    {
+        (void)self;
+
+        Vec3f dir = Quat::transform (transform.rotation, moveDir);
+
+        float currTime = (float)Time::getMillisecondCounterHiRes();
+
+        dir = Vec::mul (dir, (currTime - startTime) / 1024.0f);
+
+        transform.position = Vec::add (startTransform.position, dir);
+        this->camera.transform.commit (transform);
+
+        return (state.get() >= stateMoving) ? ThreadPoolJob::jobNeedsRunningAgain : ThreadPoolJob::jobHasFinished;
+    });
+}
+
+void Demo::FPSCameraControl::syncWithCamera()
+{
+    transform = camera.transform.fetch();
+}
+
+void Demo::FPSCameraControl::mouseDrag (const MouseEvent& evt)
+{
+    Point<float> delta = evt.position - startPoint;
+    float currTime = (float)Time::getMillisecondCounterHiRes();
+
+    if (state.get() == stateLooking)
+    {
+        Vec3f rot;
+        rot.x = (delta.getY() /-1024.0f) * Scalar::cPI<float>();
+        rot.y = (delta.getX() / 1024.0f) * Scalar::cPI<float>();
+
+        Vec4f q = transform.rotation;
+
+        q = Quat::mul (startTransform.rotation, Quat::fromXYZRotation (rot));
+
+        Vec3f dir = Quat::transform (q, Vec3f (0, 0, -1));
+        transform.rotation = q;
+        Transform::fromLookAt (transform, transform.position, Vec::add (transform.position, dir), Vec3f (0, 1, 0));
+
+        startTransform = transform;
+        startPoint = evt.position;
+        camera.transform.commit (transform);
+    }
+    else if (state.get() == stateMoveHori)
+    {
+        moveDir = Vec3f (-delta.x, 0, delta.y);
+        float moveLen = Vec::length (moveDir) * 2.0f;
+
+        if (Scalar::abs (moveDir.x) > Scalar::abs (moveDir.z))
+            moveDir = Vec3f (moveLen * Scalar::sign (moveDir.x), 0, 0);
+        else
+            moveDir = Vec3f (0, 0, moveLen * Scalar::sign (moveDir.z));
+
+        if ((currTime - startTime) > 100.0f)
+        {
+            
+            state.set (stateMoving);
+        }
+    }
+    else if (state.get() == stateMoveVert)
+    {
+        float moveLen = delta.y;
+        moveDir = Vec3f (0, moveLen, 0);
+
+        if ((currTime - startTime) > 100.0f)
+        {
+            state.set (stateMoving);
+        }
+    }
+}
+
+void Demo::FPSCameraControl::mouseDown (const MouseEvent& evt)
+{
+    (void)evt;
+    if (!active)
+        return;
+
+    startTransform = transform;
+    startPoint = evt.position;
+    startTime = (float)Time::getMillisecondCounterHiRes();
+
+    if (evt.mods.isLeftButtonDown())
+    {
+        state.set (stateLooking);
+    }
+    else if (evt.mods.isRightButtonDown())
+    {
+        moveDir = Vec3f (0, 0, 0);
+        state.set (stateMoveHori);
+        threadPool.addJob (job, false);
+    }
+    else if (evt.mods.isMiddleButtonDown())
+    {
+        moveDir = Vec3f (0, 0, 0);
+        state.set (stateMoveVert);
+        threadPool.addJob (job, false);
+    }
+    //m_dprint_begin() << "start dragging..." << m_dprint_end();
+}
+
+void Demo::FPSCameraControl::mouseUp (const MouseEvent& evt)
+{
+    (void)evt;
+    if (!active)
+        return;
+
+    state.set (stateIdle);
+    //m_dprint_begin() << "stop dragging..." << m_dprint_end();
+}
+
+//==============================================================================
 Demo::Camera::Camera()
 {
     Transform3f tran;
@@ -20,7 +138,7 @@ Demo::Camera::Camera()
     projection.commit (proj);
 }
 
-void Demo::Camera::updateD3D (float rtAspect)
+void Demo::Camera::updateForD3D (float rtAspect)
 {
     Transform3f tran = transform.fetch();
     Projection proj = projection.fetch();

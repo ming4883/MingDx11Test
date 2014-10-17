@@ -74,7 +74,7 @@ public:
         scene_ = new D3D11Scene (d3d11);
 
         ScopedPointer<InputStream> stream = appDataGet ("Boxes.babylon");
-        //ScopedPointer<InputStream> stream = appDataGet ("SponzaSimple.babylon");
+        //ScopedPointer<InputStream> stream = appDataGet ("~SponzaSimple.babylon");
 
         if (m_isnull (stream))
             return false;
@@ -95,7 +95,6 @@ public:
         cam_.projection.commit (proj);
         cam_.transform.commit (tran);
         fpsCamControl_->syncWithCamera();
-        //Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 50, 0), Vec3f (0, 1, 0));
 
         return true;
     }
@@ -111,17 +110,7 @@ public:
         D3D11_VIEWPORT vp = getViewport (0.0f, 0.0f, 1.0f, 1.0f);
 
         // update
-#if 0
-        float sinTime, cosTime;
-        Scalar::calcSinCos<float> (sinTime, cosTime, timeGetAccumMS<float>() / 4096.0f);
-        float x = 200 * sinTime;
-        float z = 200 * cosTime;
-
-        Transform::fromLookAt (cam_.transform, Vec3f (x, 100, z), Vec3f (0, 50, 0), Vec3f (0, 1, 0));
-#endif
-        //ScopedSyncWrite<SyncWithAtomic> lock (fpsCamControl_->sync);
-
-        cam_.updateD3D (getAspect());
+        cam_.updateForD3D (getAspect());
         scene_->update (d3d11, cam_, timeGetDeltaMS<float>() / 1000.0f);
 
         // render
@@ -146,122 +135,6 @@ public:
         addMouseListener (fpsCamControl_, false);
     }
 
-    class FPSCameraControl : public MouseListener
-    {
-    private:
-        FPSCameraControl (const FPSCameraControl&);
-        void operator = (const FPSCameraControl&);
-    public:
-        
-        enum State
-        {
-            stateIdle,
-            stateLooking,
-            stateMoveBegin,
-            stateMoving,
-        };
-
-        ThreadPool& threadPool;
-        Camera& camera;
-        bool active;
-        Atomic<State> state;
-        Transform3f transform;
-        Transform3f startTransform;
-        Point<float> startPoint;
-        Point<float> moveDir;
-        float startTime;
-        ScopedPointer<JobWithCallback> job;
-        
-        FPSCameraControl (ThreadPool& threadPool, Camera& camera)
-            : threadPool (threadPool), camera (camera), active (true), state (stateIdle)
-        {
-            syncWithCamera();
-
-            job = new JobWithCallback("mdkFPSCameraControl", [this](ThreadPoolJob* self)
-            {
-                (void)self;
-
-                Vec3f dir = Quat::transform (transform.rotation, Vec3f (-moveDir.x, 0, moveDir.y));
-
-                float currTime = (float)Time::getMillisecondCounterHiRes();
-
-                dir = Vec::mul (dir, (currTime - startTime) / 2048.0f);
-
-                transform.position = Vec::add (startTransform.position, dir);
-                this->camera.transform.commit (transform);
-
-                return (state.get() == stateMoveBegin || state.get() == stateMoving) ? ThreadPoolJob::jobNeedsRunningAgain : ThreadPoolJob::jobHasFinished;
-            });
-        }
-
-        void syncWithCamera()
-        {
-            transform = camera.transform.fetch();
-        }
-
-        void mouseDrag (const MouseEvent& evt) override
-        {
-            (void)evt;
-            if (state.get() == stateLooking)
-            {
-                Point<float> delta = evt.position - startPoint;
-
-                Vec3f rot;
-                rot.x = (delta.getY() /-512.0f) * Scalar::cPI<float>();
-                rot.y = (delta.getX() / 512.0f) * Scalar::cPI<float>();
-
-                Vec4f q = Quat::fromXYZRotation (rot);
-
-                transform.rotation = Quat::mul (startTransform.rotation, q);
-
-                Vec3f dir = Quat::transform (transform.rotation, Vec3f (0, 0, -1));
-                Transform::fromLookAt (transform, transform.position, Vec::add (transform.position, dir), Vec3f (0, 1, 0));
-
-                camera.transform.commit (transform);
-            }
-            else if (state.get() == stateMoveBegin)
-            {
-                float currTime = (float)Time::getMillisecondCounterHiRes();
-
-                if ((currTime - startTime) > 100.0f)
-                {
-                    moveDir = (evt.position - startPoint) * 2.0f;
-                    state.set (stateMoving);
-                }
-            }
-        }
-
-        void mouseDown (const MouseEvent& evt) override
-        {
-            (void)evt;
-            if (!active)
-                return;
-
-            startTransform = transform;
-            startPoint = evt.position;
-            startTime = (float)Time::getMillisecondCounterHiRes();
-
-            if (evt.mods.isLeftButtonDown())
-            {
-                state.set (stateLooking);
-            }
-            else if (evt.mods.isRightButtonDown())
-            {
-                moveDir = Point<float> (0, 0);
-                state.set (stateMoveBegin);
-                threadPool.addJob (job, false);
-            }
-            
-            //m_dprint_begin() << "start dragging..." << m_dprint_end();
-        }
-
-        void mouseUp (const MouseEvent& evt) override
-        {
-            (void)evt;
-            state.set (stateIdle);
-            //m_dprint_begin() << "stop dragging..." << m_dprint_end();
-        }
-    };
 
     Hold<ID3D11Buffer> cbFrameData_;
     ScopedPointer<D3D11Scene> scene_;
