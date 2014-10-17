@@ -23,14 +23,15 @@ class ObjectPool
 {
 public:
     typedef typename TRAITS::ObjectType Object;
-    typedef typename TRAITS::AllocatorType Allocator;
     typedef typename TRAITS::SyncType Sync;
     typedef ScopedSyncRead<Sync> SyncRead;
     typedef ScopedSyncWrite<Sync> SyncWrite;
     
-    explicit ObjectPool (size_t initialCapacity = 32, size_t nodeMaxCapacity = 1000000);
+    explicit ObjectPool (size_t initialCapacity = 32, size_t nodeMaxCapacity = 1000000, Allocator& allocator = CrtAllocator::get());
 
     virtual ~ObjectPool();
+
+    Allocator& getAllocator() { return _allocator; }
 
     bool isOwnerOf (Object* content) const;
 
@@ -61,7 +62,7 @@ private:
     };
 
     Sync _syncHandle;
-    Allocator _allocator;
+    Allocator& _allocator;
 
     void* _nodeMemory;
     Object* _firstDeleted;

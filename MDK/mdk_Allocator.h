@@ -6,24 +6,37 @@
 namespace mdk
 {
 
-class CrtAllocator
+class Allocator
 {
 public:
-    void* malloc (size_t size)
+    virtual void* malloc (size_t size) = 0;
+    
+    virtual void* realloc (void* origPtr, size_t origSize, size_t newSize) = 0;
+    
+    virtual void free (void* ptr) = 0;
+};
+
+class CrtAllocator : public Allocator
+{
+public:
+    void* malloc (size_t size) override
     {
         return std::malloc (size);
     }
     
-    void* realloc (void* origPtr, size_t origSize, size_t newSize)
+    void* realloc (void* origPtr, size_t origSize, size_t newSize) override
     {
         (void) origSize;
         return std::realloc (origPtr, newSize);
     }
     
-    void free (void* ptr)
+    void free (void* ptr) override
     {
         std::free (ptr);
     }
+
+    static CrtAllocator& get();
+
 };
 
 }   // namespace

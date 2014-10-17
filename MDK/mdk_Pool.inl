@@ -23,8 +23,9 @@ ObjectPool<TRAITS>::_Node::~_Node()
 }
 
 template<typename TRAITS>
-ObjectPool<TRAITS>::ObjectPool (size_t initialCapacity, size_t nodeMaxCapacity)
-    : _firstDeleted (nullptr)
+ObjectPool<TRAITS>::ObjectPool (size_t initialCapacity, size_t nodeMaxCapacity, Allocator& allocator)
+    : _allocator (allocator)
+    , _firstDeleted (nullptr)
     , _countInNode (0)
     , _nodeCapacity (initialCapacity)
     , _firstNode (_allocator, initialCapacity)

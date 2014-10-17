@@ -1,5 +1,6 @@
 #include "mdk.h"
 
+#include "mdk_Allocator.cpp"
 #include "mdk_BabylonFile.cpp"
 #include "mdk_Demo.cpp"
 #include "mdk_Math.cpp"
