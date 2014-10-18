@@ -172,7 +172,7 @@ public:
     D3D11Scene (D3D11Context& d3d11);
     ~D3D11Scene();
 
-    void update (D3D11Context& d3d11, Demo::Camera& camera, float deltaTime);
+    void update (D3D11Context& d3d11, Camera& camera, float deltaTime);
 
     D3D11DrawUnit* add();
 

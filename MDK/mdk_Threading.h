@@ -4,6 +4,8 @@
 #include <AppConfig.h>
 #include <modules/juce_core/juce_core.h>
 
+#include <functional>
+
 namespace mdk
 {
 

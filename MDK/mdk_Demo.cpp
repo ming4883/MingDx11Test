@@ -24,6 +24,9 @@ Demo::FPSCameraControl::FPSCameraControl (ThreadPool& threadPool, Camera& camera
         transform.position = Vec::add (startTransform.position, dir);
         this->camera.transform.commit (transform);
 
+        startTime = currTime;
+        startTransform = transform;
+
         return (state.get() >= stateMoving) ? ThreadPoolJob::jobNeedsRunningAgain : ThreadPoolJob::jobHasFinished;
     });
 }
@@ -68,8 +71,7 @@ void Demo::FPSCameraControl::mouseDrag (const MouseEvent& evt)
 
         if ((currTime - startTime) > 100.0f)
         {
-            
-            state.set (stateMoving);
+            //state.set (stateMoving);
         }
     }
     else if (state.get() == stateMoveVert)
@@ -79,7 +81,7 @@ void Demo::FPSCameraControl::mouseDrag (const MouseEvent& evt)
 
         if ((currTime - startTime) > 100.0f)
         {
-            state.set (stateMoving);
+            //state.set (stateMoving);
         }
     }
 }
@@ -121,63 +123,6 @@ void Demo::FPSCameraControl::mouseUp (const MouseEvent& evt)
 
     state.set (stateIdle);
     //m_dprint_begin() << "stop dragging..." << m_dprint_end();
-}
-
-//==============================================================================
-Demo::Camera::Camera()
-{
-    Transform3f tran;
-    Transform::setIdentity (tran);
-    transform.commit (tran);
-
-    Projection proj;
-    proj.aspect = 1.0f;
-    proj.fovY = Scalar::rad<float> (45.0f);
-    proj.zFar = 1025.0f;
-    proj.zNear = 1.0f;
-    projection.commit (proj);
-}
-
-void Demo::Camera::updateForD3D (float rtAspect)
-{
-    Transform3f tran = transform.fetch();
-    Projection proj = projection.fetch();
-
-    Transform3f inv;
-    Transform::inverse (inv, tran);
-    Mat::fromTransform3 (viewMatrix, inv);
-
-    float aspect = rtAspect * proj.aspect;
-    float zn = proj.zNear;
-    float zf = proj.zFar;
-    float sinFov, cosFov;
-    Scalar::calcSinCos<float> (sinFov, cosFov, proj.fovY * 0.5f);
-    
-    float yscale = cosFov / sinFov;
-    float xscale = yscale / aspect;
-    float zscale = 1.0f / (zn - zf);
-
-    projectionMatrix[0][0] = -xscale;
-    projectionMatrix[0][1] = 0;
-    projectionMatrix[0][2] = 0;
-    projectionMatrix[0][3] = 0;
-
-    projectionMatrix[1][0] = 0;
-    projectionMatrix[1][1] = yscale;
-    projectionMatrix[1][2] = 0;
-    projectionMatrix[1][3] = 0;
-
-    projectionMatrix[2][0] = 0;
-    projectionMatrix[2][1] = 0;
-    projectionMatrix[2][2] = zf * zscale;
-    projectionMatrix[2][3] = zn * zf * zscale;
-
-    projectionMatrix[3][0] = 0;
-    projectionMatrix[3][1] = 0;
-    projectionMatrix[3][2] =-1;
-    projectionMatrix[3][3] = 0;
-
-    Mat::mul (projectionviewMatrix, projectionMatrix, viewMatrix);
 }
 
 //==============================================================================

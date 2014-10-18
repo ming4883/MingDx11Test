@@ -39,12 +39,18 @@ public:
 
 };
 
+template<typename T>
+struct UseAllocator
+{
+    static const bool value = false;
+};
+
 }   // namespace
 
 #define m_new(alloc, type) new (alloc.malloc (sizeof (type))) type
 
-template<typename ALLOCATE, typename TYPE>
-void m_del(ALLOCATE& alloc, TYPE* ptr)
+template<typename TYPE>
+void m_del (mdk::Allocator& alloc, TYPE* ptr)
 {
     if (nullptr == ptr)
         return;

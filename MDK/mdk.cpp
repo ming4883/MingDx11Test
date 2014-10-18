@@ -4,8 +4,8 @@
 #include "mdk_BabylonFile.cpp"
 #include "mdk_Demo.cpp"
 #include "mdk_Math.cpp"
-
 #include "mdk_Persistable.cpp"
+#include "mdk_Scene.cpp"
 
 #if JUCE_WINDOWS
 #include "mdk_D3D11.cpp"

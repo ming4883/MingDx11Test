@@ -3,8 +3,9 @@
 
 #include <AppConfig.h>
 #include <modules/juce_gui_basics/juce_gui_basics.h>
-#include <functional>
+
 #include "mdk_Math.h"
+#include "mdk_Scene.h"
 #include "mdk_Threading.h"
 
 using namespace juce;
@@ -87,30 +88,7 @@ public:
         }
     };
     
-// Camera
-    class Camera
-    {
-    public:
-        struct Projection
-        {
-            float fovY;
-            float aspect;
-            float zNear;
-            float zFar;
-        };
-
-        Synced<Transform3f> transform;
-        Synced<Projection> projection;
-
-        Mat44f viewMatrix;              //!< derived from transform
-        Mat44f projectionMatrix;        //!< derived from projection
-        Mat44f projectionviewMatrix;    //!< derived from viewMatrix and viewprojectionMatrix
-
-        Camera();
-
-        void updateForD3D (float rtAspect = 1.0f);
-    };
-
+// Camera Controls
     //! A First Per Shooter camera control
     class FPSCameraControl : public MouseListener
     {

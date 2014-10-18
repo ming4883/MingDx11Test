@@ -81,6 +81,12 @@ private:
 
 };
 
+template<typename TRAITS>
+struct UseAllocator< ObjectPool<TRAITS> >
+{
+    static const bool value = true;
+};
+
 } // namespace
 
 #define m_new_with_pool(pool, type) new (pool.allocate())type
