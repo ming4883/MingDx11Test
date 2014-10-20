@@ -15,15 +15,6 @@ Vec3<REAL> Vec::add (Vec3<REAL> a, Vec3<REAL> b)
 }
 
 template<typename REAL>
-void Vec::add (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = add (a[i], b[i]);
-    }
-}
-
-template<typename REAL>
 Vec4<REAL> Vec::add (Vec4<REAL> a, Vec4<REAL> b)
 {
     Vec4<REAL> dst;
@@ -32,15 +23,6 @@ Vec4<REAL> Vec::add (Vec4<REAL> a, Vec4<REAL> b)
     dst.z = a.z + b.z;
     dst.w = a.w + b.w;
     return dst;
-}
-
-template<typename REAL>
-void Vec::add (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = add (a[i], b[i]);
-    }
 }
 
 // Vec::sub
@@ -56,15 +38,6 @@ Vec3<REAL> Vec::sub (Vec3<REAL> a, Vec3<REAL> b)
 }
 
 template<typename REAL>
-void Vec::sub (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = sub (a[i], b[i]);
-    }
-}
-
-template<typename REAL>
 Vec4<REAL> Vec::sub (Vec4<REAL> a, Vec4<REAL> b)
 {
     Vec4<REAL> dst;
@@ -74,15 +47,6 @@ Vec4<REAL> Vec::sub (Vec4<REAL> a, Vec4<REAL> b)
     dst.w = a.w - b.w;
 
     return dst;
-}
-
-template<typename REAL>
-void Vec::sub (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = sub (a[i], b[i]);
-    }
 }
 
 // Vec::mul
@@ -98,15 +62,6 @@ Vec3<REAL> Vec::mul (Vec3<REAL> a, REAL b)
 }
 
 template<typename REAL>
-void Vec::mul (Vec3<REAL>* dst, const Vec3<REAL>* a, const REAL* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = mul (a[i], b[i]);
-    }
-}
-
-template<typename REAL>
 Vec4<REAL> Vec::mul (Vec4<REAL> a, REAL b)
 {
     Vec4<REAL> dst;
@@ -117,16 +72,6 @@ Vec4<REAL> Vec::mul (Vec4<REAL> a, REAL b)
 
     return dst;
 }
-
-template<typename REAL>
-void Vec::mul (Vec4<REAL>* dst, const Vec4<REAL>* a, const REAL* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = mul (a[i], b[i]);
-    }
-}
-
 
 // Vec::mul
 template<typename REAL>
@@ -141,15 +86,6 @@ Vec3<REAL> Vec::mul (Vec3<REAL> a, Vec3<REAL> b)
 }
 
 template<typename REAL>
-void Vec::mul (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = mul (a[i], b[i]);
-    }
-}
-
-template<typename REAL>
 Vec4<REAL> Vec::mul (Vec4<REAL> a, Vec4<REAL> b)
 {
     Vec4<REAL> dst;
@@ -161,15 +97,6 @@ Vec4<REAL> Vec::mul (Vec4<REAL> a, Vec4<REAL> b)
     return dst;
 }
 
-template<typename REAL>
-void Vec::mul (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = mul (a[i], b[i]);
-    }
-}
-
 // Vec::dot
 template<typename REAL>
 REAL Vec::dot (Vec3<REAL> a, Vec3<REAL> b)
@@ -178,27 +105,9 @@ REAL Vec::dot (Vec3<REAL> a, Vec3<REAL> b)
 }
 
 template<typename REAL>
-void Vec::dot (REAL* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = dot (a[i], b[i]);
-    }
-}
-
-template<typename REAL>
 REAL Vec::dot (Vec4<REAL> a, Vec4<REAL> b)
 {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
-
-template<typename REAL>
-void Vec::dot (REAL* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = dot (a[i], b[i]);
-    }
 }
 
 template<typename REAL>
@@ -220,15 +129,6 @@ Vec3<REAL> Vec::reciprocal (Vec3<REAL> v)
 }
 
 template<typename REAL>
-void Vec::reciprocal (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = reciprocal (v[i]);
-    }
-}
-
-template<typename REAL>
 Vec4<REAL> Vec::reciprocal (Vec4<REAL> v)
 {
     Vec4<REAL> dst;
@@ -237,15 +137,6 @@ Vec4<REAL> Vec::reciprocal (Vec4<REAL> v)
     dst.z = (REAL)1.0f / v.z;
     dst.w = (REAL)1.0f / v.w;
     return dst;
-}
-
-template<typename REAL>
-void Vec::reciprocal (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = reciprocal (v[i]);
-    }
 }
 
 // Vec::length
@@ -288,15 +179,6 @@ Vec3<REAL> Vec::neg (Vec3<REAL> v)
 }
 
 template<typename REAL>
-void Vec::neg (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = neg (v[i]);
-    }
-}
-
-template<typename REAL>
 Vec4<REAL> Vec::neg (Vec4<REAL> v)
 {
     Vec4<REAL> dst;
@@ -305,15 +187,6 @@ Vec4<REAL> Vec::neg (Vec4<REAL> v)
     dst.z = -v.z;
     dst.w = -v.w;
     return dst;
-}
-
-template<typename REAL>
-void Vec::neg (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = neg (v[i]);
-    }
 }
 
 // Vec::normalize
@@ -327,30 +200,12 @@ Vec3<REAL> Vec::normalize (Vec3<REAL> v)
 }
 
 template<typename REAL>
-void Vec::normalize (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = normalize (v[i]);
-    }
-}
-
-template<typename REAL>
 Vec4<REAL> Vec::normalize (Vec4<REAL> v)
 {
     REAL len = v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w;
     len = (REAL)1.0f / ((REAL)std::sqrtf (len + (REAL)1e-12f)); // adding a epsilon to avoid sqrt (0)
 
     return Vec::mul (v, len);
-}
-
-template<typename REAL>
-void Vec::normalize (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = normalize (v[i]);
-    }
 }
 
 // Vec::cross
@@ -364,16 +219,6 @@ Vec3<REAL> Vec::cross (Vec3<REAL> a, Vec3<REAL> b)
 
     return dst;
 }
-
-template<typename REAL>
-void Vec::cross (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = cross (a[i], b[i]);
-    }
-}
-
 
 template<typename REAL>
 Vec3<REAL> Vec::lerp (Vec3<REAL> a, Vec3<REAL> b, REAL t)
@@ -464,15 +309,6 @@ void Mat::fromQuat (Mat44<REAL>& dst, Vec4<REAL> q)
     dst[3][3] = (REAL)1;
 }
 
-template<typename REAL>
-void Mat::fromQuat (Mat44<REAL>* dst, const Vec4<REAL>* q, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        toMatrix (dst[i], q[i]);
-    }
-}
-
 // Mat::fromTransform3
 template<typename REAL>
 void Mat::fromTransform3 (Mat44<REAL>& dst, const Transform3<REAL>& src)
@@ -499,15 +335,6 @@ void Mat::transpose (Mat44<REAL>& dst, const Mat44<REAL>& m)
     dst.m01 = a[1][0]; dst.m11 = a[1][1]; dst.m21 = a[1][2]; dst.m31 = a[1][3];
     dst.m02 = a[2][0]; dst.m12 = a[2][1]; dst.m22 = a[2][2]; dst.m32 = a[2][3];
     dst.m03 = a[3][0]; dst.m13 = a[3][1]; dst.m23 = a[3][2]; dst.m33 = a[3][3];
-}
-
-template<typename REAL>
-void Mat::transpose (Mat44<REAL>* dst, const Mat44<REAL>* m, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        transpose (dst[i], m[i]);
-    }
 }
 
 // Mat::mul
@@ -551,15 +378,6 @@ void Mat::mul (Mat44<REAL>& dst, const Mat44<REAL>& a, const Mat44<REAL>& b)
     dst.m31 = a0 * b.m01 + a1 * b.m11 + a2 * b.m21 + a3 * b.m31;
     dst.m32 = a0 * b.m02 + a1 * b.m12 + a2 * b.m22 + a3 * b.m32;
     dst.m33 = a0 * b.m03 + a1 * b.m13 + a2 * b.m23 + a3 * b.m33;
-}
-
-template<typename REAL>
-void Mat::mul (Mat44<REAL>* dst, const Mat44<REAL>* a, const Mat44<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        mul (dst[i], a[i], b[i]);
-    }
 }
 
 //==============================================================================
@@ -681,15 +499,6 @@ Vec4<REAL> Quat::mul (Vec4<REAL> a, Vec4<REAL> b)
     return dst;
 }
 
-template<typename REAL>
-void Quat::mul (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = mul (a[i], b[i]);
-    }
-}
-
 // Quat::inverse
 template<typename REAL>
 Vec4<REAL> Quat::inverse (Vec4<REAL> q)
@@ -716,15 +525,6 @@ Vec4<REAL> Quat::inverse (Vec4<REAL> q)
     }
 }
 
-template<typename REAL>
-void Quat::inverse (Vec4<REAL>* dst, const Vec4<REAL>* q, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = inverse (q[i]);
-    }
-}
-
 // Quat::transform
 template<typename REAL>
 Vec3<REAL> Quat::transform (Vec4<REAL> q, Vec3<REAL> v)
@@ -734,15 +534,6 @@ Vec3<REAL> Quat::transform (Vec4<REAL> q, Vec3<REAL> v)
     Vec3<REAL> t = Vec::mul (Vec::cross (q.xyz(), v), (REAL)2.0f);
 
     return Vec::add (v, Vec::add (Vec::mul (t, q.w), Vec::cross (q.xyz(), t)));
-}
-
-template<typename REAL>
-void Quat::transform (Vec3<REAL>* dst, const Vec4<REAL>* q, const Vec3<REAL>* v, size_t cnt)
-{
-    for (size_t i = 0; i < cnt; ++i)
-    {
-        dst[i] = inverse (q[i], v[i]);
-    }
 }
 
 //==============================================================================

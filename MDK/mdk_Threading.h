@@ -1,7 +1,7 @@
 #ifndef MCD_THREADING_H_INCLUDED
 #define MCD_THREADING_H_INCLUDED
 
-#include <AppConfig.h>
+#include "mdk_Config.h"
 #include <modules/juce_core/juce_core.h>
 
 #include <functional>
@@ -129,10 +129,7 @@ private:
 template<class Sync>
 class ScopedSyncRead
 {
-    Sync& sync_;
-
-    ScopedSyncRead (const ScopedSyncRead& source);
-    void operator = (const ScopedSyncRead& source);
+    m_noncopyable (ScopedSyncRead)
 
 public:
     ScopedSyncRead (Sync& sync) : sync_ (sync)
@@ -144,15 +141,15 @@ public:
     {
         sync_.unlockReader();
     }
+
+private:
+    Sync& sync_;
 };
 
 template<class Sync>
 class ScopedSyncWrite
 {
-    Sync& sync_;
-
-    ScopedSyncWrite (const ScopedSyncWrite& source);
-    void operator = (const ScopedSyncWrite& source);
+    m_noncopyable (ScopedSyncWrite)
 
 public:
     ScopedSyncWrite (Sync& sync) : sync_ (sync)
@@ -164,6 +161,9 @@ public:
     {
         sync_.unlockWriter();
     }
+
+private:
+    Sync& sync_;
 };
 
 template<typename T>

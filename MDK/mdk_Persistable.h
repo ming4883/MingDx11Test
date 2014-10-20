@@ -1,9 +1,10 @@
 #ifndef MDK_PERSISTABLE_H_INCLUDED
 #define MDK_PERSISTABLE_H_INCLUDED
 
-#include <AppConfig.h>
-#include <modules/juce_data_structures/juce_data_structures.h>
+#include "mdk_Config.h"
 #include "mdk_BitMask.h"
+
+#include <modules/juce_data_structures/juce_data_structures.h>
 
 namespace mdk
 {

@@ -26,8 +26,7 @@ typedef ObjectPool< ObjectPoolTraitsDefault<D3D11SRBinding> > D3D11SRBindingPool
 
 class D3D11SRBindings
 {
-    D3D11SRBindings (const D3D11SRBindings&);
-    void operator = (const D3D11SRBindings&);
+    m_noncopyable (D3D11SRBindings)
 
     D3D11SRBindingPool& pool_;
 
@@ -55,8 +54,7 @@ typedef ObjectPool< ObjectPoolTraitsDefault<D3D11SampBinding> > D3D11SampBinding
 
 class D3D11SampBindings
 {
-    D3D11SampBindings (const D3D11SampBindings&);
-    void operator = (const D3D11SampBindings&);
+    m_noncopyable (D3D11SampBindings)
 
     D3D11SampBindingPool& pool_;
 
@@ -182,9 +180,8 @@ public:
 
 class D3D11BabylonFileAdaptor : public BabylonFile::Adapter
 {
-    D3D11BabylonFileAdaptor (D3D11BabylonFileAdaptor&);
-    D3D11BabylonFileAdaptor& operator = (D3D11BabylonFileAdaptor&);
-
+    m_noncopyable (D3D11BabylonFileAdaptor)
+    
 public:
     D3D11Context& d3d11;
     D3D11Scene& scene;

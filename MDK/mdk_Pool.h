@@ -21,6 +21,8 @@ struct ObjectPoolTraitsDefault
 template<typename TRAITS>
 class ObjectPool
 {
+    m_noncopyable (ObjectPool)
+
 public:
     typedef typename TRAITS::ObjectType Object;
     typedef typename TRAITS::SyncType Sync;
@@ -46,6 +48,8 @@ private:
 
     class _Node
     {
+        m_noncopyable (_Node)
+
     public:
         Allocator& _allocator;
         void* _memory;
@@ -53,12 +57,7 @@ private:
         _Node* _nextNode;
 
         _Node (Allocator& allocator, size_t capacity);
-
         ~_Node();
-
-    private:
-        _Node (const _Node& source);
-        void operator = (const _Node& source);
     };
 
     Sync _syncHandle;
@@ -74,10 +73,6 @@ private:
     
 
     void _allocateNewNode();
-
-    // non copyable
-    ObjectPool (const ObjectPool& source);
-    void operator = (const ObjectPool& source);
 
 };
 

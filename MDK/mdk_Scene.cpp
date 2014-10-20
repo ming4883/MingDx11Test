@@ -61,4 +61,75 @@ void Camera::updateForD3D (float rtAspect)
     Mat::mul (projectionviewMatrix, projectionMatrix, viewMatrix);
 }
 
+//==============================================================================
+Animation::Animation (Allocator& allocator)
+    : _allocator (allocator)
+    , frameCount (0)
+    , frameDataSize (0)
+{
+
+}
+
+Animation::~Animation()
+{
+    dealloc();
+}
+
+void Animation::alloc (uint32 numOfFrames, uint32 numOfElemsPerFrame)
+{
+    m_assert (numOfFrames > 1);
+    m_assert (numOfElemsPerFrame > 0);
+
+    frameCount = numOfFrames;
+    frameDataSize = numOfElemsPerFrame;
+
+    frameTime = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames));
+    frameData = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames * numOfElemsPerFrame));
+}
+
+void Animation::dealloc()
+{
+    _allocator.free (frameTime);
+    _allocator.free (frameData);
+}
+
+void Animation::fetch2Frames (float* retFrameData, float* retFrameTime, float frameNo)
+{
+    uint32 thisFrame = 0;
+
+    while (frameNo < frameTime[thisFrame] && thisFrame < frameCount)
+    {
+        thisFrame++;
+    }
+
+    if (thisFrame >= frameCount)
+        thisFrame = frameCount - 1;
+
+    uint32 lastFrame;
+    if (thisFrame == 0)
+        lastFrame = 0;
+    else
+        lastFrame = thisFrame - 1;
+
+    uint32 srcOffset;
+    uint32 dstOffset;
+
+    // first frame
+    srcOffset = lastFrame * frameDataSize;
+    dstOffset = 0;
+
+    for (uint32 i = 0; i < frameDataSize; ++i)
+        retFrameData[dstOffset + i] = frameData[srcOffset + i];
+
+    // second frame
+    srcOffset = thisFrame * frameDataSize;
+    dstOffset = frameDataSize;
+
+    for (uint32 i = 0; i < frameDataSize; ++i)
+        retFrameData[dstOffset + i] = frameData[srcOffset + i];
+
+    retFrameTime[0] = frameTime[lastFrame];
+    retFrameTime[1] = frameTime[thisFrame];
+}
+
 }   // namespace

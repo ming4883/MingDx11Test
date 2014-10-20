@@ -1,17 +1,14 @@
 #ifndef MDK_DEMO_H_INCLUDED
 #define MDK_DEMO_H_INCLUDED
 
-#include <AppConfig.h>
-#include <modules/juce_gui_basics/juce_gui_basics.h>
-
+#include "mdk_Config.h"
 #include "mdk_Math.h"
 #include "mdk_Scene.h"
 #include "mdk_Threading.h"
 
-using namespace juce;
+#include <modules/juce_gui_basics/juce_gui_basics.h>
 
-#define m_stringify(x) #x
-#define m_tostr(x) m_stringify(x)
+using namespace juce;
 
 #define m_isnull(x) reportTrue (x == nullptr, __FILE__ "(" m_tostr(__LINE__) "): " #x)
 
@@ -92,9 +89,8 @@ public:
     //! A First Per Shooter camera control
     class FPSCameraControl : public MouseListener
     {
-    private:
-        FPSCameraControl (const FPSCameraControl&);
-        void operator = (const FPSCameraControl&);
+        m_noncopyable (FPSCameraControl)
+
     public:
         
         enum State

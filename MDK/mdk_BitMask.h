@@ -1,6 +1,8 @@
 #ifndef MDK_BITMASK_H_INCLUDED
 #define MDK_BITMASK_H_INCLUDED
 
+#include "mdk_Config.h"
+
 namespace mdk
 {
 
@@ -16,8 +18,8 @@ struct BitMask
 
     BitMask& turnOn (EnumType whichBit)
     {
-        assert (whichBit < sizeof (MaskType));
-        assert (whichBit >= 0);
+        m_assert (whichBit < sizeof (MaskType));
+        m_assert (whichBit >= 0);
 
         mask = mask | (1 << whichBit);
         return *this;
@@ -25,8 +27,8 @@ struct BitMask
 
     BitMask& turnOff (EnumType whichBit)
     {
-        assert (whichBit < sizeof (MaskType));
-        assert (whichBit >= 0);
+        m_assert (whichBit < sizeof (MaskType));
+        m_assert (whichBit >= 0);
 
         mask = mask & ~(1 << whichBit);
         return *this;
@@ -34,16 +36,16 @@ struct BitMask
 
     bool isOn (EnumType whichBit) const
     {
-        assert (whichBit < sizeof (MaskType));
-        assert (whichBit >= 0);
+        m_assert (whichBit < sizeof (MaskType));
+        m_assert (whichBit >= 0);
 
         return (mask & (1 << whichBit)) > 0;
     }
 
     bool isOff (EnumType whichBit) const
     {
-        assert (whichBit < sizeof (MaskType));
-        assert (whichBit >= 0);
+        m_assert (whichBit < sizeof (MaskType));
+        m_assert (whichBit >= 0);
 
         return (mask & (1 << whichBit)) == 0;
     }

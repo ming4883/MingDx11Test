@@ -255,67 +255,37 @@ struct Vec
     static inline Vec3<REAL> add (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline void add (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt);
-
-    template<typename REAL>
     static inline Vec4<REAL> add (Vec4<REAL> a, Vec4<REAL> b);
-
-    template<typename REAL>
-    static inline void add (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt);
 
     //! dst[i] = a[i] - b[i]
     template<typename REAL>
     static inline Vec3<REAL> sub (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline void sub (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt);
-
-    template<typename REAL>
     static inline Vec4<REAL> sub (Vec4<REAL> a, Vec4<REAL> b);
-
-    template<typename REAL>
-    static inline void sub (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt);
 
     //! dst[i] = a[i] * b
     template<typename REAL>
     static inline Vec3<REAL> mul (Vec3<REAL> a, REAL b);
 
     template<typename REAL>
-    static inline void mul (Vec3<REAL>* dst, const Vec3<REAL>* a, const REAL* b, size_t cnt);
-
-    template<typename REAL>
     static inline Vec4<REAL> mul (Vec4<REAL> a, REAL b);
     
-    template<typename REAL>
-    static inline void mul (Vec4<REAL>* dst, const Vec4<REAL>* a, const REAL* b, size_t cnt);
-
     //! dst[i] = a[i] * b[i]
     template<typename REAL>
     static inline Vec3<REAL> mul (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline void mul (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt);
-
-    template<typename REAL>
     static inline Vec4<REAL> mul (Vec4<REAL> a, Vec4<REAL> b);
-    
-    template<typename REAL>
-    static inline void mul (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt);
 
     //! dst = sum (a[i] * b[i])
     template<typename REAL>
     static inline REAL dot (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline void dot (REAL* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt);
-
-    template<typename REAL>
     static inline REAL dot (Vec4<REAL> a, Vec4<REAL> b);
-
-    template<typename REAL>
-    static inline void dot (REAL* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt);
-
-    //! replicate
+    
+    //! dot and replicated the result
     template<typename REAL>
     static inline Vec4<REAL> dotSIMD (Vec4<REAL> a, Vec4<REAL> b);
 
@@ -324,13 +294,7 @@ struct Vec
     static inline Vec3<REAL> reciprocal (Vec3<REAL> v);
 
     template<typename REAL>
-    static inline void reciprocal (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt);
-
-    template<typename REAL>
     static inline Vec4<REAL> reciprocal (Vec4<REAL> v);
-
-    template<typename REAL>
-    static inline void reciprocal (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt);
 
     // length
     template<typename REAL>
@@ -351,33 +315,18 @@ struct Vec
     static inline Vec3<REAL> neg (Vec3<REAL> v);
 
     template<typename REAL>
-    static inline void neg (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt);
-
-    template<typename REAL>
     static inline Vec4<REAL> neg (Vec4<REAL> v);
-
-    template<typename REAL>
-    static inline void neg (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt);
 
     //! dst = v / |v|
     template<typename REAL>
     static inline Vec3<REAL> normalize (Vec3<REAL> v);
-
-    template<typename REAL>
-    static inline void normalize (Vec3<REAL>* dst, const Vec3<REAL>* v, size_t cnt);
-
+    
     template<typename REAL>
     static inline Vec4<REAL> normalize (Vec4<REAL> v);
-
-    template<typename REAL>
-    static inline void normalize (Vec4<REAL>* dst, const Vec4<REAL>* v, size_t cnt);
-
+    
     //! dst[i] = crossProduct (a[i], b[i])
     template<typename REAL>
     static inline Vec3<REAL> cross (Vec3<REAL> a, Vec3<REAL> b);
-    
-    template<typename REAL>
-    static inline void cross (Vec3<REAL>* dst, const Vec3<REAL>* a, const Vec3<REAL>* b, size_t cnt);
 
     //! dst[i] = a[i] * (1 - t) + b[i] * t
     template<typename REAL>
@@ -406,15 +355,9 @@ struct Mat
     template<typename REAL>
     static inline void transpose (Mat44<REAL>& dst, const Mat44<REAL>& m);
 
-    template<typename REAL>
-    static inline void transpose (Mat44<REAL>* dst, const Mat44<REAL>* m, size_t cnt);
-
     // dst = a * b
     template<typename REAL>
     static inline void mul (Mat44<REAL>& dst, const Mat44<REAL>& a, const Mat44<REAL>& b);
-
-    template<typename REAL>
-    static inline void mul (Mat44<REAL>* dst, const Mat44<REAL>* a, const Mat44<REAL>* b, size_t cnt);
 };
 
 struct Quat
@@ -442,22 +385,13 @@ struct Quat
     template<typename REAL>
     static inline Vec4<REAL> mul (Vec4<REAL> a, Vec4<REAL> b);
 
-    template<typename REAL>
-    static inline void mul (Vec4<REAL>* dst, const Vec4<REAL>* a, const Vec4<REAL>* b, size_t cnt);
-
     //! inverse of q
     template<typename REAL>
     static inline Vec4<REAL> inverse (Vec4<REAL> q);
 
-    template<typename REAL>
-    static inline void inverse (Vec4<REAL>* dst, const Vec4<REAL>* q, size_t cnt);
-
     //! transform v by q
     template<typename REAL>
     static inline Vec3<REAL> transform (Vec4<REAL> q, Vec3<REAL> v);
-
-    template<typename REAL>
-    static inline void transform (Vec3<REAL>* dst, const Vec4<REAL>* q, const Vec3<REAL>* v, size_t cnt);
 };
 
 struct Transform

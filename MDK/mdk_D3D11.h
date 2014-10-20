@@ -37,9 +37,7 @@ namespace mdk
 template<class T>
 class Hold
 {
-    T* ptr_;
-    Hold& operator = (Hold&);
-    Hold (const Hold&);
+    m_noncopyable (Hold)
 
 public:
     Hold (T *ptr = nullptr) : ptr_ (ptr)
@@ -117,11 +115,14 @@ public:
 
         return hr;
     }
+
+private:
+    T* ptr_;
 };
 
 class D3D11Context
 {
-    Demo* demo_;
+    m_noncopyable (D3D11Context)
 
 public:
     D3D_FEATURE_LEVEL featureLevel;
@@ -210,12 +211,12 @@ public:
 
     // views
     ID3D11RenderTargetView* createRenderTargetView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
-	
-	ID3D11DepthStencilView* createDepthStencilView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat = (DXGI_FORMAT)-1);
 
-	ID3D11ShaderResourceView* createShaderResourceView (ID3D11Texture2D* texture, DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
+    ID3D11DepthStencilView* createDepthStencilView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat = (DXGI_FORMAT)-1);
 
-	ID3D11ShaderResourceView* createShaderResourceView (ID3D11Buffer* buffer);
+    ID3D11ShaderResourceView* createShaderResourceView (ID3D11Texture2D* texture, DXGI_FORMAT srvFormat = (DXGI_FORMAT)-1);
+
+    ID3D11ShaderResourceView* createShaderResourceView (ID3D11Buffer* buffer);
 
     // states
     ID3D11SamplerState* createSamplerState (const D3D11_SAMPLER_DESC& desc);
@@ -223,6 +224,9 @@ public:
     ID3D11RasterizerState* createRasterizerState (const D3D11_RASTERIZER_DESC& desc);
 
     ID3D11DepthStencilState* createDepthStencilState (const D3D11_DEPTH_STENCIL_DESC& desc);
+
+private:
+    Demo* demo_;
 
     // error reporting
     inline bool reportFailed (HRESULT hr, const char* errMsg)

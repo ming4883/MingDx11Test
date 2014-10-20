@@ -2,6 +2,7 @@
 #define MDK_ALLOCATOR_H_INCLUDED
 
 #include <new>
+#include <cstdlib>
 
 namespace mdk
 {
