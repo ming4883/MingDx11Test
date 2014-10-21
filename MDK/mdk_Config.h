@@ -10,6 +10,8 @@
 
 #define m_assert(x) assert(x)
 
+#define m_static_assert(x) static_assert(x)
+
 #define m_noncopyable(x) private: x(const x&); void operator = (const x&);
 
 #endif // MDK_CONFIG_H_INCLUDED

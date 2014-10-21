@@ -1,0 +1,22 @@
+{
+  "id":             "GoogleTest",
+  "name":           "Google C++ Testing Framework",
+  "version":        "1.7.0",
+  "description":    "Google C++ Testing Framework.",
+  "website":        "https://code.google.com/p/googletest/",
+  "license":        "New BSD License",
+
+  "dependencies":   [ { "id": "juce_gui_basics",   "version": "matching" }
+                    ],
+
+  "include":        "GoogleTest.h",
+
+  "compile":        [ { "file": "GoogleTest.cpp" } ],
+
+  "browse":         [],
+
+  "OSXFrameworks":  "",
+  "iOSFrameworks":  "",
+  "LinuxLibs":      "",
+  "mingwLibs":      ""
+}

@@ -4,6 +4,7 @@
 #include "mdk_Demo.h"
 #include "mdk_BabylonFile.h"
 #include "mdk_Math.h"
+#include "mdk_Manager.h"
 #include "mdk_Pool.h"
 #include "mdk_Persistable.h"
 #include "mdk_Scene.h"

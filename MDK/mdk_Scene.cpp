@@ -62,7 +62,7 @@ void Camera::updateForD3D (float rtAspect)
 }
 
 //==============================================================================
-Animation::Animation (Allocator& allocator)
+AnimationTrack::AnimationTrack (Allocator& allocator)
     : _allocator (allocator)
     , frameCount (0)
     , frameDataSize (0)
@@ -70,12 +70,12 @@ Animation::Animation (Allocator& allocator)
 
 }
 
-Animation::~Animation()
+AnimationTrack::~AnimationTrack()
 {
     dealloc();
 }
 
-void Animation::alloc (uint32 numOfFrames, uint32 numOfElemsPerFrame)
+void AnimationTrack::alloc (uint32 numOfFrames, uint32 numOfElemsPerFrame)
 {
     m_assert (numOfFrames > 1);
     m_assert (numOfElemsPerFrame > 0);
@@ -87,13 +87,79 @@ void Animation::alloc (uint32 numOfFrames, uint32 numOfElemsPerFrame)
     frameData = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames * numOfElemsPerFrame));
 }
 
-void Animation::dealloc()
+void AnimationTrack::dealloc()
 {
     _allocator.free (frameTime);
     _allocator.free (frameData);
 }
 
-void Animation::fetch2Frames (float* retFrameData, float* retFrameTime, float frameNo)
+void AnimationTrack::setFrameTime (uint32 offset, uint32 numOfFrames, float* ptr)
+{
+    float* dstPtr = frameTime;
+    float* srcPtr = ptr;
+
+    uint32 srcOffset = 0;
+    uint32 dstOffset = offset;
+
+    for (uint32 i = 0; i < numOfFrames; ++i)
+    {
+        dstPtr[++dstOffset] = srcPtr[++srcOffset];
+    }
+}
+
+void AnimationTrack::setFrameData (uint32 offset, uint32 numOfFrames, float* ptr)
+{
+    float* dstPtr = frameData;
+    float* srcPtr = ptr;
+
+    uint32 srcOffset = 0;
+    uint32 dstOffset = offset;
+
+    if (1 == frameDataSize)
+    {
+        for (uint32 i = 0; i < numOfFrames; ++i)
+        {
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+        }
+    }
+    else if (2 == frameDataSize)
+    {
+        for (uint32 i = 0; i < numOfFrames; ++i)
+        {
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+        }
+    }
+    else if (3 == frameDataSize)
+    {
+        for (uint32 i = 0; i < numOfFrames; ++i)
+        {
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+        }
+    }
+    else if (4 == frameDataSize)
+    {
+        for (uint32 i = 0; i < numOfFrames; ++i)
+        {
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+        }
+    }
+    else
+    {
+        for (uint32 i = 0; i < numOfFrames; ++i)
+        {
+            for (uint32 j = 0; j < frameDataSize; ++j)
+                dstPtr[++dstOffset] = srcPtr[++srcOffset];
+        }
+    }
+}
+
+void AnimationTrack::fetch2Frames (float* retFrameData, float* retFrameTime, float frameNo)
 {
     uint32 thisFrame = 0;
 
@@ -130,6 +196,12 @@ void Animation::fetch2Frames (float* retFrameData, float* retFrameTime, float fr
 
     retFrameTime[0] = frameTime[lastFrame];
     retFrameTime[1] = frameTime[thisFrame];
+}
+
+SceneAnimationManager::SceneAnimationManager (Allocator& allocator)
+    : Super (16u, allocator)
+{
+
 }
 
 }   // namespace

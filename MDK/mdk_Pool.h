@@ -11,7 +11,6 @@ template<typename T>
 struct ObjectPoolTraitsDefault
 {
     typedef T ObjectType;
-    typedef CrtAllocator AllocatorType;
     typedef SyncWithAtomic SyncType;
 };
 
