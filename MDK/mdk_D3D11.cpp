@@ -26,14 +26,14 @@ bool D3D11Context::startup (void* hwnd)
     flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-    D3D_FEATURE_LEVEL featureLevels[] = 
+    D3D_FEATURE_LEVEL featureLevels[] =
     {
         D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0,
     };
 
-    if (m_failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevels, numElementsInArray(featureLevels), D3D11_SDK_VERSION, device, &featureLevel, contextIM)))
+    if (m_failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevels, numElementsInArray (featureLevels), D3D11_SDK_VERSION, device, &featureLevel, contextIM)))
     {
-        if (m_failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_WARP, nullptr, flags, featureLevels, numElementsInArray(featureLevels), D3D11_SDK_VERSION, device, &featureLevel, contextIM)))
+        if (m_failed (::D3D11CreateDevice (nullptr, D3D_DRIVER_TYPE_WARP, nullptr, flags, featureLevels, numElementsInArray (featureLevels), D3D11_SDK_VERSION, device, &featureLevel, contextIM)))
             return false;
     }
 
@@ -42,15 +42,15 @@ bool D3D11Context::startup (void* hwnd)
         return false;
 
     Hold<IDXGIAdapter> dxgiAdapter;
-    if (m_failed (dxgiDevice->GetAdapter(dxgiAdapter)))
+    if (m_failed (dxgiDevice->GetAdapter (dxgiAdapter)))
         return false;
 
     Hold<IDXGIFactory2> dxgiFactory;
-    if (m_failed (dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), dxgiFactory)))
+    if (m_failed (dxgiAdapter->GetParent (__uuidof (IDXGIFactory2), dxgiFactory)))
         return false;
 
     DXGI_SWAP_CHAIN_DESC1 desc;
-    
+
     desc.Width = 0;
     desc.Height = 0;
     desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -76,7 +76,7 @@ bool D3D11Context::startup (void* hwnd)
 
     RECT rect;
     ::GetClientRect ((HWND)hwnd, &rect);
-    if (m_isnull (depthBuf.set ( createTexture2DRT (rect.right - rect.left, rect.bottom - rect.top, 1, DXGI_FORMAT_R32_TYPELESS, DXGI_FORMAT_D32_FLOAT))))
+    if (m_isnull (depthBuf.set (createTexture2DRT (rect.right - rect.left, rect.bottom - rect.top, 1, DXGI_FORMAT_R32_TYPELESS, DXGI_FORMAT_D32_FLOAT))))
         return false;
 
     if (m_isnull (depthBufDSView.set (createDepthStencilView (depthBuf, 0, DXGI_FORMAT_D32_FLOAT))))
@@ -240,7 +240,7 @@ struct ShaderCompileDesc
 
     D3D_SHADER_MACRO* defines;
     ID3DInclude* include;
-        
+
     size_t sourceSize;  //!< if 0, set to strlen (source)
     size_t flags1;
     size_t flags2;      //!< ignored for non effect file
@@ -276,7 +276,7 @@ void ShaderCompileDesc::reset()
 
     defines = nullptr;
     include = nullptr;
-        
+
     sourceSize = 0;
     flags1 = 0;
     flags2 = 0;
@@ -437,14 +437,14 @@ ID3D11GeometryShader* D3D11Context::createGeometryShader (ID3DBlob* bytecode, ID
 
 ID3D11InputLayout* D3D11Context::createInputLayout (const D3D11_INPUT_ELEMENT_DESC* inputElements, const size_t inputElementCount, ID3DBlob* shaderByteCode)
 {
-    if(nullptr == shaderByteCode)
+    if (nullptr == shaderByteCode)
         return nullptr;
 
     Hold<ID3D11InputLayout> layout;
-    if (m_failed (device->CreateInputLayout(
-        inputElements, inputElementCount,
-        shaderByteCode->GetBufferPointer(), shaderByteCode->GetBufferSize(),
-        layout)))
+    if (m_failed (device->CreateInputLayout (
+                      inputElements, inputElementCount,
+                      shaderByteCode->GetBufferPointer(), shaderByteCode->GetBufferSize(),
+                      layout)))
         return nullptr;
 
     return layout.drop();
@@ -457,7 +457,7 @@ ID3D11Buffer* D3D11Context::createVertexBuffer (size_t sizeInBytes, bool dynamic
     desc.StructureByteStride = 0;   // for compute buffer only
     desc.BindFlags = D3D11_BIND_VERTEX_BUFFER;	// vertex buffer
     desc.MiscFlags = 0;	// no misc flags
-        
+
     if (dynamic)
     {
         desc.Usage = D3D11_USAGE_DYNAMIC;				// gpu read/write
@@ -471,9 +471,9 @@ ID3D11Buffer* D3D11Context::createVertexBuffer (size_t sizeInBytes, bool dynamic
 
     D3D11_SUBRESOURCE_DATA srdara;
     srdara.pSysMem = initialData;
-        
+
     Hold<ID3D11Buffer> buffer;
-    
+
     if (m_failed (device->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
         return nullptr;
 
@@ -513,7 +513,7 @@ ID3D11Buffer* D3D11Context::createIndexBuffer (size_t sizeInBytes, bool dynamic,
 
 ID3D11Buffer* D3D11Context::createConstantBuffer (size_t sizeInBytes)
 {
-    if(sizeInBytes % 16 != 0)
+    if (sizeInBytes % 16 != 0)
         sizeInBytes += 16 - (sizeInBytes % 16);
 
     D3D11_BUFFER_DESC desc;
@@ -524,7 +524,7 @@ ID3D11Buffer* D3D11Context::createConstantBuffer (size_t sizeInBytes)
     desc.ByteWidth = sizeInBytes;
 
     Hold<ID3D11Buffer> buffer;
-    
+
     if (m_failed (device->CreateBuffer (&desc, nullptr, buffer)))
         return nullptr;
 
@@ -539,9 +539,9 @@ bool D3D11Context::updateBuffer (ID3D11Buffer* buffer, const void* data, size_t 
     if (dynamic)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
-        if (m_failed(contextIM->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+        if (m_failed (contextIM->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
             return false;
-        
+
         memcpy (mapped.pData, data, dataSize);
 
         contextIM->Unmap (buffer, 0);
@@ -563,9 +563,9 @@ bool D3D11Context::updateBuffer (ID3D11DeviceContext* context, ID3D11Buffer* buf
     if (dynamic)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
-        if (FAILED(context->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+        if (FAILED (context->Map (buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
             return false;
-        
+
         memcpy (mapped.pData, data, dataSize);
 
         context->Unmap (buffer, 0);
@@ -598,10 +598,10 @@ ID3D11Texture2D* D3D11Context::createTexture2D (size_t width, size_t height, siz
     srdata.pSysMem = initialData;
     srdata.SysMemPitch = rowPitch;
     srdata.SysMemSlicePitch = slicePitch;
-    
+
     if (m_failed (device->CreateTexture2D (&desc, initialData == nullptr ? nullptr : &srdata, texture)))
         return nullptr;
-    
+
     return texture.drop();
 }
 
@@ -654,7 +654,7 @@ ID3D11Texture2D* D3D11Context::createTexture2DFromAppData (const char* id)
             s += 4;
             d += 4;
         }
-        
+
         src += imgData.lineStride;
         dst += rowPitch;
     }
@@ -696,7 +696,7 @@ ID3D11Texture2D* D3D11Context::createTexture2DRT (size_t width, size_t height, s
     }
 
     Hold<ID3D11Texture2D> texture;
-    
+
     if (m_failed (device->CreateTexture2D (&desc, nullptr, texture)))
         return nullptr;
 
@@ -707,7 +707,7 @@ ID3D11RenderTargetView* D3D11Context::createRenderTargetView (ID3D11Texture2D* t
 {
     D3D11_TEXTURE2D_DESC texdesc;
     texture->GetDesc (&texdesc);
-    
+
     D3D11_RENDER_TARGET_VIEW_DESC desc;
     zerostruct (desc);
     if (-1 == rtvFormat)
@@ -729,7 +729,7 @@ ID3D11RenderTargetView* D3D11Context::createRenderTargetView (ID3D11Texture2D* t
     }
 
     Hold<ID3D11RenderTargetView> rtview;
-    
+
     if (m_failed (device->CreateRenderTargetView (texture, &desc, rtview)))
         return nullptr;
 
@@ -739,8 +739,8 @@ ID3D11RenderTargetView* D3D11Context::createRenderTargetView (ID3D11Texture2D* t
 ID3D11DepthStencilView* D3D11Context::createDepthStencilView (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat)
 {
     D3D11_TEXTURE2D_DESC texdesc;
-    texture->GetDesc(&texdesc);
-    
+    texture->GetDesc (&texdesc);
+
     D3D11_DEPTH_STENCIL_VIEW_DESC desc;
     zerostruct (desc);
 
@@ -763,7 +763,7 @@ ID3D11DepthStencilView* D3D11Context::createDepthStencilView (ID3D11Texture2D* t
     }
 
     Hold<ID3D11DepthStencilView> dsview;
-    
+
     if (m_failed (device->CreateDepthStencilView (texture, &desc, dsview)))
         return nullptr;
 
@@ -778,7 +778,7 @@ ID3D11ShaderResourceView* D3D11Context::createShaderResourceView (ID3D11Texture2
     D3D11_SHADER_RESOURCE_VIEW_DESC desc;
     zerostruct (desc);
 
-    if (-1 == srvFormat)	
+    if (-1 == srvFormat)
         desc.Format = texdesc.Format;
     else
         desc.Format = srvFormat;
@@ -799,7 +799,7 @@ ID3D11ShaderResourceView* D3D11Context::createShaderResourceView (ID3D11Texture2
     }
 
     Hold<ID3D11ShaderResourceView> srview;
-    
+
     if (m_failed (device->CreateShaderResourceView (texture, &desc, srview)))
         return nullptr;
 
@@ -836,7 +836,7 @@ ID3D11ShaderResourceView* D3D11Context::createShaderResourceView (ID3D11Buffer* 
     }
 
     Hold<ID3D11ShaderResourceView> srview;
-    
+
     if (m_failed (device->CreateShaderResourceView (buffer, &desc, srview)))
         return nullptr;
 
@@ -887,34 +887,34 @@ void D3D11Demo::paint (Graphics&)
     renderThreadStart ([this] (Thread* thread)
     {
         {
-            ErrorReporter r(this);
+            ErrorReporter r (this);
             if (!d3d11.startup (getTopLevelComponent()->getWindowHandle()))
                 return;
         }
-            
+
         {
-            ErrorReporter r(this);
+            ErrorReporter r (this);
             if (!demoStartup())
                 return;
         }
 
         timeInit();
-            
+
         while (!thread->threadShouldExit())
         {
-            ErrorReporter r(this);
+            ErrorReporter r (this);
             timeUpdate();
             demoUpdate();
             Thread::yield();
         }
 
         {
-            ErrorReporter r(this);
+            ErrorReporter r (this);
             demoShutdown();
         }
 
         {
-            ErrorReporter r(this);
+            ErrorReporter r (this);
             d3d11.shutdown();
         }
     });
@@ -961,8 +961,8 @@ ID3D11Buffer* D3D11Resource::createStructComputeBuffer (ID3D11Device* d3dDevice,
     srdata.pSysMem = initialData;
 
     Hold<ID3D11Buffer> buffer;
-    
-    if (FAILED (d3dDevice->CreateBuffer(&desc, (nullptr == initialData) ? nullptr : &srdata, buffer)))
+
+    if (FAILED (d3dDevice->CreateBuffer (&desc, (nullptr == initialData) ? nullptr : &srdata, buffer)))
         return nullptr;
 
     return buffer.drop();
@@ -1019,7 +1019,7 @@ ID3D11Texture2D* D3D11Resource::createTexture2DStagingBuffer (ID3D11Device* d3dD
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
     Hold<ID3D11Texture2D> texture;
-    
+
     if (FAILED (d3dDevice->CreateTexture2D (&desc, nullptr, texture)))
         return nullptr;
 
@@ -1042,22 +1042,22 @@ ID3D11UnorderedAccessView* D3D11Resource::createUnorderedAccessView (ID3D11Devic
         // This is a Raw Buffer
         desc.Format = DXGI_FORMAT_R32_TYPELESS; // Format must be DXGI_FORMAT_R32_TYPELESS, when creating Raw Unordered Access View
         desc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_RAW;
-        desc.Buffer.NumElements = bufdesc.ByteWidth / 4; 
+        desc.Buffer.NumElements = bufdesc.ByteWidth / 4;
     }
     else if (bufdesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED)
     {
         // This is a Structured Buffer
         desc.Format = DXGI_FORMAT_UNKNOWN;      // Format must be must be DXGI_FORMAT_UNKNOWN, when creating a View of a Structured Buffer
-        desc.Buffer.NumElements = bufdesc.ByteWidth / bufdesc.StructureByteStride; 
-    } 
+        desc.Buffer.NumElements = bufdesc.ByteWidth / bufdesc.StructureByteStride;
+    }
     else
     {
         return nullptr;
     }
 
     Hold<ID3D11UnorderedAccessView> uaview;
-    
-    if (FAILED (d3dDevice->CreateUnorderedAccessView(buffer, &desc, uaview)))
+
+    if (FAILED (d3dDevice->CreateUnorderedAccessView (buffer, &desc, uaview)))
         return nullptr;
 
     return uaview.drop();

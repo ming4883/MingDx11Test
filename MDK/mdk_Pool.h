@@ -27,12 +27,15 @@ public:
     typedef typename TRAITS::SyncType Sync;
     typedef ScopedSyncRead<Sync> SyncRead;
     typedef ScopedSyncWrite<Sync> SyncWrite;
-    
+
     explicit ObjectPool (size_t initialCapacity = 32, size_t nodeMaxCapacity = 1000000, Allocator& allocator = CrtAllocator::get());
 
     virtual ~ObjectPool();
 
-    Allocator& getAllocator() { return _allocator; }
+    Allocator& getAllocator()
+    {
+        return _allocator;
+    }
 
     bool isOwnerOf (Object* content) const;
 
@@ -69,7 +72,7 @@ private:
     _Node _firstNode;
     _Node* _lastNode;
     size_t _nodeMaxCapacity;
-    
+
 
     void _allocateNewNode();
 
@@ -86,13 +89,13 @@ struct UseAllocator< ObjectPool<TRAITS> >
 #define m_new_with_pool(pool, type) new (pool.allocate())type
 
 template<typename POOL, typename TYPE>
-void m_del_with_pool(POOL& pool, TYPE* ptr)
+void m_del_with_pool (POOL& pool, TYPE* ptr)
 {
     if (nullptr == ptr)
         return;
 
     ptr->~TYPE();
-    pool.release(ptr);
+    pool.release (ptr);
 }
 
 #include "mdk_Pool.inl"

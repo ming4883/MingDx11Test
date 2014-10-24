@@ -43,7 +43,7 @@ public:
     void fromDataStore (const DataStore& ds, const Flags& flags);
 
     template<class T>
-    static void clone(T& dst, T& src)
+    static void clone (T& dst, T& src)
     {
         Flags flags;
         flags.turnOn (flagSerialize);
@@ -129,7 +129,7 @@ template<typename TYPE> inline bool loadValue (const DataStore& src, const DataI
 inline bool loadValue (const DataStore& src, const DataId& dataId, float& value)
 {
     double value64;
-    if (!loadValue(src, dataId, value64))
+    if (!loadValue (src, dataId, value64))
         return false;
 
     value = (float)value64;
@@ -153,7 +153,7 @@ inline bool loadValue (const DataStore& src, const DataId& dataId, juce::String&
 
     return true;
 }
-    
+
 template<typename TYPE> inline bool loadArray (const DataStore& src, const DataId& dataId, juce::Array<TYPE>& values)
 {
     // check for existance

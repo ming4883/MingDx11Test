@@ -11,3 +11,8 @@
 #include "mdk_D3D11.cpp"
 #include "mdk_D3D11Scene.cpp"
 #endif // JUCE_WINDOWS
+
+#ifdef MDK_UNIT_TESTS
+#include "mdk_Manager.tests.cpp"
+#include "mdk_Scene.tests.cpp"
+#endif

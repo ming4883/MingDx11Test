@@ -292,12 +292,12 @@ void Mat::fromQuat (Mat44<REAL>& dst, Vec4<REAL> q)
     dst[0][1] = txy - twz;
     dst[0][2] = txz + twy;
     dst[0][3] = (REAL)0;
-    
+
     dst[1][0] = txy + twz;
     dst[1][1] = 1 - (txx + tzz);
     dst[1][2] = tyz - twx;
     dst[1][3] = (REAL)0;
-    
+
     dst[2][0] = txz - twy;
     dst[2][1] = tyz + twx;
     dst[2][2] = 1 - (txx + tyy);
@@ -331,10 +331,22 @@ void Mat::transpose (Mat44<REAL>& dst, const Mat44<REAL>& m)
 {
     Vec4<REAL> a[4] = {m[0], m[1], m[2], m[3]};
 
-    dst.m00 = a[0][0]; dst.m10 = a[0][1]; dst.m20 = a[0][2]; dst.m30 = a[0][3];
-    dst.m01 = a[1][0]; dst.m11 = a[1][1]; dst.m21 = a[1][2]; dst.m31 = a[1][3];
-    dst.m02 = a[2][0]; dst.m12 = a[2][1]; dst.m22 = a[2][2]; dst.m32 = a[2][3];
-    dst.m03 = a[3][0]; dst.m13 = a[3][1]; dst.m23 = a[3][2]; dst.m33 = a[3][3];
+    dst.m00 = a[0][0];
+    dst.m10 = a[0][1];
+    dst.m20 = a[0][2];
+    dst.m30 = a[0][3];
+    dst.m01 = a[1][0];
+    dst.m11 = a[1][1];
+    dst.m21 = a[1][2];
+    dst.m31 = a[1][3];
+    dst.m02 = a[2][0];
+    dst.m12 = a[2][1];
+    dst.m22 = a[2][2];
+    dst.m32 = a[2][3];
+    dst.m03 = a[3][0];
+    dst.m13 = a[3][1];
+    dst.m23 = a[3][2];
+    dst.m33 = a[3][3];
 }
 
 // Mat::mul
@@ -418,7 +430,7 @@ template<typename REAL>
 Vec4<REAL> Quat::fromUnitAxisAngle (Vec3<REAL> axis, REAL angleInRad)
 {
     REAL sinVal, cosVal;
-    Scalar::calcSinCos<REAL> (sinVal, cosVal, (REAL)(angleInRad * 0.5f));
+    Scalar::calcSinCos<REAL> (sinVal, cosVal, (REAL) (angleInRad * 0.5f));
 
     Vec4<REAL> dst (Vec::mul (axis, sinVal), cosVal);
     return dst;
@@ -436,11 +448,11 @@ Vec4<REAL> Quat::fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd)
         // If d == 1, vectors are the same
         Quat::setIdentity (dst);
     }
-    if (d < (REAL)(1e-6f - 1.0f))
+    if (d < (REAL) (1e-6f - 1.0f))
     {
         // dirEnd is almost equals to -dirBeg, pick an axis and make a 180 degree rotation
         Vec3<REAL> axis = Vec::cross (Vec3<REAL> (0, 1, 0), dirBeg);
-        if (Vec::isNearZero (axis)) 
+        if (Vec::isNearZero (axis))
         {
             // pick another if colinear
             axis = Vec::cross (Vec3<REAL> (0, 0, 1), dirBeg);
@@ -450,7 +462,7 @@ Vec4<REAL> Quat::fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd)
     }
     else
     {
-        REAL s = (REAL)std::sqrtf ((float)(1 + d) * 2);
+        REAL s = (REAL)std::sqrtf ((float) (1 + d) * 2);
         REAL invs = 1 / s;
 
         Vec3<REAL> c = Vec::cross (dirBeg, dirEnd);
@@ -458,13 +470,13 @@ Vec4<REAL> Quat::fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd)
         dst.x = c.x * invs;
         dst.y = c.y * invs;
         dst.z = c.z * invs;
-        dst.w = (REAL)(s * 0.5f);
+        dst.w = (REAL) (s * 0.5f);
 
         float norm = (float)Vec::dot (dst, dst);
 
         if (std::fabsf (norm - 1.0f) > 1e-6f)
         {
-            dst = Vec::mul (dst, (REAL)(1.0f / std::sqrtf (norm)));
+            dst = Vec::mul (dst, (REAL) (1.0f / std::sqrtf (norm)));
         }
     }
 
@@ -510,7 +522,7 @@ Vec4<REAL> Quat::inverse (Vec4<REAL> q)
     {
 #if 0
         sqLen = Vec::reciprocal (sqLen);
-        
+
         Vec4<REAL> dst;
         dst.x = -q.x * sqLen;
         dst.y = -q.y * sqLen;

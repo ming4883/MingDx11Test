@@ -1,9 +1,11 @@
 #ifndef MDK_D3D11_H_INCLUDED
 #define MDK_D3D11_H_INCLUDED
 
+#include "mdk_Config.h"
 #include "mdk_Demo.h"
 
 #pragma warning(disable:4324)
+#define NOMINMAX
 
 #include <dxgi.h>
 #include <d3d11_1.h>
@@ -16,7 +18,7 @@
         XMFLOAT2 a; // 0x00
         XMFLOAT4 b; // 0x08
     };
-    
+
     struct cb_align TestCB2
     {
         XMFLOAT2 a; // 0x00
@@ -40,7 +42,7 @@ class Hold
     m_noncopyable (Hold)
 
 public:
-    Hold (T *ptr = nullptr) : ptr_ (ptr)
+    Hold (T* ptr = nullptr) : ptr_ (ptr)
     {
     }
 
@@ -105,7 +107,7 @@ public:
     }
 
     template<class U>
-    HRESULT as(Hold<U>& ret)
+    HRESULT as (Hold<U>& ret)
     {
         U* u;
         HRESULT hr = ptr_->QueryInterface (__uuidof (U), (void**)&u);
@@ -138,18 +140,18 @@ public:
     Hold<ID3D11SamplerState> sampWrapPoint;
     Hold<ID3D11SamplerState> sampClampLinear;
     Hold<ID3D11SamplerState> sampClampPoint;
-    
+
     Hold<ID3D11RasterizerState> rastCullNone;
     Hold<ID3D11RasterizerState> rastCWCullFront;
     Hold<ID3D11RasterizerState> rastCWCullBack;
     Hold<ID3D11RasterizerState> rastCCWCullFront;
     Hold<ID3D11RasterizerState> rastCCWCullBack;
-    
+
     Hold<ID3D11DepthStencilState> depthTestOnWriteOn;
     Hold<ID3D11DepthStencilState> depthTestOnWriteOff;
     Hold<ID3D11DepthStencilState> depthTestOffWriteOn;
     Hold<ID3D11DepthStencilState> depthTestOffWriteOff;
-    
+
 public:
     D3D11Context (Demo* demo);
     ~D3D11Context();
@@ -250,7 +252,7 @@ public:
 
 protected:
     D3D11Context d3d11;
-    
+
 protected:
     // render targets
     D3D11_VIEWPORT getViewport (float x_ratio, float y_ratio, float w_ratio, float h_ratio, float minz = 0.0f, float maxz = 1.0f);
@@ -262,11 +264,11 @@ class D3D11Resource
 public:
     static ID3D11Buffer* createStructComputeBuffer (ID3D11Device* d3dDevice, size_t bufferSizeInBytes, size_t structSizeInBytes, const void* initialData = nullptr);
 
-	static ID3D11Texture2D* createTexture2DArrayRenderBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t arraySize, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
+    static ID3D11Texture2D* createTexture2DArrayRenderBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t arraySize, size_t mipLevels, DXGI_FORMAT dataFormat, DXGI_FORMAT rtvFormat = (DXGI_FORMAT)-1);
 
-	static ID3D11Texture2D* createTexture2DStagingBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat);
+    static ID3D11Texture2D* createTexture2DStagingBuffer (ID3D11Device* d3dDevice, size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat);
 
-	static ID3D11UnorderedAccessView* createUnorderedAccessView (ID3D11Device* d3dDevice, ID3D11Buffer* buffer);
+    static ID3D11UnorderedAccessView* createUnorderedAccessView (ID3D11Device* d3dDevice, ID3D11Buffer* buffer);
 };
 
 } // namespace

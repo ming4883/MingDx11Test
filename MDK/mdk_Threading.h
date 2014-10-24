@@ -49,23 +49,23 @@ public:
 class SyncWithNull
 {
 public:
-    inline void lockWriter ()
+    inline void lockWriter()
     {
     }
 
-    inline void unlockWriter ()
+    inline void unlockWriter()
     {
     }
 
-    inline void lockReader ()
+    inline void lockReader()
     {
     }
 
-    inline void unlockReader ()
+    inline void unlockReader()
     {
     }
 
-    inline bool tryLockReader ()
+    inline bool tryLockReader()
     {
         return true;
     }
@@ -78,27 +78,27 @@ public:
     {
     }
 
-    inline void lockWriter ()
+    inline void lockWriter()
     {
         lock();
     }
 
-    inline void unlockWriter ()
+    inline void unlockWriter()
     {
         unlock();
     }
 
-    inline void lockReader ()
+    inline void lockReader()
     {
         lock();
     }
 
-    inline void unlockReader ()
+    inline void unlockReader()
     {
         unlock();
     }
 
-    inline bool tryLockReader ()
+    inline bool tryLockReader()
     {
         return tryLock();
     }
@@ -137,7 +137,7 @@ public:
         sync_.lockReader();
     }
 
-    ~ScopedSyncRead ()
+    ~ScopedSyncRead()
     {
         sync_.unlockReader();
     }
@@ -157,7 +157,7 @@ public:
         sync_.lockWriter();
     }
 
-    ~ScopedSyncWrite ()
+    ~ScopedSyncWrite()
     {
         sync_.unlockWriter();
     }

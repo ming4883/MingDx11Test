@@ -62,7 +62,7 @@ public:
             memcpy (dst, defaultVals, sizeof (T) * N);
             return false;
         }
-        
+
         for (int i = 0; i < N; ++i)
             dst[i] = (T)src[i];
 
@@ -95,7 +95,7 @@ public:
             dst = defaultVal;
             return false;
         }
-        
+
         dst = (T)src;
         return true;
     }
@@ -122,13 +122,13 @@ bool BabylonFile::read (InputStream* stream)
 
     if (Var::isNull (document))
         return false;
-    
+
     if (!importMeshes (document))
         return false;
 
     if (!importMaterials (document))
         return false;
-    
+
     return true;
 }
 
@@ -170,7 +170,7 @@ void BabylonFile::importMesh (const var& _)
     decl_id (colors);
 
     decl_id (animations);
-    
+
     ScopedPointer<Mesh> mesh = new Mesh;
 
     mesh->name = _.getProperty (id_name, "").toString();
@@ -199,9 +199,10 @@ void BabylonFile::importMesh (const var& _)
         float def[3] = {1.0f, 1.0f, 1.0f};
         Var::toVector (mesh->local.scaling, _, id_scaling, def);
     }
-    
+
     {
-        float def[16] = {
+        float def[16] =
+        {
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,

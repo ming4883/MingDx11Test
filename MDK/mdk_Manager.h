@@ -1,6 +1,7 @@
 #ifndef MDK_MANAGER_H_INCLUDED
 #define MDK_MANAGER_H_INCLUDED
 
+#include "mdk_Config.h"
 #include "mdk_Allocator.h"
 #include "mdk_Threading.h"
 
@@ -16,10 +17,10 @@ struct ManagerTraitsDefault
 
     enum
     {
-        kHandleIndexBits = 20,
-        kHandleGenerationBits = 12,
+        cHandleIndexBits = 20,
+        cHandleGenerationBits = 12,
     };
-    
+
 };
 
 /*! A template for managing objects in data-oriented manner.
@@ -35,13 +36,13 @@ public:
     struct Handle
     {
         typedef typename TRAITS::HandleDataType DataType;
-        DataType index : TRAITS::kHandleIndexBits;
-        DataType generation : TRAITS::kHandleGenerationBits;
+        DataType index : TRAITS::cHandleIndexBits;
+        DataType generation : TRAITS::cHandleGenerationBits;
 
         enum
         {
-            kIndexLimit = 1 << (TRAITS::kHandleIndexBits),
-            kGenerationLimit = 1 << (TRAITS::kHandleGenerationBits),
+            cIndexLimit = 1 << (TRAITS::cHandleIndexBits),
+            cGenerationLimit = 1 << (TRAITS::cHandleGenerationBits),
         };
 
         Handle()
@@ -65,56 +66,13 @@ public:
     typedef ScopedSyncRead<Sync> SyncRead;
     typedef ScopedSyncWrite<Sync> SyncWrite;
 
-protected:
-
-    enum
-    {
-        kInvalidSlotIndex = 1 << (TRAITS::kHandleIndexBits)
-    };
-
-    //! Allocation Table
-    struct ATable
-    {
-        Handle handle;
-        size_t slotIndex;
-        size_t freelistNext;
-    };
-
-    Allocator& _allocator;
-    Sync mSyncHandle;
-    size_t mCapacity;
-    size_t mSize;
-    size_t mFirstDisabled;
-    size_t mFreelistDequeue;
-    size_t mFreelistEnqueue;
-    size_t mFreelistCount;
-    ATable* mATable;
-    Data* mDataSlot;      //! slots for holding the actual data
-    Handle* mDataHandle;    //! mapping data slot back to the associated Handle, used in copyDataSlot() & swapDataSlot().
-    
-    //! Returns true if successfully resized, otherwise false (e.g. out of memory or newCapacity > Handle::kIndexLimit).
-    bool resize (size_t newCapacity);
-
-    void copyDataSlot (size_t from, size_t to);
-
-    void swapDataSlot (size_t a, size_t b);
-
-    inline bool isEnabledNoSync (Handle handle) const;
-
-    inline bool isValidNoSync (Handle handle) const;
-
-    inline Data* getNoSync (Handle handle) const;
-
-    inline Handle acquireNoSync();
-
-    inline bool releaseNoSync (Handle handle);
-
-
 public:
     //! Construct the Manager with initial capacity.
     Manager (size_t initialCapacity, Allocator& allocator = CrtAllocator::get());
 
     virtual ~Manager();
+
+    Allocator& getAllocator() { return _allocator; }
 
     //! Returns the capacity of this Manager.
     size_t capacity() const
@@ -133,6 +91,31 @@ public:
 
     //! Retuns true of the memory location
     bool release (Handle handle);
+
+    //! An utility which invoke the object's constructor.
+    template<typename... Args>
+    bool construct (Handle handle, Args... args)
+    {
+        SyncWrite sync (mSyncHandle);
+
+        if (!isValidNoSync (handle))
+            return false;
+
+        ConstructWithAllocator<Data, UseAllocator<Data>::value>::invoke (_allocator, getNoSync (handle), args...);
+
+        return true;
+    }
+
+    bool destruct (Handle handle)
+    {
+        SyncWrite sync (mSyncHandle);
+
+        if (!isValidNoSync (handle))
+            return false;
+
+        getNoSync (handle)->~Data();
+        return true;
+    }
 
     //! Returns to if handle is pointing to a memory location within this Manager, otherwise false.
     bool isValid (Handle handle) const;
@@ -209,31 +192,49 @@ public:
     {
         return mDataSlot + mSize;
     }
+
+protected:
+
+    enum
+    {
+        cInvalidSlotIndex = 1 << (TRAITS::cHandleIndexBits)
+    };
+
+    //! Allocation Table
+    struct ATable
+    {
+        Handle handle;
+        size_t slotIndex;
+        size_t freelistNext;
+    };
+
+    Allocator& _allocator;
+    mutable Sync mSyncHandle;
+    size_t mCapacity;
+    size_t mSize;
+    size_t mFirstDisabled;
+    size_t mFreelistDequeue;
+    size_t mFreelistEnqueue;
+    size_t mFreelistCount;
+    ATable* mATable;
+    Data* mDataSlot;      //! slots for holding the actual data
+    Handle* mDataHandle;    //! mapping data slot back to the associated Handle, used in copyDataSlot() & swapDataSlot().
+
+    //! Returns true if successfully resized, otherwise false (e.g. out of memory or newCapacity > Handle::kIndexLimit).
+    bool resize (size_t newCapacity);
+
+    void swapDataSlot (size_t slotIdxA, size_t slotIdxB);
+
+    inline bool isEnabledNoSync (Handle handle) const;
+
+    inline bool isValidNoSync (Handle handle) const;
+
+    inline Data* getNoSync (Handle handle) const;
+
+    inline Handle acquireNoSync();
+
+    inline bool releaseNoSync (Handle handle);
 };
-
-//! An utility which invoke the object's default constructor just after Manager::acquire().
-template<typename Manager>
-inline typename Manager::Handle createObject (Manager& manager)
-{
-    typedef typename Manager::Data Data;
-    typename Manager::Handle handle = manager.acquire();
-
-    if (manager.isValid (handle))
-        new (manager.get (handle))Data();
-
-    return handle;
-}
-
-//! An utility which invoke the object's destructor right before Manager::release().
-template<typename Manager>
-inline bool destroyObject (Manager& manager, typename Manager::Handle handle)
-{
-    typedef typename Manager::Data Data;
-    if (manager.isValid (handle))
-        manager.get (handle)->~Data();
-
-    return manager.release (handle);
-}
 
 }
 

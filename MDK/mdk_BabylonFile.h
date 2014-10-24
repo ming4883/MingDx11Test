@@ -1,10 +1,12 @@
 #ifndef MDK_BABYLONFILE_H_INCLUDED
 #define MDK_BABYLONFILE_H_INCLUDED
 
-#include <AppConfig.h>
+
+#include "mdk_Config.h"
+#include "mdk_Math.h"
+
 #include <modules/juce_core/juce_core.h>
 
-#include "mdk_Math.h"
 
 namespace mdk
 {

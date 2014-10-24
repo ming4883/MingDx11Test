@@ -53,13 +53,13 @@ public:
     class MouseListenerWithCallback : public MouseListener
     {
     public:
-        typedef std::function<void (const MouseEvent& )> MouseCallback;
+        typedef std::function<void (const MouseEvent&)> MouseCallback;
 
         MouseCallback onMouseMove;
         MouseCallback onMouseDown;
         MouseCallback onMouseUp;
         MouseCallback onMouseDrag;
-        
+
         void mouseMove (const MouseEvent& event) override
         {
             if (onMouseMove)
@@ -71,20 +71,20 @@ public:
             if (onMouseDown)
                 onMouseDown (event);
         }
-    
+
         void mouseDrag (const MouseEvent& event) override
         {
             if (onMouseDrag)
                 onMouseDrag (event);
         }
-    
+
         void mouseUp (const MouseEvent& event) override
         {
             if (onMouseUp)
                 onMouseUp (event);
         }
     };
-    
+
 // Camera Controls
     //! A First Per Shooter camera control
     class FPSCameraControl : public MouseListener
@@ -92,7 +92,7 @@ public:
         m_noncopyable (FPSCameraControl)
 
     public:
-        
+
         enum State
         {
             stateIdle,
@@ -112,7 +112,7 @@ public:
         float startTime;
         Vec3f moveDir;
         ScopedPointer<JobWithCallback> job;
-        
+
         FPSCameraControl (ThreadPool& threadPool, Camera& camera);
 
         void syncWithCamera();
@@ -140,7 +140,7 @@ protected:
     };
 
     typedef HashMap<int, AppData*> AppDataCache;
-    
+
     StringArray appDataDirs;
 
     AppDataCache appDataCache;
@@ -165,7 +165,7 @@ protected:
     inline void errDump()
     {
         for (int i = 0; i < errors_.size(); ++i)
-            Logger::outputDebugString (errors_.getReference(i) + "\n");
+            Logger::outputDebugString (errors_.getReference (i) + "\n");
     }
 
     class ErrorReporter
@@ -196,7 +196,7 @@ protected:
     inline void timeUpdate()
     {
         double timeThisFrame = Time::getMillisecondCounterHiRes();
-        
+
         double delta = timeThisFrame - timeLastFrame_;
 
         if (0 == timeDelta_)
@@ -227,7 +227,7 @@ protected:
     {
         return (REAL)timeSmoothDelta_;
     }
-    
+
     template<typename REAL = double>
     inline REAL timeGetAccumMS() const
     {
@@ -267,7 +267,7 @@ class DemoApplication : public JUCEApplication
 public:
     ScopedPointer<DemoWindow> window;
 
-    DemoApplication () {}
+    DemoApplication() {}
     virtual ~DemoApplication() {}
 
     void initialise (const String& cmdLine) override
@@ -285,7 +285,7 @@ public:
         quit();
     }
 
-    void anotherInstanceStarted (const String& ) override
+    void anotherInstanceStarted (const String&) override
     {
     }
 };

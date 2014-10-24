@@ -94,7 +94,7 @@ typename ObjectPool<TRAITS>::Object* ObjectPool<TRAITS>::allocate()
     address += _countInNode * cItemSize;
 
     Object* result = (Object*)address;
- 
+
     _countInNode++;
     return result;
 }

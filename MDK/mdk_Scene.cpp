@@ -33,7 +33,7 @@ void Camera::updateForD3D (float rtAspect)
     float zf = proj.zFar;
     float sinFov, cosFov;
     Scalar::calcSinCos<float> (sinFov, cosFov, proj.fovY * 0.5f);
-    
+
     float yscale = cosFov / sinFov;
     float xscale = yscale / aspect;
     float zscale = 1.0f / (zn - zf);
@@ -66,6 +66,8 @@ AnimationTrack::AnimationTrack (Allocator& allocator)
     : _allocator (allocator)
     , frameCount (0)
     , frameDataSize (0)
+    , frameTime (nullptr)
+    , frameData (nullptr)
 {
 
 }
@@ -95,15 +97,9 @@ void AnimationTrack::dealloc()
 
 void AnimationTrack::setFrameTime (uint32 offset, uint32 numOfFrames, float* ptr)
 {
-    float* dstPtr = frameTime;
-    float* srcPtr = ptr;
-
-    uint32 srcOffset = 0;
-    uint32 dstOffset = offset;
-
     for (uint32 i = 0; i < numOfFrames; ++i)
     {
-        dstPtr[++dstOffset] = srcPtr[++srcOffset];
+        frameTime[offset + i] = ptr[i];
     }
 }
 
@@ -113,40 +109,40 @@ void AnimationTrack::setFrameData (uint32 offset, uint32 numOfFrames, float* ptr
     float* srcPtr = ptr;
 
     uint32 srcOffset = 0;
-    uint32 dstOffset = offset;
+    uint32 dstOffset = offset * frameDataSize;
 
     if (1 == frameDataSize)
     {
         for (uint32 i = 0; i < numOfFrames; ++i)
         {
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
         }
     }
     else if (2 == frameDataSize)
     {
         for (uint32 i = 0; i < numOfFrames; ++i)
         {
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
         }
     }
     else if (3 == frameDataSize)
     {
         for (uint32 i = 0; i < numOfFrames; ++i)
         {
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
         }
     }
     else if (4 == frameDataSize)
     {
         for (uint32 i = 0; i < numOfFrames; ++i)
         {
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
-            dstPtr[++dstOffset] = srcPtr[++srcOffset];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
+            dstPtr[dstOffset++] = srcPtr[srcOffset++];
         }
     }
     else
@@ -154,7 +150,7 @@ void AnimationTrack::setFrameData (uint32 offset, uint32 numOfFrames, float* ptr
         for (uint32 i = 0; i < numOfFrames; ++i)
         {
             for (uint32 j = 0; j < frameDataSize; ++j)
-                dstPtr[++dstOffset] = srcPtr[++srcOffset];
+                dstPtr[dstOffset++] = srcPtr[srcOffset++];
         }
     }
 }
@@ -198,7 +194,16 @@ void AnimationTrack::fetch2Frames (float* retFrameData, float* retFrameTime, flo
     retFrameTime[1] = frameTime[thisFrame];
 }
 
-SceneAnimationManager::SceneAnimationManager (Allocator& allocator)
+void AnimationTrack::_swap (AnimationTrack& a, AnimationTrack& b)
+{
+    swap (a.frameCount, b.frameCount);
+    swap (a.frameDataSize, b.frameDataSize);
+    swap (a.frameTime, b.frameTime);
+    swap (a.frameData, b.frameData);
+}
+
+//==============================================================================
+AnimationTrackManager::AnimationTrackManager (Allocator& allocator)
     : Super (16u, allocator)
 {
 

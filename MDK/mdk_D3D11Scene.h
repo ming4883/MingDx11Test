@@ -1,6 +1,7 @@
 #ifndef MDK_D3D11SCENE_H_INCLUDED
 #define MDK_D3D11SCENE_H_INCLUDED
 
+#include "mdk_Config.h"
 #include "mdk_D3D11.h"
 #include "mdk_BabylonFile.h"
 
@@ -33,7 +34,7 @@ class D3D11SRBindings
 public:
     D3D11SRBinding::ListPtr list;
 
-    D3D11SRBindings(D3D11SRBindingPool& pool);
+    D3D11SRBindings (D3D11SRBindingPool& pool);
     ~D3D11SRBindings();
 
     void add (ID3D11Resource* object, ID3D11ShaderResourceView* objectSRView, UINT slot);
@@ -61,7 +62,7 @@ class D3D11SampBindings
 public:
     D3D11SampBinding::ListPtr list;
 
-    D3D11SampBindings(D3D11SampBindingPool& pool);
+    D3D11SampBindings (D3D11SampBindingPool& pool);
     ~D3D11SampBindings();
 
     void add (ID3D11SamplerState* sampler, UINT slot);
@@ -181,7 +182,7 @@ public:
 class D3D11BabylonFileAdaptor : public BabylonFile::Adapter
 {
     m_noncopyable (D3D11BabylonFileAdaptor)
-    
+
 public:
     D3D11Context& d3d11;
     D3D11Scene& scene;

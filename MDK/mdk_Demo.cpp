@@ -11,7 +11,7 @@ Demo::FPSCameraControl::FPSCameraControl (ThreadPool& threadPool, Camera& camera
 {
     syncWithCamera();
 
-    job = new JobWithCallback("mdkFPSCameraControl", [this](ThreadPoolJob* self)
+    job = new JobWithCallback ("mdkFPSCameraControl", [this] (ThreadPoolJob* self)
     {
         (void)self;
 
@@ -190,7 +190,7 @@ const char* Demo::appDataGet (const char* id, int& size)
     int hash = fileId.hashCode();
 
     // check for cache
-    if (appDataCache.contains(hash))
+    if (appDataCache.contains (hash))
     {
         AppData* appData = appDataCache[hash];
         size = appData->data.getSize();
@@ -201,14 +201,14 @@ const char* Demo::appDataGet (const char* id, int& size)
     String* dirEnd = appDataDirs.end();
     for (String* dirItr = dirBeg; dirItr != dirEnd; ++dirItr)
     {
-        File file = File::createFileWithoutCheckingPath(*dirItr).getChildFile (id);
-        
+        File file = File::createFileWithoutCheckingPath (*dirItr).getChildFile (id);
+
         if (file.existsAsFile())
         {
             AppData* appData = new AppData;
             FileInputStream stream (file);
             stream.readIntoMemoryBlock (appData->data);
-            
+
             appDataCache.set (hash, appData);
 
             size = appData->data.getSize();
@@ -225,8 +225,8 @@ InputStream* Demo::appDataGet (const char* id)
     String* dirEnd = appDataDirs.end();
     for (String* dirItr = dirBeg; dirItr != dirEnd; ++dirItr)
     {
-        File file = File::createFileWithoutCheckingPath(*dirItr).getChildFile (id);
-        
+        File file = File::createFileWithoutCheckingPath (*dirItr).getChildFile (id);
+
         if (file.existsAsFile())
         {
             return new FileInputStream (file);
@@ -250,7 +250,7 @@ DemoWindow::DemoWindow (Demo* demo, const String& /*cmdLine*/)
     jassert (demo_);
     setUsingNativeTitleBar (true);
     BorderSize<int> border = getBorderThickness();
-            
+
 #if JUCE_IOS || JUCE_ANDROID
     int w = int (Desktop::getInstance().getDisplays().getMainDisplay().userArea.getWidth());
     int h = int (Desktop::getInstance().getDisplays().getMainDisplay().userArea.getHeight());

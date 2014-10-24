@@ -5,7 +5,7 @@ namespace mdk
 {
 
 /**/
-D3D11SRBindings::D3D11SRBindings(D3D11SRBindingPool& pool)
+D3D11SRBindings::D3D11SRBindings (D3D11SRBindingPool& pool)
     : pool_ (pool)
 {
 
@@ -36,7 +36,7 @@ void D3D11SRBindings::add (ID3D11Resource* object, ID3D11ShaderResourceView* obj
 }
 
 /**/
-D3D11SampBindings::D3D11SampBindings(D3D11SampBindingPool& pool)
+D3D11SampBindings::D3D11SampBindings (D3D11SampBindingPool& pool)
     : pool_ (pool)
 {
 
@@ -82,7 +82,7 @@ void D3D11SceneMaterial::prepare (ID3D11DeviceContext* context, D3D11Scene* scen
 
     objData.objNormalMatrix = objData.objWorldMatrix;
     Mat::mul (objData.objWorldViewProjMatrix, scene->sceneData.scnViewProjMatrix, objData.objWorldMatrix);
-            
+
     D3D11Context::updateBuffer (context, cbObjectData, objData);
 
     context->VSSetShader (vs, nullptr, 0);
@@ -95,7 +95,8 @@ void D3D11SceneMaterial::prepare (ID3D11DeviceContext* context, D3D11Scene* scen
 
 void D3D11SceneMaterial::bindShaderConstants (ID3D11DeviceContext* context)
 {
-    ID3D11Buffer* cb[] = {
+    ID3D11Buffer* cb[] =
+    {
         cbSceneData,
         cbObjectData,
     };
@@ -149,7 +150,7 @@ D3D11Scene::~D3D11Scene()
 }
 
 void D3D11Scene::update (D3D11Context& d3d11, Camera& camera, float deltaTime)
-{   
+{
     sceneData.scnAnimationTime.x += deltaTime;
     sceneData.scnViewPos = Vec4f (camera.transform.fetch().position, 1.0f);
     Mat::mul (sceneData.scnViewProjMatrix, camera.projectionMatrix, camera.viewMatrix);
@@ -225,7 +226,7 @@ void D3D11BabylonFileAdaptor::adopt (BabylonFile::Mesh* mesh, BabylonFile::Mater
 
     zerostruct (unit->vbBindings);
     zerostruct (unit->vbOffsets);
-    
+
     // positions
     {
         D3D11_INPUT_ELEMENT_DESC _;

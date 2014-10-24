@@ -50,7 +50,7 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
     if (newCapacity <= mCapacity)
         return false;
 
-    if (newCapacity > Handle::kIndexLimit)
+    if (newCapacity > Handle::cIndexLimit)
         return false;
 
     // allocate memory for new capacity
@@ -64,7 +64,7 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
         newATable[i].handle.index = (typename TRAITS::HandleDataType)i;
         newATable[i].handle.generation = 1;
         newATable[i].freelistNext = i + 1;
-        newATable[i].slotIndex = (size_t)kInvalidSlotIndex;
+        newATable[i].slotIndex = (size_t)cInvalidSlotIndex;
     }
 
     if (mCapacity > 0)
@@ -91,39 +91,17 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
 }
 
 template<typename TRAITS>
-void Manager<TRAITS>::copyDataSlot (size_t from, size_t to)
+void Manager<TRAITS>::swapDataSlot (size_t slotIdxA, size_t slotIdxB)
 {
-    if (from == to)
+    if (slotIdxA == slotIdxB)
         return;
 
-    mATable[mDataHandle[from].index].slotIndex = to;
+    mATable[mDataHandle[slotIdxA].index].slotIndex = slotIdxB;
+    mATable[mDataHandle[slotIdxB].index].slotIndex = slotIdxA;
 
-    //mDataHandle[to] = mDataHandle[from];
-    //mDataSlot[to] = mDataSlot[from];
+    swap<Handle> (mDataHandle[slotIdxA], mDataHandle[slotIdxB]);
+    swap<Data> (mDataSlot[slotIdxA], mDataSlot[slotIdxB]);
 
-    memcpy (&mDataHandle[to], &mDataHandle[from], sizeof (Handle));
-    memcpy (&mDataSlot[to], &mDataSlot[from], sizeof (Data));
-}
-
-template<typename TRAITS>
-void Manager<TRAITS>::swapDataSlot (size_t a, size_t b)
-{
-    if (a == b)
-        return;
-
-    Data tmpSlot;
-    Handle tmpHandle;
-
-    mATable[mDataHandle[a].index].slotIndex = b;
-    mATable[mDataHandle[b].index].slotIndex = a;
-
-    tmpHandle = mDataHandle[a];
-    mDataHandle[a] = mDataHandle[b];
-    mDataHandle[b] = tmpHandle;
-
-    tmpSlot = mDataSlot[a];
-    mDataSlot[a] = mDataSlot[b];
-    mDataSlot[b] = tmpSlot;
 }
 
 template<typename TRAITS>
@@ -157,7 +135,11 @@ typename Manager<TRAITS>::Handle Manager<TRAITS>::acquireNoSync()
     aTable.slotIndex = mFirstDisabled;
     if (mFirstDisabled != mSize)
     {
-        copyDataSlot (mFirstDisabled, mSize);
+        mATable[mDataHandle[mFirstDisabled].index].slotIndex = mSize;
+
+        mDataHandle[mSize] = mDataHandle[mFirstDisabled];
+
+        swap<Data> (mDataSlot[mSize], mDataSlot[mFirstDisabled]);
     }
 
     ++mFirstDisabled;
@@ -185,15 +167,15 @@ bool Manager<TRAITS>::releaseNoSync (Handle handle)
 
     if (isEnabledNoSync (handle))
     {
-        copyDataSlot (mFirstDisabled - 1, aTable.slotIndex);
-        copyDataSlot (mSize - 1, mFirstDisabled - 1);
+        swapDataSlot (mFirstDisabled - 1, aTable.slotIndex);
+        swapDataSlot (mSize - 1, mFirstDisabled - 1);
 
         --mSize;
         --mFirstDisabled;
     }
     else
     {
-        copyDataSlot (mSize - 1, aTable.slotIndex);
+        swapDataSlot (mSize - 1, aTable.slotIndex);
         --mSize;
     }
 
@@ -204,7 +186,7 @@ bool Manager<TRAITS>::releaseNoSync (Handle handle)
         aTable.handle.generation++;
 
     // set slotIndex to an invalid value
-    aTable.slotIndex = (size_t)kInvalidSlotIndex;
+    aTable.slotIndex = (size_t)cInvalidSlotIndex;
 
     // enqueue to freelist
     mATable[mFreelistEnqueue].freelistNext = handle.index;
@@ -235,7 +217,7 @@ bool Manager<TRAITS>::isValidNoSync (Handle handle) const
     if (handle.index >= mCapacity)
         return false;
 
-    if (handle.index == kInvalidSlotIndex)
+    if (handle.index == cInvalidSlotIndex)
         return false;
 
     return (handle.generation == mATable[handle.index].handle.generation);
@@ -258,7 +240,7 @@ template<typename TRAITS>
 bool Manager<TRAITS>::fetch (Data& Data, Handle handle) const
 {
     SyncRead sync (mSyncHandle);
-    if (!isValidNoSync(handle))
+    if (!isValidNoSync (handle))
         return false;
 
     Data = mDataSlot[mATable[handle.index].slotIndex];
@@ -269,7 +251,7 @@ template<typename TRAITS>
 bool Manager<TRAITS>::store (Handle handle, const Data& Data)
 {
     SyncWrite sync (mSyncHandle);
-    if (!isValidNoSync(handle))
+    if (!isValidNoSync (handle))
         return false;
 
     mDataSlot[mATable[handle.index].slotIndex] = Data;

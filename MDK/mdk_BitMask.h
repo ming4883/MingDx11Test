@@ -11,7 +11,7 @@ struct BitMask
 {
     MaskType mask;
 
-    BitMask ()
+    BitMask()
         : mask (MaskType (0))
     {
     }
@@ -30,7 +30,7 @@ struct BitMask
         m_assert (whichBit < sizeof (MaskType));
         m_assert (whichBit >= 0);
 
-        mask = mask & ~(1 << whichBit);
+        mask = mask & ~ (1 << whichBit);
         return *this;
     }
 
