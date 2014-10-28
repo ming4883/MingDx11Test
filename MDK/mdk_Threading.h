@@ -49,23 +49,23 @@ public:
 class SyncWithNull
 {
 public:
-    inline void lockWriter()
+    m_inline void lockWriter()
     {
     }
 
-    inline void unlockWriter()
+    m_inline void unlockWriter()
     {
     }
 
-    inline void lockReader()
+    m_inline void lockReader()
     {
     }
 
-    inline void unlockReader()
+    m_inline void unlockReader()
     {
     }
 
-    inline bool tryLockReader()
+    m_inline bool tryLockReader()
     {
         return true;
     }
@@ -78,27 +78,27 @@ public:
     {
     }
 
-    inline void lockWriter()
+    m_inline void lockWriter()
     {
         lock();
     }
 
-    inline void unlockWriter()
+    m_inline void unlockWriter()
     {
         unlock();
     }
 
-    inline void lockReader()
+    m_inline void lockReader()
     {
         lock();
     }
 
-    inline void unlockReader()
+    m_inline void unlockReader()
     {
         unlock();
     }
 
-    inline bool tryLockReader()
+    m_inline bool tryLockReader()
     {
         return tryLock();
     }
@@ -106,12 +106,12 @@ public:
 private:
     juce::Atomic<int> lockVal_;
 
-    inline bool tryLock()
+    m_inline bool tryLock()
     {
         return 1 == lockVal_.compareAndSetValue (1, 0);
     }
 
-    inline void lock()
+    m_inline void lock()
     {
         while (tryLock())
         {
@@ -119,7 +119,7 @@ private:
         }
     }
 
-    inline void unlock()
+    m_inline void unlock()
     {
         lockVal_.exchange (0);
     }

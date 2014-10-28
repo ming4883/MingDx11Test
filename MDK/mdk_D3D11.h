@@ -231,12 +231,12 @@ private:
     Demo* demo_;
 
     // error reporting
-    inline bool reportFailed (HRESULT hr, const char* errMsg)
+    m_inline bool reportFailed (HRESULT hr, const char* errMsg)
     {
         return demo_->reportTrue (FAILED (hr), errMsg);
     }
 
-    inline bool reportTrue (bool boolVal, const char* errMsg)
+    m_inline bool reportTrue (bool boolVal, const char* errMsg)
     {
         return demo_->reportTrue (boolVal, errMsg);
     }

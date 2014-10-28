@@ -148,7 +148,7 @@ public:
     /*! Returns a pointer to the first element of all objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    inline Data* beginOfAll() const
+    m_inline Data* beginOfAll() const
     {
         return mDataSlot;
     }
@@ -156,7 +156,7 @@ public:
     /*! Returns a pointer to the element which follows the last element of all objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    inline Data* endOfAll() const
+    m_inline Data* endOfAll() const
     {
         return mDataSlot + mSize;
     }
@@ -164,7 +164,7 @@ public:
     /*! Returns a pointer to the first element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    inline Data* beginOfEnabled() const
+    m_inline Data* beginOfEnabled() const
     {
         return mDataSlot;
     }
@@ -172,7 +172,7 @@ public:
     /*! Returns a pointer to the element which follows the last element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    inline Data* endOfEnabled() const
+    m_inline Data* endOfEnabled() const
     {
         return mDataSlot + mFirstDisabled;
     }
@@ -180,7 +180,7 @@ public:
     /*! Returns a pointer to the first element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    inline Data* beginOfDisabled() const
+    m_inline Data* beginOfDisabled() const
     {
         return mDataSlot + mFirstDisabled;
     }
@@ -188,7 +188,7 @@ public:
     /*! Returns a pointer to the element which follows the last element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    inline Data* endOfDisabled() const
+    m_inline Data* endOfDisabled() const
     {
         return mDataSlot + mSize;
     }
@@ -225,15 +225,15 @@ protected:
 
     void swapDataSlot (size_t slotIdxA, size_t slotIdxB);
 
-    inline bool isEnabledNoSync (Handle handle) const;
+    m_inline bool isEnabledNoSync (Handle handle) const;
 
-    inline bool isValidNoSync (Handle handle) const;
+    m_inline bool isValidNoSync (Handle handle) const;
 
-    inline Data* getNoSync (Handle handle) const;
+    m_inline Data* getNoSync (Handle handle) const;
 
-    inline Handle acquireNoSync();
+    m_inline Handle acquireNoSync();
 
-    inline bool releaseNoSync (Handle handle);
+    m_inline bool releaseNoSync (Handle handle);
 };
 
 }

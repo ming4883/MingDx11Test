@@ -33,7 +33,7 @@ public:
     virtual void demoUpdate() = 0;
     virtual void demoShutdown() = 0;
 
-    inline bool reportTrue (bool boolVal, const char* errMsg)
+    m_inline bool reportTrue (bool boolVal, const char* errMsg)
     {
         if (true == boolVal)
             errors_.add (String (errMsg));
@@ -149,12 +149,12 @@ protected:
 
 
 // error report
-    inline void errClear()
+    m_inline void errClear()
     {
         errors_.clearQuick();
     }
 
-    inline void errLog (const char* errMsg)
+    m_inline void errLog (const char* errMsg)
     {
         if (nullptr == errMsg)
             return;
@@ -162,7 +162,7 @@ protected:
         errors_.add (String (errMsg));
     }
 
-    inline void errDump()
+    m_inline void errDump()
     {
         for (int i = 0; i < errors_.size(); ++i)
             Logger::outputDebugString (errors_.getReference (i) + "\n");
@@ -185,7 +185,7 @@ protected:
     };
 
 // Time
-    inline void timeInit()
+    m_inline void timeInit()
     {
         timeLastFrame_ = Time::getMillisecondCounterHiRes();
         timeDelta_= 0;
@@ -193,7 +193,7 @@ protected:
         timeAccum_ = 0;
     }
 
-    inline void timeUpdate()
+    m_inline void timeUpdate()
     {
         double timeThisFrame = Time::getMillisecondCounterHiRes();
 
@@ -217,19 +217,19 @@ protected:
     }
 
     template<typename REAL = double>
-    inline REAL timeGetDeltaMS() const
+    m_inline REAL timeGetDeltaMS() const
     {
         return (REAL)timeDelta_;
     }
 
     template<typename REAL = double>
-    inline REAL timeGetSmoothDeltaMS() const
+    m_inline REAL timeGetSmoothDeltaMS() const
     {
         return (REAL)timeSmoothDelta_;
     }
 
     template<typename REAL = double>
-    inline REAL timeGetAccumMS() const
+    m_inline REAL timeGetAccumMS() const
     {
         return (REAL)timeAccum_;
     }

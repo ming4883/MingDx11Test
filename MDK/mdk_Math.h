@@ -17,67 +17,67 @@ namespace mdk
 struct Scalar
 {
     template<typename REAL>
-    static inline REAL cPI()
+    static m_inline REAL cPI()
     {
         return (REAL)3.141592654f;
     }
 
     template<typename REAL>
-    static inline REAL c2PI()
+    static m_inline REAL c2PI()
     {
         return (REAL)6.283185307f;
     }
 
     template<typename REAL>
-    static inline REAL cPIdiv2()
+    static m_inline REAL cPIdiv2()
     {
         return (REAL)1.570796327f;
     }
 
     template<typename REAL>
-    static inline REAL cPIdiv4()
+    static m_inline REAL cPIdiv4()
     {
         return (REAL)0.785398163f;
     }
 
     template<typename REAL>
-    static inline REAL c1divPI()
+    static m_inline REAL c1divPI()
     {
         return (REAL)0.318309886f;
     }
 
     template<typename REAL>
-    static inline REAL c1div2PI()
+    static m_inline REAL c1div2PI()
     {
         return (REAL)0.159154943f;
     }
 
     template<typename REAL>
-    static inline REAL rad (REAL valueInDeg)
+    static m_inline REAL rad (REAL valueInDeg)
     {
         return (valueInDeg * cPI<REAL>()) / (REAL)180.0f;
     }
 
     template<typename REAL>
-    static inline REAL deg (REAL valueInRad)
+    static m_inline REAL deg (REAL valueInRad)
     {
         return (valueInRad * 180.0f) * c1divPI<REAL>();
     }
 
     template<typename REAL>
-    static inline REAL sign (REAL value)
+    static m_inline REAL sign (REAL value)
     {
         return (REAL) (value > -1e-6 ? 1 : -1);
     }
 
     template<typename REAL>
-    static inline REAL abs (REAL value)
+    static m_inline REAL abs (REAL value)
     {
         return (REAL)fabsf ((float)value);
     }
 
     template<typename REAL>
-    static inline void calcSinCos (REAL& retSin, REAL& retCos, REAL angleInRad)
+    static m_inline void calcSinCos (REAL& retSin, REAL& retCos, REAL angleInRad)
     {
         float a = (float)angleInRad;
         retSin = (REAL) sinf (a);
@@ -107,12 +107,12 @@ struct Vec3
     {
     }
 
-    inline operator REAL* ()
+    m_inline operator REAL* ()
     {
         return &x;
     }
 
-    inline operator const REAL* () const
+    m_inline operator const REAL* () const
     {
         return &x;
     }
@@ -145,17 +145,17 @@ struct Vec4
     {
     }
 
-    inline operator REAL* ()
+    m_inline operator REAL* ()
     {
         return &x;
     }
 
-    inline operator const REAL* () const
+    m_inline operator const REAL* () const
     {
         return &x;
     }
 
-    inline Vec3<REAL> xyz() const
+    m_inline Vec3<REAL> xyz() const
     {
         return Vec3<REAL> (x, y, z);
     }
@@ -261,7 +261,7 @@ struct Mat44
     }
 
     // Returns the i-th row
-    inline Vec4<REAL>& operator[] (size_t i)
+    m_inline Vec4<REAL>& operator[] (size_t i)
     {
         Vec4<REAL>* vec4 = (Vec4<REAL>*)m;
         assert (i < 4);
@@ -269,7 +269,7 @@ struct Mat44
     }
 
     // Returns the i-th row
-    inline const Vec4<REAL>& operator[] (size_t i) const
+    m_inline const Vec4<REAL>& operator[] (size_t i) const
     {
         const Vec4<REAL>* vec4 = (const Vec4<REAL>*)m;
         assert (i < 4);
@@ -291,161 +291,161 @@ struct Vec
 {
     //! dst[i] = a[i] + b[i]
     template<typename REAL>
-    static inline Vec3<REAL> add (Vec3<REAL> a, Vec3<REAL> b);
+    static m_inline Vec3<REAL> add (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline Vec4<REAL> add (Vec4<REAL> a, Vec4<REAL> b);
+    static m_inline Vec4<REAL> add (Vec4<REAL> a, Vec4<REAL> b);
 
     //! dst[i] = a[i] - b[i]
     template<typename REAL>
-    static inline Vec3<REAL> sub (Vec3<REAL> a, Vec3<REAL> b);
+    static m_inline Vec3<REAL> sub (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline Vec4<REAL> sub (Vec4<REAL> a, Vec4<REAL> b);
+    static m_inline Vec4<REAL> sub (Vec4<REAL> a, Vec4<REAL> b);
 
     //! dst[i] = a[i] * b
     template<typename REAL>
-    static inline Vec3<REAL> mul (Vec3<REAL> a, REAL b);
+    static m_inline Vec3<REAL> mul (Vec3<REAL> a, REAL b);
 
     template<typename REAL>
-    static inline Vec4<REAL> mul (Vec4<REAL> a, REAL b);
+    static m_inline Vec4<REAL> mul (Vec4<REAL> a, REAL b);
 
     //! dst[i] = a[i] * b[i]
     template<typename REAL>
-    static inline Vec3<REAL> mul (Vec3<REAL> a, Vec3<REAL> b);
+    static m_inline Vec3<REAL> mul (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline Vec4<REAL> mul (Vec4<REAL> a, Vec4<REAL> b);
+    static m_inline Vec4<REAL> mul (Vec4<REAL> a, Vec4<REAL> b);
 
     //! dst = sum (a[i] * b[i])
     template<typename REAL>
-    static inline REAL dot (Vec3<REAL> a, Vec3<REAL> b);
+    static m_inline REAL dot (Vec3<REAL> a, Vec3<REAL> b);
 
     template<typename REAL>
-    static inline REAL dot (Vec4<REAL> a, Vec4<REAL> b);
+    static m_inline REAL dot (Vec4<REAL> a, Vec4<REAL> b);
 
     //! dot and replicated the result
     template<typename REAL>
-    static inline Vec4<REAL> dotSIMD (Vec4<REAL> a, Vec4<REAL> b);
+    static m_inline Vec4<REAL> dotSIMD (Vec4<REAL> a, Vec4<REAL> b);
 
     //! dst[i] = 1.0 / v[i]
     template<typename REAL>
-    static inline Vec3<REAL> reciprocal (Vec3<REAL> v);
+    static m_inline Vec3<REAL> reciprocal (Vec3<REAL> v);
 
     template<typename REAL>
-    static inline Vec4<REAL> reciprocal (Vec4<REAL> v);
+    static m_inline Vec4<REAL> reciprocal (Vec4<REAL> v);
 
     // length
     template<typename REAL>
-    static inline REAL length (Vec3<REAL> v);
+    static m_inline REAL length (Vec3<REAL> v);
 
     template<typename REAL>
-    static inline REAL length (Vec4<REAL> v);
+    static m_inline REAL length (Vec4<REAL> v);
 
     //! isNear (0, dot (v, v))
     template<typename REAL>
-    static inline bool isNearZero (Vec3<REAL> v);
+    static m_inline bool isNearZero (Vec3<REAL> v);
 
     template<typename REAL>
-    static inline bool isNearZero (Vec4<REAL> v);
+    static m_inline bool isNearZero (Vec4<REAL> v);
 
     //! dst[i] = -v[i]
     template<typename REAL>
-    static inline Vec3<REAL> neg (Vec3<REAL> v);
+    static m_inline Vec3<REAL> neg (Vec3<REAL> v);
 
     template<typename REAL>
-    static inline Vec4<REAL> neg (Vec4<REAL> v);
+    static m_inline Vec4<REAL> neg (Vec4<REAL> v);
 
     //! dst = v / |v|
     template<typename REAL>
-    static inline Vec3<REAL> normalize (Vec3<REAL> v);
+    static m_inline Vec3<REAL> normalize (Vec3<REAL> v);
 
     template<typename REAL>
-    static inline Vec4<REAL> normalize (Vec4<REAL> v);
+    static m_inline Vec4<REAL> normalize (Vec4<REAL> v);
 
     //! dst[i] = crossProduct (a[i], b[i])
     template<typename REAL>
-    static inline Vec3<REAL> cross (Vec3<REAL> a, Vec3<REAL> b);
+    static m_inline Vec3<REAL> cross (Vec3<REAL> a, Vec3<REAL> b);
 
     //! dst[i] = a[i] * (1 - t) + b[i] * t
     template<typename REAL>
-    static inline Vec3<REAL> lerp (Vec3<REAL> a, Vec3<REAL> b, REAL t);
+    static m_inline Vec3<REAL> lerp (Vec3<REAL> a, Vec3<REAL> b, REAL t);
 
     template<typename REAL>
-    static inline Vec4<REAL> lerp (Vec4<REAL> a, Vec4<REAL> b, REAL t);
+    static m_inline Vec4<REAL> lerp (Vec4<REAL> a, Vec4<REAL> b, REAL t);
 };
 
 struct Mat
 {
     template<typename REAL>
-    static inline void setIdentity (Mat44<REAL>& m);
+    static m_inline void setIdentity (Mat44<REAL>& m);
 
     template<typename REAL>
-    static inline void fromTransform3 (Mat44<REAL>& dst, const Transform3<REAL>& src);
+    static m_inline void fromTransform3 (Mat44<REAL>& dst, const Transform3<REAL>& src);
 
     //! convert q to matrix
     template<typename REAL>
-    static inline void fromQuat (Mat44<REAL>& dst, Vec4<REAL> q);
+    static m_inline void fromQuat (Mat44<REAL>& dst, Vec4<REAL> q);
 
     template<typename REAL>
-    static inline void fromQuat (Mat44<REAL>* dst, const Vec4<REAL>* q, size_t cnt);
+    static m_inline void fromQuat (Mat44<REAL>* dst, const Vec4<REAL>* q, size_t cnt);
 
     // dst[i][j] = m[j][i]
     template<typename REAL>
-    static inline void transpose (Mat44<REAL>& dst, const Mat44<REAL>& m);
+    static m_inline void transpose (Mat44<REAL>& dst, const Mat44<REAL>& m);
 
     // dst = a * b
     template<typename REAL>
-    static inline void mul (Mat44<REAL>& dst, const Mat44<REAL>& a, const Mat44<REAL>& b);
+    static m_inline void mul (Mat44<REAL>& dst, const Mat44<REAL>& a, const Mat44<REAL>& b);
 };
 
 struct Quat
 {
     template<typename REAL>
-    static inline void setIdentity (Vec4<REAL>& q);
+    static m_inline void setIdentity (Vec4<REAL>& q);
 
     //! construct a quaternion from xyz rotation (in radian).
     template<typename REAL>
-    static inline Vec4<REAL> fromXYZRotation (Vec3<REAL> rotationInRad);
+    static m_inline Vec4<REAL> fromXYZRotation (Vec3<REAL> rotationInRad);
 
     //! construct a quaternion from a normalized axis and an angle (in radian).
     template<typename REAL>
-    static inline Vec4<REAL> fromUnitAxisAngle (Vec3<REAL> axis, REAL angleInRad);
+    static m_inline Vec4<REAL> fromUnitAxisAngle (Vec3<REAL> axis, REAL angleInRad);
 
     //! construct a quaternion which transform dirBeg to dirEnd.
     template<typename REAL>
-    static inline Vec4<REAL> fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd);
+    static m_inline Vec4<REAL> fromDirs (Vec3<REAL> dirBeg, Vec3<REAL> dirEnd);
 
     //! construct a quaternion from the rotation part of a matrix.
     template<typename REAL>
-    static inline Vec4<REAL> fromMatrix (const Mat44<REAL>& m);
+    static m_inline Vec4<REAL> fromMatrix (const Mat44<REAL>& m);
 
     //! dst = a * b
     template<typename REAL>
-    static inline Vec4<REAL> mul (Vec4<REAL> a, Vec4<REAL> b);
+    static m_inline Vec4<REAL> mul (Vec4<REAL> a, Vec4<REAL> b);
 
     //! inverse of q
     template<typename REAL>
-    static inline Vec4<REAL> inverse (Vec4<REAL> q);
+    static m_inline Vec4<REAL> inverse (Vec4<REAL> q);
 
     //! transform v by q
     template<typename REAL>
-    static inline Vec3<REAL> transform (Vec4<REAL> q, Vec3<REAL> v);
+    static m_inline Vec3<REAL> transform (Vec4<REAL> q, Vec3<REAL> v);
 };
 
 struct Transform
 {
     template<typename REAL>
-    static inline void setIdentity (Transform3<REAL>& dst);
+    static m_inline void setIdentity (Transform3<REAL>& dst);
 
     template<typename REAL>
-    static inline void fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt, const Vec3<REAL>& unitRefUp);
+    static m_inline void fromLookAt (Transform3<REAL>& dst, const Vec3<REAL>& eyeAt, const Vec3<REAL>& lookAt, const Vec3<REAL>& unitRefUp);
 
     template<typename REAL>
-    static inline void inverse (Transform3<REAL>& dst, const Transform3<REAL>& src);
+    static m_inline void inverse (Transform3<REAL>& dst, const Transform3<REAL>& src);
 
     template<typename REAL>
-    static inline void derive (Transform3<REAL>& dst, const Transform3<REAL>& parent, const Transform3<REAL>& child);
+    static m_inline void derive (Transform3<REAL>& dst, const Transform3<REAL>& parent, const Transform3<REAL>& child);
 
 };
 

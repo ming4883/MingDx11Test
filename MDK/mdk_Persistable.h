@@ -87,17 +87,17 @@ private:
     friend class juce::WeakReference<Persistable>;
 };
 
-template<typename TYPE> inline void saveValue (DataStore& dst, const DataId& dataId, const TYPE& value)
+template<typename TYPE> m_inline void saveValue (DataStore& dst, const DataId& dataId, const TYPE& value)
 {
     dst.setProperty (dataId, juce::var (value), nullptr);
 }
 
-inline void saveValue (DataStore& dst, const DataId& dataId, const float& value)
+m_inline void saveValue (DataStore& dst, const DataId& dataId, const float& value)
 {
     dst.setProperty (dataId, juce::var ((double)value), nullptr);
 }
 
-template<typename TYPE> inline void saveArray (DataStore& dst, const DataId& dataId, const juce::Array<TYPE>& values)
+template<typename TYPE> m_inline void saveArray (DataStore& dst, const DataId& dataId, const juce::Array<TYPE>& values)
 {
     juce::var copied;
     const int cSize = values.size();
@@ -108,7 +108,7 @@ template<typename TYPE> inline void saveArray (DataStore& dst, const DataId& dat
     dst.setProperty (dataId, copied, nullptr);
 }
 
-template<typename TYPE> inline bool loadValue (const DataStore& src, const DataId& dataId, TYPE& value)
+template<typename TYPE> m_inline bool loadValue (const DataStore& src, const DataId& dataId, TYPE& value)
 {
     // check for existance
     if (!src.hasProperty (dataId))
@@ -126,7 +126,7 @@ template<typename TYPE> inline bool loadValue (const DataStore& src, const DataI
     return true;
 }
 
-inline bool loadValue (const DataStore& src, const DataId& dataId, float& value)
+m_inline bool loadValue (const DataStore& src, const DataId& dataId, float& value)
 {
     double value64;
     if (!loadValue (src, dataId, value64))
@@ -136,7 +136,7 @@ inline bool loadValue (const DataStore& src, const DataId& dataId, float& value)
     return true;
 }
 
-inline bool loadValue (const DataStore& src, const DataId& dataId, juce::String& value)
+m_inline bool loadValue (const DataStore& src, const DataId& dataId, juce::String& value)
 {
     // check for existance
     if (!src.hasProperty (dataId))
@@ -154,7 +154,7 @@ inline bool loadValue (const DataStore& src, const DataId& dataId, juce::String&
     return true;
 }
 
-template<typename TYPE> inline bool loadArray (const DataStore& src, const DataId& dataId, juce::Array<TYPE>& values)
+template<typename TYPE> m_inline bool loadArray (const DataStore& src, const DataId& dataId, juce::Array<TYPE>& values)
 {
     // check for existance
     if (!src.hasProperty (dataId))

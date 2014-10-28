@@ -38,9 +38,9 @@ public:
     static void waitForThreadExit (long threadHandle);
     
     template<class T>
-    static inline void doNotOptimizeAway (T&& x)
+    static inline void doNotOptimizeAway (T& x)
     {
-        printf ("", x);
+        printf ("%p", &x);
     }
 };
 

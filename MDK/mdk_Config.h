@@ -14,6 +14,8 @@
 
 #define m_noncopyable(x) private: x(const x&); void operator = (const x&);
 
+#define m_inline __forceinline
+
 namespace mdk
 {
 

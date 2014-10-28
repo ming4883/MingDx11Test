@@ -66,8 +66,8 @@ AnimationTrack::AnimationTrack (Allocator& allocator)
     : _allocator (allocator)
     , frameCount (0)
     , frameDataSize (0)
-    , frameTime (nullptr)
-    , frameData (nullptr)
+    , frameTimePtr (nullptr)
+    , frameDataPtr (nullptr)
 {
 
 }
@@ -85,27 +85,27 @@ void AnimationTrack::alloc (uint32 numOfFrames, uint32 numOfElemsPerFrame)
     frameCount = numOfFrames;
     frameDataSize = numOfElemsPerFrame;
 
-    frameTime = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames));
-    frameData = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames * numOfElemsPerFrame));
+    frameTimePtr = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames));
+    frameDataPtr = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames * numOfElemsPerFrame));
 }
 
 void AnimationTrack::dealloc()
 {
-    _allocator.free (frameTime);
-    _allocator.free (frameData);
+    _allocator.free (frameTimePtr);
+    _allocator.free (frameDataPtr);
 }
 
 void AnimationTrack::setFrameTime (uint32 offset, uint32 numOfFrames, float* ptr)
 {
     for (uint32 i = 0; i < numOfFrames; ++i)
     {
-        frameTime[offset + i] = ptr[i];
+        frameTimePtr[offset + i] = ptr[i];
     }
 }
 
 void AnimationTrack::setFrameData (uint32 offset, uint32 numOfFrames, float* ptr)
 {
-    float* dstPtr = frameData;
+    float* dstPtr = frameDataPtr;
     float* srcPtr = ptr;
 
     uint32 srcOffset = 0;
@@ -159,7 +159,7 @@ void AnimationTrack::fetch2Frames (float* retFrameData, float* retFrameTime, flo
 {
     uint32 thisFrame = 0;
 
-    while (frameNo < frameTime[thisFrame] && thisFrame < frameCount)
+    while (frameTimePtr[thisFrame] < frameNo && thisFrame < frameCount)
     {
         thisFrame++;
     }
@@ -181,25 +181,25 @@ void AnimationTrack::fetch2Frames (float* retFrameData, float* retFrameTime, flo
     dstOffset = 0;
 
     for (uint32 i = 0; i < frameDataSize; ++i)
-        retFrameData[dstOffset + i] = frameData[srcOffset + i];
+        retFrameData[dstOffset + i] = frameDataPtr[srcOffset + i];
 
     // second frame
     srcOffset = thisFrame * frameDataSize;
     dstOffset = frameDataSize;
 
     for (uint32 i = 0; i < frameDataSize; ++i)
-        retFrameData[dstOffset + i] = frameData[srcOffset + i];
+        retFrameData[dstOffset + i] = frameDataPtr[srcOffset + i];
 
-    retFrameTime[0] = frameTime[lastFrame];
-    retFrameTime[1] = frameTime[thisFrame];
+    retFrameTime[0] = frameTimePtr[lastFrame];
+    retFrameTime[1] = frameTimePtr[thisFrame];
 }
 
 void AnimationTrack::_swap (AnimationTrack& a, AnimationTrack& b)
 {
     swap (a.frameCount, b.frameCount);
     swap (a.frameDataSize, b.frameDataSize);
-    swap (a.frameTime, b.frameTime);
-    swap (a.frameData, b.frameData);
+    swap (a.frameTimePtr, b.frameTimePtr);
+    swap (a.frameDataPtr, b.frameDataPtr);
 }
 
 //==============================================================================
@@ -207,6 +207,31 @@ AnimationTrackManager::AnimationTrackManager (Allocator& allocator)
     : Super (16u, allocator)
 {
 
+}
+
+//==============================================================================
+AnimationStateManager::AnimationStateManager (Allocator& allocator)
+    : Super (16u, allocator)
+{
+
+}
+
+void AnimationStateManager::update (AnimationTrackManager& trackManager)
+{
+    AnimationState* const itBeg = beginOfEnabled();
+    AnimationState* const itEnd = endOfEnabled();
+
+    for (AnimationState* itCur = itBeg; itCur != itEnd; ++itCur)
+    {
+        if (!itCur->cache.isValid())
+        {
+            AnimationTrack* track = trackManager.get (itCur->track);
+            m_assert (track != nullptr);
+            track->fetch2Frames (itCur->cache.data, itCur->cache.time, itCur->time);
+        }
+
+
+    }
 }
 
 }   // namespace

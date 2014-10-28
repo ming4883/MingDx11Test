@@ -42,6 +42,24 @@ public:
     void updateForD3D (float rtAspect = 1.0f);
 };
 
+class AnimationCache
+{
+public:
+    enum { cNumOfFrames = 4 };
+    float time[cNumOfFrames];
+    float data[cNumOfFrames * 4];
+
+    AnimationCache()
+    {
+        time[0] = time[1] = time[2] = time[3] = -1;
+    }
+
+    m_inline bool isValid() const
+    {
+        return false;
+    }
+};
+
 class AnimationTrack
 {
     m_noncopyable (AnimationTrack)
@@ -49,8 +67,8 @@ class AnimationTrack
 public:
     uint32 frameCount;
     uint32 frameDataSize;
-    float* frameTime;
-    float* frameData;
+    float* frameTimePtr;
+    float* frameDataPtr;
     
     AnimationTrack (Allocator& allocator);
     ~AnimationTrack();
@@ -94,10 +112,33 @@ class AnimationTrackManager : public Manager< ManagerTraitsDefault<AnimationTrac
 
 public:
     AnimationTrackManager (Allocator& allocator);
-
 };
 
 typedef AnimationTrackManager::Handle AnimationTrackHandle;
+
+class AnimationState
+{
+public:
+    float time;
+    AnimationCache cache;
+    AnimationTrackHandle track;
+    float result[4];
+};
+
+class AnimationStateManager : public Manager< ManagerTraitsDefault<AnimationState> >
+{
+    m_noncopyable (AnimationStateManager)
+
+    typedef Manager< ManagerTraitsDefault<AnimationState> > Super;
+
+public:
+    AnimationStateManager (Allocator& allocator);
+
+    void update (AnimationTrackManager& trackManager);
+
+};
+
+typedef AnimationStateManager::Handle AnimationStateHandle;
 
 }
 

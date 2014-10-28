@@ -8,13 +8,13 @@ namespace mdk
 class BabylonFile::Var
 {
 public:
-    static inline bool isNull (const var& _)
+    static m_inline bool isNull (const var& _)
     {
         return _.isUndefined() || _.isVoid();
     }
 
     template<typename T>
-    static inline int toBuffer (Buffer<T>& ret, const var& arr)
+    static int toBuffer (Buffer<T>& ret, const var& arr)
     {
         if (isNull (arr) || !arr.isArray())
             return 0;
@@ -26,13 +26,13 @@ public:
     }
 
     template<typename T>
-    static inline int toBuffer (Buffer<T>& ret, const var& src, const Identifier& id)
+    static int toBuffer (Buffer<T>& ret, const var& src, const Identifier& id)
     {
         return toBuffer<T> (ret, src.getProperty (id, var::null));
     }
 
     template<typename T>
-    static inline typename Buffer<T>::Ptr toBuffer (const var& arr)
+    static typename Buffer<T>::Ptr toBuffer (const var& arr)
     {
         typename Buffer<T>::Ptr ret;
         if (isNull (arr) || !arr.isArray())
@@ -46,14 +46,14 @@ public:
     }
 
     template<typename T>
-    static inline typename Buffer<T>::Ptr toBuffer (const var& src, const Identifier& id)
+    static typename Buffer<T>::Ptr toBuffer (const var& src, const Identifier& id)
     {
         return toBuffer<T> (src.getProperty (id, var::null));
     }
 
 
     template<typename T, int N>
-    static inline bool toVector (T* dst, const var& src, T* defaultVals)
+    static bool toVector (T* dst, const var& src, T* defaultVals)
     {
         (void) sizeof (0[dst]); // This line should cause an error if you pass an object with a user-defined subscript operator
 
@@ -70,25 +70,25 @@ public:
     }
 
     template<typename T>
-    static inline bool toVector (Vec3<T>& dst, const var& src, const Identifier& id, T* defaultVals)
+    static bool toVector (Vec3<T>& dst, const var& src, const Identifier& id, T* defaultVals)
     {
         return toVector<T, 3> ((T*)dst, src.getProperty (id, var::null), defaultVals);
     }
 
     template<typename T>
-    static inline bool toVector (Vec4<T>& dst, const var& src, const Identifier& id, T* defaultVals)
+    static bool toVector (Vec4<T>& dst, const var& src, const Identifier& id, T* defaultVals)
     {
         return toVector<T, 4> ((T*)dst, src.getProperty (id, var::null), defaultVals);
     }
 
     template<typename T>
-    static inline bool toVector (Mat44<T>& dst, const var& src, const Identifier& id, T* defaultVals)
+    static m_inline bool toVector (Mat44<T>& dst, const var& src, const Identifier& id, T* defaultVals)
     {
         return toVector<T, 16> ((T*)dst.m, src.getProperty (id, var::null), defaultVals);
     }
 
     template<typename T>
-    static inline bool toScalar (T& dst, const var& src, T defaultVal)
+    static m_inline bool toScalar (T& dst, const var& src, T defaultVal)
     {
         if (isNull (src))
         {
@@ -101,7 +101,7 @@ public:
     }
 
     template<typename T>
-    static inline bool toScalar (T& dst, const var& src, const Identifier& id, T defaultVal)
+    static m_inline bool toScalar (T& dst, const var& src, const Identifier& id, T defaultVal)
     {
         return toScalar (dst, src.getProperty (id, var::null), defaultVal);
     }
