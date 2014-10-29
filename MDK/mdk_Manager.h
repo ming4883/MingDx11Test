@@ -5,13 +5,25 @@
 #include "mdk_Allocator.h"
 #include "mdk_Threading.h"
 
+#include <tuple>
+#include <type_traits>
+
 namespace mdk
 {
 
-template<typename T>
+//! template for Struct-Of-Arrays
+template <typename TUPLE, size_t INDEX>
+struct SOA
+{
+    typedef TUPLE Tuple;
+    typedef typename std::tuple_element<INDEX, Tuple>::type ElemPtr;
+    typedef typename std::remove_pointer<ElemPtr>::type Elem;
+};
+
+template<typename... DATA>
 struct ManagerTraitsDefault
 {
-    typedef T DataType;
+    typedef std::tuple<typename std::add_pointer<DATA>::type ...> SOAType;
     typedef SyncWithAtomic SyncType;
     typedef juce::uint32 HandleDataType;
 
@@ -20,6 +32,12 @@ struct ManagerTraitsDefault
         cHandleIndexBits = 20,
         cHandleGenerationBits = 12,
     };
+
+};
+
+template<typename MANAGER, size_t INDEX>
+struct ManagerSOA : public SOA<typename MANAGER::SOAs, INDEX>
+{
 
 };
 
@@ -61,10 +79,91 @@ public:
             return *reinterpret_cast<DataType*> (const_cast<Handle*> (this));
         }
     };
-    typedef typename TRAITS::DataType Data;
+
+    typedef typename TRAITS::SOAType SOAs;
     typedef typename TRAITS::SyncType Sync;
     typedef ScopedSyncRead<Sync> SyncRead;
     typedef ScopedSyncWrite<Sync> SyncWrite;
+
+    enum { cSize =  std::tuple_size<SOAs>::value };
+
+    template<size_t INDEX>
+    struct Ops : public SOA<SOAs, INDEX>
+    {
+        typedef Ops<INDEX+1> Next;
+
+        static void reset (SOAs& t)
+        {
+            std::get<INDEX> (t) = nullptr;
+            Next::reset (t);
+        }
+
+        static void malloc (SOAs& t, Allocator& allocator, size_t numOfElements)
+        {
+            ElemPtr& elems = std::get<INDEX> (t);
+            elems = static_cast<ElemPtr> (allocator.malloc (sizeof (Elem) * numOfElements));
+
+            Next::malloc (t, allocator, numOfElements);
+        }
+
+        static void free (SOAs& t, Allocator& allocator)
+        {
+            allocator.free (std::get<INDEX> (t));
+
+            Next::free (t, allocator);
+        }
+
+        static void memcpy (SOAs& dst, SOAs& src, size_t numOfElements)
+        {
+            std::memcpy (std::get<INDEX> (dst), std::get<INDEX> (src), sizeof (Elem) * numOfElements);
+
+            Next::memcpy (dst, src, numOfElements);
+        }
+
+        static void swap (SOAs& t, size_t a, size_t b)
+        {
+            ElemPtr elems = std::get<INDEX> (t);
+            mdk::swap<Elem> (elems[a], elems[b]);
+
+            Next::swap (t, a, b);
+        }
+    };
+
+    template<>
+    struct Ops<cSize>
+    {
+        static void reset (SOAs& t)
+        {
+            (void)t;
+        }
+
+        static void malloc (SOAs& t, Allocator& allocator, size_t numOfElements)
+        {
+            (void)t;
+            (void)allocator;
+            (void)numOfElements;
+        }
+
+        static void free (SOAs& t, Allocator& allocator)
+        {
+            (void)t;
+            (void)allocator;
+        }
+
+        static void memcpy (SOAs& dst, SOAs& src, size_t numOfElements)
+        {
+            (void)dst;
+            (void)src;
+            (void)numOfElements;
+        }
+
+        static void swap (SOAs& t, size_t a, size_t b)
+        {
+            (void)t;
+            (void)a;
+            (void)b;
+        }
+    };
 
 public:
     //! Construct the Manager with initial capacity.
@@ -93,6 +192,7 @@ public:
     bool release (Handle handle);
 
     //! An utility which invoke the object's constructor.
+#if 0
     template<typename... Args>
     bool construct (Handle handle, Args... args)
     {
@@ -116,15 +216,18 @@ public:
         getNoSync (handle)->~Data();
         return true;
     }
+#endif
 
     //! Returns to if handle is pointing to a memory location within this Manager, otherwise false.
     bool isValid (Handle handle) const;
-
+    
     /*! Get the memory location associated with the given handle.
         Since the memory locations may be changed during resize() or release(), do NOT store the returned pointer for later usages.
      */
-    Data* get (Handle handle);
+    template<size_t INDEX>
+    typename ManagerSOA<Manager, INDEX>::ElemPtr get (Handle handle);
 
+#if 0
     /*! Fetch the content of the memory location with synchronization primitive support.
      */
     bool fetch (Data& data, Handle handle) const;
@@ -132,6 +235,7 @@ public:
     /*! Store the content to the memory location with synchronization primitive support.
      */
     bool store (Handle handle, const Data& data);
+#endif
 
     /*! Mark the object as enabled.
      */
@@ -145,6 +249,7 @@ public:
      */
     bool isEnabled (Handle handle) const;
 
+#if 0
     /*! Returns a pointer to the first element of all objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
@@ -192,6 +297,7 @@ public:
     {
         return mDataSlot + mSize;
     }
+#endif
 
 protected:
 
@@ -217,7 +323,7 @@ protected:
     size_t mFreelistEnqueue;
     size_t mFreelistCount;
     ATable* mATable;
-    Data* mDataSlot;      //! slots for holding the actual data
+    SOAs mSOAs;      //! slots for holding the actual data
     Handle* mDataHandle;    //! mapping data slot back to the associated Handle, used in copyDataSlot() & swapDataSlot().
 
     //! Returns true if successfully resized, otherwise false (e.g. out of memory or newCapacity > Handle::kIndexLimit).
@@ -229,7 +335,8 @@ protected:
 
     m_inline bool isValidNoSync (Handle handle) const;
 
-    m_inline Data* getNoSync (Handle handle) const;
+    template<size_t INDEX>
+    m_inline typename ManagerSOA<Manager, INDEX>::ElemPtr getNoSync (Handle handle) const;
 
     m_inline Handle acquireNoSync();
 

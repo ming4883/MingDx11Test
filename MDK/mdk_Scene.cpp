@@ -218,6 +218,7 @@ AnimationStateManager::AnimationStateManager (Allocator& allocator)
 
 void AnimationStateManager::update (AnimationTrackManager& trackManager)
 {
+#if 0
     AnimationState* const itBeg = beginOfEnabled();
     AnimationState* const itEnd = endOfEnabled();
 
@@ -229,9 +230,8 @@ void AnimationStateManager::update (AnimationTrackManager& trackManager)
             m_assert (track != nullptr);
             track->fetch2Frames (itCur->cache.data, itCur->cache.time, itCur->time);
         }
-
-
     }
+#endif
 }
 
 }   // namespace

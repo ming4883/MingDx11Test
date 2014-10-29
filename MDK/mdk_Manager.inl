@@ -2,6 +2,8 @@
 namespace mdk
 {
 
+
+
 template<typename TRAITS>
 Manager<TRAITS>::Manager (size_t initialCapacity, Allocator& allocator)
     : _allocator (allocator)
@@ -12,10 +14,11 @@ Manager<TRAITS>::Manager (size_t initialCapacity, Allocator& allocator)
     , mFreelistEnqueue (0)
     , mFreelistCount (0)
     , mATable (nullptr)
-    , mDataSlot (nullptr)
+    //, mDataSlot (nullptr)
     , mDataHandle (nullptr)
 {
     SyncWrite sync (mSyncHandle);
+    Ops<0>::reset (mSOAs);
     resize (initialCapacity);
 }
 
@@ -28,8 +31,9 @@ Manager<TRAITS>::~Manager()
         if (mCapacity > 0)
         {
             _allocator.free (mATable);
-            _allocator.free (mDataSlot);
+            //_allocator.free (mDataSlot);
             _allocator.free (mDataHandle);
+            Ops<0>::free (mSOAs, _allocator);
         }
 
         mCapacity = 0;
@@ -39,7 +43,7 @@ Manager<TRAITS>::~Manager()
         mFreelistEnqueue = 0;
         mFreelistCount = 0;
         mATable = nullptr;
-        mDataSlot = nullptr;
+        //mDataSlot = nullptr;
         mDataHandle = nullptr;
     }
 }
@@ -55,8 +59,10 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
 
     // allocate memory for new capacity
     ATable* newATable = (ATable*)_allocator.malloc (newCapacity * sizeof (ATable));
-    Data* newSlot = (Data*)_allocator.malloc (newCapacity * sizeof (Data));
+    //Data* newSlot = (Data*)_allocator.malloc (newCapacity * sizeof (Data));
     Handle* newHandle = (Handle*)_allocator.malloc (newCapacity * sizeof (Handle));
+    SOAs newSOAs;
+    Ops<0>::malloc (newSOAs, _allocator, newCapacity);
 
     // initialize the alloation table
     for (size_t i = mCapacity; i < newCapacity; ++i)
@@ -70,18 +76,23 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
     if (mCapacity > 0)
     {
         memcpy (newATable, mATable, mCapacity * sizeof (ATable));
-        memcpy (newSlot, mDataSlot, mCapacity * sizeof (Data));
+        //memcpy (newSlot, mDataSlot, mCapacity * sizeof (Data));
         memcpy (newHandle, mDataHandle, mCapacity * sizeof (Handle));
 
+        Ops<0>::memcpy (newSOAs, mSOAs, mCapacity);
+
         _allocator.free (mATable);
-        _allocator.free (mDataSlot);
+        //_allocator.free (mDataSlot);
         _allocator.free (mDataHandle);
+
+        Ops<0>::free (mSOAs, _allocator);
 
         mFreelistDequeue = mCapacity;
     }
 
     mATable = newATable;
-    mDataSlot = newSlot;
+    //mDataSlot = newSlot;
+    mSOAs = newSOAs;
     mDataHandle = newHandle;
     mFreelistCount += newCapacity - mCapacity;
     mFreelistEnqueue = newCapacity - 1;
@@ -100,8 +111,8 @@ void Manager<TRAITS>::swapDataSlot (size_t slotIdxA, size_t slotIdxB)
     mATable[mDataHandle[slotIdxB].index].slotIndex = slotIdxA;
 
     swap<Handle> (mDataHandle[slotIdxA], mDataHandle[slotIdxB]);
-    swap<Data> (mDataSlot[slotIdxA], mDataSlot[slotIdxB]);
-
+    //swap<Data> (mDataSlot[slotIdxA], mDataSlot[slotIdxB]);
+    Ops<0>::swap (mSOAs, slotIdxA, slotIdxB);
 }
 
 template<typename TRAITS>
@@ -139,7 +150,8 @@ typename Manager<TRAITS>::Handle Manager<TRAITS>::acquireNoSync()
 
         mDataHandle[mSize] = mDataHandle[mFirstDisabled];
 
-        swap<Data> (mDataSlot[mSize], mDataSlot[mFirstDisabled]);
+        //swap<Data> (mDataSlot[mSize], mDataSlot[mFirstDisabled]);
+        Ops<0>::swap (mSOAs, mSize, mFirstDisabled);
     }
 
     ++mFirstDisabled;
@@ -224,18 +236,26 @@ bool Manager<TRAITS>::isValidNoSync (Handle handle) const
 }
 
 template<typename TRAITS>
-typename Manager<TRAITS>::Data* Manager<TRAITS>::get (Handle handle)
+template<size_t INDEX>
+typename ManagerSOA<Manager<TRAITS>, INDEX>::ElemPtr Manager<TRAITS>::get (Handle handle)
 {
     SyncRead sync (mSyncHandle);
-    return getNoSync (handle);
+    return getNoSync<INDEX> (handle);
 }
+
 
 template<typename TRAITS>
-typename Manager<TRAITS>::Data* Manager<TRAITS>::getNoSync (Handle handle) const
+template<size_t INDEX>
+typename ManagerSOA<Manager<TRAITS>, INDEX>::ElemPtr Manager<TRAITS>::getNoSync (Handle handle) const
 {
-    return &mDataSlot[mATable[handle.index].slotIndex];
+    //return &mDataSlot[mATable[handle.index].slotIndex];
+    typename SOA<SOAs, INDEX>::ElemPtr ptr = std::get<INDEX> (mSOAs);
+    return &ptr[mATable[handle.index].slotIndex];
 }
+#if 0
+#endif
 
+#if 0
 template<typename TRAITS>
 bool Manager<TRAITS>::fetch (Data& Data, Handle handle) const
 {
@@ -257,6 +277,7 @@ bool Manager<TRAITS>::store (Handle handle, const Data& Data)
     mDataSlot[mATable[handle.index].slotIndex] = Data;
     return true;
 }
+#endif
 
 template<typename TRAITS>
 void Manager<TRAITS>::enable (Handle handle)

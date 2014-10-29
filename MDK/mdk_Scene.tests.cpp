@@ -23,6 +23,7 @@ protected:
     }
 };
 
+#if 0
 TEST_F (TestAnimationTrackManager, BasicUsages)
 {
     float cFrameTime[] = {0, 1};
@@ -61,6 +62,7 @@ TEST_F (TestAnimationTrackManager, BasicUsages)
 
     EXPECT_FALSE (manager.isValid (handle));
 }
+#endif
 
 TEST (BenchMark, CpuCacheWrite)
 {
