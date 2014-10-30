@@ -3,8 +3,8 @@
 
 #include "mdk_Config.h"
 #include "mdk_Allocator.h"
-#include "mdk_Manager.h"
 #include "mdk_Math.h"
+#include "mdk_SOAManager.h"
 #include "mdk_Threading.h"
 
 using juce::uint32;
@@ -92,7 +92,7 @@ private:
     Allocator& _allocator;
 };
 
-//! specialize swap<>() for Manager<>
+//! specialize swap<>() for SOAManager<>
 template<>
 void swap<AnimationTrack> (AnimationTrack& a, AnimationTrack& b)
 {
@@ -101,14 +101,14 @@ void swap<AnimationTrack> (AnimationTrack& a, AnimationTrack& b)
 
 template<> struct UseAllocator<AnimationTrack>
 {
-    static const bool value = true;
+    static const bool Value = true;
 };
 
-class AnimationTrackManager : public Manager< ManagerTraitsDefault<AnimationTrack> >
+class AnimationTrackManager : public SOAManager< SOAManagerTraitsDefault<AnimationTrack> >
 {
     m_noncopyable (AnimationTrackManager)
 
-    typedef Manager< ManagerTraitsDefault<AnimationTrack> > Super;
+    typedef SOAManager< SOAManagerTraitsDefault<AnimationTrack> > Super;
 
 public:
     AnimationTrackManager (Allocator& allocator);
@@ -125,11 +125,11 @@ public:
     float result[4];
 };
 
-class AnimationStateManager : public Manager< ManagerTraitsDefault<AnimationState> >
+class AnimationStateManager : public SOAManager< SOAManagerTraitsDefault<AnimationState> >
 {
     m_noncopyable (AnimationStateManager)
 
-    typedef Manager< ManagerTraitsDefault<AnimationState> > Super;
+    typedef SOAManager< SOAManagerTraitsDefault<AnimationState> > Super;
 
 public:
     AnimationStateManager (Allocator& allocator);

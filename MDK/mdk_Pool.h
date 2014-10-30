@@ -81,7 +81,7 @@ private:
 template<typename TRAITS>
 struct UseAllocator< ObjectPool<TRAITS> >
 {
-    static const bool value = true;
+    static const bool Value = true;
 };
 
 } // namespace

@@ -46,7 +46,7 @@ public:
 template<typename Type>
 struct UseAllocator
 {
-    static const bool value = false;
+    static const bool Value = false;
 };
 
 template<typename Type, bool AllocatorUsage>

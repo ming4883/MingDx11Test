@@ -2,10 +2,110 @@
 namespace mdk
 {
 
+template<typename TRAITS>
+struct SOAManager<TRAITS>::Handle
+{
+    typedef typename TRAITS::HandleDataType DataType;
+    DataType index : TRAITS::cHandleIndexBits;
+    DataType generation : TRAITS::cHandleGenerationBits;
+
+    enum
+    {
+        cIndexLimit = 1 << (TRAITS::cHandleIndexBits),
+        cGenerationLimit = 1 << (TRAITS::cHandleGenerationBits),
+    };
+
+    Handle()
+    {
+    }
+
+    Handle (DataType rawbits)
+    {
+        m_static_assert (sizeof (Handle) == sizeof (DataType));
+        *this = *reinterpret_cast<Handle*> (&rawbits);
+    }
+
+    operator DataType() const
+    {
+        m_static_assert (sizeof (Handle) == sizeof (DataType));
+        return *reinterpret_cast<DataType*> (const_cast<Handle*> (this));
+    }
+};
 
 
 template<typename TRAITS>
-Manager<TRAITS>::Manager (size_t initialCapacity, Allocator& allocator)
+struct SOAManager<TRAITS>::SOAops
+{
+    enum { cSize = SOAManager::cSOASize };
+
+    template<size_t INDEX>
+    static void resetFrom (SOA& t)
+    {
+        std::get<INDEX> (t) = nullptr;
+        resetFrom<INDEX+1> (t);
+    }
+
+    template<>
+    static void resetFrom<cSize> (SOA&) {}
+
+    template<size_t INDEX>
+    static void mallocFrom (SOA& t, Allocator& allocator, size_t numOfElements)
+    {
+        typedef typename SOAColumn<SOAManager, INDEX>::ElemPtr ElemPtr;
+        typedef typename SOAColumn<SOAManager, INDEX>::Elem Elem;
+
+        ElemPtr& elems = std::get<INDEX> (t);
+        elems = static_cast<ElemPtr> (allocator.malloc (sizeof (Elem) * numOfElements));
+
+        mallocFrom<INDEX+1> (t, allocator, numOfElements);
+    }
+    
+    template<>
+    static void mallocFrom<cSize> (SOA&, Allocator&, size_t) {}
+
+    template<size_t INDEX>
+    static void freeFrom (SOA& t, Allocator& allocator)
+    {
+        allocator.free (std::get<INDEX> (t));
+
+        freeFrom<INDEX+1> (t, allocator);
+    }
+
+    template<>
+    static void freeFrom<cSize> (SOA&, Allocator&) {}
+
+    template<size_t INDEX>
+    static void memcpyFrom (SOA& dst, SOA& src, size_t numOfElements)
+    {
+        typedef typename SOAColumn<SOAManager, INDEX>::ElemPtr ElemPtr;
+        typedef typename SOAColumn<SOAManager, INDEX>::Elem Elem;
+
+        std::memcpy (std::get<INDEX> (dst), std::get<INDEX> (src), sizeof (Elem) * numOfElements);
+
+        memcpyFrom<INDEX+1> (dst, src, numOfElements);
+    }
+    
+    template<>
+    static void memcpyFrom<cSize> (SOA&, SOA&, size_t) {}
+
+    template<size_t INDEX>
+    static void swapFrom (SOA& t, size_t indexA, size_t indexB)
+    {
+        typedef typename SOAColumn<SOAManager, INDEX>::ElemPtr ElemPtr;
+        typedef typename SOAColumn<SOAManager, INDEX>::Elem Elem;
+
+        ElemPtr& elems = std::get<INDEX> (t);
+        mdk::swap<Elem> (elems[indexA], elems[indexB]);
+
+        swapFrom<INDEX+1> (t, indexA, indexB);
+    }
+
+    template<>
+    static void swapFrom<cSize> (SOA&, size_t, size_t) {}
+};
+
+template<typename TRAITS>
+SOAManager<TRAITS>::SOAManager (size_t initialCapacity, Allocator& allocator)
     : _allocator (allocator)
     , mCapacity (0)
     , mSize (0)
@@ -18,12 +118,12 @@ Manager<TRAITS>::Manager (size_t initialCapacity, Allocator& allocator)
     , mDataHandle (nullptr)
 {
     SyncWrite sync (mSyncHandle);
-    Ops<0>::reset (mSOAs);
+    SOAops::resetFrom<0> (mSOAs);
     resize (initialCapacity);
 }
 
 template<typename TRAITS>
-Manager<TRAITS>::~Manager()
+SOAManager<TRAITS>::~SOAManager()
 {
     {
         SyncWrite sync (mSyncHandle);
@@ -33,7 +133,7 @@ Manager<TRAITS>::~Manager()
             _allocator.free (mATable);
             //_allocator.free (mDataSlot);
             _allocator.free (mDataHandle);
-            Ops<0>::free (mSOAs, _allocator);
+            SOAops::freeFrom<0> (mSOAs, _allocator);
         }
 
         mCapacity = 0;
@@ -49,7 +149,7 @@ Manager<TRAITS>::~Manager()
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::resize (size_t newCapacity)
+bool SOAManager<TRAITS>::resize (size_t newCapacity)
 {
     if (newCapacity <= mCapacity)
         return false;
@@ -61,8 +161,8 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
     ATable* newATable = (ATable*)_allocator.malloc (newCapacity * sizeof (ATable));
     //Data* newSlot = (Data*)_allocator.malloc (newCapacity * sizeof (Data));
     Handle* newHandle = (Handle*)_allocator.malloc (newCapacity * sizeof (Handle));
-    SOAs newSOAs;
-    Ops<0>::malloc (newSOAs, _allocator, newCapacity);
+    SOA newSOA;
+    SOAops::mallocFrom<0> (newSOA, _allocator, newCapacity);
 
     // initialize the alloation table
     for (size_t i = mCapacity; i < newCapacity; ++i)
@@ -79,20 +179,20 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
         //memcpy (newSlot, mDataSlot, mCapacity * sizeof (Data));
         memcpy (newHandle, mDataHandle, mCapacity * sizeof (Handle));
 
-        Ops<0>::memcpy (newSOAs, mSOAs, mCapacity);
+        SOAops::memcpyFrom<0> (newSOA, mSOAs, mCapacity);
 
         _allocator.free (mATable);
         //_allocator.free (mDataSlot);
         _allocator.free (mDataHandle);
 
-        Ops<0>::free (mSOAs, _allocator);
+        SOAops::freeFrom<0> (mSOAs, _allocator);
 
         mFreelistDequeue = mCapacity;
     }
 
     mATable = newATable;
     //mDataSlot = newSlot;
-    mSOAs = newSOAs;
+    mSOAs = newSOA;
     mDataHandle = newHandle;
     mFreelistCount += newCapacity - mCapacity;
     mFreelistEnqueue = newCapacity - 1;
@@ -102,7 +202,7 @@ bool Manager<TRAITS>::resize (size_t newCapacity)
 }
 
 template<typename TRAITS>
-void Manager<TRAITS>::swapDataSlot (size_t slotIdxA, size_t slotIdxB)
+void SOAManager<TRAITS>::swapDataSlot (size_t slotIdxA, size_t slotIdxB)
 {
     if (slotIdxA == slotIdxB)
         return;
@@ -112,18 +212,18 @@ void Manager<TRAITS>::swapDataSlot (size_t slotIdxA, size_t slotIdxB)
 
     swap<Handle> (mDataHandle[slotIdxA], mDataHandle[slotIdxB]);
     //swap<Data> (mDataSlot[slotIdxA], mDataSlot[slotIdxB]);
-    Ops<0>::swap (mSOAs, slotIdxA, slotIdxB);
+    SOAops::swapFrom<0> (mSOAs, slotIdxA, slotIdxB);
 }
 
 template<typename TRAITS>
-typename Manager<TRAITS>::Handle Manager<TRAITS>::acquire()
+typename SOAManager<TRAITS>::Handle SOAManager<TRAITS>::acquire()
 {
     SyncWrite sync (mSyncHandle);
     return acquireNoSync();
 }
 
 template<typename TRAITS>
-typename Manager<TRAITS>::Handle Manager<TRAITS>::acquireNoSync()
+typename SOAManager<TRAITS>::Handle SOAManager<TRAITS>::acquireNoSync()
 {
     if (mSize == mCapacity)
     {
@@ -151,7 +251,7 @@ typename Manager<TRAITS>::Handle Manager<TRAITS>::acquireNoSync()
         mDataHandle[mSize] = mDataHandle[mFirstDisabled];
 
         //swap<Data> (mDataSlot[mSize], mDataSlot[mFirstDisabled]);
-        Ops<0>::swap (mSOAs, mSize, mFirstDisabled);
+        SOAops::swapFrom<0> (mSOAs, mSize, mFirstDisabled);
     }
 
     ++mFirstDisabled;
@@ -163,14 +263,14 @@ typename Manager<TRAITS>::Handle Manager<TRAITS>::acquireNoSync()
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::release (Handle handle)
+bool SOAManager<TRAITS>::release (Handle handle)
 {
     SyncWrite sync (mSyncHandle);
     return releaseNoSync (handle);
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::releaseNoSync (Handle handle)
+bool SOAManager<TRAITS>::releaseNoSync (Handle handle)
 {
     if (!isValidNoSync (handle))
         return false;
@@ -214,14 +314,14 @@ bool Manager<TRAITS>::releaseNoSync (Handle handle)
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::isValid (Handle handle) const
+bool SOAManager<TRAITS>::isValid (Handle handle) const
 {
     SyncRead sync (mSyncHandle);
     return isValidNoSync (handle);
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::isValidNoSync (Handle handle) const
+bool SOAManager<TRAITS>::isValidNoSync (Handle handle) const
 {
     if (handle.generation == 0)
         return false;
@@ -236,51 +336,50 @@ bool Manager<TRAITS>::isValidNoSync (Handle handle) const
 }
 
 template<typename TRAITS>
-template<size_t INDEX>
-typename ManagerSOA<Manager<TRAITS>, INDEX>::ElemPtr Manager<TRAITS>::get (Handle handle)
+template<typename SOACOL>
+typename SOACOL::ElemPtr SOAManager<TRAITS>::get (Handle handle)
 {
     SyncRead sync (mSyncHandle);
-    return getNoSync<INDEX> (handle);
+    return getNoSync<SOACOL> (handle);
 }
 
-
 template<typename TRAITS>
-template<size_t INDEX>
-typename ManagerSOA<Manager<TRAITS>, INDEX>::ElemPtr Manager<TRAITS>::getNoSync (Handle handle) const
+template<typename SOACOL>
+typename SOACOL::ElemPtr SOAManager<TRAITS>::getNoSync (Handle handle) const
 {
     //return &mDataSlot[mATable[handle.index].slotIndex];
-    typename SOA<SOAs, INDEX>::ElemPtr ptr = std::get<INDEX> (mSOAs);
+    typename SOACOL::ElemPtr ptr = std::get<SOACOL::cIndex> (mSOAs);
     return &ptr[mATable[handle.index].slotIndex];
 }
-#if 0
-#endif
 
-#if 0
 template<typename TRAITS>
-bool Manager<TRAITS>::fetch (Data& Data, Handle handle) const
+template<typename SOACOL>
+bool SOAManager<TRAITS>::fetch (typename SOACOL::Elem& data, Handle handle) const
 {
     SyncRead sync (mSyncHandle);
     if (!isValidNoSync (handle))
         return false;
 
-    Data = mDataSlot[mATable[handle.index].slotIndex];
+    //data = mDataSlot[mATable[handle.index].slotIndex];
+    data = *getNoSync<SOACOL> (handle);
     return true;
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::store (Handle handle, const Data& Data)
+template<typename SOACOL>
+bool SOAManager<TRAITS>::store (Handle handle, const typename SOACOL::Elem& data)
 {
     SyncWrite sync (mSyncHandle);
     if (!isValidNoSync (handle))
         return false;
 
-    mDataSlot[mATable[handle.index].slotIndex] = Data;
+    //mDataSlot[mATable[handle.index].slotIndex] = data;
+    *getNoSync<SOACOL> (handle) = data;
     return true;
 }
-#endif
 
 template<typename TRAITS>
-void Manager<TRAITS>::enable (Handle handle)
+void SOAManager<TRAITS>::enable (Handle handle)
 {
     SyncWrite sync (mSyncHandle);
 
@@ -292,7 +391,7 @@ void Manager<TRAITS>::enable (Handle handle)
 }
 
 template<typename TRAITS>
-void Manager<TRAITS>::disable (Handle handle)
+void SOAManager<TRAITS>::disable (Handle handle)
 {
     SyncWrite sync (mSyncHandle);
 
@@ -304,14 +403,14 @@ void Manager<TRAITS>::disable (Handle handle)
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::isEnabled (Handle handle) const
+bool SOAManager<TRAITS>::isEnabled (Handle handle) const
 {
     SyncRead sync (mSyncHandle);
     return isEnabledNoSync (handle);
 }
 
 template<typename TRAITS>
-bool Manager<TRAITS>::isEnabledNoSync (Handle handle) const
+bool SOAManager<TRAITS>::isEnabledNoSync (Handle handle) const
 {
     return mATable[handle.index].slotIndex < mFirstDisabled;
 }

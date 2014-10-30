@@ -1,22 +1,22 @@
-#include "mdk_Manager.h"
+#include "mdk_SOAManager.h"
 #include <modules/GoogleTest/GoogleTest.h>
 
 using namespace mdk;
 
-TEST (TestManagerHandle, Basic)
+TEST (TestSOAManagerHandle, Basic)
 {
-    struct Traits : ManagerTraitsDefault<int>
+    struct Traits : SOAManagerTraitsDefault<int>
     {
     };
 
-    typedef Manager<Traits>::Handle Handle;
+    typedef SOAManager<Traits>::Handle Handle;
     EXPECT_EQ (sizeof (juce::uint32), sizeof (Handle));
 
     EXPECT_EQ (1048576, Handle::cIndexLimit);   // 2^20
     EXPECT_EQ (4096, Handle::cGenerationLimit); // 2^12
 }
 
-class TestManager : public testing::Test
+class TestSOAManager : public testing::Test
 {
 protected:
     struct Object
@@ -24,7 +24,7 @@ protected:
         int data;
     };
 
-    struct Traits : ManagerTraitsDefault<Object>
+    struct Traits : SOAManagerTraitsDefault<Object>
     {
     };
 
@@ -36,10 +36,11 @@ protected:
     {
     }
 
-    typedef Manager<Traits> ObjectManager;
+    typedef SOAManager<Traits> ObjectManager;
+    typedef SOAColumn<ObjectManager, 0> ObjectCol;
 };
 
-TEST_F (TestManager, AcquireAndRelease)
+TEST_F (TestSOAManager, AcquireAndRelease)
 {
     const size_t N = 4;
     ObjectManager mgr (N);
@@ -61,7 +62,7 @@ TEST_F (TestManager, AcquireAndRelease)
         EXPECT_EQ (1, ha[i].generation);
         EXPECT_TRUE (mgr.isValid (ha[i]));
 
-        mgr.get<0> (ha[i])->data = i;
+        mgr.get<ObjectCol> (ha[i])->data = i;
     }
 
     // test for release, notice that we are destroying in reverse order
@@ -75,7 +76,7 @@ TEST_F (TestManager, AcquireAndRelease)
 
         // make sure the content of other allocated object are not affected
         for (int j = i + 1; j < N; ++j)
-            EXPECT_EQ (j, mgr.get<0> (ha[j])->data);
+            EXPECT_EQ (j, mgr.get<ObjectCol> (ha[j])->data);
     }
 
     // Acquire the objects again.
@@ -98,7 +99,7 @@ TEST_F (TestManager, AcquireAndRelease)
     }
 }
 
-TEST_F (TestManager, AllocationContinuity)
+TEST_F (TestSOAManager, AllocationContinuity)
 {
     ObjectManager mgr (4);
 
@@ -113,14 +114,14 @@ TEST_F (TestManager, AllocationContinuity)
     // make sure the objects are allocated continuously
     for (int i = 1; i < countof (ha); ++i)
     {
-        long p0 = reinterpret_cast<long> (mgr.get<0> (ha[i-1]));
-        long p1 = reinterpret_cast<long> (mgr.get<0> (ha[i]));
+        long p0 = reinterpret_cast<long> (mgr.get<ObjectCol> (ha[i-1]));
+        long p1 = reinterpret_cast<long> (mgr.get<ObjectCol> (ha[i]));
 
         EXPECT_EQ (sizeof (Object), p1 - p0);
     }
 }
 
-TEST_F (TestManager, ResizeSimple)
+TEST_F (TestSOAManager, ResizeSimple)
 {
     ObjectManager mgr (4);
 
@@ -161,7 +162,7 @@ TEST_F (TestManager, ResizeSimple)
     }
 }
 
-TEST_F (TestManager, ResizeAdvanced)
+TEST_F (TestSOAManager, ResizeAdvanced)
 {
     ObjectManager mgr (4);
 
@@ -176,7 +177,7 @@ TEST_F (TestManager, ResizeAdvanced)
     EXPECT_EQ (4, mgr.capacity());
 
     for (int i = 0; i < countof (ha); ++i)
-        mgr.get<0> (ha[i])->data = i;
+        mgr.get<ObjectCol> (ha[i])->data = i;
 
     mgr.release (ha[1]);
 
@@ -189,7 +190,7 @@ TEST_F (TestManager, ResizeAdvanced)
     };
 
     for (int i = 0; i < countof (hb); ++i)
-        mgr.get<0> (hb[i])->data = 4 + i;
+        mgr.get<ObjectCol> (hb[i])->data = 4 + i;
 
     EXPECT_EQ (7, mgr.size());
     EXPECT_EQ (8, mgr.capacity());
@@ -216,16 +217,16 @@ TEST_F (TestManager, ResizeAdvanced)
 
     mgr.release (hb[1]);
 
-    EXPECT_EQ (0, mgr.get<0> (ha[0])->data);
-    EXPECT_EQ (2, mgr.get<0> (ha[2])->data);
-    EXPECT_EQ (3, mgr.get<0> (ha[3])->data);
+    EXPECT_EQ (0, mgr.get<ObjectCol> (ha[0])->data);
+    EXPECT_EQ (2, mgr.get<ObjectCol> (ha[2])->data);
+    EXPECT_EQ (3, mgr.get<ObjectCol> (ha[3])->data);
 
-    EXPECT_EQ (4, mgr.get<0> (hb[0])->data);
-    EXPECT_EQ (6, mgr.get<0> (hb[2])->data);
-    EXPECT_EQ (7, mgr.get<0> (hb[3])->data);
+    EXPECT_EQ (4, mgr.get<ObjectCol> (hb[0])->data);
+    EXPECT_EQ (6, mgr.get<ObjectCol> (hb[2])->data);
+    EXPECT_EQ (7, mgr.get<ObjectCol> (hb[3])->data);
 }
 
-TEST_F (TestManager, EnableAndDisable)
+TEST_F (TestSOAManager, EnableAndDisable)
 {
     const size_t N = 4;
     ObjectManager mgr (N);
@@ -239,7 +240,7 @@ TEST_F (TestManager, EnableAndDisable)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<0> (ha[i])->data = i;
+        mgr.get<ObjectCol> (ha[i])->data = i;
 
     // ha[1] should be enabled by default
     EXPECT_TRUE (mgr.isEnabled (ha[1]));
@@ -249,17 +250,17 @@ TEST_F (TestManager, EnableAndDisable)
 
     // make sure the contents are not affected by disable(ha[1])
     for (int i = 0; i < N; ++i)
-        EXPECT_EQ (i, mgr.get<0> (ha[i])->data);
+        EXPECT_EQ (i, mgr.get<ObjectCol> (ha[i])->data);
 
     mgr.enable (ha[1]);
     EXPECT_TRUE (mgr.isEnabled (ha[1]));
 
     // make sure the contents are not affected by enable(ha[1])
     for (int i = 0; i < N; ++i)
-        EXPECT_EQ (i, mgr.get<0> (ha[i])->data);
+        EXPECT_EQ (i, mgr.get<ObjectCol> (ha[i])->data);
 }
 
-TEST_F (TestManager, AcquireWithDisable)
+TEST_F (TestSOAManager, AcquireWithDisable)
 {
     const size_t N = 4;
     ObjectManager mgr (N);
@@ -273,7 +274,7 @@ TEST_F (TestManager, AcquireWithDisable)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<0> (ha[i])->data = i;
+        mgr.get<ObjectCol> (ha[i])->data = i;
 
     mgr.disable (ha[1]);
 
@@ -283,14 +284,14 @@ TEST_F (TestManager, AcquireWithDisable)
     ha[7] = mgr.acquire();
 
     for (int i = N; i < 2 * N; ++i)
-        mgr.get<0> (ha[i])->data = i;
+        mgr.get<ObjectCol> (ha[i])->data = i;
 
     for (int i = 0; i < 2 * N; ++i)
-        EXPECT_EQ (i, mgr.get<0> (ha[i])->data);
+        EXPECT_EQ (i, mgr.get<ObjectCol> (ha[i])->data);
 
 }
 
-TEST_F (TestManager, ReleaseEnabled)
+TEST_F (TestSOAManager, ReleaseEnabled)
 {
     const size_t N = 4;
     ObjectManager mgr (N);
@@ -304,19 +305,19 @@ TEST_F (TestManager, ReleaseEnabled)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<0> (ha[i])->data = i;
+        mgr.get<ObjectCol> (ha[i])->data = i;
 
     mgr.disable (ha[1]);
 
     mgr.release (ha[0]);
 
     // make sure the contents are not affected by .release (ha[0])
-    EXPECT_EQ (1, mgr.get<0> (ha[1])->data);
-    EXPECT_EQ (2, mgr.get<0> (ha[2])->data);
-    EXPECT_EQ (3, mgr.get<0> (ha[3])->data);
+    EXPECT_EQ (1, mgr.get<ObjectCol> (ha[1])->data);
+    EXPECT_EQ (2, mgr.get<ObjectCol> (ha[2])->data);
+    EXPECT_EQ (3, mgr.get<ObjectCol> (ha[3])->data);
 }
 
-TEST_F (TestManager, ReleaseDisabled)
+TEST_F (TestSOAManager, ReleaseDisabled)
 {
     const size_t N = 4;
     ObjectManager mgr (N);
@@ -330,26 +331,25 @@ TEST_F (TestManager, ReleaseDisabled)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<0> (ha[i])->data = i;
+        mgr.get<ObjectCol> (ha[i])->data = i;
 
     mgr.disable (ha[1]);
 
     mgr.release (ha[1]);
 
     // make sure the contents are not affected by .release (ha[0])
-    EXPECT_EQ (0, mgr.get<0> (ha[0])->data);
-    EXPECT_EQ (2, mgr.get<0> (ha[2])->data);
-    EXPECT_EQ (3, mgr.get<0> (ha[3])->data);
+    EXPECT_EQ (0, mgr.get<ObjectCol> (ha[0])->data);
+    EXPECT_EQ (2, mgr.get<ObjectCol> (ha[2])->data);
+    EXPECT_EQ (3, mgr.get<ObjectCol> (ha[3])->data);
 }
 
-#if 0
-#if 0
-TEST_F (TestManager, MultithreadAcquire)
+TEST_F (TestSOAManager, MultithreadAcquire)
 {
     ObjectManager mgr (4096);
 
     ObjectManager::Handle h[4096];
 
+    // quarter 1
     auto f1 = [&h, &mgr]()
     {
         Object obj;
@@ -360,12 +360,13 @@ TEST_F (TestManager, MultithreadAcquire)
         {
             obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store (h[i], obj);
+            mgr.store<ObjectCol> (h[i], obj);
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
     };
 
+    // quarter 2
     auto f2 = [&h, &mgr]()
     {
         Object obj;
@@ -376,12 +377,13 @@ TEST_F (TestManager, MultithreadAcquire)
         {
             obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store (h[i], obj);
+            mgr.store<ObjectCol> (h[i], obj);
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
     };
 
+    // quarter 3
     auto f3 = [&h, &mgr]()
     {
         Object obj;
@@ -392,12 +394,13 @@ TEST_F (TestManager, MultithreadAcquire)
         {
             obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store (h[i], obj);
+            mgr.store<ObjectCol> (h[i], obj);
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
     };
 
+    // quarter 4
     auto f4 = [&h, &mgr]()
     {
         Object obj;
@@ -408,7 +411,7 @@ TEST_F (TestManager, MultithreadAcquire)
         {
             obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store (h[i], obj);
+            mgr.store<ObjectCol> (h[i], obj);
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
@@ -427,12 +430,8 @@ TEST_F (TestManager, MultithreadAcquire)
     for (int i = 0; i < 4096; ++i)
     {
         Object obj;
-        mgr.fetch (obj, h[i]);
+        mgr.fetch<ObjectCol> (obj, h[i]);
         EXPECT_EQ (i, obj.data);
         EXPECT_EQ ((i % 2) == 0, !mgr.isEnabled (h[i]));
     }
 }
-
-#endif
-
-#endif
