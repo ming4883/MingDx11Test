@@ -141,55 +141,65 @@ public:
      */
     bool isEnabled (Handle handle) const;
 
-#if 0
     /*! Returns a pointer to the first element of all objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    m_inline Data* beginOfAll() const
+    template<typename SOACOL>
+    m_inline typename SOACOL::ElemPtr* beginOfAll() const
     {
-        return mDataSlot;
+        return std::get<SOACOL::cIndex> (mSOAs);
+        //return mDataSlot;
     }
 
     /*! Returns a pointer to the element which follows the last element of all objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    m_inline Data* endOfAll() const
+    template<typename SOACOL>
+    m_inline typename SOACOL::ElemPtr* endOfAll() const
     {
-        return mDataSlot + mSize;
+        return std::get<SOACOL::cIndex> (mSOAs) + mSize;
+        //return mDataSlot + mSize;
     }
 
     /*! Returns a pointer to the first element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    m_inline Data* beginOfEnabled() const
+    template<typename SOACOL>
+    m_inline typename SOACOL::ElemPtr beginOfEnabled() const
     {
-        return mDataSlot;
+        return std::get<SOACOL::cIndex> (mSOAs);
+        //return mDataSlot;
     }
 
     /*! Returns a pointer to the element which follows the last element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    m_inline Data* endOfEnabled() const
+    template<typename SOACOL>
+    m_inline typename SOACOL::ElemPtr endOfEnabled() const
     {
-        return mDataSlot + mFirstDisabled;
+        return std::get<SOACOL::cIndex> (mSOAs) + mFirstDisabled;
+        //return mDataSlot + mFirstDisabled;
     }
 
     /*! Returns a pointer to the first element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    m_inline Data* beginOfDisabled() const
+    template<typename SOACOL>
+    m_inline typename SOACOL::ElemPtr beginOfDisabled() const
     {
-        return mDataSlot + mFirstDisabled;
+        return std::get<SOACOL::cIndex> (mSOAs) + mFirstDisabled;
+        //return mDataSlot + mFirstDisabled;
     }
 
     /*! Returns a pointer to the element which follows the last element of enabled objects.
         This method is provided for compatibility with standard C++ iteration mechanisms.
      */
-    m_inline Data* endOfDisabled() const
+    template<typename SOACOL>
+    m_inline typename SOACOL::ElemPtr endOfDisabled() const
     {
-        return mDataSlot + mSize;
+        return std::get<SOACOL::cIndex> (mSOAs) + mSize;
+        //return mDataSlot + mSize;
     }
-#endif
 
 protected:
     struct SOAops;

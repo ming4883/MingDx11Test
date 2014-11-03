@@ -104,14 +104,22 @@ template<> struct UseAllocator<AnimationTrack>
     static const bool Value = true;
 };
 
-class AnimationTrackManager : public SOAManager< SOAManagerTraitsDefault<AnimationTrack> >
+class AnimationTrackManager : protected SOAManager< SOAManagerTraitsDefault<AnimationTrack> >
 {
     m_noncopyable (AnimationTrackManager)
 
-    typedef SOAManager< SOAManagerTraitsDefault<AnimationTrack> > Super;
-
 public:
+    typedef SOAManager< SOAManagerTraitsDefault<AnimationTrack> > Super;
+    typedef SOAColumn<Super, 0> ColTrack;
+
+    using Super::Handle;
+
     AnimationTrackManager (Allocator& allocator);
+
+    AnimationTrack* get (Handle handle)
+    {
+        return Super::get<ColTrack> (handle);
+    }
 };
 
 typedef AnimationTrackManager::Handle AnimationTrackHandle;
@@ -122,20 +130,31 @@ public:
     float time;
     AnimationCache cache;
     AnimationTrackHandle track;
-    float result[4];
 };
 
-class AnimationStateManager : public SOAManager< SOAManagerTraitsDefault<AnimationState> >
+class AnimationResult
+{
+public:
+    float data[4];
+};
+
+class AnimationStateManager : protected SOAManager< SOAManagerTraitsDefault<AnimationState, AnimationResult> >
 {
     m_noncopyable (AnimationStateManager)
 
-    typedef SOAManager< SOAManagerTraitsDefault<AnimationState> > Super;
-
 public:
+    typedef SOAManager< SOAManagerTraitsDefault<AnimationState, AnimationResult> > Super;
+    typedef SOAColumn<Super, 0> ColState;
+    typedef SOAColumn<Super, 1> ColResult;
+
+    using Super::Handle;
+    
     AnimationStateManager (Allocator& allocator);
 
     void update (AnimationTrackManager& trackManager);
 
+private:
+    
 };
 
 typedef AnimationStateManager::Handle AnimationStateHandle;

@@ -218,9 +218,9 @@ AnimationStateManager::AnimationStateManager (Allocator& allocator)
 
 void AnimationStateManager::update (AnimationTrackManager& trackManager)
 {
-#if 0
-    AnimationState* const itBeg = beginOfEnabled();
-    AnimationState* const itEnd = endOfEnabled();
+#if 1
+    AnimationState* const itBeg = beginOfEnabled<ColState>();
+    AnimationState* const itEnd = endOfEnabled<ColState>();
 
     for (AnimationState* itCur = itBeg; itCur != itEnd; ++itCur)
     {
