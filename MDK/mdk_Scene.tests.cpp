@@ -23,20 +23,18 @@ protected:
     }
 };
 
-#if 0
 TEST_F (TestAnimationTrackManager, BasicUsages)
 {
     float cFrameTime[] = {0, 1};
     float cFrameData[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
     // create track
-    AnimationTrackHandle handle = manager.acquire();
-    EXPECT_TRUE (manager.construct (handle));
+    AnimationTrackHandle handle = manager.create (2, 4);
+    EXPECT_TRUE (manager.isValid (handle));
 
     // initialize track contents
     {
         AnimationTrack* track = manager.get (handle);
-        track->alloc (2, 4);
         track->setFrameTime (0, 2, cFrameTime);
         track->setFrameData (0, 2, cFrameData);
     }
@@ -48,21 +46,24 @@ TEST_F (TestAnimationTrackManager, BasicUsages)
     // verify track contents
     {
         AnimationTrack* track = manager.get (handle);
-        float time[2];
-        float data[8];
-        track->fetch2Frames (data, time, 0.5f);
+        AnimationCache cache;
+        track->fetch2Frames (cache, 0.5f);
 
-        for (int i = 0; i < countof (time); ++i)
-            EXPECT_EQ (cFrameTime[i], time[i]);
+        for (int i = 0; i < countof (cFrameTime); ++i)
+        {
+            EXPECT_EQ (cFrameTime[i], cache.time[i]);
+            EXPECT_EQ (cFrameData[i * 4 + 0], cache.data[i][0]);
+            EXPECT_EQ (cFrameData[i * 4 + 1], cache.data[i][1]);
+            EXPECT_EQ (cFrameData[i * 4 + 2], cache.data[i][2]);
+            EXPECT_EQ (cFrameData[i * 4 + 3], cache.data[i][3]);
+        }
     }
 
     // destory track
-    EXPECT_TRUE (manager.destruct (handle));
-    manager.release (handle);
+    EXPECT_TRUE (manager.destroy (handle));
 
     EXPECT_FALSE (manager.isValid (handle));
 }
-#endif
 
 TEST (BenchMark, CpuCacheWrite)
 {

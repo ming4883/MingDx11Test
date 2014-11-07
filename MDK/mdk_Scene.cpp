@@ -155,7 +155,7 @@ void AnimationTrack::setFrameData (uint32 offset, uint32 numOfFrames, float* ptr
     }
 }
 
-void AnimationTrack::fetch2Frames (float* retFrameData, float* retFrameTime, float frameNo)
+void AnimationTrack::fetch2Frames (AnimationCache& ret, float frameNo)
 {
     uint32 thisFrame = 0;
 
@@ -174,24 +174,21 @@ void AnimationTrack::fetch2Frames (float* retFrameData, float* retFrameTime, flo
         lastFrame = thisFrame - 1;
 
     uint32 srcOffset;
-    uint32 dstOffset;
 
     // first frame
     srcOffset = lastFrame * frameDataSize;
-    dstOffset = 0;
 
     for (uint32 i = 0; i < frameDataSize; ++i)
-        retFrameData[dstOffset + i] = frameDataPtr[srcOffset + i];
+        ret.data[0][i] = frameDataPtr[srcOffset + i];
 
     // second frame
     srcOffset = thisFrame * frameDataSize;
-    dstOffset = frameDataSize;
 
     for (uint32 i = 0; i < frameDataSize; ++i)
-        retFrameData[dstOffset + i] = frameDataPtr[srcOffset + i];
+        ret.data[1][i] = frameDataPtr[srcOffset + i];
 
-    retFrameTime[0] = frameTimePtr[lastFrame];
-    retFrameTime[1] = frameTimePtr[thisFrame];
+    ret.time[0] = frameTimePtr[lastFrame];
+    ret.time[1] = frameTimePtr[thisFrame];
 }
 
 void AnimationTrack::_swap (AnimationTrack& a, AnimationTrack& b)
@@ -209,6 +206,24 @@ AnimationTrackManager::AnimationTrackManager (Allocator& allocator)
 
 }
 
+AnimationTrackManager::Handle AnimationTrackManager::create (uint32 numOfFrames, uint32 numOfElemsPerFrame)
+{
+    Handle handle = acquire ();
+    Super::construct<ColTrack> (handle);
+    Super::get<ColTrack> (handle)->alloc (numOfFrames, numOfElemsPerFrame);
+
+    return handle;
+}
+
+bool AnimationTrackManager::destroy (Handle handle)
+{
+    if (!Super::destruct<ColTrack> (handle))
+        return false;
+
+    release (handle);
+    return true;
+}
+
 //==============================================================================
 AnimationStateManager::AnimationStateManager (Allocator& allocator)
     : Super (16u, allocator)
@@ -218,20 +233,28 @@ AnimationStateManager::AnimationStateManager (Allocator& allocator)
 
 void AnimationStateManager::update (AnimationTrackManager& trackManager)
 {
-#if 1
-    AnimationState* const itBeg = beginOfEnabled<ColState>();
-    AnimationState* const itEnd = endOfEnabled<ColState>();
+    AnimationState* const statePtr = beginOfEnabled<ColState>();
+    AnimationResult* const resultPtr = beginOfEnabled<ColResult>();
+    
+    const size_t cCnt = sizeOfEnabled();
 
-    for (AnimationState* itCur = itBeg; itCur != itEnd; ++itCur)
+    for (size_t i = 0; i < cCnt; ++i)
     {
-        if (!itCur->cache.isValid())
+        AnimationState& state = statePtr[i];
+        AnimationResult& result = resultPtr[i];
+
+        float stateTime = state.time;
+
+        if (!state.cache.isValid (stateTime))
         {
-            AnimationTrack* track = trackManager.get (itCur->track);
+            AnimationTrack* track = trackManager.get (state.track);
             m_assert (track != nullptr);
-            track->fetch2Frames (itCur->cache.data, itCur->cache.time, itCur->time);
+            track->fetch2Frames (state.cache, stateTime);
         }
+
+        float t = (stateTime - state.cache.time[0]) / (state.cache.time[1] - state.cache.time[0]);
+        result.data = Vec::lerp (state.cache.data[0], state.cache.data[1], t);
     }
-#endif
 }
 
 }   // namespace

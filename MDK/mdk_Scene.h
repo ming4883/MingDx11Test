@@ -45,18 +45,18 @@ public:
 class AnimationCache
 {
 public:
-    enum { cNumOfFrames = 4 };
+    enum { cNumOfFrames = 2 };
     float time[cNumOfFrames];
-    float data[cNumOfFrames * 4];
+    Vec4f data[cNumOfFrames];
 
     AnimationCache()
     {
-        time[0] = time[1] = time[2] = time[3] = -1;
+        time[0] = time[1] = -1;
     }
 
-    m_inline bool isValid() const
+    m_inline bool isValid (float t) const
     {
-        return false;
+        return !((time[0] == -1) || (time[0] < t) || (time[1] > t));
     }
 };
 
@@ -84,7 +84,7 @@ public:
     void setFrameTime (uint32 offset, uint32 numOfFrames, float* ptr);
     void setFrameData (uint32 offset, uint32 numOfFrames, float* ptr);
 
-    void fetch2Frames (float* retFrameData, float* retFrameTime, float frameNo);
+    void fetch2Frames (AnimationCache& ret, float frameNo);
 
     static void _swap (AnimationTrack& a, AnimationTrack& b);
 
@@ -113,13 +113,20 @@ public:
     typedef SOAColumn<Super, 0> ColTrack;
 
     using Super::Handle;
+    using Super::disable;
+    using Super::enable;
+    using Super::isValid;
 
     AnimationTrackManager (Allocator& allocator);
 
-    AnimationTrack* get (Handle handle)
+    m_inline AnimationTrack* get (Handle handle)
     {
         return Super::get<ColTrack> (handle);
     }
+
+    Handle create (uint32 numOfFrames, uint32 numOfElemsPerFrame);
+
+    bool destroy (Handle handle);
 };
 
 typedef AnimationTrackManager::Handle AnimationTrackHandle;
@@ -135,7 +142,7 @@ public:
 class AnimationResult
 {
 public:
-    float data[4];
+    Vec4f data;
 };
 
 class AnimationStateManager : protected SOAManager< SOAManagerTraitsDefault<AnimationState, AnimationResult> >

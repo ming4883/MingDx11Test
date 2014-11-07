@@ -75,6 +75,18 @@ public:
         return mSize;
     }
 
+    //! Returns the number of enabled-objects being allocated in this SOAManager.
+    size_t sizeOfEnabled() const
+    {
+        return mFirstDisabled;
+    }
+
+    //! Returns the number of disabled-objects being allocated in this SOAManager.
+    size_t sizeOfDisabled() const
+    {
+        return mSize - mFirstDisabled;
+    }
+
     //! Retuns a handle with points to a memory location. If this SOAManager is full, an invalid handle is returned.
     Handle acquire();
 
