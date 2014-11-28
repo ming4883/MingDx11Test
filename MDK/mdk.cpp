@@ -3,6 +3,7 @@
 #include "mdk_Allocator.cpp"
 #include "mdk_BabylonFile.cpp"
 #include "mdk_Demo.cpp"
+#include "mdk_Graphics.cpp"
 #include "mdk_Math.cpp"
 #include "mdk_Persistable.cpp"
 #include "mdk_Scene.cpp"
