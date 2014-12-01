@@ -4,6 +4,7 @@
 
 #include <AppConfig.h>
 #include <cassert>
+#include <cstdint>
 
 #define m_stringify(x) #x
 #define m_tostr(x) m_stringify(x)

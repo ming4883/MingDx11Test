@@ -19,7 +19,7 @@ namespace mdk
 template<class T>
 class ComObj
 {
-    m_noncopyable (ComObj)
+    //m_noncopyable (ComObj)
 
 public:
     ComObj (T* ptr = nullptr) : ptr_ (ptr)
@@ -118,11 +118,15 @@ public:
     HGfxBuffer createIndexBuffer (size_t sizeInBytes, juce::uint32 flags, const void* initialData) override;
     HGfxBuffer createConstantBuffer (size_t sizeInBytes) override;
 
+    void destroy (HGfxBuffer buffer);
+
     bool updateBuffer (HGfxBuffer buffer, const void* data, size_t dataSize, bool dynamic) override;
 
 private:
-    typedef SOAManager<SOAManagerTraitsDefault<GfxBufferD3D11>> Manager;
-    Manager manager_;
+    typedef SOAManager<SOAManagerTraitsDefault<GfxBufferD3D11>> SOA;
+    typedef SOAColumn<SOA, 0> Col;
+    SOA soa_;
+    ComObj<ID3D11Device> apiDevice_;
 };
 
 

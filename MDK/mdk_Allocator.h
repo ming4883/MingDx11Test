@@ -53,7 +53,7 @@ template<typename Type, bool AllocatorUsage>
 struct ConstructWithAllocator
 {
     template<typename... Args>
-    static void invoke (Allocator& alloc, Type* ptr, Args... args)
+    static void invoke (Allocator& /*alloc*/, Type* ptr, Args... args)
     {
         new (ptr) Type (args...);
     }

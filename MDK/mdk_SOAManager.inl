@@ -27,7 +27,7 @@ struct SOAManager<TRAITS>::Handle
 
     operator DataType() const
     {
-        m_static_assert (sizeof (Handle) == sizeof (DataType));
+        //m_static_assert (sizeof (Handle) == sizeof (DataType));
         return *reinterpret_cast<DataType*> (const_cast<Handle*> (this));
     }
 };

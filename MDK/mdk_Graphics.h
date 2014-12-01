@@ -26,7 +26,7 @@ namespace GfxBufferFlags
     };
 }
 
-typedef juce::uint32 HGfxBuffer;
+typedef uint32_t HGfxBuffer;
 
 class GfxBufferManager
 {

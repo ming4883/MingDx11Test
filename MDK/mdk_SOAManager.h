@@ -17,7 +17,7 @@ struct SOAManagerTraitsDefault
 {
     typedef std::tuple<typename std::add_pointer<DATA>::type ...> SOAType;
     typedef SyncWithAtomic SyncType;
-    typedef juce::uint32 HandleDataType;
+    typedef uint32_t HandleDataType;
 
     enum
     {
