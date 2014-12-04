@@ -36,6 +36,15 @@ struct SOAColumn
     typedef typename std::remove_pointer<ElemPtr>::type Elem;
 };
 
+#define m_decl_handle(TYPE, DATATYPE) struct TYPE { \
+    DATATYPE value; \
+    explicit TYPE (DATATYPE data) : value (data) {} \
+    bool operator == (const TYPE& other) const { return value == other.value; } \
+    bool operator != (const TYPE& other) const { return value != other.value; } \
+    bool operator > (const TYPE& other) const { return value > other.value; } \
+    bool operator < (const TYPE& other) const { return value < other.value; } \
+};
+
 /*! A template for managing objects in data-oriented manner.
     For performance reasons, the constructor and destructor will NOT be invoked during acquire() and release();
     and OBJECT must support operator =.

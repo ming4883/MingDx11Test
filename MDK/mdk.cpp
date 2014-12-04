@@ -3,6 +3,7 @@
 #include "mdk_Allocator.cpp"
 #include "mdk_BabylonFile.cpp"
 #include "mdk_Demo.cpp"
+#include "mdk_Frontend.cpp"
 #include "mdk_Graphics.cpp"
 #include "mdk_Math.cpp"
 #include "mdk_Persistable.cpp"
@@ -16,4 +17,5 @@
 #ifdef MDK_UNIT_TESTS
 #include "mdk_Scene.tests.cpp"
 #include "mdk_SOAManager.tests.cpp"
+#include "mdk_Frontend.tests.cpp"
 #endif

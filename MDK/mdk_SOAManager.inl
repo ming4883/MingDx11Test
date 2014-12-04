@@ -19,9 +19,10 @@ struct SOAManager<TRAITS>::Handle
     {
     }
 
+#if 0
     Handle (DataType rawbits)
     {
-        m_static_assert (sizeof (Handle) == sizeof (DataType));
+        //m_static_assert (sizeof (Handle) == sizeof (DataType));
         *this = *reinterpret_cast<Handle*> (&rawbits);
     }
 
@@ -29,6 +30,19 @@ struct SOAManager<TRAITS>::Handle
     {
         //m_static_assert (sizeof (Handle) == sizeof (DataType));
         return *reinterpret_cast<DataType*> (const_cast<Handle*> (this));
+    }
+#endif
+
+    template <class RAW>
+    Handle (RAW raw)
+    {
+        *this = *reinterpret_cast<Handle*> (&raw.value);
+    }
+
+    template <class RAW>
+    RAW as() const
+    {
+        return RAW (*reinterpret_cast<DataType*> (const_cast<Handle*> (this)));
     }
 };
 

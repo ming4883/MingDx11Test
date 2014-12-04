@@ -2,6 +2,7 @@
 #define MDK_GRAPHICS_H_INCLUDED
 
 #include "mdk_Config.h"
+#include "mdk_Allocator.h"
 
 namespace mdk
 {
@@ -26,25 +27,29 @@ namespace GfxBufferFlags
     };
 }
 
-typedef uint32_t HGfxBuffer;
+m_decl_handle (HGfxBuffer, uint32_t)
 
-class GfxBufferManager
+class Frontend;
+
+class GfxService
 {
-    m_noncopyable (GfxBufferManager)
+    m_noncopyable (GfxService)
 
 public:
-    GfxBufferManager() {}
-    virtual ~GfxBufferManager() {}
+    GfxService() {}
+    virtual ~GfxService() {}
 
-    virtual HGfxBuffer createVertexBuffer (size_t sizeInBytes, juce::uint32 flags, const void* initialData = nullptr) = 0;
-    virtual HGfxBuffer createIndexBuffer (size_t sizeInBytes, juce::uint32 flags, const void* initialData = nullptr) = 0;
-    virtual HGfxBuffer createConstantBuffer (size_t sizeInBytes) = 0;
+    virtual bool startup (Frontend& frontEnd) = 0;
+    virtual void shutdown() = 0;
 
-    virtual void destroy (HGfxBuffer buffer) = 0;
+    virtual HGfxBuffer bufferCreateVertex (size_t sizeInBytes, uint32_t flags, const void* initialData = nullptr) = 0;
+    virtual HGfxBuffer bufferCreateIndex (size_t sizeInBytes, uint32_t flags, const void* initialData = nullptr) = 0;
+    virtual HGfxBuffer bufferCreateConstant (size_t sizeInBytes) = 0;
+
+    virtual bool bufferDestroy (HGfxBuffer buffer) = 0;
     
-    virtual bool updateBuffer (HGfxBuffer buffer, const void* data, size_t dataSize, bool dynamic) = 0;
+    virtual bool bufferUpdate (HGfxBuffer buffer, const void* data, size_t dataSize, bool dynamic) = 0;
 };
-
 
 }
 
