@@ -36,6 +36,7 @@ public:
     class Thread;
     static long startThread (std::function<void (void)> func, const char* name = "TestHelpers");
     static void waitForThreadExit (long threadHandle);
+    static void sleep (int numofMS);
     
     template<class T>
     static inline void doNotOptimizeAway (T& x)

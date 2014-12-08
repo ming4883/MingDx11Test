@@ -124,6 +124,20 @@ public:
     ComObj<ID3D11Buffer> apiBuffer;
 };
 
+class GfxColorTargetD3D11
+{
+public:
+    ComObj<ID3D11RenderTargetView> apiRTV;
+    ComObj<ID3D11ShaderResourceView> apiSRV;
+};
+
+class GfxDepthTargetD3D11
+{
+public:
+    ComObj<ID3D11DepthStencilView> apiDSV;
+    ComObj<ID3D11ShaderResourceView> apiSRV;
+};
+
 class GfxServiceD3D11 : public GfxService
 {
 public:
@@ -133,15 +147,29 @@ public:
     bool startup (Frontend& frontEnd) override;
     void shutdown() override;
 
+    bool frameBegin() override;
+    void frameEnd() override;
+
+    HGfxColorTarget colorTargetDefault() override;
+    void colorTargetClear (HGfxColorTarget target, float r, float g, float b, float a) override;
+    HGfxDepthTarget depthTargetDefault() override;
+    void depthTargetClear (HGfxDepthTarget target, float depth) override;
+
     HGfxBuffer bufferCreateVertex (size_t sizeInBytes, uint32_t flags, const void* initialData) override;
     HGfxBuffer bufferCreateIndex (size_t sizeInBytes, uint32_t flags, const void* initialData) override;
     HGfxBuffer bufferCreateConstant (size_t sizeInBytes) override;
-
     bool bufferDestroy (HGfxBuffer buffer) override;
-    
     bool bufferUpdate (HGfxBuffer buffer, const void* data, size_t dataSize, bool dynamic) override;
 
 private:
+    typedef SOAManager<SOAManagerTraitsDefault<GfxColorTargetD3D11>> ColorTargets;
+    typedef SOAColumn<ColorTargets, 0> ColorTargetsCol;
+    ColorTargets colorTargets_;
+
+    typedef SOAManager<SOAManagerTraitsDefault<GfxDepthTargetD3D11>> DepthTargets;
+    typedef SOAColumn<DepthTargets, 0> DepthTargetsCol;
+    DepthTargets depthTargets_;
+
     typedef SOAManager<SOAManagerTraitsDefault<GfxBufferD3D11>> Buffers;
     typedef SOAColumn<Buffers, 0> BuffersCol;
     Buffers buffers_;

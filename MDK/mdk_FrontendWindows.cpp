@@ -62,6 +62,7 @@ bool FrontendWinAPI::apiCreateHWND (uint32_t width, uint32_t height, bool fullsc
 
     // cursor
     wc.hCursor = LoadCursor (0, IDC_ARROW);
+    wc.hbrBackground = (HBRUSH)GetStockObject (BLACK_BRUSH);
     RegisterClassExA (&wc);
     
     // process parentHWND

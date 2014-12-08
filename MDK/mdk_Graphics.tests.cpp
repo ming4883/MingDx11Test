@@ -3,7 +3,7 @@
 
 using namespace mdk;
 
-class TestFrontend : public testing::Test
+class TestGraphics : public testing::Test
 {
 protected:
     
@@ -21,14 +21,21 @@ protected:
 
 };
 
-TEST_F (TestFrontend, Basic)
+TEST_F (TestGraphics, Basic)
 {
     Frontend* fn = Frontend::create (CrtAllocator::get());
-
     fn->startup (startupOptions);
+
+    GfxService* gfx = &fn->getGfxService();
 
     while (fn->update())
     {
+        gfx->frameBegin();
+
+        gfx->colorTargetClear (gfx->colorTargetDefault(), 0.25f, 0.25f, 1.0f, 1.0f);
+        gfx->depthTargetClear (gfx->depthTargetDefault(), 1.0f);
+
+        gfx->frameEnd();
         TestHelpers::sleep (1);
     }
 

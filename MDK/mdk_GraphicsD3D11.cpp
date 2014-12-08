@@ -6,6 +6,8 @@ namespace mdk
 
 GfxServiceD3D11::GfxServiceD3D11 (Allocator& allocator)
     : buffers_ (16u, allocator)
+    , colorTargets_ (16u, allocator)
+    , depthTargets_ (16u, allocator)
 {
 }
 
@@ -87,6 +89,43 @@ bool GfxServiceD3D11::startup (Frontend& frontEnd)
 
 void GfxServiceD3D11::shutdown()
 {
+}
+
+bool GfxServiceD3D11::frameBegin()
+{
+    return true;
+}
+
+void GfxServiceD3D11::frameEnd()
+{
+    apiSwapChain_->Present (0u, 0u);
+}
+
+HGfxColorTarget GfxServiceD3D11::colorTargetDefault()
+{
+    return HGfxColorTarget (0u);
+}
+
+void GfxServiceD3D11::colorTargetClear (HGfxColorTarget target, float r, float g, float b, float a)
+{
+    Vec4f rgba (r, g, b, a);
+    if (0u == target)
+    {
+        apiContextIM_->ClearRenderTargetView (apiColorBufRTV_, rgba);
+    }
+}
+
+HGfxDepthTarget GfxServiceD3D11::depthTargetDefault()
+{
+    return HGfxDepthTarget (0u);
+}
+
+void GfxServiceD3D11::depthTargetClear (HGfxDepthTarget target, float depth)
+{
+    if (0u == target)
+    {
+        apiContextIM_->ClearDepthStencilView (apiDepthBufDSV_, 0, depth, 0);
+    }
 }
 
 HGfxBuffer GfxServiceD3D11::bufferCreateVertex (size_t sizeInBytes, uint32_t flags, const void* initialData)

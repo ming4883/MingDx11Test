@@ -472,6 +472,11 @@ void TestHelpers::waitForThreadExit(long threadHandle)
     delete thread;
 }
 
+void TestHelpers::sleep (int milliseconds)
+{
+    Thread::sleep (milliseconds);
+}
+
 //==============================================================================
 // This macro generates the main() routine that launches the app.
 START_JUCE_APPLICATION (ThisApplication)
