@@ -1,6 +1,8 @@
 #include "mdk_Frontend.h"
 
+#if JUCE_WINDOWS
 #include "mdk_FrontendWindows.cpp"
+#endif
 
 namespace mdk
 {

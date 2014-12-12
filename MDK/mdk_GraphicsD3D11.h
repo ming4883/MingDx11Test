@@ -138,6 +138,20 @@ public:
     ComObj<ID3D11ShaderResourceView> apiSRV;
 };
 
+class GfxShaderSourceD3D11
+{
+public:
+    void* dataPtr;
+    size_t dataSize;
+};
+
+class GfxRendShaderD3D11
+{
+public:
+    ComObj<ID3D11VertexShader> apiVS;
+    ComObj<ID3D11PixelShader> apiFS;
+};
+
 class GfxServiceD3D11 : public GfxService
 {
 public:
@@ -161,6 +175,12 @@ public:
     bool bufferDestroy (HGfxBuffer buffer) override;
     bool bufferUpdate (HGfxBuffer buffer, const void* data, size_t dataSize, bool dynamic) override;
 
+    HGfxShaderSource shaderSourceCreate (const void* dataPtr, size_t dataSize) override;
+    bool shaderSourceDestroy (HGfxShaderSource source) override;
+
+    HGfxRendShader rendShaderCreate (HGfxShaderSource vertexSrc, HGfxShaderSource fragmentSrc) override;
+    bool rendShaderApply (HGfxRendShader shader) override;
+    bool rendShaderDestroy (HGfxRendShader shader) override;
 private:
     typedef SOAManager<SOAManagerTraitsDefault<GfxColorTargetD3D11>> ColorTargets;
     typedef SOAColumn<ColorTargets, 0> ColorTargetsCol;
@@ -173,7 +193,17 @@ private:
     typedef SOAManager<SOAManagerTraitsDefault<GfxBufferD3D11>> Buffers;
     typedef SOAColumn<Buffers, 0> BuffersCol;
     Buffers buffers_;
-    
+
+    typedef SOAManager<SOAManagerTraitsDefault<GfxShaderSourceD3D11>> ShaderSources;
+    typedef SOAColumn<ShaderSources, 0> ShaderSourcesCol;
+    ShaderSources shaderSources_;
+
+    typedef SOAManager<SOAManagerTraitsDefault<GfxRendShaderD3D11>> RendShaders;
+    typedef SOAColumn<RendShaders, 0> RendShadersCol;
+    RendShaders rendShaders_;
+
+    class D3DBlob;
+
     D3D_FEATURE_LEVEL apiFeatureLevel_;
     ComObj<ID3D11Device> apiDevice_;
     ComObj<ID3D11DeviceContext> apiContextIM_;
@@ -206,6 +236,8 @@ private:
     ID3D11ShaderResourceView* apiCreateSRV (ID3D11Buffer* buffer);
     ID3D11ShaderResourceView* apiCreateSRV (ID3D11Texture2D* texture, DXGI_FORMAT srvFormat);
     ID3D11DepthStencilView* apiCreateDSV (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat);
+    ID3D11VertexShader* apiCreateVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage);
+    ID3D11PixelShader* apiCreatePixelShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage);
     
 };
 

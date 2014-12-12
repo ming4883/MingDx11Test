@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="i9spml" name="MDK_tests" projectType="guiapp" version="1.0.0"
-              bundleIdentifier="com.yourcompany.MDK_tests" includeBinaryInAppConfig="0"
+<JUCERPROJECT id="i9spml" name="MDK_tests" projectType="consoleapp" version="1.0.0"
+              bundleIdentifier="org.ming.MDK_tests" includeBinaryInAppConfig="0"
               jucerVersion="3.1.0">
   <MAINGROUP id="h1HD0p" name="MDK_tests">
     <FILE id="AtJ93l" name="Test.txt.dat" compile="0" resource="1" file="Test.txt.dat"/>

@@ -9,7 +9,9 @@
 #include "src/gtest-test-part.cc"
 #include "src/gtest-typed-test.cc"
 
-#if 0
+#define JUCE_GOOGLE_TEST_USE_GUI 0
+
+#if !JUCE_GOOGLE_TEST_USE_GUI
 #include "src/gtest_main.cc"
 
 #else
@@ -394,6 +396,15 @@ private:
     GoogleTestThread* thread_;
 };
 
+//==============================================================================
+// This macro generates the main() routine that launches the app.
+START_JUCE_APPLICATION (ThisApplication)
+
+#endif
+
+#include <AppConfig.h>
+#include <modules/juce_core/juce_core.h>
+
 TestHelpers::Timer::Timer()
 {
     reset();
@@ -435,7 +446,9 @@ void TestHelpers::Timer::endPass()
 
 void TestHelpers::log (const std::string& msg)
 {
+#if JUCE_GOOGLE_TEST_USE_GUI
     ((ThisApplication*)JUCEApplication::getInstance())->mainView().log (false, msg);
+#endif
     std::cout << msg;
 }
 
@@ -476,9 +489,3 @@ void TestHelpers::sleep (int milliseconds)
 {
     Thread::sleep (milliseconds);
 }
-
-//==============================================================================
-// This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (ThisApplication)
-
-#endif

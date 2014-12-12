@@ -1,3 +1,5 @@
+#if MDK_TEST_FRONTEND
+
 #include "mdk_Frontend.h"
 #include <modules/GoogleTest/GoogleTest.h>
 
@@ -36,3 +38,5 @@ TEST_F (TestFrontend, Basic)
 
     m_del (CrtAllocator::get(), fn);
 }
+
+#endif

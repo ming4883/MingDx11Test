@@ -4,11 +4,66 @@
 namespace mdk
 {
 
+
+class GfxServiceD3D11::D3DBlob : public ID3DBlob
+{
+public:
+    void* data;
+    size_t size;
+    Atomic<ULONG> refCnt;
+
+    D3DBlob (void* ptr, size_t sz)
+        : data (ptr)
+        , size (sz)
+        , refCnt (1u)
+    {
+    }
+
+    STDMETHOD_ (LPVOID, GetBufferPointer) (void)
+    {
+        return data;
+    }
+
+    STDMETHOD_ (SIZE_T, GetBufferSize) (void)
+    {
+        return size;
+    }
+
+    STDMETHOD (QueryInterface) (REFIID riid, void** ppvObject)
+    {
+        if (riid == __uuidof (ID3DBlob))
+        {
+            *ppvObject = this;
+            return S_OK;
+        }
+
+        return E_NOINTERFACE;
+    }
+
+    STDMETHOD_ (ULONG, AddRef) (void)
+    {
+        return ++refCnt;
+    }
+
+    STDMETHOD_ (ULONG, Release) (void)
+    {
+        ULONG ret = --refCnt;
+
+        if (ret == 0)
+            delete this;
+
+        return ret;
+    }
+};
+
 GfxServiceD3D11::GfxServiceD3D11 (Allocator& allocator)
     : buffers_ (16u, allocator)
     , colorTargets_ (16u, allocator)
     , depthTargets_ (16u, allocator)
+    , shaderSources_ (16u, allocator)
+    , rendShaders_ (16u, allocator)
 {
+
 }
 
 GfxServiceD3D11::~GfxServiceD3D11()
@@ -159,7 +214,7 @@ HGfxBuffer GfxServiceD3D11::bufferCreateVertex (size_t sizeInBytes, uint32_t fla
         return HGfxBuffer (0);
 
     Buffers::Handle handle = buffers_.acquire ();
-    m_assert (buffers_.construct<BuffersCol> (handle));
+    buffers_.construct<BuffersCol> (handle);
     buffers_.get<BuffersCol> (handle)->apiBuffer = buffer;
 
     return handle.as<HGfxBuffer>();
@@ -196,7 +251,7 @@ HGfxBuffer GfxServiceD3D11::bufferCreateIndex (size_t sizeInBytes, uint32_t flag
         return HGfxBuffer (0);
 
     Buffers::Handle handle = buffers_.acquire ();
-    m_assert (buffers_.construct<BuffersCol> (handle));
+    buffers_.construct<BuffersCol> (handle);
     buffers_.get<BuffersCol> (handle)->apiBuffer = buffer;
 
     return handle.as<HGfxBuffer>();
@@ -220,7 +275,7 @@ HGfxBuffer GfxServiceD3D11::bufferCreateConstant (size_t sizeInBytes)
         return HGfxBuffer (0);
 
     Buffers::Handle handle = buffers_.acquire ();
-    m_assert (buffers_.construct<BuffersCol> (handle));
+    buffers_.construct<BuffersCol> (handle);
     buffers_.get<BuffersCol> (handle)->apiBuffer = buffer;
 
     return handle.as<HGfxBuffer>();
@@ -261,6 +316,83 @@ bool GfxServiceD3D11::bufferUpdate (HGfxBuffer handle, const void* data, size_t 
         apiContextIM_->UpdateSubresource (buffer, 0, nullptr, data, dataSize, dataSize);
         return true;
     }
+
+    return false;
+}
+
+HGfxShaderSource GfxServiceD3D11::shaderSourceCreate (const void* dataPtr, size_t dataSize)
+{
+    ShaderSources::Handle handle = shaderSources_.acquire();
+    shaderSources_.construct<ShaderSourcesCol> (handle);
+    
+    GfxShaderSourceD3D11* source = shaderSources_.get<ShaderSourcesCol> (handle);
+
+    source->dataPtr = shaderSources_.getAllocator().malloc (dataSize);
+    source->dataSize = dataSize;
+
+    ::memcpy (source->dataPtr, dataPtr, dataSize);
+    
+    return handle.as<HGfxShaderSource>();
+}
+
+bool GfxServiceD3D11::shaderSourceDestroy (HGfxShaderSource source)
+{
+    if (!shaderSources_.isValid (source))
+        return false;
+
+    GfxShaderSourceD3D11* obj = shaderSources_.get<ShaderSourcesCol> (source);
+    shaderSources_.getAllocator().free (obj->dataPtr);
+
+    shaderSources_.destruct <ShaderSourcesCol> (source);
+    shaderSources_.release (source);
+
+    return true;
+}
+
+HGfxRendShader GfxServiceD3D11::rendShaderCreate (HGfxShaderSource vertexSrc, HGfxShaderSource fragmentSrc)
+{
+     if (!shaderSources_.isValid (vertexSrc) ||
+         !shaderSources_.isValid (fragmentSrc))
+         return HGfxRendShader (0u);
+
+     ComObj<ID3D11VertexShader> vs;
+     ComObj<ID3D11PixelShader> ps;
+
+     {
+         GfxShaderSourceD3D11* src = shaderSources_.get<ShaderSourcesCol> (vertexSrc);
+         D3DBlob* blob = new D3DBlob (src->dataPtr, src->dataSize);
+         if (vs.set (apiCreateVertexShader (blob, nullptr)).isNull())
+             return HGfxRendShader (0u);
+     }
+
+     {
+         GfxShaderSourceD3D11* src = shaderSources_.get<ShaderSourcesCol> (fragmentSrc);
+         D3DBlob* blob = new D3DBlob (src->dataPtr, src->dataSize);
+         if (ps.set (apiCreatePixelShader (blob, nullptr)).isNull())
+             return HGfxRendShader (0u);
+     }
+
+     RendShaders::Handle handle = rendShaders_.acquire();
+     rendShaders_.construct<RendShadersCol>(handle);
+     GfxRendShaderD3D11* obj = rendShaders_.get<RendShadersCol>(handle);
+     obj->apiVS = vs;
+     obj->apiFS = ps;
+
+     return handle.as<HGfxRendShader>();
+}
+
+bool GfxServiceD3D11::rendShaderApply (HGfxRendShader shader)
+{
+    return false;
+}
+
+bool GfxServiceD3D11::rendShaderDestroy (HGfxRendShader shader)
+{
+    if (!rendShaders_.isValid (shader))
+        return false;
+
+    rendShaders_.destruct <RendShadersCol> (shader);
+    rendShaders_.release (shader);
 
     return false;
 }
@@ -435,5 +567,31 @@ ID3D11DepthStencilView* GfxServiceD3D11::apiCreateDSV (ID3D11Texture2D* texture,
 
     return dsview.drop();
 }
+
+
+ID3D11VertexShader* GfxServiceD3D11::apiCreateVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+{
+    if (nullptr == bytecode)
+        return nullptr;
+
+    ComObj<ID3D11VertexShader> shader;
+    if (FAILED (apiDevice_->CreateVertexShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+        return nullptr;
+
+    return shader.drop();
+}
+
+ID3D11PixelShader* GfxServiceD3D11::apiCreatePixelShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
+{
+    if (nullptr == bytecode)
+        return nullptr;
+
+    ComObj<ID3D11PixelShader> shader;
+    if (FAILED (apiDevice_->CreatePixelShader (bytecode->GetBufferPointer(), bytecode->GetBufferSize(), linkage, shader)))
+        return nullptr;
+
+    return shader.drop();
+}
+
 
 }   // namespace

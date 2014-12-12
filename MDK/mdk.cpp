@@ -15,6 +15,7 @@
 #endif // JUCE_WINDOWS
 
 #ifdef MDK_UNIT_TESTS
+#define MDK_TEST_GRAPHICS 1
 #include "mdk_Frontend.tests.cpp"
 #include "mdk_Graphics.tests.cpp"
 #include "mdk_Scene.tests.cpp"

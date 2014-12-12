@@ -30,6 +30,8 @@ namespace GfxBufferFlags
 m_decl_handle (HGfxBuffer, uint32_t)
 m_decl_handle (HGfxColorTarget, uint32_t)
 m_decl_handle (HGfxDepthTarget, uint32_t)
+m_decl_handle (HGfxShaderSource, uint32_t)
+m_decl_handle (HGfxRendShader, uint32_t)
 
 class Frontend;
 
@@ -44,7 +46,7 @@ public:
     virtual bool startup (Frontend& frontEnd) = 0;
     virtual void shutdown() = 0;
 
-// Frame control
+// Frame Control
     virtual bool frameBegin() = 0;
     virtual void frameEnd() = 0;
 
@@ -67,6 +69,16 @@ public:
     virtual HGfxBuffer bufferCreateConstant (size_t sizeInBytes) = 0;
     virtual bool bufferDestroy (HGfxBuffer buffer) = 0;
     virtual bool bufferUpdate (HGfxBuffer buffer, const void* data, size_t dataSize, bool dynamic) = 0;
+
+// Shader Source
+    virtual HGfxShaderSource shaderSourceCreate (const void* dataPtr, size_t dataSize) = 0;
+    virtual bool shaderSourceDestroy (HGfxShaderSource source) = 0;
+
+// Rendering Shaders
+    virtual HGfxRendShader rendShaderCreate (HGfxShaderSource vertexSrc, HGfxShaderSource fragmentSrc) = 0;
+    virtual bool rendShaderApply (HGfxRendShader shader) = 0;
+    virtual bool rendShaderDestroy (HGfxRendShader shader) = 0;
+
 };
 
 }
