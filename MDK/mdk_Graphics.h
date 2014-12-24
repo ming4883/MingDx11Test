@@ -27,11 +27,62 @@ namespace GfxBufferFlags
     };
 }
 
+namespace GfxCompareFunc
+{
+    enum Value
+    {
+        Never,
+        Less,
+        Equal,
+        LessEqual,
+        Greater,
+        NotEqual,
+        GreaterEqual,
+        Always,
+    };
+}
+
+namespace GfxStencilOperation
+{
+    enum Value
+    {
+        Keep,
+        Zero,
+        Replace,
+        IncClamp,
+        DecClamp,
+        Invert,
+        IncWrap,
+        DecWrap,
+    };
+}
+
+struct GfxStencilDesc
+{
+    GfxStencilOperation::Value stencilFailOp; // Stencil Test Failure Operation;
+    GfxStencilOperation::Value depthFailOp; // Depth Test Failure Operation;
+    GfxStencilOperation::Value depthStencilPassOp; // Depth Stencil Test Pass Operation;
+    GfxCompareFunc::Value stencilCmpFunc;
+
+    uint32_t readMask;
+    uint32_t writeMask;
+};
+
+struct GfxDepthStencilDesc
+{
+    GfxStencilDesc stencilFrontFace;
+    GfxStencilDesc stencilBackFace;
+    GfxCompareFunc::Value depthCmpFunc;
+    bool depthWriteEnabled;
+};
+
 m_decl_handle (HGfxBuffer, uint32_t)
 m_decl_handle (HGfxColorTarget, uint32_t)
 m_decl_handle (HGfxDepthTarget, uint32_t)
 m_decl_handle (HGfxShaderSource, uint32_t)
 m_decl_handle (HGfxRendShader, uint32_t)
+m_decl_handle (HGfxDepthStencilState, uint32_t)
+//m_decl_handle (HGfxDepthStencilState, uint32_t)
 
 class Frontend;
 
