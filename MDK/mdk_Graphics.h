@@ -57,6 +57,40 @@ namespace GfxStencilOperation
     };
 }
 
+namespace GfxBlendOperation
+{
+    enum Value
+    {
+        Add,                // a + b
+        Subtract,           // a - b
+        ReverseSubtract,    // b - a
+        Min,                // min (a, b)
+        Max,                // max (a, b)
+    };
+}
+
+namespace GfxBlendFactor
+{
+    enum Value
+    {
+        Zero,
+        One,
+        SourceColor,
+        OneMinusSourceColor,
+        SourceAlpha,
+        OneMinusSourceAlpha,
+        DestinationColor,
+        OneMinusDestinationColor,
+        DestinationAlpha,
+        OneMinusDestinationAlpha,
+        SourceAlphaSaturated,
+        BlendColor,
+        OneMinusBlendColor,
+        BlendAlpha,
+        OneMinusBlendAlpha,
+    };
+}
+
 struct GfxStencilDesc
 {
     GfxStencilOperation::Value stencilFailOp; // Stencil Test Failure Operation;
@@ -76,13 +110,26 @@ struct GfxDepthStencilDesc
     bool depthWriteEnabled;
 };
 
+struct GfxBlendDesc
+{
+    bool blendEnabled;
+    GfxBlendOperation::Value rgbOp;
+    GfxBlendOperation::Value alphaOp;
+
+    GfxBlendFactor::Value rgbDstFactor;
+    GfxBlendFactor::Value alphaDstFactor;
+
+    GfxBlendFactor::Value rgbSrcFactor;
+    GfxBlendFactor::Value alphaSrcFactor;
+};
+
 m_decl_handle (HGfxBuffer, uint32_t)
 m_decl_handle (HGfxColorTarget, uint32_t)
 m_decl_handle (HGfxDepthTarget, uint32_t)
 m_decl_handle (HGfxShaderSource, uint32_t)
 m_decl_handle (HGfxRendShader, uint32_t)
 m_decl_handle (HGfxDepthStencilState, uint32_t)
-//m_decl_handle (HGfxDepthStencilState, uint32_t)
+m_decl_handle (HGfxBlendState, uint32_t)
 
 class Frontend;
 
@@ -129,6 +176,16 @@ public:
     virtual HGfxRendShader rendShaderCreate (HGfxShaderSource vertexSrc, HGfxShaderSource fragmentSrc) = 0;
     virtual bool rendShaderApply (HGfxRendShader shader) = 0;
     virtual bool rendShaderDestroy (HGfxRendShader shader) = 0;
+
+// Render States
+    virtual HGfxDepthStencilState depthStencilStateCreate (GfxStencilDesc desc) = 0;
+    virtual void depthStencilStateApply (HGfxDepthStencilState state) = 0;
+    virtual void depthStencilStateDestroy (HGfxDepthStencilState state) = 0;
+
+    virtual HGfxBlendState blendStateCreate (GfxBlendDesc desc) = 0;
+    virtual void blendStateApply (HGfxBlendState state) = 0;
+    virtual void blendStateDestroy (HGfxBlendState state) = 0;
+    virtual void blendStateSetFactor (float r, float g, float b, float a) = 0;
 
 };
 

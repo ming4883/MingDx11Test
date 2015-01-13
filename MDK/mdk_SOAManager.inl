@@ -46,7 +46,6 @@ struct SOAManager<TRAITS>::Handle
     }
 };
 
-
 template<typename TRAITS>
 struct SOAManager<TRAITS>::SOAops
 {
@@ -131,7 +130,7 @@ SOAManager<TRAITS>::SOAManager (size_t initialCapacity, Allocator& allocator)
     //, mDataSlot (nullptr)
     , mDataHandle (nullptr)
 {
-    SyncWrite sync (mSyncHandle);
+    SyncWrite sync (_syncHandle);
     SOAops::resetFrom<0> (mSOAs);
     resize (initialCapacity);
 }
@@ -140,7 +139,7 @@ template<typename TRAITS>
 SOAManager<TRAITS>::~SOAManager()
 {
     {
-        SyncWrite sync (mSyncHandle);
+        SyncWrite sync (_syncHandle);
 
         if (mCapacity > 0)
         {
@@ -232,7 +231,7 @@ void SOAManager<TRAITS>::swapDataSlot (size_t slotIdxA, size_t slotIdxB)
 template<typename TRAITS>
 typename SOAManager<TRAITS>::Handle SOAManager<TRAITS>::acquire()
 {
-    SyncWrite sync (mSyncHandle);
+    SyncWrite sync (_syncHandle);
     return acquireNoSync();
 }
 
@@ -279,7 +278,7 @@ typename SOAManager<TRAITS>::Handle SOAManager<TRAITS>::acquireNoSync()
 template<typename TRAITS>
 bool SOAManager<TRAITS>::release (Handle handle)
 {
-    SyncWrite sync (mSyncHandle);
+    SyncWrite sync (_syncHandle);
     return releaseNoSync (handle);
 }
 
@@ -328,9 +327,42 @@ bool SOAManager<TRAITS>::releaseNoSync (Handle handle)
 }
 
 template<typename TRAITS>
+template<size_t INDEX, typename... ARGS>
+bool SOAManager<TRAITS>::construct (Handle handle, ARGS... args)
+{
+    typedef SOAColumn<SOAManager, INDEX> SOACol;
+    typedef typename SOACol::Elem Elem;
+
+    SyncWrite sync (_syncHandle);
+
+    if (!isValidNoSync (handle))
+        return false;
+
+    ConstructWithAllocator<Elem, UseAllocator<Elem>::Value>::invoke (_allocator, getNoSync<SOACol> (handle), args...);
+    return true;
+}
+
+template<typename TRAITS>
+template<size_t INDEX>
+bool SOAManager<TRAITS>::destruct (Handle handle)
+{
+    typedef SOAColumn<SOAManager, INDEX> SOACol;
+    typedef typename SOACol::Elem Elem;
+
+    SyncWrite sync (_syncHandle);
+    
+    if (!isValidNoSync (handle))
+        return false;
+
+     getNoSync<SOACol> (handle)->~Elem();
+
+     return true;
+}
+
+template<typename TRAITS>
 bool SOAManager<TRAITS>::isValid (Handle handle) const
 {
-    SyncRead sync (mSyncHandle);
+    SyncRead sync (_syncHandle);
     return isValidNoSync (handle);
 }
 
@@ -351,14 +383,6 @@ bool SOAManager<TRAITS>::isValidNoSync (Handle handle) const
 
 template<typename TRAITS>
 template<typename SOACOL>
-typename SOACOL::ElemPtr SOAManager<TRAITS>::get (Handle handle)
-{
-    SyncRead sync (mSyncHandle);
-    return getNoSync<SOACOL> (handle);
-}
-
-template<typename TRAITS>
-template<typename SOACOL>
 typename SOACOL::ElemPtr SOAManager<TRAITS>::getNoSync (Handle handle) const
 {
     //return &mDataSlot[mATable[handle.index].slotIndex];
@@ -367,35 +391,9 @@ typename SOACOL::ElemPtr SOAManager<TRAITS>::getNoSync (Handle handle) const
 }
 
 template<typename TRAITS>
-template<typename SOACOL>
-bool SOAManager<TRAITS>::fetch (typename SOACOL::Elem& data, Handle handle) const
-{
-    SyncRead sync (mSyncHandle);
-    if (!isValidNoSync (handle))
-        return false;
-
-    //data = mDataSlot[mATable[handle.index].slotIndex];
-    data = *getNoSync<SOACOL> (handle);
-    return true;
-}
-
-template<typename TRAITS>
-template<typename SOACOL>
-bool SOAManager<TRAITS>::store (Handle handle, const typename SOACOL::Elem& data)
-{
-    SyncWrite sync (mSyncHandle);
-    if (!isValidNoSync (handle))
-        return false;
-
-    //mDataSlot[mATable[handle.index].slotIndex] = data;
-    *getNoSync<SOACOL> (handle) = data;
-    return true;
-}
-
-template<typename TRAITS>
 void SOAManager<TRAITS>::enable (Handle handle)
 {
-    SyncWrite sync (mSyncHandle);
+    SyncWrite sync (_syncHandle);
 
     if (isEnabledNoSync (handle))
         return;
@@ -407,7 +405,7 @@ void SOAManager<TRAITS>::enable (Handle handle)
 template<typename TRAITS>
 void SOAManager<TRAITS>::disable (Handle handle)
 {
-    SyncWrite sync (mSyncHandle);
+    SyncWrite sync (_syncHandle);
 
     if (!isEnabledNoSync (handle))
         return;
@@ -419,7 +417,7 @@ void SOAManager<TRAITS>::disable (Handle handle)
 template<typename TRAITS>
 bool SOAManager<TRAITS>::isEnabled (Handle handle) const
 {
-    SyncRead sync (mSyncHandle);
+    SyncRead sync (_syncHandle);
     return isEnabledNoSync (handle);
 }
 

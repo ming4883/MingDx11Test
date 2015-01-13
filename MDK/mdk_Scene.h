@@ -84,7 +84,7 @@ public:
     void setFrameTime (uint32 offset, uint32 numOfFrames, float* ptr);
     void setFrameData (uint32 offset, uint32 numOfFrames, float* ptr);
 
-    void fetch2Frames (AnimationCache& ret, float frameNo);
+    void fetch2Frames (AnimationCache& ret, float frameNo) const;
 
     static void _swap (AnimationTrack& a, AnimationTrack& b);
 
@@ -104,13 +104,14 @@ template<> struct UseAllocator<AnimationTrack>
     static const bool Value = true;
 };
 
-class AnimationTrackManager : protected SOAManager< SOAManagerTraitsDefault<AnimationTrack> >
+class AnimationTrackManager : public SOAManager< SOAManagerTraitsDefault<AnimationTrack> >
 {
     m_noncopyable (AnimationTrackManager)
 
 public:
     typedef SOAManager< SOAManagerTraitsDefault<AnimationTrack> > Super;
-    typedef SOAColumn<Super, 0> ColTrack;
+    typedef SOARead<Super, 0> Read;
+    typedef SOAReadWrite<Super, 0> ReadWrite;
 
     using Super::Handle;
     using Super::disable;
@@ -119,17 +120,14 @@ public:
 
     AnimationTrackManager (Allocator& allocator);
 
-    m_inline AnimationTrack* get (Handle handle)
-    {
-        return Super::get<ColTrack> (handle);
-    }
-
     Handle create (uint32 numOfFrames, uint32 numOfElemsPerFrame);
 
     bool destroy (Handle handle);
 };
 
 typedef AnimationTrackManager::Handle AnimationTrackHandle;
+typedef SOARead<AnimationTrackManager> AnimationTrackR;
+typedef SOAReadWrite<AnimationTrackManager> AnimationTrackRW;
 
 class AnimationState
 {

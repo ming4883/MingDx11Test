@@ -38,6 +38,8 @@ protected:
 
     typedef SOAManager<Traits> ObjectManager;
     typedef SOAColumn<ObjectManager, 0> ObjectCol;
+    typedef SOARead<ObjectManager, 0> ObjectR;
+    typedef SOAReadWrite<ObjectManager, 0> ObjectRW;
 };
 
 TEST_F (TestSOAManager, AcquireAndRelease)
@@ -62,7 +64,7 @@ TEST_F (TestSOAManager, AcquireAndRelease)
         EXPECT_EQ (1, ha[i].generation);
         EXPECT_TRUE (mgr.isValid (ha[i]));
 
-        mgr.get<ObjectCol> (ha[i])->data = i;
+        ObjectRW (mgr, ha[i])->data = i;
     }
 
     // test for release, notice that we are destroying in reverse order
@@ -76,7 +78,7 @@ TEST_F (TestSOAManager, AcquireAndRelease)
 
         // make sure the content of other allocated object are not affected
         for (int j = i + 1; j < N; ++j)
-            EXPECT_EQ (j, mgr.get<ObjectCol> (ha[j])->data);
+            EXPECT_EQ (j, ObjectR (mgr, ha[j])->data);
     }
 
     // Acquire the objects again.
@@ -114,8 +116,8 @@ TEST_F (TestSOAManager, AllocationContinuity)
     // make sure the objects are allocated continuously
     for (int i = 1; i < countof (ha); ++i)
     {
-        long p0 = reinterpret_cast<long> (mgr.get<ObjectCol> (ha[i-1]));
-        long p1 = reinterpret_cast<long> (mgr.get<ObjectCol> (ha[i]));
+        long p0 = reinterpret_cast<long> (ObjectR (mgr, ha[i-1]).operator->());
+        long p1 = reinterpret_cast<long> (ObjectR (mgr, ha[i]).operator->());
 
         EXPECT_EQ (sizeof (Object), p1 - p0);
     }
@@ -177,7 +179,7 @@ TEST_F (TestSOAManager, ResizeAdvanced)
     EXPECT_EQ (4, mgr.capacity());
 
     for (int i = 0; i < countof (ha); ++i)
-        mgr.get<ObjectCol> (ha[i])->data = i;
+        ObjectRW (mgr, ha[i])->data = i;
 
     mgr.release (ha[1]);
 
@@ -190,7 +192,7 @@ TEST_F (TestSOAManager, ResizeAdvanced)
     };
 
     for (int i = 0; i < countof (hb); ++i)
-        mgr.get<ObjectCol> (hb[i])->data = 4 + i;
+        ObjectRW (mgr, hb[i])->data = 4 + i;
 
     EXPECT_EQ (7, mgr.size());
     EXPECT_EQ (8, mgr.capacity());
@@ -217,13 +219,13 @@ TEST_F (TestSOAManager, ResizeAdvanced)
 
     mgr.release (hb[1]);
 
-    EXPECT_EQ (0, mgr.get<ObjectCol> (ha[0])->data);
-    EXPECT_EQ (2, mgr.get<ObjectCol> (ha[2])->data);
-    EXPECT_EQ (3, mgr.get<ObjectCol> (ha[3])->data);
+    EXPECT_EQ (0, ObjectR (mgr, ha[0])->data);
+    EXPECT_EQ (2, ObjectR (mgr, ha[2])->data);
+    EXPECT_EQ (3, ObjectR (mgr, ha[3])->data);
 
-    EXPECT_EQ (4, mgr.get<ObjectCol> (hb[0])->data);
-    EXPECT_EQ (6, mgr.get<ObjectCol> (hb[2])->data);
-    EXPECT_EQ (7, mgr.get<ObjectCol> (hb[3])->data);
+    EXPECT_EQ (4, ObjectR (mgr, hb[0])->data);
+    EXPECT_EQ (6, ObjectR (mgr, hb[2])->data);
+    EXPECT_EQ (7, ObjectR (mgr, hb[3])->data);
 }
 
 TEST_F (TestSOAManager, EnableAndDisable)
@@ -240,7 +242,7 @@ TEST_F (TestSOAManager, EnableAndDisable)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<ObjectCol> (ha[i])->data = i;
+        ObjectRW (mgr, ha[i])->data = i;
 
     // ha[1] should be enabled by default
     EXPECT_TRUE (mgr.isEnabled (ha[1]));
@@ -250,14 +252,14 @@ TEST_F (TestSOAManager, EnableAndDisable)
 
     // make sure the contents are not affected by disable(ha[1])
     for (int i = 0; i < N; ++i)
-        EXPECT_EQ (i, mgr.get<ObjectCol> (ha[i])->data);
+        EXPECT_EQ (i, ObjectR (mgr, ha[i])->data);
 
     mgr.enable (ha[1]);
     EXPECT_TRUE (mgr.isEnabled (ha[1]));
 
     // make sure the contents are not affected by enable(ha[1])
     for (int i = 0; i < N; ++i)
-        EXPECT_EQ (i, mgr.get<ObjectCol> (ha[i])->data);
+        EXPECT_EQ (i, ObjectR (mgr, ha[i])->data);
 }
 
 TEST_F (TestSOAManager, AcquireWithDisable)
@@ -274,7 +276,7 @@ TEST_F (TestSOAManager, AcquireWithDisable)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<ObjectCol> (ha[i])->data = i;
+        ObjectRW (mgr, ha[i])->data = i;
 
     mgr.disable (ha[1]);
 
@@ -284,10 +286,10 @@ TEST_F (TestSOAManager, AcquireWithDisable)
     ha[7] = mgr.acquire();
 
     for (int i = N; i < 2 * N; ++i)
-        mgr.get<ObjectCol> (ha[i])->data = i;
+        ObjectRW (mgr, ha[i])->data = i;
 
     for (int i = 0; i < 2 * N; ++i)
-        EXPECT_EQ (i, mgr.get<ObjectCol> (ha[i])->data);
+        EXPECT_EQ (i, ObjectR (mgr, ha[i])->data);
 
 }
 
@@ -305,16 +307,16 @@ TEST_F (TestSOAManager, ReleaseEnabled)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<ObjectCol> (ha[i])->data = i;
+        ObjectRW (mgr, ha[i])->data = i;
 
     mgr.disable (ha[1]);
 
     mgr.release (ha[0]);
 
     // make sure the contents are not affected by .release (ha[0])
-    EXPECT_EQ (1, mgr.get<ObjectCol> (ha[1])->data);
-    EXPECT_EQ (2, mgr.get<ObjectCol> (ha[2])->data);
-    EXPECT_EQ (3, mgr.get<ObjectCol> (ha[3])->data);
+    EXPECT_EQ (1, ObjectR (mgr, ha[1])->data);
+    EXPECT_EQ (2, ObjectR (mgr, ha[2])->data);
+    EXPECT_EQ (3, ObjectR (mgr, ha[3])->data);
 }
 
 TEST_F (TestSOAManager, ReleaseDisabled)
@@ -331,16 +333,16 @@ TEST_F (TestSOAManager, ReleaseDisabled)
     };
 
     for (int i = 0; i < N; ++i)
-        mgr.get<ObjectCol> (ha[i])->data = i;
+        ObjectRW (mgr, ha[i])->data = i;
 
     mgr.disable (ha[1]);
 
     mgr.release (ha[1]);
 
     // make sure the contents are not affected by .release (ha[0])
-    EXPECT_EQ (0, mgr.get<ObjectCol> (ha[0])->data);
-    EXPECT_EQ (2, mgr.get<ObjectCol> (ha[2])->data);
-    EXPECT_EQ (3, mgr.get<ObjectCol> (ha[3])->data);
+    EXPECT_EQ (0, ObjectR (mgr, ha[0])->data);
+    EXPECT_EQ (2, ObjectR (mgr, ha[2])->data);
+    EXPECT_EQ (3, ObjectR (mgr, ha[3])->data);
 }
 
 TEST_F (TestSOAManager, MultithreadAcquire)
@@ -352,15 +354,13 @@ TEST_F (TestSOAManager, MultithreadAcquire)
     // quarter 1
     auto f1 = [&h, &mgr]()
     {
-        Object obj;
         int BEG = 0;
         int END = 1024;
 
         for (int i = BEG; i < END; ++i)
         {
-            obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store<ObjectCol> (h[i], obj);
+            ObjectRW (mgr, h[i])->data = i;
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
@@ -369,15 +369,13 @@ TEST_F (TestSOAManager, MultithreadAcquire)
     // quarter 2
     auto f2 = [&h, &mgr]()
     {
-        Object obj;
         int BEG = 1024;
         int END = 2048;
 
         for (int i = BEG; i < END; ++i)
         {
-            obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store<ObjectCol> (h[i], obj);
+            ObjectRW (mgr, h[i])->data = i;
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
@@ -386,15 +384,13 @@ TEST_F (TestSOAManager, MultithreadAcquire)
     // quarter 3
     auto f3 = [&h, &mgr]()
     {
-        Object obj;
         int BEG = 2048;
         int END = 3072;
 
         for (int i = BEG; i < END; ++i)
         {
-            obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store<ObjectCol> (h[i], obj);
+            ObjectRW (mgr, h[i])->data = i;
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
@@ -403,15 +399,13 @@ TEST_F (TestSOAManager, MultithreadAcquire)
     // quarter 4
     auto f4 = [&h, &mgr]()
     {
-        Object obj;
         int BEG = 3072;
         int END = 4096;
 
         for (int i = BEG; i < END; ++i)
         {
-            obj.data = i;
             h[i] = mgr.acquire();
-            mgr.store<ObjectCol> (h[i], obj);
+            ObjectRW (mgr, h[i])->data = i;
             if ((i % 2) == 0)
                 mgr.disable (h[i]);
         }
@@ -429,9 +423,13 @@ TEST_F (TestSOAManager, MultithreadAcquire)
 
     for (int i = 0; i < 4096; ++i)
     {
-        Object obj;
-        mgr.fetch<ObjectCol> (obj, h[i]);
-        EXPECT_EQ (i, obj.data);
+        //Object obj;
+        //mgr.fetch<ObjectCol> (obj, h[i]);
+        {
+            ObjectR obj(mgr, h[i]);
+            EXPECT_EQ (i, obj->data);
+        }
+        
         EXPECT_EQ ((i % 2) == 0, !mgr.isEnabled (h[i]));
     }
 }

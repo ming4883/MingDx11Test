@@ -152,6 +152,18 @@ public:
     ComObj<ID3D11PixelShader> apiFS;
 };
 
+class GfxDepthStencilStateD3D11
+{
+public:
+    ComObj<ID3D11DepthStencilState> apiState;
+};
+
+class GfxBlendStateD3D11
+{
+public:
+    ComObj<ID3D11BlendState> apiState;
+};
+
 class GfxServiceD3D11 : public GfxService
 {
 public:
@@ -181,26 +193,37 @@ public:
     HGfxRendShader rendShaderCreate (HGfxShaderSource vertexSrc, HGfxShaderSource fragmentSrc) override;
     bool rendShaderApply (HGfxRendShader shader) override;
     bool rendShaderDestroy (HGfxRendShader shader) override;
+
+    HGfxDepthStencilState depthStencilStateCreate (GfxStencilDesc desc) override;
+    void depthStencilStateApply (HGfxDepthStencilState state) override;
+    void depthStencilStateDestroy (HGfxDepthStencilState state) override;
+
+    HGfxBlendState blendStateCreate (GfxBlendDesc desc) override;
+    void blendStateApply (HGfxBlendState state) override;
+    void blendStateDestroy (HGfxBlendState state) override;
+    void blendStateSetFactor (float r, float g, float b, float a) override;
+
 private:
     typedef SOAManager<SOAManagerTraitsDefault<GfxColorTargetD3D11>> ColorTargets;
-    typedef SOAColumn<ColorTargets, 0> ColorTargetsCol;
     ColorTargets colorTargets_;
 
     typedef SOAManager<SOAManagerTraitsDefault<GfxDepthTargetD3D11>> DepthTargets;
-    typedef SOAColumn<DepthTargets, 0> DepthTargetsCol;
     DepthTargets depthTargets_;
 
     typedef SOAManager<SOAManagerTraitsDefault<GfxBufferD3D11>> Buffers;
-    typedef SOAColumn<Buffers, 0> BuffersCol;
     Buffers buffers_;
 
     typedef SOAManager<SOAManagerTraitsDefault<GfxShaderSourceD3D11>> ShaderSources;
-    typedef SOAColumn<ShaderSources, 0> ShaderSourcesCol;
     ShaderSources shaderSources_;
 
     typedef SOAManager<SOAManagerTraitsDefault<GfxRendShaderD3D11>> RendShaders;
-    typedef SOAColumn<RendShaders, 0> RendShadersCol;
     RendShaders rendShaders_;
+
+    typedef SOAManager<SOAManagerTraitsDefault<GfxDepthStencilStateD3D11>> DepthStencilStates;
+    DepthStencilStates depthStencilStates_;
+
+    typedef SOAManager<SOAManagerTraitsDefault<GfxBlendStateD3D11>> BlendStates;
+    BlendStates blendStates_;
 
     class D3DBlob;
 

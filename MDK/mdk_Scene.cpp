@@ -155,7 +155,7 @@ void AnimationTrack::setFrameData (uint32 offset, uint32 numOfFrames, float* ptr
     }
 }
 
-void AnimationTrack::fetch2Frames (AnimationCache& ret, float frameNo)
+void AnimationTrack::fetch2Frames (AnimationCache& ret, float frameNo) const
 {
     uint32 thisFrame = 0;
 
@@ -208,16 +208,18 @@ AnimationTrackManager::AnimationTrackManager (Allocator& allocator)
 
 AnimationTrackManager::Handle AnimationTrackManager::create (uint32 numOfFrames, uint32 numOfElemsPerFrame)
 {
-    Handle handle = acquire ();
-    Super::construct<ColTrack> (handle);
-    Super::get<ColTrack> (handle)->alloc (numOfFrames, numOfElemsPerFrame);
+    Handle handle = acquire();
+    construct<0> (handle);
+
+    AnimationTrackRW obj (*this, handle);
+    obj->alloc (numOfFrames, numOfElemsPerFrame);
 
     return handle;
 }
 
 bool AnimationTrackManager::destroy (Handle handle)
 {
-    if (!Super::destruct<ColTrack> (handle))
+    if (!destruct<0> (handle))
         return false;
 
     release (handle);
@@ -247,8 +249,8 @@ void AnimationStateManager::update (AnimationTrackManager& trackManager)
 
         if (!state.cache.isValid (stateTime))
         {
-            AnimationTrack* track = trackManager.get (state.track);
-            m_assert (track != nullptr);
+            SOARead<AnimationTrackManager> track (trackManager, state.track);
+            m_assert (track.isValid());
             track->fetch2Frames (state.cache, stateTime);
         }
 

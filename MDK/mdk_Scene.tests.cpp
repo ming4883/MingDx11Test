@@ -34,7 +34,7 @@ TEST_F (TestAnimationTrackManager, BasicUsages)
 
     // initialize track contents
     {
-        AnimationTrack* track = manager.get (handle);
+        SOAReadWrite<AnimationTrackManager> track (manager, handle);
         track->setFrameTime (0, 2, cFrameTime);
         track->setFrameData (0, 2, cFrameData);
     }
@@ -45,7 +45,7 @@ TEST_F (TestAnimationTrackManager, BasicUsages)
 
     // verify track contents
     {
-        AnimationTrack* track = manager.get (handle);
+        SOARead<AnimationTrackManager> track (manager, handle);
         AnimationCache cache;
         track->fetch2Frames (cache, 0.5f);
 

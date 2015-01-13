@@ -42,6 +42,66 @@ struct SOAColumn
     operator const DATATYPE& () const { return value; } \
 };
 
+template<typename MANAGER, size_t INDEX = 0>
+struct SOARead : public SOAColumn<MANAGER, INDEX>
+{
+    typedef typename MANAGER::Handle Handle;
+    typedef typename MANAGER::SyncRead Sync;
+
+    Sync _sync;
+    Elem* _elem;
+
+    SOARead (MANAGER& manager, Handle handle)
+        : _sync (manager.getSyncHandle())
+        , _elem (nullptr)
+    {
+        if (manager.isValidNoSync (handle))
+            _elem = manager.getNoSync<SOARead> (handle);
+    }
+
+    bool isValid() const
+    {
+        return _elem != nullptr;
+    }
+
+    const Elem* operator -> ()
+    {
+        return _elem;
+    }
+
+    m_noncopyable (SOARead);
+};
+
+template<typename MANAGER, size_t INDEX = 0>
+struct SOAReadWrite : public SOAColumn<MANAGER, INDEX>
+{
+    typedef typename MANAGER::Handle Handle;
+    typedef typename MANAGER::SyncWrite Sync;
+
+    Sync _sync;
+    Elem* _elem;
+
+    SOAReadWrite (MANAGER& manager, Handle handle)
+        : _sync (manager.getSyncHandle())
+        , _elem (nullptr)
+    {
+        if (manager.isValidNoSync (handle))
+            _elem = manager.getNoSync<SOAReadWrite> (handle);
+    }
+
+    bool isValid() const
+    {
+        return _elem != nullptr;
+    }
+
+    Elem* operator -> ()
+    {
+        return _elem;
+    }
+
+    m_noncopyable (SOAReadWrite);
+};
+
 /*! A template for managing objects in data-oriented manner.
     For performance reasons, the constructor and destructor will NOT be invoked during acquire() and release();
     and OBJECT must support operator =.
@@ -59,7 +119,14 @@ public:
 
     enum { cSOASize =  std::tuple_size<SOA>::value };
     
+    template<typename MANAGER, size_t INDEX>
+    friend struct SOARead;
+
+    template<typename MANAGER, size_t INDEX>
+    friend struct SOAReadWrite;
+
     struct Handle;
+    typedef SOAColumn<SOAManager, 0> FirstColumn;
 
 public:
     //! Construct the SOAManager with initial capacity.
@@ -68,6 +135,8 @@ public:
     virtual ~SOAManager();
 
     Allocator& getAllocator() { return _allocator; }
+
+    Sync& getSyncHandle() { return _syncHandle; }
 
     //! Returns the capacity of this SOAManager.
     size_t capacity() const
@@ -96,57 +165,20 @@ public:
     //! Retuns a handle with points to a memory location. If this SOAManager is full, an invalid handle is returned.
     Handle acquire();
 
+    //! 
+    template<size_t INDEX, typename... ARGS>
+    bool construct (Handle handle, ARGS... args);
+
+    //!
+    template<size_t INDEX>
+    bool destruct (Handle handle);
+
     //! Retuns true of the memory location
     bool release (Handle handle);
-
-    //! An utility which invoke the object's constructor.
-    template<typename SOACOL, typename... ARGS>
-    bool construct (Handle handle, ARGS... args)
-    {
-        typedef typename SOACOL::Elem Elem;
-        SyncWrite sync (mSyncHandle);
-
-        if (!isValidNoSync (handle))
-            return false;
-
-        ConstructWithAllocator<Elem, UseAllocator<Elem>::Value>::invoke (_allocator, getNoSync<SOACOL> (handle), args...);
-
-        return true;
-    }
-
-    template<typename SOACOL>
-    bool destruct (Handle handle)
-    {
-        typedef typename SOACOL::Elem Elem;
-
-        SyncWrite sync (mSyncHandle);
-
-        if (!isValidNoSync (handle))
-            return false;
-
-        getNoSync<SOACOL> (handle)->~Elem();
-        return true;
-    }
 
     //! Returns to if handle is pointing to a memory location within this SOAManager, otherwise false.
     bool isValid (Handle handle) const;
     
-    /*! Get the memory location associated with the given handle.
-        Since the memory locations may be changed during resize() or release(), do NOT store the returned pointer for later usages.
-     */
-    template<typename SOACOL>
-    typename SOACOL::ElemPtr get (Handle handle);
-
-    /*! Fetch the content of the memory location with synchronization primitive support.
-     */
-    template<typename SOACOL>
-    bool fetch (typename SOACOL::Elem& data, Handle handle) const;
-
-    /*! Store the content to the memory location with synchronization primitive support.
-     */
-    template<typename SOACOL>
-    bool store (Handle handle, const typename SOACOL::Elem& data);
-
     /*! Mark the object as enabled.
      */
     void enable (Handle handle);
@@ -236,7 +268,7 @@ protected:
     };
 
     Allocator& _allocator;
-    mutable Sync mSyncHandle;
+    mutable Sync _syncHandle;
     size_t mCapacity;
     size_t mSize;
     size_t mFirstDisabled;

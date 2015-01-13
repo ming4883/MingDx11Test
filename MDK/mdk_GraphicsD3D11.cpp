@@ -62,6 +62,8 @@ GfxServiceD3D11::GfxServiceD3D11 (Allocator& allocator)
     , depthTargets_ (16u, allocator)
     , shaderSources_ (16u, allocator)
     , rendShaders_ (16u, allocator)
+    , depthStencilStates_ (16u, allocator)
+    , blendStates_ (16u, allocator)
 {
 
 }
@@ -213,10 +215,11 @@ HGfxBuffer GfxServiceD3D11::bufferCreateVertex (size_t sizeInBytes, uint32_t fla
     if (FAILED (apiDevice_->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
         return HGfxBuffer (0);
 
-    Buffers::Handle handle = buffers_.acquire ();
-    buffers_.construct<BuffersCol> (handle);
-    buffers_.get<BuffersCol> (handle)->apiBuffer = buffer;
-
+    Buffers::Handle handle = buffers_.acquire();
+    buffers_.construct<0> (handle);
+    SOAReadWrite<Buffers> obj (buffers_, handle);
+    obj->apiBuffer = buffer;
+    
     return handle.as<HGfxBuffer>();
 }
 
@@ -250,9 +253,10 @@ HGfxBuffer GfxServiceD3D11::bufferCreateIndex (size_t sizeInBytes, uint32_t flag
     if (FAILED (apiDevice_->CreateBuffer (&desc, initialData == nullptr ? nullptr : &srdara, buffer)))
         return HGfxBuffer (0);
 
-    Buffers::Handle handle = buffers_.acquire ();
-    buffers_.construct<BuffersCol> (handle);
-    buffers_.get<BuffersCol> (handle)->apiBuffer = buffer;
+    Buffers::Handle handle = buffers_.acquire();
+    buffers_.construct<0> (handle);
+    SOAReadWrite<Buffers> obj (buffers_, handle);
+    obj->apiBuffer = buffer;
 
     return handle.as<HGfxBuffer>();
 }
@@ -274,19 +278,18 @@ HGfxBuffer GfxServiceD3D11::bufferCreateConstant (size_t sizeInBytes)
     if (FAILED (apiDevice_->CreateBuffer (&desc, nullptr, buffer)))
         return HGfxBuffer (0);
 
-    Buffers::Handle handle = buffers_.acquire ();
-    buffers_.construct<BuffersCol> (handle);
-    buffers_.get<BuffersCol> (handle)->apiBuffer = buffer;
+    Buffers::Handle handle = buffers_.acquire();
+    buffers_.construct<0> (handle);
+
+    SOAReadWrite<Buffers> obj (buffers_, handle);
+    obj->apiBuffer = buffer;
 
     return handle.as<HGfxBuffer>();
 }
 
 bool GfxServiceD3D11::bufferDestroy (HGfxBuffer handle)
 {
-    if (!buffers_.isValid (handle))
-        return false;
-
-    if (!buffers_.destruct<BuffersCol> (handle))
+    if (!buffers_.destruct<0> (handle))
         return false;
 
     return buffers_.release (handle);
@@ -297,8 +300,10 @@ bool GfxServiceD3D11::bufferUpdate (HGfxBuffer handle, const void* data, size_t 
     if (!buffers_.isValid (handle) || nullptr == data)
         return false;
 
-    ComObj<ID3D11Buffer> buffer = buffers_.get<BuffersCol> (handle)->apiBuffer;
-
+    ComObj<ID3D11Buffer> buffer;
+    {
+        buffer = SOARead<Buffers> (buffers_, handle)->apiBuffer;
+    }
     if (dynamic)
     {
         D3D11_MAPPED_SUBRESOURCE mapped;
@@ -323,28 +328,32 @@ bool GfxServiceD3D11::bufferUpdate (HGfxBuffer handle, const void* data, size_t 
 HGfxShaderSource GfxServiceD3D11::shaderSourceCreate (const void* dataPtr, size_t dataSize)
 {
     ShaderSources::Handle handle = shaderSources_.acquire();
-    shaderSources_.construct<ShaderSourcesCol> (handle);
-    
-    GfxShaderSourceD3D11* source = shaderSources_.get<ShaderSourcesCol> (handle);
+    shaderSources_.construct <0>(handle);
 
-    source->dataPtr = shaderSources_.getAllocator().malloc (dataSize);
-    source->dataSize = dataSize;
+    SOAReadWrite<ShaderSources> obj (shaderSources_, handle);
+    obj->dataPtr = shaderSources_.getAllocator().malloc (dataSize);
+    obj->dataSize = dataSize;
 
-    ::memcpy (source->dataPtr, dataPtr, dataSize);
+    ::memcpy (obj->dataPtr, dataPtr, dataSize);
     
     return handle.as<HGfxShaderSource>();
 }
 
-bool GfxServiceD3D11::shaderSourceDestroy (HGfxShaderSource source)
+bool GfxServiceD3D11::shaderSourceDestroy (HGfxShaderSource handle)
 {
-    if (!shaderSources_.isValid (source))
+    /*
+    SOAReadWrite<ShaderSources> obj (shaderSources_, handle);
+
+    if (!obj.isValid())
         return false;
 
-    GfxShaderSourceD3D11* obj = shaderSources_.get<ShaderSourcesCol> (source);
     shaderSources_.getAllocator().free (obj->dataPtr);
+    */
+    
+    if (!shaderSources_.destruct<0> (handle))
+        return false;
 
-    shaderSources_.destruct <ShaderSourcesCol> (source);
-    shaderSources_.release (source);
+    shaderSources_.release (handle);
 
     return true;
 }
@@ -359,22 +368,23 @@ HGfxRendShader GfxServiceD3D11::rendShaderCreate (HGfxShaderSource vertexSrc, HG
      ComObj<ID3D11PixelShader> ps;
 
      {
-         GfxShaderSourceD3D11* src = shaderSources_.get<ShaderSourcesCol> (vertexSrc);
-         D3DBlob* blob = new D3DBlob (src->dataPtr, src->dataSize);
+         SOARead<ShaderSources> obj (shaderSources_, vertexSrc);
+         D3DBlob* blob = new D3DBlob (obj->dataPtr, obj->dataSize);
          if (vs.set (apiCreateVertexShader (blob, nullptr)).isNull())
              return HGfxRendShader (0u);
      }
 
      {
-         GfxShaderSourceD3D11* src = shaderSources_.get<ShaderSourcesCol> (fragmentSrc);
-         D3DBlob* blob = new D3DBlob (src->dataPtr, src->dataSize);
+         SOARead<ShaderSources> obj (shaderSources_, fragmentSrc);
+         D3DBlob* blob = new D3DBlob (obj->dataPtr, obj->dataSize);
          if (ps.set (apiCreatePixelShader (blob, nullptr)).isNull())
              return HGfxRendShader (0u);
      }
 
      RendShaders::Handle handle = rendShaders_.acquire();
-     rendShaders_.construct<RendShadersCol>(handle);
-     GfxRendShaderD3D11* obj = rendShaders_.get<RendShadersCol>(handle);
+     rendShaders_.construct<0> (handle);
+
+     SOAReadWrite<RendShaders> obj (rendShaders_, handle);
      obj->apiVS = vs;
      obj->apiFS = ps;
 
@@ -386,13 +396,12 @@ bool GfxServiceD3D11::rendShaderApply (HGfxRendShader shader)
     return false;
 }
 
-bool GfxServiceD3D11::rendShaderDestroy (HGfxRendShader shader)
+bool GfxServiceD3D11::rendShaderDestroy (HGfxRendShader handle)
 {
-    if (!rendShaders_.isValid (shader))
+    if (!rendShaders_.destruct<0> (handle))
         return false;
 
-    rendShaders_.destruct <RendShadersCol> (shader);
-    rendShaders_.release (shader);
+    rendShaders_.release (handle);
 
     return false;
 }
@@ -591,6 +600,36 @@ ID3D11PixelShader* GfxServiceD3D11::apiCreatePixelShader (ID3DBlob* bytecode, ID
         return nullptr;
 
     return shader.drop();
+}
+
+HGfxDepthStencilState GfxServiceD3D11::depthStencilStateCreate (GfxStencilDesc desc)
+{
+    return HGfxDepthStencilState (0u);
+}
+
+void GfxServiceD3D11::depthStencilStateApply (HGfxDepthStencilState state)
+{
+}
+
+void GfxServiceD3D11::depthStencilStateDestroy (HGfxDepthStencilState state)
+{
+}
+
+HGfxBlendState GfxServiceD3D11::blendStateCreate (GfxBlendDesc desc)
+{
+    return HGfxBlendState (0u);
+}
+
+void GfxServiceD3D11::blendStateApply (HGfxBlendState state)
+{
+}
+
+void GfxServiceD3D11::blendStateDestroy (HGfxBlendState state)
+{
+}
+
+void GfxServiceD3D11::blendStateSetFactor (float r, float g, float b, float a)
+{
 }
 
 
