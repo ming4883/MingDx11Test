@@ -203,6 +203,9 @@ public:
     void blendStateDestroy (HGfxBlendState state) override;
     void blendStateSetFactor (float r, float g, float b, float a) override;
 
+    HGfxSampler samplerCreate (GfxSamplerDesc desc) override;
+    void samplerDestroy (GfxSamplerDesc state) override;
+
 private:
     typedef SOAManager<SOAManagerTraitsDefault<GfxColorTargetD3D11>> ColorTargets;
     ColorTargets colorTargets_;
@@ -226,6 +229,7 @@ private:
     BlendStates blendStates_;
 
     class D3DBlob;
+    class Mapping;
 
     D3D_FEATURE_LEVEL apiFeatureLevel_;
     ComObj<ID3D11Device> apiDevice_;

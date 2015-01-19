@@ -91,6 +91,26 @@ namespace GfxBlendFactor
     };
 }
 
+namespace GfxSamplerAddressMode
+{
+    enum Value
+    {
+        ClampToEdge,
+        Repeat,
+        MirrorRepeat,
+        ClampToZero,
+    };
+}
+
+namespace GfxSamplerFilterMode
+{
+    enum Value
+    {
+        Nearest,
+        Linear,
+    };
+}
+
 struct GfxStencilDesc
 {
     GfxStencilOperation::Value stencilFailOp; // Stencil Test Failure Operation;
@@ -123,6 +143,21 @@ struct GfxBlendDesc
     GfxBlendFactor::Value alphaSrcFactor;
 };
 
+struct GfxSamplerDesc
+{
+    GfxSamplerAddressMode::Value addressModeR;
+    GfxSamplerAddressMode::Value addressModeS;
+    GfxSamplerAddressMode::Value addressModeT;
+
+    GfxSamplerAddressMode::Value filterModeMin;
+    GfxSamplerAddressMode::Value filterModeMag;
+    GfxSamplerAddressMode::Value filterModeMip;
+
+    float mipMinLevel;
+    float mipMaxLevel;
+    float maxAnisotropy;
+};
+
 m_decl_handle (HGfxBuffer, uint32_t)
 m_decl_handle (HGfxColorTarget, uint32_t)
 m_decl_handle (HGfxDepthTarget, uint32_t)
@@ -130,6 +165,7 @@ m_decl_handle (HGfxShaderSource, uint32_t)
 m_decl_handle (HGfxRendShader, uint32_t)
 m_decl_handle (HGfxDepthStencilState, uint32_t)
 m_decl_handle (HGfxBlendState, uint32_t)
+m_decl_handle (HGfxSampler, uint32_t)
 
 class Frontend;
 
@@ -186,6 +222,9 @@ public:
     virtual void blendStateApply (HGfxBlendState state) = 0;
     virtual void blendStateDestroy (HGfxBlendState state) = 0;
     virtual void blendStateSetFactor (float r, float g, float b, float a) = 0;
+
+    virtual HGfxSampler samplerCreate (GfxSamplerDesc desc) = 0;
+    virtual void samplerDestroy (GfxSamplerDesc state) = 0;
 
 };
 

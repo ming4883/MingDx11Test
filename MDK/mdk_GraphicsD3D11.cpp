@@ -4,7 +4,6 @@
 namespace mdk
 {
 
-
 class GfxServiceD3D11::D3DBlob : public ID3DBlob
 {
 public:
@@ -53,6 +52,122 @@ public:
             delete this;
 
         return ret;
+    }
+};
+
+class GfxServiceD3D11::Mapping
+{
+public:
+    static D3D11_COMPARISON_FUNC get (GfxCompareFunc::Value value)
+    {
+        switch (value)
+        {
+            case GfxCompareFunc::Never: return D3D11_COMPARISON_NEVER;
+            case GfxCompareFunc::Less: return D3D11_COMPARISON_LESS;
+            case GfxCompareFunc::Equal: return D3D11_COMPARISON_EQUAL;
+            case GfxCompareFunc::LessEqual: return D3D11_COMPARISON_LESS_EQUAL;
+            case GfxCompareFunc::Greater: return D3D11_COMPARISON_GREATER;
+            case GfxCompareFunc::NotEqual: return D3D11_COMPARISON_NOT_EQUAL;
+            case GfxCompareFunc::GreaterEqual: return D3D11_COMPARISON_GREATER_EQUAL;
+            case GfxCompareFunc::Always: return D3D11_COMPARISON_ALWAYS;
+        }
+    }
+
+    static D3D11_STENCIL_OP get (GfxStencilOperation::Value value)
+    {
+        switch (value)
+        {
+            case GfxStencilOperation::Keep: return D3D11_STENCIL_OP_KEEP;
+            case GfxStencilOperation::Zero: return D3D11_STENCIL_OP_ZERO;
+            case GfxStencilOperation::Replace: return D3D11_STENCIL_OP_REPLACE;
+            case GfxStencilOperation::IncClamp: return D3D11_STENCIL_OP_INCR_SAT;
+            case GfxStencilOperation::DecClamp: return D3D11_STENCIL_OP_DECR_SAT;
+            case GfxStencilOperation::Invert: return D3D11_STENCIL_OP_INVERT;
+            case GfxStencilOperation::IncWrap: return D3D11_STENCIL_OP_INCR;
+            case GfxStencilOperation::DecWrap: return D3D11_STENCIL_OP_DECR;
+        }
+    }
+
+    static D3D11_BLEND_OP get (GfxBlendOperation::Value value)
+    {
+        switch (value)
+        {
+            case GfxBlendOperation::Add: return D3D11_BLEND_OP_ADD;
+            case GfxBlendOperation::Subtract: return D3D11_BLEND_OP_SUBTRACT;
+            case GfxBlendOperation::ReverseSubtract: return D3D11_BLEND_OP_REV_SUBTRACT;
+            case GfxBlendOperation::Min: return D3D11_BLEND_OP_MIN;
+            case GfxBlendOperation::Max: return D3D11_BLEND_OP_MAX;
+        }
+    }
+
+    static D3D11_BLEND get (GfxBlendFactor::Value value)
+    {
+        switch (value)
+        {
+            case GfxBlendFactor::Zero: return D3D11_BLEND_ZERO;
+            case GfxBlendFactor::One: return D3D11_BLEND_ONE;
+            case GfxBlendFactor::SourceColor: return D3D11_BLEND_SRC_COLOR;
+            case GfxBlendFactor::OneMinusSourceColor: return D3D11_BLEND_INV_SRC_COLOR;
+            case GfxBlendFactor::SourceAlpha: return D3D11_BLEND_SRC_ALPHA;
+            case GfxBlendFactor::OneMinusSourceAlpha: return D3D11_BLEND_INV_SRC_ALPHA;
+            case GfxBlendFactor::DestinationColor: return D3D11_BLEND_DEST_COLOR;
+            case GfxBlendFactor::OneMinusDestinationColor: return D3D11_BLEND_INV_DEST_COLOR;
+            case GfxBlendFactor::DestinationAlpha: return D3D11_BLEND_DEST_ALPHA;
+            case GfxBlendFactor::OneMinusDestinationAlpha: return D3D11_BLEND_INV_DEST_ALPHA;
+            case GfxBlendFactor::SourceAlphaSaturated: return D3D11_BLEND_SRC_ALPHA_SAT;
+            case GfxBlendFactor::BlendColor: return D3D11_BLEND_SRC1_COLOR;
+            case GfxBlendFactor::OneMinusBlendColor: return D3D11_BLEND_INV_SRC1_COLOR;
+            case GfxBlendFactor::BlendAlpha: return D3D11_BLEND_SRC1_ALPHA;
+            case GfxBlendFactor::OneMinusBlendAlpha: return D3D11_BLEND_INV_SRC1_ALPHA;
+        }
+    }
+
+    static D3D11_TEXTURE_ADDRESS_MODE get (GfxSamplerAddressMode::Value value)
+    {
+        switch (value)
+        {
+            case GfxSamplerAddressMode::ClampToEdge: return D3D11_TEXTURE_ADDRESS_CLAMP;
+            case GfxSamplerAddressMode::Repeat: return D3D11_TEXTURE_ADDRESS_WRAP;
+            case GfxSamplerAddressMode::MirrorRepeat: return D3D11_TEXTURE_ADDRESS_MIRROR;
+            case GfxSamplerAddressMode::ClampToZero: return D3D11_TEXTURE_ADDRESS_BORDER;
+        }
+    }
+
+    static unsigned int get (GfxSamplerFilterMode::Value min, GfxSamplerFilterMode::Value mag, GfxSamplerFilterMode::Value mip)
+    {
+        enum
+        {
+            D3D11_FILTER_PPP = D3D11_FILTER_MIN_MAG_MIP_POINT,
+            D3D11_FILTER_PPL = D3D11_FILTER_MIN_MAG_POINT_MIP_LINEAR,
+            D3D11_FILTER_PLP = D3D11_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT,
+            D3D11_FILTER_PLL = D3D11_FILTER_MIN_POINT_MAG_MIP_LINEAR,
+            D3D11_FILTER_LPP = D3D11_FILTER_MIN_LINEAR_MAG_MIP_POINT,
+            D3D11_FILTER_LPL = D3D11_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR,
+            D3D11_FILTER_LLP = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
+            D3D11_FILTER_LLL = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+        };
+        
+        switch (min)
+        {
+        case GfxSamplerFilterMode::Linear:
+            switch (mag)
+            {
+            case GfxSamplerFilterMode::Linear: // L L L/P
+                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_LLL : D3D11_FILTER_LLP;
+            case GfxSamplerFilterMode::Nearest: // L P L/P
+                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_LPL : D3D11_FILTER_LPP;
+            }
+        case GfxSamplerFilterMode::Nearest:
+            switch (mag)
+            {
+            case GfxSamplerFilterMode::Linear: // P L L/P
+                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_PLL : D3D11_FILTER_PLP;
+            case GfxSamplerFilterMode::Nearest: // P P L/P
+                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_PPL : D3D11_FILTER_PPP;
+            }
+        }
+
+        return D3D11_FILTER_MIN_MAG_MIP_POINT;
     }
 };
 
@@ -630,6 +745,16 @@ void GfxServiceD3D11::blendStateDestroy (HGfxBlendState state)
 
 void GfxServiceD3D11::blendStateSetFactor (float r, float g, float b, float a)
 {
+}
+
+HGfxSampler GfxServiceD3D11::samplerCreate (GfxSamplerDesc desc)
+{
+    return HGfxSampler (0u);
+}
+
+void GfxServiceD3D11::samplerDestroy (GfxSamplerDesc state)
+{
+
 }
 
 
