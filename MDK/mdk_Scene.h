@@ -75,7 +75,7 @@ public:
 
     Allocator& getAllocator()
     {
-        return _allocator;
+        return allocator_;
     }
 
     void alloc (uint32 numOfFrames, uint32 numOfElemsPerFrame);
@@ -89,7 +89,7 @@ public:
     static void _swap (AnimationTrack& a, AnimationTrack& b);
 
 private:
-    Allocator& _allocator;
+    Allocator& allocator_;
 };
 
 //! specialize swap<>() for SOAManager<>
@@ -99,7 +99,7 @@ void swap<AnimationTrack> (AnimationTrack& a, AnimationTrack& b)
     return AnimationTrack::_swap (a, b);
 }
 
-template<> struct UseAllocator<AnimationTrack>
+template<> struct TypeUseAllocator<AnimationTrack>
 {
     static const bool Value = true;
 };

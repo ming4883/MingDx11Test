@@ -70,6 +70,7 @@ public:
             case GfxCompareFunc::NotEqual: return D3D11_COMPARISON_NOT_EQUAL;
             case GfxCompareFunc::GreaterEqual: return D3D11_COMPARISON_GREATER_EQUAL;
             case GfxCompareFunc::Always: return D3D11_COMPARISON_ALWAYS;
+            default: return D3D11_COMPARISON_NEVER;
         }
     }
 
@@ -85,6 +86,7 @@ public:
             case GfxStencilOperation::Invert: return D3D11_STENCIL_OP_INVERT;
             case GfxStencilOperation::IncWrap: return D3D11_STENCIL_OP_INCR;
             case GfxStencilOperation::DecWrap: return D3D11_STENCIL_OP_DECR;
+            default: return D3D11_STENCIL_OP_KEEP;
         }
     }
 
@@ -97,6 +99,7 @@ public:
             case GfxBlendOperation::ReverseSubtract: return D3D11_BLEND_OP_REV_SUBTRACT;
             case GfxBlendOperation::Min: return D3D11_BLEND_OP_MIN;
             case GfxBlendOperation::Max: return D3D11_BLEND_OP_MAX;
+            default: return D3D11_BLEND_OP_ADD;
         }
     }
 
@@ -119,6 +122,7 @@ public:
             case GfxBlendFactor::OneMinusBlendColor: return D3D11_BLEND_INV_SRC1_COLOR;
             case GfxBlendFactor::BlendAlpha: return D3D11_BLEND_SRC1_ALPHA;
             case GfxBlendFactor::OneMinusBlendAlpha: return D3D11_BLEND_INV_SRC1_ALPHA;
+            default: return D3D11_BLEND_ZERO;
         }
     }
 
@@ -130,10 +134,11 @@ public:
             case GfxSamplerAddressMode::Repeat: return D3D11_TEXTURE_ADDRESS_WRAP;
             case GfxSamplerAddressMode::MirrorRepeat: return D3D11_TEXTURE_ADDRESS_MIRROR;
             case GfxSamplerAddressMode::ClampToZero: return D3D11_TEXTURE_ADDRESS_BORDER;
+            default: return D3D11_TEXTURE_ADDRESS_CLAMP;
         }
     }
 
-    static unsigned int get (GfxSamplerFilterMode::Value min, GfxSamplerFilterMode::Value mag, GfxSamplerFilterMode::Value mip)
+    static D3D11_FILTER get (GfxSamplerFilterMode::Value min, GfxSamplerFilterMode::Value mag, GfxSamplerFilterMode::Value mip)
     {
         enum
         {
@@ -146,6 +151,8 @@ public:
             D3D11_FILTER_LLP = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT,
             D3D11_FILTER_LLL = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
         };
+
+        unsigned int ret = D3D11_FILTER_MIN_MAG_MIP_POINT;
         
         switch (min)
         {
@@ -153,21 +160,25 @@ public:
             switch (mag)
             {
             case GfxSamplerFilterMode::Linear: // L L L/P
-                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_LLL : D3D11_FILTER_LLP;
+                ret = GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_LLL : D3D11_FILTER_LLP;
+                break;
             case GfxSamplerFilterMode::Nearest: // L P L/P
-                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_LPL : D3D11_FILTER_LPP;
+                ret = GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_LPL : D3D11_FILTER_LPP;
+                break;
             }
         case GfxSamplerFilterMode::Nearest:
             switch (mag)
             {
             case GfxSamplerFilterMode::Linear: // P L L/P
-                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_PLL : D3D11_FILTER_PLP;
+                ret = GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_PLL : D3D11_FILTER_PLP;
+                break;
             case GfxSamplerFilterMode::Nearest: // P P L/P
-                return GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_PPL : D3D11_FILTER_PPP;
+                ret = GfxSamplerFilterMode::Linear == mip ? D3D11_FILTER_PPL : D3D11_FILTER_PPP;
+                break;
             }
         }
 
-        return D3D11_FILTER_MIN_MAG_MIP_POINT;
+        return (D3D11_FILTER)ret;
     }
 };
 
@@ -179,6 +190,7 @@ GfxServiceD3D11::GfxServiceD3D11 (Allocator& allocator)
     , rendShaders_ (16u, allocator)
     , depthStencilStates_ (16u, allocator)
     , blendStates_ (16u, allocator)
+    , samplerStates_ (16u, allocator)
 {
 
 }
@@ -302,8 +314,8 @@ void GfxServiceD3D11::depthTargetClear (HGfxDepthTarget target, float depth)
 
 HGfxBuffer GfxServiceD3D11::bufferCreateVertex (size_t sizeInBytes, uint32_t flags, const void* initialData)
 {
-    bool dynamic = (flags & GfxBufferFlags::Dynamic) > 0;
-    bool immutable = (flags & GfxBufferFlags::Immutable) > 0;
+    bool dynamic = (flags & GfxBufferFlag::Dynamic) > 0;
+    bool immutable = (flags & GfxBufferFlag::Immutable) > 0;
 
     D3D11_BUFFER_DESC desc;
     desc.ByteWidth = sizeInBytes;   // size
@@ -340,8 +352,8 @@ HGfxBuffer GfxServiceD3D11::bufferCreateVertex (size_t sizeInBytes, uint32_t fla
 
 HGfxBuffer GfxServiceD3D11::bufferCreateIndex (size_t sizeInBytes, uint32_t flags, const void* initialData)
 {
-    bool dynamic = (flags & GfxBufferFlags::Dynamic) > 0;
-    bool immutable = (flags & GfxBufferFlags::Immutable) > 0;
+    bool dynamic = (flags & GfxBufferFlag::Dynamic) > 0;
+    bool immutable = (flags & GfxBufferFlag::Immutable) > 0;
 
     D3D11_BUFFER_DESC desc;
     desc.ByteWidth = sizeInBytes;   // size
@@ -501,14 +513,22 @@ HGfxRendShader GfxServiceD3D11::rendShaderCreate (HGfxShaderSource vertexSrc, HG
 
      SOAReadWrite<RendShaders> obj (rendShaders_, handle);
      obj->apiVS = vs;
-     obj->apiFS = ps;
+     obj->apiPS = ps;
 
      return handle.as<HGfxRendShader>();
 }
 
-bool GfxServiceD3D11::rendShaderApply (HGfxRendShader shader)
+bool GfxServiceD3D11::rendShaderApply (HGfxRendShader handle)
 {
-    return false;
+    SOARead<RendShaders> obj (rendShaders_, handle);
+
+    if (!obj.isValid())
+        return false;
+
+    apiContextIM_->VSSetShader (obj->apiVS, nullptr, 0);
+    apiContextIM_->PSSetShader (obj->apiPS, nullptr, 0);
+
+    return true;
 }
 
 bool GfxServiceD3D11::rendShaderDestroy (HGfxRendShader handle)
@@ -518,7 +538,42 @@ bool GfxServiceD3D11::rendShaderDestroy (HGfxRendShader handle)
 
     rendShaders_.release (handle);
 
-    return false;
+    return true;
+}
+
+uint32_t GfxServiceD3D11::rendShaderSamplerSlotCount()
+{
+    return D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+}
+
+bool GfxServiceD3D11::rendShaderVSSetSampler (HGfxSamplerState handle, uint32_t slot)
+{
+    if (slot >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
+        return false;
+
+    SOARead<SamplerStates> obj (samplerStates_, handle);
+    if (!obj.isValid())
+        return false;
+
+    ID3D11SamplerState* apiState = obj->apiState;
+    apiContextIM_->VSSetSamplers (slot, 1, &apiState);
+
+    return true;
+}
+
+bool GfxServiceD3D11::rendShaderPSSetSampler (HGfxSamplerState handle, uint32_t slot)
+{
+    if (slot >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT)
+        return false;
+
+    SOARead<SamplerStates> obj (samplerStates_, handle);
+    if (!obj.isValid())
+        return false;
+
+    ID3D11SamplerState* apiState = obj->apiState;
+    apiContextIM_->PSSetSamplers (slot, 1, &apiState);
+
+    return true;
 }
 
 ID3D11Texture2D* GfxServiceD3D11::apiCreateTex2D (size_t width, size_t height, size_t mipLevels, DXGI_FORMAT dataFormat, const void* initialData, size_t rowPitch, size_t slicePitch)
@@ -657,7 +712,6 @@ ID3D11ShaderResourceView* GfxServiceD3D11::apiCreateSRV (ID3D11Buffer* buffer)
     return srview.drop();
 }
 
-
 ID3D11DepthStencilView* GfxServiceD3D11::apiCreateDSV (ID3D11Texture2D* texture, size_t mipLevel, DXGI_FORMAT dsvFormat)
 {
     D3D11_TEXTURE2D_DESC texdesc;
@@ -692,7 +746,6 @@ ID3D11DepthStencilView* GfxServiceD3D11::apiCreateDSV (ID3D11Texture2D* texture,
     return dsview.drop();
 }
 
-
 ID3D11VertexShader* GfxServiceD3D11::apiCreateVertexShader (ID3DBlob* bytecode, ID3D11ClassLinkage* linkage)
 {
     if (nullptr == bytecode)
@@ -717,45 +770,154 @@ ID3D11PixelShader* GfxServiceD3D11::apiCreatePixelShader (ID3DBlob* bytecode, ID
     return shader.drop();
 }
 
-HGfxDepthStencilState GfxServiceD3D11::depthStencilStateCreate (GfxStencilDesc desc)
+HGfxDepthStencilState GfxServiceD3D11::depthStencilStateCreate (GfxDepthStencilDesc desc)
 {
-    return HGfxDepthStencilState (0u);
+    ComObj<ID3D11DepthStencilState> apiObj;
+
+    CD3D11_DEPTH_STENCIL_DESC apiDesc = CD3D11_DEPTH_STENCIL_DESC (CD3D11_DEFAULT());
+    apiDesc.DepthEnable = desc.depthCmpFunc != GfxCompareFunc::Always;
+    apiDesc.DepthWriteMask = desc.depthWriteEnabled ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+    apiDesc.DepthFunc = Mapping::get (desc.depthCmpFunc);
+
+    apiDesc.StencilEnable = TRUE;
+    apiDesc.StencilReadMask = (UINT8)desc.stencilFrontFace.readMask;
+    apiDesc.StencilWriteMask = (UINT8)desc.stencilFrontFace.writeMask;
+    
+    apiDesc.FrontFace.StencilFunc = Mapping::get (desc.stencilFrontFace.stencilCmpFunc);
+    apiDesc.FrontFace.StencilDepthFailOp = Mapping::get (desc.stencilFrontFace.depthFailOp);
+    apiDesc.FrontFace.StencilFailOp = Mapping::get (desc.stencilFrontFace.stencilFailOp);
+    apiDesc.FrontFace.StencilPassOp = Mapping::get (desc.stencilFrontFace.depthStencilPassOp);
+
+    apiDesc.BackFace.StencilFunc = Mapping::get (desc.stencilBackFace.stencilCmpFunc);
+    apiDesc.BackFace.StencilDepthFailOp = Mapping::get (desc.stencilBackFace.depthFailOp);
+    apiDesc.BackFace.StencilFailOp = Mapping::get (desc.stencilBackFace.stencilFailOp);
+    apiDesc.BackFace.StencilPassOp = Mapping::get (desc.stencilBackFace.depthStencilPassOp);
+
+    if (FAILED (apiDevice_->CreateDepthStencilState (&apiDesc, apiObj)))
+        return HGfxDepthStencilState (0u);
+
+    DepthStencilStates::Handle handle = depthStencilStates_.acquire();
+    depthStencilStates_.construct<0> (handle);
+
+    SOAReadWrite<DepthStencilStates> obj (depthStencilStates_, handle);
+    obj->apiState = apiObj;
+
+    return handle.as<HGfxDepthStencilState>();
 }
 
-void GfxServiceD3D11::depthStencilStateApply (HGfxDepthStencilState state)
+bool GfxServiceD3D11::depthStencilStateApply (HGfxDepthStencilState handle, uint32_t stencilRefVal)
 {
+    SOAReadWrite<DepthStencilStates> obj (depthStencilStates_, handle);
+    if (!obj.isValid())
+        return false;
+
+    apiContextIM_->OMSetDepthStencilState (obj->apiState, stencilRefVal);
+    return true;
 }
 
-void GfxServiceD3D11::depthStencilStateDestroy (HGfxDepthStencilState state)
+bool GfxServiceD3D11::depthStencilStateDestroy (HGfxDepthStencilState handle)
 {
+    if (!depthStencilStates_.destruct<0> (handle))
+        return false;
+
+    depthStencilStates_.release (handle);
+
+    return true;
 }
 
 HGfxBlendState GfxServiceD3D11::blendStateCreate (GfxBlendDesc desc)
 {
-    return HGfxBlendState (0u);
+    ComObj<ID3D11BlendState> apiObj;
+
+    CD3D11_BLEND_DESC apiDesc = CD3D11_BLEND_DESC (CD3D11_DEFAULT());
+    apiDesc.AlphaToCoverageEnable = FALSE;
+    apiDesc.IndependentBlendEnable= FALSE;
+    
+    D3D11_RENDER_TARGET_BLEND_DESC& rt0 = apiDesc.RenderTarget[0];
+    rt0.BlendEnable = desc.blendEnabled;
+    rt0.SrcBlend = Mapping::get (desc.rgbSrcFactor);
+    rt0.DestBlend = Mapping::get (desc.rgbDstFactor);
+    rt0.BlendOp = Mapping::get (desc.rgbOp);
+    rt0.SrcBlendAlpha = Mapping::get (desc.alphaSrcFactor);
+    rt0.DestBlendAlpha = Mapping::get (desc.alphaDstFactor);
+    rt0.BlendOpAlpha = Mapping::get (desc.alphaOp);
+    rt0.RenderTargetWriteMask = 0;
+    if (desc.colorWriteMask & GfxColorWriteMask::Red)
+        rt0.RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_RED;
+    if (desc.colorWriteMask & GfxColorWriteMask::Green)
+        rt0.RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_GREEN;
+    if (desc.colorWriteMask & GfxColorWriteMask::Blue)
+        rt0.RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_BLUE;
+    if (desc.colorWriteMask & GfxColorWriteMask::Alpha)
+        rt0.RenderTargetWriteMask |= D3D11_COLOR_WRITE_ENABLE_ALPHA;
+
+    if (FAILED (apiDevice_->CreateBlendState (&apiDesc, apiObj)))
+        return HGfxBlendState (0u);
+
+    BlendStates::Handle handle = blendStates_.acquire();
+    blendStates_.construct<0> (handle);
+
+    SOAReadWrite<BlendStates> obj (blendStates_, handle);
+    obj->apiState = apiObj;
+
+    return handle.as<HGfxBlendState>();
 }
 
-void GfxServiceD3D11::blendStateApply (HGfxBlendState state)
+bool GfxServiceD3D11::blendStateApply (HGfxBlendState handle, float factorR, float factorG, float factorB, float factorA)
 {
+    SOARead<BlendStates> obj (blendStates_, handle);
+    if (!obj.isValid())
+        return false;
+
+    float factor[] = {factorR, factorG, factorB, factorA};
+    apiContextIM_->OMSetBlendState (obj->apiState, factor, 0);
+    return true;
 }
 
-void GfxServiceD3D11::blendStateDestroy (HGfxBlendState state)
+bool GfxServiceD3D11::blendStateDestroy (HGfxBlendState handle)
 {
+    if (!blendStates_.destruct<0> (handle))
+        return false;
+
+    blendStates_.release (handle);
+    return true;
 }
 
-void GfxServiceD3D11::blendStateSetFactor (float r, float g, float b, float a)
+HGfxSamplerState GfxServiceD3D11::samplerCreate (GfxSamplerDesc desc)
 {
+    ComObj<ID3D11SamplerState> apiObj;
+    CD3D11_SAMPLER_DESC apiDesc = CD3D11_SAMPLER_DESC (CD3D11_DEFAULT());
+
+    apiDesc.Filter = Mapping::get (desc.filterModeMin, desc.filterModeMag, desc.filterModeMip);
+    apiDesc.AddressU = Mapping::get (desc.addressModeS);
+    apiDesc.AddressV = Mapping::get (desc.addressModeT);
+    apiDesc.AddressW = Mapping::get (desc.addressModeR);
+    (void)apiDesc.MipLODBias;
+    apiDesc.MaxAnisotropy = desc.maxAnisotropy;
+    (void)apiDesc.ComparisonFunc;
+    (void)apiDesc.BorderColor;
+    apiDesc.MinLOD = desc.mipMinLevel;
+    apiDesc.MaxLOD = desc.mipMaxLevel;
+
+    if (FAILED (apiDevice_->CreateSamplerState (&apiDesc, apiObj)))
+        return HGfxSamplerState (0u);
+
+    SamplerStates::Handle handle = samplerStates_.acquire ();
+    samplerStates_.construct<0> (handle);
+
+    SOAReadWrite<SamplerStates> obj (samplerStates_, handle);
+    obj->apiState = apiObj;
+
+    return handle.as<HGfxSamplerState>();
 }
 
-HGfxSampler GfxServiceD3D11::samplerCreate (GfxSamplerDesc desc)
+bool GfxServiceD3D11::samplerDestroy (HGfxSamplerState handle)
 {
-    return HGfxSampler (0u);
+    if (!samplerStates_.destruct<0> (handle))
+        return false;
+
+    samplerStates_.release (handle);
+    return true;
 }
-
-void GfxServiceD3D11::samplerDestroy (GfxSamplerDesc state)
-{
-
-}
-
 
 }   // namespace

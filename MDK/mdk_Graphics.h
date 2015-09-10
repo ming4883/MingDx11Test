@@ -7,7 +7,7 @@
 namespace mdk
 {
 
-namespace GfxBufferTypes
+namespace GfxBufferType
 {
     enum Value
     {
@@ -17,13 +17,13 @@ namespace GfxBufferTypes
     };
 }
 
-namespace GfxBufferFlags
+namespace GfxBufferFlag
 {
     enum Value
     {
-        None = 0,
-        Dynamic = 1 << 0,
-        Immutable = 1 << 1,
+        None        = 0,
+        Dynamic     = 0x1 << 0,
+        Immutable   = 0x1 << 1,
     };
 }
 
@@ -91,6 +91,19 @@ namespace GfxBlendFactor
     };
 }
 
+namespace GfxColorWriteMask
+{
+    enum Value
+    {
+        None    = 0,
+        Red     = 0x1 << 3,
+        Green   = 0x1 << 2,
+        Blue    = 0x1 << 1,
+        Alpha   = 0x1 << 0,
+        All     = 0xf,
+    };
+}
+
 namespace GfxSamplerAddressMode
 {
     enum Value
@@ -141,6 +154,8 @@ struct GfxBlendDesc
 
     GfxBlendFactor::Value rgbSrcFactor;
     GfxBlendFactor::Value alphaSrcFactor;
+
+    uint32_t colorWriteMask;
 };
 
 struct GfxSamplerDesc
@@ -149,13 +164,13 @@ struct GfxSamplerDesc
     GfxSamplerAddressMode::Value addressModeS;
     GfxSamplerAddressMode::Value addressModeT;
 
-    GfxSamplerAddressMode::Value filterModeMin;
-    GfxSamplerAddressMode::Value filterModeMag;
-    GfxSamplerAddressMode::Value filterModeMip;
+    GfxSamplerFilterMode::Value filterModeMin;
+    GfxSamplerFilterMode::Value filterModeMag;
+    GfxSamplerFilterMode::Value filterModeMip;
 
     float mipMinLevel;
     float mipMaxLevel;
-    float maxAnisotropy;
+    uint32_t maxAnisotropy;
 };
 
 m_decl_handle (HGfxBuffer, uint32_t)
@@ -165,7 +180,7 @@ m_decl_handle (HGfxShaderSource, uint32_t)
 m_decl_handle (HGfxRendShader, uint32_t)
 m_decl_handle (HGfxDepthStencilState, uint32_t)
 m_decl_handle (HGfxBlendState, uint32_t)
-m_decl_handle (HGfxSampler, uint32_t)
+m_decl_handle (HGfxSamplerState, uint32_t)
 
 class Frontend;
 
@@ -212,19 +227,21 @@ public:
     virtual HGfxRendShader rendShaderCreate (HGfxShaderSource vertexSrc, HGfxShaderSource fragmentSrc) = 0;
     virtual bool rendShaderApply (HGfxRendShader shader) = 0;
     virtual bool rendShaderDestroy (HGfxRendShader shader) = 0;
+    virtual uint32_t rendShaderSamplerSlotCount() = 0;
+    virtual bool rendShaderVSSetSampler (HGfxSamplerState state, uint32_t slot) = 0;
+    virtual bool rendShaderPSSetSampler (HGfxSamplerState state, uint32_t slot) = 0;
 
 // Render States
-    virtual HGfxDepthStencilState depthStencilStateCreate (GfxStencilDesc desc) = 0;
-    virtual void depthStencilStateApply (HGfxDepthStencilState state) = 0;
-    virtual void depthStencilStateDestroy (HGfxDepthStencilState state) = 0;
+    virtual HGfxDepthStencilState depthStencilStateCreate (GfxDepthStencilDesc desc) = 0;
+    virtual bool depthStencilStateApply (HGfxDepthStencilState state, uint32_t stencilRefVal) = 0;
+    virtual bool depthStencilStateDestroy (HGfxDepthStencilState state) = 0;
 
     virtual HGfxBlendState blendStateCreate (GfxBlendDesc desc) = 0;
-    virtual void blendStateApply (HGfxBlendState state) = 0;
-    virtual void blendStateDestroy (HGfxBlendState state) = 0;
-    virtual void blendStateSetFactor (float r, float g, float b, float a) = 0;
+    virtual bool blendStateApply (HGfxBlendState state, float factorR, float factorG, float factorB, float factorA) = 0;
+    virtual bool blendStateDestroy (HGfxBlendState state) = 0;
 
-    virtual HGfxSampler samplerCreate (GfxSamplerDesc desc) = 0;
-    virtual void samplerDestroy (GfxSamplerDesc state) = 0;
+    virtual HGfxSamplerState samplerCreate (GfxSamplerDesc desc) = 0;
+    virtual bool samplerDestroy (HGfxSamplerState state) = 0;
 
 };
 

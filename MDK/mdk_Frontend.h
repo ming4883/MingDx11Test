@@ -26,14 +26,19 @@ class Frontend
 public:
     static Frontend* create (Allocator& allocator);
     
-    Frontend() {}
+    Frontend (Allocator& allocator) : allocator_ (allocator) {}
     virtual ~Frontend() {}
+
+    Allocator& getAllocator() { return allocator_; }
 
     virtual bool startup (const FrontendStartupOptions& options) = 0;
     virtual void shutdown() = 0;
     virtual bool update() = 0;
 
     virtual GfxService& getGfxService() = 0;
+
+private:
+    Allocator& allocator_;
 };
 
 }

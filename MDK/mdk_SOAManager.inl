@@ -338,7 +338,7 @@ bool SOAManager<TRAITS>::construct (Handle handle, ARGS... args)
     if (!isValidNoSync (handle))
         return false;
 
-    ConstructWithAllocator<Elem, UseAllocator<Elem>::Value>::invoke (_allocator, getNoSync<SOACol> (handle), args...);
+    TypeTraits<Elem>::construct (_allocator, getNoSync<SOACol> (handle), args...);
     return true;
 }
 

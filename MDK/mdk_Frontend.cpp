@@ -16,7 +16,7 @@ FrontendStartupOptions::FrontendStartupOptions ()
 
 Frontend* Frontend::create (Allocator& allocator)
 {
-    return m_new (allocator, FrontendWinAPI) (allocator);
+    return m_new<FrontendWinAPI> (allocator);
 }
 
 }   // namespace

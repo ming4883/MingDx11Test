@@ -43,36 +43,77 @@ public:
     static CrtAllocator& get();
 };
 
-template<typename Type>
-struct UseAllocator
+/*! To make a type support allocator, define the following:
+
+    template<> struct TypeUseAllocator<MyType>
+    {
+        static const bool Value = true;
+    };
+
+    class MyType
+    {
+        Allocator& allocator_;
+    public:
+        Allocator& getAllocator() { return allocator_; }
+    }
+ */
+template<typename TYPE>
+struct TypeUseAllocator
 {
     static const bool Value = false;
 };
 
-template<typename Type, bool AllocatorUsage>
-struct ConstructWithAllocator
+/*! Returns the number of bytes required for allocating a type.
+ */
+template<typename TYPE>
+struct TypeSizeOf
+{
+    static const size_t Value = sizeof (TYPE);
+};
+
+template<typename TYPE, bool USE_ALLOCATOR>
+struct TypeConstructor
 {
     template<typename... Args>
-    static void invoke (Allocator& /*alloc*/, Type* ptr, Args... args)
+    static void invoke (Allocator& /*alloc*/, TYPE* ptr, Args... args)
     {
-        new (ptr) Type (args...);
+        new (ptr) TYPE (args...);
     }
 };
 
-template<typename Type>
-struct ConstructWithAllocator<Type, true>
+template<typename TYPE>
+struct TypeConstructor<TYPE, true>
 {
     template<typename... Args>
-    static void invoke (Allocator& alloc, Type* ptr, Args... args)
+    static void invoke (Allocator& alloc, TYPE* ptr, Args... args)
     {
-        new (ptr) Type (args..., alloc);
+        new (ptr) TYPE (alloc, args...);
     }
 };
 
+template<typename TYPE>
+struct TypeTraits
+{
+    static const bool UseAllocator = TypeUseAllocator<TYPE>::Value;
+    static const size_t SizeOf = TypeSizeOf<TYPE>::Value;
+
+    template<typename... Args>
+    static void construct (Allocator& alloc, TYPE* ptr, Args... args)
+    {
+        return TypeConstructor<TYPE, UseAllocator>::invoke (alloc, ptr, args...);
+    }
+};
 
 }   // namespace
 
-#define m_new(alloc, type) new (alloc.malloc (sizeof (type))) type
+//#define m_new(alloc, type) new (alloc.malloc (sizeof (type))) type
+template<typename TYPE, typename... Args>
+static TYPE* m_new (mdk::Allocator& alloc, Args... args)
+{
+    TYPE* ptr = static_cast<TYPE*> (alloc.malloc (sizeof (TYPE)));
+    TypeTraits<TYPE>::construct (alloc, ptr, args...);
+    return ptr;
+}
 
 template<typename TYPE>
 void m_del (mdk::Allocator& alloc, TYPE* ptr)
@@ -82,6 +123,15 @@ void m_del (mdk::Allocator& alloc, TYPE* ptr)
 
     ptr->~TYPE();
     alloc.free (ptr);
+}
+
+template<typename TYPE>
+void m_del (TYPE* ptr)
+{
+    if (nullptr == ptr)
+        return;
+
+    m_del (ptr->getAllocator(), ptr);
 }
 
 

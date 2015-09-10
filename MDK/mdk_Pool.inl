@@ -2,13 +2,12 @@
 namespace mdk
 {
 
-template<typename TRAITS>
-ObjectPool<TRAITS>::_Node::_Node (Allocator& allocator, size_t capacity)
-    : _allocator (allocator)
+ObjectPoolNode::ObjectPoolNode (Allocator& allocator, size_t itemSize, size_t capacity)
+    : allocator_ (allocator)
 {
-    jassert (capacity >= 1 && "capacity must be at least 1.");
+    m_assert (capacity >= 1 && "capacity must be at least 1.");
 
-    _memory = _allocator.malloc (cItemSize * capacity);
+    _memory = allocator_.malloc (itemSize * capacity);
     if (_memory == nullptr)
         throw std::bad_alloc();
 
@@ -16,10 +15,9 @@ ObjectPool<TRAITS>::_Node::_Node (Allocator& allocator, size_t capacity)
     _nextNode = nullptr;
 }
 
-template<typename TRAITS>
-ObjectPool<TRAITS>::_Node::~_Node()
+ObjectPoolNode::~ObjectPoolNode()
 {
-    _allocator.free (_memory);
+    allocator_.free (_memory);
 }
 
 template<typename TRAITS>
@@ -28,10 +26,10 @@ ObjectPool<TRAITS>::ObjectPool (size_t initialCapacity, size_t nodeMaxCapacity, 
     , _firstDeleted (nullptr)
     , _countInNode (0)
     , _nodeCapacity (initialCapacity)
-    , _firstNode (_allocator, initialCapacity)
+    , _firstNode (_allocator, cItemSize, initialCapacity)
     , _nodeMaxCapacity (nodeMaxCapacity)
 {
-    jassert (nodeMaxCapacity >= 1 && "nodeMaxCapacity must be at least 1.");
+    m_assert (nodeMaxCapacity >= 1 && "nodeMaxCapacity must be at least 1.");
 
     _nodeMemory = _firstNode._memory;
     _lastNode = &_firstNode;
@@ -42,11 +40,11 @@ ObjectPool<TRAITS>::~ObjectPool()
 {
     SyncWrite sync (_syncHandle);
 
-    _Node* node = _firstNode._nextNode;
+    ObjectPoolNode* node = _firstNode._nextNode;
     while (node)
     {
-        _Node* nextNode = node->_nextNode;
-        m_del (_allocator, node);
+        ObjectPoolNode* nextNode = node->_nextNode;
+        m_del (node);
         node = nextNode;
     }
 }
@@ -67,7 +65,7 @@ void ObjectPool<TRAITS>::_allocateNewNode()
             size = _nodeMaxCapacity;
     }
 
-    _Node* newNode = m_new (_allocator, _Node) (_allocator, size);
+    ObjectPoolNode* newNode = m_new<ObjectPoolNode> (_allocator, cItemSize, size);
     _lastNode->_nextNode = newNode;
     _lastNode = newNode;
     _nodeMemory = newNode->_memory;

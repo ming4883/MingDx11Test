@@ -63,7 +63,7 @@ void Camera::updateForD3D (float rtAspect)
 
 //==============================================================================
 AnimationTrack::AnimationTrack (Allocator& allocator)
-    : _allocator (allocator)
+    : allocator_ (allocator)
     , frameCount (0)
     , frameDataSize (0)
     , frameTimePtr (nullptr)
@@ -85,14 +85,14 @@ void AnimationTrack::alloc (uint32 numOfFrames, uint32 numOfElemsPerFrame)
     frameCount = numOfFrames;
     frameDataSize = numOfElemsPerFrame;
 
-    frameTimePtr = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames));
-    frameDataPtr = static_cast<float*> (_allocator.malloc (sizeof (float) * numOfFrames * numOfElemsPerFrame));
+    frameTimePtr = static_cast<float*> (allocator_.malloc (sizeof (float) * numOfFrames));
+    frameDataPtr = static_cast<float*> (allocator_.malloc (sizeof (float) * numOfFrames * numOfElemsPerFrame));
 }
 
 void AnimationTrack::dealloc()
 {
-    _allocator.free (frameTimePtr);
-    _allocator.free (frameDataPtr);
+    allocator_.free (frameTimePtr);
+    allocator_.free (frameDataPtr);
 }
 
 void AnimationTrack::setFrameTime (uint32 offset, uint32 numOfFrames, float* ptr)

@@ -76,7 +76,7 @@ public:
         return ptr_ != raw;
     }
 
-    T* operator -> ()
+    T* operator -> () const
     {
         return ptr_;
     }
@@ -92,6 +92,11 @@ public:
     }
 
     operator T* ()
+    {
+        return ptr_;
+    }
+
+    operator T* () const
     {
         return ptr_;
     }
@@ -149,7 +154,7 @@ class GfxRendShaderD3D11
 {
 public:
     ComObj<ID3D11VertexShader> apiVS;
-    ComObj<ID3D11PixelShader> apiFS;
+    ComObj<ID3D11PixelShader> apiPS;
 };
 
 class GfxDepthStencilStateD3D11
@@ -162,6 +167,12 @@ class GfxBlendStateD3D11
 {
 public:
     ComObj<ID3D11BlendState> apiState;
+};
+
+class GfxSamplerStateD3D11
+{
+public:
+    ComObj<ID3D11SamplerState> apiState;
 };
 
 class GfxServiceD3D11 : public GfxService
@@ -194,17 +205,19 @@ public:
     bool rendShaderApply (HGfxRendShader shader) override;
     bool rendShaderDestroy (HGfxRendShader shader) override;
 
-    HGfxDepthStencilState depthStencilStateCreate (GfxStencilDesc desc) override;
-    void depthStencilStateApply (HGfxDepthStencilState state) override;
-    void depthStencilStateDestroy (HGfxDepthStencilState state) override;
+    HGfxDepthStencilState depthStencilStateCreate (GfxDepthStencilDesc desc) override;
+    bool depthStencilStateApply (HGfxDepthStencilState state, uint32_t stencilRefVal) override;
+    bool depthStencilStateDestroy (HGfxDepthStencilState state) override;
 
     HGfxBlendState blendStateCreate (GfxBlendDesc desc) override;
-    void blendStateApply (HGfxBlendState state) override;
-    void blendStateDestroy (HGfxBlendState state) override;
-    void blendStateSetFactor (float r, float g, float b, float a) override;
+    bool blendStateApply (HGfxBlendState state, float factorR, float factorG, float factorB, float factorA) override;
+    bool blendStateDestroy (HGfxBlendState state) override;
 
-    HGfxSampler samplerCreate (GfxSamplerDesc desc) override;
-    void samplerDestroy (GfxSamplerDesc state) override;
+    HGfxSamplerState samplerCreate (GfxSamplerDesc desc) override;
+    bool samplerDestroy (HGfxSamplerState state) override;
+    uint32_t rendShaderSamplerSlotCount() override;
+    bool rendShaderVSSetSampler (HGfxSamplerState state, uint32_t slot) override;
+    bool rendShaderPSSetSampler (HGfxSamplerState state, uint32_t slot) override;
 
 private:
     typedef SOAManager<SOAManagerTraitsDefault<GfxColorTargetD3D11>> ColorTargets;
@@ -227,6 +240,9 @@ private:
 
     typedef SOAManager<SOAManagerTraitsDefault<GfxBlendStateD3D11>> BlendStates;
     BlendStates blendStates_;
+    
+    typedef SOAManager<SOAManagerTraitsDefault<GfxSamplerStateD3D11>> SamplerStates;
+    SamplerStates samplerStates_;
 
     class D3DBlob;
     class Mapping;

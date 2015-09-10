@@ -33,6 +33,11 @@ private:
     static LRESULT WINAPI apiMsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 };
 
+template<> struct TypeUseAllocator<FrontendWinAPI>
+{
+    static const bool Value = true;
+};
+
 }
 
 #endif // MDK_FRONTENDWINDOWS_H_INCLUDED

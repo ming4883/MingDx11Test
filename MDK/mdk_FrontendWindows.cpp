@@ -5,7 +5,8 @@ namespace mdk
 
 
 FrontendWinAPI::FrontendWinAPI (Allocator& allocator)
-    : apiHWND_ (nullptr)
+    : Frontend (allocator)
+    , apiHWND_ (nullptr)
     , gfxService_ (allocator)
 {
 }

@@ -23,7 +23,20 @@ protected:
 
 };
 
-TEST_F (TestGraphics, Basic)
+
+TEST_F (TestGraphics, Buffers)
+{
+    Frontend* fn = Frontend::create (CrtAllocator::get());
+    fn->startup (startupOptions);
+
+    GfxService* gfx = &fn->getGfxService();
+
+    fn->shutdown();
+
+    m_del (fn);
+}
+
+TEST_F (TestGraphics, FrameBeginEnd)
 {
     Frontend* fn = Frontend::create (CrtAllocator::get());
     fn->startup (startupOptions);
@@ -43,7 +56,7 @@ TEST_F (TestGraphics, Basic)
 
     fn->shutdown();
 
-    m_del (CrtAllocator::get(), fn);
+    m_del (fn);
 }
 
 #endif

@@ -14,6 +14,22 @@ struct ObjectPoolTraitsDefault
     typedef SyncWithAtomic SyncType;
 };
 
+class ObjectPoolNode
+{
+    m_noncopyable (ObjectPoolNode)
+
+public:
+    Allocator& allocator_;
+    void* _memory;
+    size_t _capacity;
+    ObjectPoolNode* _nextNode;
+
+    ObjectPoolNode (Allocator& allocator, size_t itemSize, size_t capacity);
+    ~ObjectPoolNode();
+
+    Allocator& getAllocator() { return allocator_; }
+};
+
 /*! An object pool based on
     http://www.codeproject.com/Articles/746630/O-Object-Pool-in-Cplusplus v-2014-04-21
 */
@@ -48,20 +64,6 @@ public:
 private:
     enum { cItemSize = ((sizeof (Object) + sizeof (void*)-1) / sizeof (void*)) * sizeof (void*) };
 
-    class _Node
-    {
-        m_noncopyable (_Node)
-
-    public:
-        Allocator& _allocator;
-        void* _memory;
-        size_t _capacity;
-        _Node* _nextNode;
-
-        _Node (Allocator& allocator, size_t capacity);
-        ~_Node();
-    };
-
     Sync _syncHandle;
     Allocator& _allocator;
 
@@ -69,8 +71,8 @@ private:
     Object* _firstDeleted;
     size_t _countInNode;
     size_t _nodeCapacity;
-    _Node _firstNode;
-    _Node* _lastNode;
+    ObjectPoolNode _firstNode;
+    ObjectPoolNode* _lastNode;
     size_t _nodeMaxCapacity;
 
 
@@ -79,7 +81,13 @@ private:
 };
 
 template<typename TRAITS>
-struct UseAllocator< ObjectPool<TRAITS> >
+struct TypeUseAllocator< ObjectPool<TRAITS> >
+{
+    static const bool Value = true;
+};
+
+template<>
+struct TypeUseAllocator<ObjectPoolNode>
 {
     static const bool Value = true;
 };
